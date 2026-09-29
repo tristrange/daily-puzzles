@@ -29,9 +29,10 @@
       "maximum": 4294967295
     },
     "generatorVersion": {
-      "description": "Bumped when generation changes in a way that would alter output for a fixed seed.",
+      "description": "Bumped when generation changes in a way that would alter output for a fixed seed. Capped at the JavaScript safe-integer limit: JSON.parse rounds larger values, so the browser would disagree with the engine about which algorithm produced the puzzle.",
       "type": "integer",
-      "minimum": 1
+      "minimum": 1,
+      "maximum": 9007199254740991
     },
     "regions": {
       "description": "Region id per cell, row-major, length exactly size * size.",

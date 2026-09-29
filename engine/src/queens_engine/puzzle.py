@@ -122,8 +122,20 @@ def _require_str(value: JsonValue | None, field: str) -> str:
 
 
 def _require_int(value: JsonValue | None, field: str) -> int:
-    if not isinstance(value, int) or isinstance(value, bool):
+    """Return value as an int, using the schema's definition of "integer".
+
+    JSON Schema 2020-12 counts a number with a zero fractional part as an
+    integer, so `4.0` is as valid as `4`. json.loads hands us a float where
+    ajv hands TypeScript a plain number, so rejecting floats here would make
+    the two parsers disagree on files the schema accepts.
+    """
+    if isinstance(value, bool) or not isinstance(value, int | float):
         raise PuzzleParseError(f"{field} must be an integer")
+    if isinstance(value, float):
+        # is_integer() is False for nan and inf, so those are rejected too.
+        if not value.is_integer():
+            raise PuzzleParseError(f"{field} must be an integer")
+        return int(value)
     return value
 
 

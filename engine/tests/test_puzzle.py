@@ -68,6 +68,36 @@ class TestSemanticChecks:
             parse_puzzle([1, 2, 3])
 
 
+class TestNumberRepresentation:
+    """A number with a zero fractional part is an integer, per the schema.
+
+    json.loads yields a float for `4.0` where ajv yields a plain number, so
+    these cases exist to stop the two parsers drifting apart on files the
+    shared schema accepts.
+    """
+
+    def test_integral_floats_are_accepted_and_normalised(self) -> None:
+        data = minimal()
+        data["size"] = 4.0
+        data["seed"] = 1.0
+        data["generatorVersion"] = 1.0
+        data["regions"] = [float(region) for region in data["regions"]]
+        puzzle = parse_puzzle(data)
+        assert puzzle.board.size == 4
+        assert isinstance(puzzle.board.size, int)
+        assert puzzle.seed == 1
+        assert isinstance(puzzle.seed, int)
+        assert puzzle.board.regions == (0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3)
+        assert all(isinstance(region, int) for region in puzzle.board.regions)
+
+    @pytest.mark.parametrize("value", [4.5, "4", True, None, [4]])
+    def test_values_that_are_not_numbers_are_rejected(self, value: object) -> None:
+        data = minimal()
+        data["size"] = value
+        with pytest.raises(PuzzleParseError, match="does not match schema"):
+            parse_puzzle(data)
+
+
 class TestLoadingFromDisk:
     def test_loads_a_file(self, tmp_path: Path) -> None:
         path = tmp_path / "2026-09-30.json"
