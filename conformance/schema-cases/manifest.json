@@ -1,0 +1,17 @@
+{
+  "cases": [
+    { "file": "queens-minimal.accept.json", "valid": true },
+    { "file": "queens-explicit-capacity.accept.json", "valid": true },
+    { "file": "star-battle.accept.json", "valid": true },
+    { "file": "bad-id.reject.json", "valid": false, "reason": "id must match YYYY-MM-DD" },
+    { "file": "unknown-type.reject.json", "valid": false, "reason": "type must be a known puzzle family" },
+    { "file": "size-out-of-range.reject.json", "valid": false, "reason": "size must be between 2 and 16" },
+    { "file": "seed-out-of-range.reject.json", "valid": false, "reason": "seed must fit in an unsigned 32-bit integer" },
+    { "file": "generator-version-zero.reject.json", "valid": false, "reason": "generatorVersion starts at 1" },
+    { "file": "region-id-out-of-range.reject.json", "valid": false, "reason": "region ids are 0..15 for a grid of at most 16 regions" },
+    { "file": "extra-property.reject.json", "valid": false, "reason": "additionalProperties is false" },
+    { "file": "missing-regions.reject.json", "valid": false, "reason": "regions is required" },
+    { "file": "capacity-below-one.reject.json", "valid": false, "reason": "a region must hold at least one queen" },
+    { "file": "star-battle-missing-capacity.reject.json", "valid": false, "reason": "star-battle requires an explicit regionCapacity" }
+  ]
+}
