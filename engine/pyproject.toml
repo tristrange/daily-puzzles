@@ -1,0 +1,49 @@
+[project]
+name = "queens-engine"
+version = "0.1.0"
+description = "Generation, validation and difficulty scoring for daily logic puzzles."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "jsonschema>=4.23.0",
+]
+
+[dependency-groups]
+dev = [
+    "hypothesis>=6.122.0",
+    "pyright>=1.1.390",
+    "pytest>=8.3.0",
+    "ruff>=0.12.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.19,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers --strict-config"
+# Belt and braces: tests import the package from src directly, so a stale editable
+# install can never make a green commit look broken (or a broken one look green).
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests", "tools"]
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "N", "UP", "B", "A", "C4", "PERF", "RUF", "SIM", "T20", "PTH", "ARG", "PL"]
+ignore = [
+    "PLR0913",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ARG001", "ARG002", "PLR2004"]
+
+[tool.pyright]
+include = ["src", "tests", "tools"]
+pythonVersion = "3.13"
+typeCheckingMode = "strict"
+venvPath = "."
+venv = ".venv"

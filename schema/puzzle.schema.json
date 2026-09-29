@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://daily-puzzles.invalid/schema/puzzle.schema.json",
+  "title": "Daily puzzle",
+  "description": "Single source of truth for the file format shared by the Python engine and the TypeScript app. Structural validation only; size- and region-dependent invariants are enforced in code by both languages.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "type", "size", "seed", "generatorVersion", "regions"],
+  "properties": {
+    "id": {
+      "description": "Puzzle date in UTC, YYYY-MM-DD. Also the filename stem.",
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "type": {
+      "description": "Puzzle family. Selects the adapter in the app.",
+      "enum": ["queens", "star-battle"]
+    },
+    "size": {
+      "description": "Grid is size x size, and the number of regions equals size.",
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 16
+    },
+    "seed": {
+      "description": "Seed for the deterministic PRNG, so any puzzle can be replayed exactly.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "generatorVersion": {
+      "description": "Bumped when generation changes in a way that would alter output for a fixed seed. Capped at the JavaScript safe-integer limit: JSON.parse rounds larger values, so the browser would disagree with the engine about which algorithm produced the puzzle.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "regions": {
+      "description": "Region id per cell, row-major, length exactly size * size.",
+      "type": "array",
+      "items": { "type": "integer", "minimum": 0, "maximum": 15 }
+    },
+    "regionCapacity": {
+      "description": "Queens per region, per region id. Defaults to 1 for every region (the Queens case). Required for star-battle.",
+      "type": "array",
+      "items": { "type": "integer", "minimum": 1, "maximum": 16 }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "type": { "const": "star-battle" } }, "required": ["type"] },
+      "then": {
+        "required": ["regionCapacity"],
+        "properties": { "regionCapacity": { "type": "array", "minItems": 1 } }
+      }
+    }
+  ]
+}
