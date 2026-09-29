@@ -143,8 +143,8 @@ a cell is forced rather than just revealing it.
 | # | Milestone | Status |
 | --- | --- | --- |
 | 1 | Scaffold both toolchains, shared schema, conformance fixtures | done |
-| 2 | Solution counter — exact, parameterised by region capacity | next |
-| 3 | Seeded generator, uniqueness gate, replay, ASCII renderer | |
+| 2 | Solution counter — exact, parameterised by region capacity | done |
+| 3 | Seeded generator, uniqueness gate, replay, ASCII renderer | next |
 | 4 | Deduction engine and difficulty score (timeboxed, cuttable) | |
 | 5 | React shell, `puzzleOfToday(date, tz)`, archive routes | |
 | 6 | Board UI, keyboard and screen reader support, hint engine | |
@@ -156,6 +156,28 @@ a cell is forced rather than just revealing it.
 Milestones 2 to 4 are the critical path, and they are all Python. If the app half slips,
 the engine alone — a CLI with an exact uniqueness prover and property tests — is still
 worth publishing.
+
+### The solution counter
+
+`engine/src/queens_engine/solver.py` counts solutions exactly: no heuristics, no sampling,
+no time cutoff. A state is the row, the columns already used, how many stars each region
+holds, and which columns the previous row used — that last one only because the
+no-touching rule needs it.
+
+Two decisions worth knowing before building on it:
+
+- **Region counts are packed into one integer in mixed radix**, not kept as a tuple, so a
+  state is four small ints and the memo stays cheap. Reaching a full row means the total is
+  exactly `sum(capacity)` and no region was ever over-filled, so every region is exactly
+  full — there is no final check to forget.
+- **`count_solutions(board, limit=2)` returns `min(actual, 2)`** and stops early. The
+  generator only needs to know zero, one, or more-than-one, and bailing out keeps hopeless
+  boards cheap. Because a cached value is a *truncated* count, the memo is built per call
+  and never shared between different limits.
+
+Capacity comes from `Board.region_capacity` rather than a separate argument, so the capacity
+the solver honours is the same one `Board` validated. Queens and Star Battle run the same
+code; only the number of stars per row differs.
 
 ---
 
