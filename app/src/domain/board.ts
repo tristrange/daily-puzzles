@@ -136,11 +136,17 @@ export function validateBoard(board: Board): void {
     if (!isOrthogonallyConnected(board, cells)) {
       throw new BoardError(`region ${regionId} is not orthogonally connected`)
     }
-    if (touchesItselfDiagonally(board, cells)) {
-      throw new BoardError(`region ${regionId} touches itself diagonally`)
-    }
   }
 }
+
+// Regions are only required to be 4-connected. An earlier version also rejected
+// a region that touched itself diagonally, on the theory that it would be
+// ambiguous which blob was which. That rule is degenerate: a 4-connected set
+// with no diagonal self-contact is necessarily a straight line, because a path
+// that ever turns step p -> q -> r puts p and r diagonally adjacent. So the
+// check silently reduced every puzzle to parallel stripes, rejecting the L, T
+// and block shapes the genre is actually made of. Connectivity already prevents
+// the ambiguity it was meant to prevent.
 
 function isOrthogonallyConnected(board: Board, cells: readonly number[]): boolean {
   const members = new Set(cells)
@@ -160,9 +166,4 @@ function isOrthogonallyConnected(board: Board, cells: readonly number[]): boolea
     }
   }
   return seen.size === members.size
-}
-
-function touchesItselfDiagonally(board: Board, cells: readonly number[]): boolean {
-  const members = new Set(cells)
-  return cells.some((cell) => board.diagonalNeighbours(cell).some((n) => members.has(n)))
 }

@@ -25,14 +25,21 @@ adjacent.
 
 The engine additionally guarantees the puzzle is fair, which the player is never told:
 
-5. Regions partition the grid; each is 4-connected.
-6. No region touches itself diagonally (otherwise it is ambiguous which blob is which).
-7. Exactly one solution exists.
-8. It is solvable by pure logic rather than guessing.
+5. Regions partition the grid, and each is 4-connected.
+6. Exactly one solution exists.
+7. It is solvable by pure logic rather than guessing.
 
-Rule 7 is a hard gate enforced by an exact solver. Rule 8 is a soft signal: we measure how
+Rule 6 is a hard gate enforced by an exact solver. Rule 7 is a soft signal: we measure how
 deeply a deduction engine has to reason, and rate the board. We do not pretend "solvable
 without guessing" is formally decidable — it is not.
+
+> Connectivity is the whole of rule 5, and the choice is deliberate. An earlier draft also
+> required that a region never touch *itself* diagonally, reasoning that this made the blob
+> boundaries unambiguous. It does not: a 4-connected set with no diagonal self-contact is
+> necessarily a straight line, because any path that turns at `p -> q -> r` leaves `p` and
+> `r` diagonally adjacent. Enumerating every legal region of a 3x3 under that rule yields 27
+> shapes, none of them two-dimensional. The check would have quietly reduced every puzzle to
+> parallel stripes while passing every test written against stripes.
 
 ---
 
@@ -122,8 +129,8 @@ The contract lives in [`schema/puzzle.schema.json`](schema/puzzle.schema.json).
   Star Battle. Keeping it in the format is what lets both puzzle types share one solver.
 
 The schema handles structure. The size-dependent invariants it cannot express — array
-length tied to `size`, contiguous region ids, connectivity, no self-diagonal contact —
-are enforced in code on both sides.
+length tied to `size`, contiguous region ids, connectivity — are enforced in code on both
+sides.
 
 Solutions are **never shipped to the client**. Hints are computed live from the player's
 current board, which is both leak-proof and more useful, because a hint can explain *why*
