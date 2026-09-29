@@ -25,14 +25,21 @@ adjacent.
 
 The engine additionally guarantees the puzzle is fair, which the player is never told:
 
-5. Regions partition the grid; each is 4-connected.
-6. No region touches itself diagonally (otherwise it is ambiguous which blob is which).
-7. Exactly one solution exists.
-8. It is solvable by pure logic rather than guessing.
+5. Regions partition the grid, and each is 4-connected.
+6. Exactly one solution exists.
+7. It is solvable by pure logic rather than guessing.
 
-Rule 7 is a hard gate enforced by an exact solver. Rule 8 is a soft signal: we measure how
+Rule 6 is a hard gate enforced by an exact solver. Rule 7 is a soft signal: we measure how
 deeply a deduction engine has to reason, and rate the board. We do not pretend "solvable
 without guessing" is formally decidable — it is not.
+
+> Connectivity is the whole of rule 5, and the choice is deliberate. An earlier draft also
+> required that a region never touch *itself* diagonally, reasoning that this made the blob
+> boundaries unambiguous. It does not: a 4-connected set with no diagonal self-contact is
+> necessarily a straight line, because any path that turns at `p -> q -> r` leaves `p` and
+> `r` diagonally adjacent. Enumerating every legal region of a 3x3 under that rule yields 27
+> shapes, none of them two-dimensional. The check would have quietly reduced every puzzle to
+> parallel stripes while passing every test written against stripes.
 
 ---
 
@@ -122,8 +129,8 @@ The contract lives in [`schema/puzzle.schema.json`](schema/puzzle.schema.json).
   Star Battle. Keeping it in the format is what lets both puzzle types share one solver.
 
 The schema handles structure. The size-dependent invariants it cannot express — array
-length tied to `size`, contiguous region ids, connectivity, no self-diagonal contact —
-are enforced in code on both sides.
+length tied to `size`, contiguous region ids, connectivity — are enforced in code on both
+sides.
 
 Solutions are **never shipped to the client**. Hints are computed live from the player's
 current board, which is both leak-proof and more useful, because a hint can explain *why*
@@ -136,8 +143,8 @@ a cell is forced rather than just revealing it.
 | # | Milestone | Status |
 | --- | --- | --- |
 | 1 | Scaffold both toolchains, shared schema, conformance fixtures | done |
-| 2 | Solution counter — exact, parameterised by region capacity | next |
-| 3 | Seeded generator, uniqueness gate, replay, ASCII renderer | |
+| 2 | Solution counter — exact, parameterised by region capacity | done |
+| 3 | Seeded generator, uniqueness gate, replay, ASCII renderer | next |
 | 4 | Deduction engine and difficulty score (timeboxed, cuttable) | |
 | 5 | React shell, `puzzleOfToday(date, tz)`, archive routes | |
 | 6 | Board UI, keyboard and screen reader support, hint engine | |
@@ -149,6 +156,33 @@ a cell is forced rather than just revealing it.
 Milestones 2 to 4 are the critical path, and they are all Python. If the app half slips,
 the engine alone — a CLI with an exact uniqueness prover and property tests — is still
 worth publishing.
+
+### The solution counter
+
+`engine/src/queens_engine/solver.py` counts solutions exactly: no heuristics, no sampling,
+no time cutoff. A state is the row, how many stars each column holds, how many stars each
+region holds, and which columns the previous row used — that last one only because the
+no-touching rule needs it.
+
+Three decisions worth knowing before building on it:
+
+- **Region counts are packed into one integer in mixed radix**, as are column counts, so a
+  state is four small ints and the memo stays cheap. With one star per row the radix is 2
+  and the packed values *are* the bitmasks, so Queens costs nothing for the generality.
+  Completing every row means the total is exactly `sum(capacity)` with no region or column
+  ever over-filled, so both are exactly full — there is no final check to forget.
+- **Columns are counted, not marked.** A column holds `stars_per_row` stars, so on a
+  multi-star board it must be reusable. Tracking that as a boolean was correct for Queens
+  and silently reported *every* Star Battle board as unsolvable. Columns now pack the same
+  way regions do.
+- **`count_solutions(board, limit=2)` returns `min(actual, 2)`** and stops early. The
+  generator only needs to know zero, one, or more-than-one, and bailing out keeps hopeless
+  boards cheap. Because a cached value is a *truncated* count, the memo is built per call
+  and never shared between different limits.
+
+Capacity comes from `Board.region_capacity` rather than a separate argument, so the capacity
+the solver honours is the same one `Board` validated. Queens and Star Battle run the same
+code; only the number of stars per row differs.
 
 ---
 

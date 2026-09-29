@@ -73,10 +73,22 @@ class TestRejectedBoards:
         with pytest.raises(BoardError, match="not orthogonally connected"):
             make_board(4, regions, (1, 1), PuzzleType.STAR_BATTLE)
 
-    def test_region_touching_itself_diagonally(self) -> None:
+    def test_region_may_touch_itself_diagonally(self) -> None:
+        # Regions are only required to be 4-connected. Rejecting diagonal
+        # self-contact would force every region to be a straight line, since a
+        # 4-connected path that turns puts two cells diagonally adjacent, so
+        # this is a regression guard for that degenerate rule coming back.
         regions = (0, 0, 1, 1, 0, 0, 1, 1, 2, 2, 3, 3, 2, 2, 3, 3)
-        with pytest.raises(BoardError, match="touches itself diagonally"):
-            make_board(4, regions, (1, 1, 1, 1))
+        board = make_board(4, regions, (1, 1, 1, 1))
+        assert board.region_count == 4
+
+    def test_interlocking_regions_are_accepted(self) -> None:
+        # The shapes a real puzzle is made of: here region 2 is a nine-cell
+        # blob, not a stripe.
+        regions = (2, 2, 2, 2, 3, 2, 2, 2, 3, 2, 2, 2, 3, 0, 1, 1)
+        board = make_board(4, regions, (1, 1, 1, 1))
+        assert board.region_count == 4
+        assert set(board.cells_of_region(2)) == {0, 1, 2, 3, 5, 6, 7, 9, 10, 11}
 
     def test_queens_requires_one_region_per_row(self) -> None:
         regions = (0,) * 4 + (1,) * 4 + (2,) * 8

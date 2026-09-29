@@ -110,8 +110,6 @@ def validate_board(board: Board) -> None:
             raise BoardError(f"region {region_id} capacity {capacity} outside [1, {len(cells)}]")
         if not _is_orthogonally_connected(board, cells):
             raise BoardError(f"region {region_id} is not orthogonally connected")
-        if _touches_itself_diagonally(board, cells):
-            raise BoardError(f"region {region_id} touches itself diagonally")
 
 
 def _is_orthogonally_connected(board: Board, cells: tuple[int, ...]) -> bool:
@@ -126,8 +124,11 @@ def _is_orthogonally_connected(board: Board, cells: tuple[int, ...]) -> bool:
     return len(seen) == len(members)
 
 
-def _touches_itself_diagonally(board: Board, cells: tuple[int, ...]) -> bool:
-    members = set(cells)
-    return any(
-        neighbour in members for cell in cells for neighbour in board.diagonal_neighbours(cell)
-    )
+# Regions are only required to be 4-connected. An earlier version also rejected
+# a region that touched itself diagonally, on the theory that it would be
+# ambiguous which blob was which. That rule is degenerate: a 4-connected set
+# with no diagonal self-contact is necessarily a straight line, because a path
+# that ever turns step p -> q -> r puts p and r diagonally adjacent. So the
+# check silently reduced every puzzle to parallel stripes, rejecting the L, T
+# and block shapes the genre is actually made of. Connectivity already prevents
+# the ambiguity it was meant to prevent.
