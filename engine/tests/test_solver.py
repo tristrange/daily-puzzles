@@ -10,7 +10,8 @@ from __future__ import annotations
 
 import random
 from collections.abc import Sequence
-from itertools import combinations, permutations, product
+from functools import cache
+from itertools import combinations, permutations
 
 import pytest
 from hypothesis import HealthCheck, given, settings
@@ -57,34 +58,68 @@ def brute_force_queens(board: Board) -> int:
     return count
 
 
-def brute_force_rows(board: Board) -> int:
-    """Count by trying every per-row column set, checking all rules at the end."""
-    size = board.size
-    stars_per_row = sum(board.region_capacity) // size
-    per_row = [list(combinations(range(size), stars_per_row)) for _ in range(size)]
+@cache
+def _oracle_solve(
+    board: Board,
+    row: int,
+    column_counts: tuple[int, ...],
+    region_counts: tuple[int, ...],
+    prev_cols: tuple[int, ...],
+) -> int:
+    """Count completions. Memoized so it stays an oracle rather than a hang.
 
-    count = 0
-    for choice in product(*per_row):
-        cells: list[int] = []
-        columns: set[int] = set()
-        duplicate_column = False
-        for row, cols in enumerate(choice):
-            if columns & set(cols):
-                duplicate_column = True
+    Deliberately shaped like the solver's own recursion but independently
+    written: explicit per-column and per-region count tuples, adjacency
+    compared against the previous row's columns, and all four rules checked
+    when the last row is reached. The point is that a mistake in one is
+    unlikely to be the same mistake in both.
+    """
+    if row == board.size:
+        stars_per_row = sum(board.region_capacity) // board.size
+        return int(
+            all(count == stars_per_row for count in column_counts)
+            and region_counts == tuple(board.region_capacity)
+        )
+
+    stars_per_row = sum(board.region_capacity) // board.size
+    size = board.size
+    total = 0
+    for cols in combinations(range(size), stars_per_row):
+        if any(column_counts[col] >= stars_per_row for col in cols):
+            continue
+        # Vertical and diagonal: no column within 1 of a star in the row above.
+        if any(abs(col - prev) <= 1 for col in cols for prev in prev_cols):
+            continue
+        # Horizontal: two stars in this row must not be adjacent.
+        if any(abs(a - b) <= 1 for a, b in combinations(cols, 2)):
+            continue
+
+        next_columns = list(column_counts)
+        next_regions = list(region_counts)
+        overflowed = False
+        for col in cols:
+            next_columns[col] += 1
+            region = board.region_at(board.index(row, col))
+            next_regions[region] += 1
+            if next_regions[region] > board.region_capacity[region]:
+                overflowed = True
                 break
-            columns |= set(cols)
-            cells.extend(board.index(row, col) for col in cols)
-        if duplicate_column:
+        if overflowed:
             continue
-        if any(_touching(a, b, size) for a, b in combinations(cells, 2)):
-            continue
-        used: dict[int, int] = {}
-        for cell in cells:
-            region = board.region_at(cell)
-            used[region] = used.get(region, 0) + 1
-        if all(used.get(r, 0) == cap for r, cap in enumerate(board.region_capacity)):
-            count += 1
-    return count
+
+        total += _oracle_solve(board, row + 1, tuple(next_columns), tuple(next_regions), cols)
+    return total
+
+
+def oracle_count(board: Board) -> int:
+    """The reference implementation the solver is checked against."""
+    return _oracle_solve(
+        board,
+        0,
+        (0,) * board.size,
+        (0,) * board.region_count,
+        (),
+    )
 
 
 # --------------------------------------------------------------------------
@@ -162,6 +197,102 @@ def random_legal_board(size: int, rng: random.Random, *, attempts: int = 400) ->
                 regions=tuple(r for r in regions if r is not None),
                 region_capacity=(1,) * size,
                 puzzle_type=PuzzleType.QUEENS,
+            )
+        except BoardError:
+            continue
+    return None
+
+
+def _grow_contiguous_regions(size: int, region_count: int, rng: random.Random) -> list[int] | None:
+    """Fill the grid with `region_count` blobs, each grown from one seed cell.
+
+    Growing cell by cell from an existing region is what guarantees
+    4-connectivity, so the only structural rule left to get wrong is having
+    enough room to start each new region.
+    """
+    regions: list[int | None] = [None] * (size * size)
+    cells = list(range(size * size))
+    rng.shuffle(cells)
+    regions[cells[0]] = 0
+
+    for next_region in range(1, region_count):
+        frontier = [
+            cell
+            for cell in range(size * size)
+            if regions[cell] is None
+            and any(regions[o] is not None for o in _orthogonal(cell, size))
+        ]
+        if not frontier:
+            return None
+        regions[rng.choice(frontier)] = next_region
+
+    # Absorb whatever is left, always from a cell touching an existing region.
+    pending = [cell for cell in range(size * size) if regions[cell] is None]
+    while pending:
+        still: list[int] = []
+        for cell in pending:
+            adjacent = [regions[o] for o in _orthogonal(cell, size) if regions[o] is not None]
+            if adjacent:
+                regions[cell] = rng.choice(adjacent)
+            else:
+                still.append(cell)
+        if len(still) == len(pending):
+            return None
+        pending = still
+
+    return [r for r in regions if r is not None]
+
+
+def _balanced_capacity(
+    member_count: dict[int, int], size: int, stars_per_row: int
+) -> tuple[int, ...] | None:
+    """Capacities in proportion to area, adjusted to sum to `size * stars_per_row`."""
+    total_stars = size * stars_per_row
+    ideal = {r: count * stars_per_row / size for r, count in member_count.items()}
+    capacity = [max(1, int(ideal[r])) for r in sorted(ideal)]
+
+    deficit = total_stars - sum(capacity)
+    step = 1 if deficit > 0 else -1
+    order = sorted(range(size), key=lambda r: -ideal[r])
+    while deficit != 0:
+        moved = False
+        for region in order:
+            if deficit == 0:
+                break
+            target = capacity[region] + step
+            if 1 <= target <= member_count[region]:
+                capacity[region] = target
+                deficit -= step
+                moved = True
+        if not moved:
+            return None
+
+    return tuple(capacity) if sum(capacity) == total_stars else None
+
+
+def random_star_battle_board(
+    size: int, stars_per_row: int, rng: random.Random, *, attempts: int = 400
+) -> Board | None:
+    """A legal Star Battle board with `stars_per_row` stars in every row."""
+    for _ in range(attempts):
+        regions = _grow_contiguous_regions(size, size, rng)
+        if regions is None:
+            continue
+
+        member_count: dict[int, int] = {}
+        for region in regions:
+            member_count[region] = member_count.get(region, 0) + 1
+
+        capacity = _balanced_capacity(member_count, size, stars_per_row)
+        if capacity is None:
+            continue
+
+        try:
+            return Board(
+                size=size,
+                regions=tuple(regions),
+                region_capacity=capacity,
+                puzzle_type=PuzzleType.STAR_BATTLE,
             )
         except BoardError:
             continue
@@ -253,6 +384,83 @@ class TestLimit:
             count_solutions(striped(4), limit=0)
 
 
+def one_region_board(size: int, stars_per_row: int) -> Board:
+    """Every cell in one region, sized so each row needs `stars_per_row` stars.
+
+    Isolates the row/column rules from the region rules, which makes it the
+    sharpest available probe for a bug in column accounting.
+    """
+    return Board(
+        size=size,
+        regions=(0,) * (size * size),
+        region_capacity=(size * stars_per_row,),
+        puzzle_type=PuzzleType.STAR_BATTLE,
+    )
+
+
+class TestMultiStarPerRow:
+    """Boards with more than one star per row.
+
+    An earlier version tracked used columns as a boolean mask, so a column was
+    blocked for good after its first star. That is correct for Queens, where a
+    column holds exactly one, and silently wrong here: with two stars per row a
+    column must be reusable, and the old search ran out of columns and reported
+    every multi-star board as unsolvable.
+    """
+
+    def test_a_column_is_reused_when_it_has_room(self) -> None:
+        # The smallest grid where two stars per row can satisfy the touching
+        # rule at all. The old code answered 0.
+        board = one_region_board(8, 2)
+        assert count_solutions(board, limit=BIG) == 2
+        assert len(list(iter_solutions(board))) == 2
+
+    def test_every_solution_uses_each_column_the_right_number_of_times(self) -> None:
+        board = one_region_board(8, 2)
+        for solution in iter_solutions(board):
+            columns = [cell % board.size for cell in solution]
+            assert all(columns.count(col) == 2 for col in range(board.size))
+            assert obeys_the_rules(board, solution)
+
+    def test_agrees_with_the_oracle_across_stars_per_row(self) -> None:
+        # A row of k non-touching stars forces the next row's stars clear of
+        # them, so a grid needs roughly 3k-1 columns before k per row is
+        # feasible at all. Both sides are checked on feasible boards (where the
+        # count is large enough to catch an off-by-one) and infeasible ones
+        # (where it must be exactly 0). The oracle is exhaustive and grows
+        # quickly, so the range stops where it stops being cheap; the solver is
+        # exercised at larger sizes by the tests above.
+        for stars_per_row, sizes in ((2, range(2, 10)), (3, range(3, 12))):
+            for size in sizes:
+                board = one_region_board(size, stars_per_row)
+                assert count_solutions(board, limit=BIG) == oracle_count(board)
+
+    def test_three_stars_per_row_is_handled(self) -> None:
+        board = one_region_board(12, 3)
+        assert count_solutions(board, limit=BIG) > 0
+        for solution in iter_solutions(board):
+            columns = [cell % board.size for cell in solution]
+            assert all(columns.count(col) == 3 for col in range(board.size))
+            assert obeys_the_rules(board, solution)
+
+    def test_the_solver_handles_sizes_the_oracle_cannot(self) -> None:
+        # Where the exhaustive oracle gets expensive the solver still has to
+        # hold up: every solution it reports must satisfy the rules restated
+        # from scratch, which needs no second implementation to be trusted.
+        board = one_region_board(16, 4)
+        assert count_solutions(board, limit=2) == 2
+        for solution in iter_solutions(board):
+            columns = [cell % board.size for cell in solution]
+            assert all(columns.count(col) == 4 for col in range(board.size))
+            assert obeys_the_rules(board, solution)
+
+    def test_queens_is_unaffected(self) -> None:
+        # One star per row is the degenerate case where the packed column count
+        # is a plain bitmask, so the Queens path must be untouched.
+        board = one_region_board(8, 1)
+        assert count_solutions(board, limit=BIG) == oracle_count(board)
+
+
 class TestCapacityParameterisation:
     def test_star_battle_capacity_of_two_per_region(self) -> None:
         # Two regions of eight cells, two stars each, so two per row and
@@ -265,7 +473,7 @@ class TestCapacityParameterisation:
             puzzle_type=PuzzleType.STAR_BATTLE,
         )
         assert count_solutions(board, limit=BIG) == 2
-        assert count_solutions(board, limit=BIG) == brute_force_rows(board)
+        assert count_solutions(board, limit=BIG) == oracle_count(board)
 
     def test_inconsistent_capacities_are_reported(self) -> None:
         # Structurally fine, but the capacities total 5, which no whole number
@@ -363,17 +571,47 @@ def test_agrees_with_brute_force_queens(size: int, seed: int) -> None:
 
 
 @settings(max_examples=60, deadline=None, suppress_health_check=[HealthCheck.too_slow])
-@given(size=st.integers(min_value=2, max_value=4), seed=st.integers(min_value=0, max_value=2**32))
+@given(
+    size=st.integers(min_value=2, max_value=4),
+    seed=st.integers(min_value=0, max_value=2**32),
+)
 def test_agrees_with_brute_force_general(size: int, seed: int) -> None:
     rng = random.Random(seed)
     board = random_legal_board(size, rng)
     if board is None:
         return
-    assert count_solutions(board, limit=BIG) == brute_force_rows(board)
+    assert count_solutions(board, limit=BIG) == oracle_count(board)
+
+
+@settings(max_examples=25, deadline=None, suppress_health_check=[HealthCheck.too_slow])
+@given(
+    size=st.integers(min_value=8, max_value=10),
+    seed=st.integers(min_value=0, max_value=2**32),
+)
+def test_agrees_with_oracle_when_several_stars_per_row(size: int, seed: int) -> None:
+    board = one_region_board(size, 2)
+    assert count_solutions(board, limit=BIG) == oracle_count(board)
 
 
 @settings(max_examples=40, deadline=None, suppress_health_check=[HealthCheck.too_slow])
-@given(size=st.integers(min_value=2, max_value=4), seed=st.integers(min_value=0, max_value=2**32))
+@given(
+    size=st.integers(min_value=5, max_value=7),
+    stars_per_row=st.integers(min_value=2, max_value=2),
+    seed=st.integers(min_value=0, max_value=2**32),
+)
+def test_agrees_with_oracle_on_real_multi_star_regions(
+    size: int, stars_per_row: int, seed: int
+) -> None:
+    """The gap that hid the column bug: several stars per row *and* real regions."""
+    rng = random.Random(seed)
+    board = random_star_battle_board(size, stars_per_row, rng)
+    if board is None:
+        return
+    assert count_solutions(board, limit=BIG) == oracle_count(board)
+
+
+@settings(max_examples=40, deadline=None, suppress_health_check=[HealthCheck.too_slow])
+@given(size=st.integers(min_value=5, max_value=8), seed=st.integers(min_value=0, max_value=2**32))
 def test_enumeration_agrees_with_counting(size: int, seed: int) -> None:
     rng = random.Random(seed)
     board = random_legal_board(size, rng)

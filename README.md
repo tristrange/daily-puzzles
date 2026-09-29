@@ -160,16 +160,21 @@ worth publishing.
 ### The solution counter
 
 `engine/src/queens_engine/solver.py` counts solutions exactly: no heuristics, no sampling,
-no time cutoff. A state is the row, the columns already used, how many stars each region
-holds, and which columns the previous row used — that last one only because the
+no time cutoff. A state is the row, how many stars each column holds, how many stars each
+region holds, and which columns the previous row used — that last one only because the
 no-touching rule needs it.
 
-Two decisions worth knowing before building on it:
+Three decisions worth knowing before building on it:
 
-- **Region counts are packed into one integer in mixed radix**, not kept as a tuple, so a
-  state is four small ints and the memo stays cheap. Reaching a full row means the total is
-  exactly `sum(capacity)` and no region was ever over-filled, so every region is exactly
-  full — there is no final check to forget.
+- **Region counts are packed into one integer in mixed radix**, as are column counts, so a
+  state is four small ints and the memo stays cheap. With one star per row the radix is 2
+  and the packed values *are* the bitmasks, so Queens costs nothing for the generality.
+  Completing every row means the total is exactly `sum(capacity)` with no region or column
+  ever over-filled, so both are exactly full — there is no final check to forget.
+- **Columns are counted, not marked.** A column holds `stars_per_row` stars, so on a
+  multi-star board it must be reusable. Tracking that as a boolean was correct for Queens
+  and silently reported *every* Star Battle board as unsolvable. Columns now pack the same
+  way regions do.
 - **`count_solutions(board, limit=2)` returns `min(actual, 2)`** and stops early. The
   generator only needs to know zero, one, or more-than-one, and bailing out keeps hopeless
   boards cheap. Because a cached value is a *truncated* count, the memo is built per call
