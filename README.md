@@ -574,6 +574,16 @@ Re-dragging along a stroke you did not mean is therefore the correction, rather
 than hunting for Ctrl+Z. A press that never leaves its cell is a click and
 cycles as above.
 
+**A stroke never touches a piece**, in either direction. Dragging out a run of
+exclusions should not un-place a queen on the way, and nothing about the gesture
+says that it might, so `paintStroke` refuses both of its targets: the `mark` one
+that paints a cross, and the `empty` one an erase stroke carries — guarding only
+the first left an erase stroke sweeping pieces off the board just as
+destructively. A stroke that crossed nothing but pieces therefore changes
+nothing, and so adds no undo entry. Pieces are still removed by clicking one,
+which cycles it away, or by the keyboard's clear: both are deliberate acts on a
+cell the player aimed at, unlike passing over one.
+
 Undo granularity is the part worth stating plainly. Painting a cell is live
 feedback, but the board reports the whole *gesture* to the view rather than the
 individual cells: the view snapshots on `onGestureStart` and pushes exactly one

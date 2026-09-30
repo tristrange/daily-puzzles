@@ -100,26 +100,41 @@ export function nextCellState(game: GameState, cell: number): CellState {
 }
 
 /**
- * Force `cell` into `state`, clearing whatever it held before — except that a
- * mark will not be written over a piece.
+ * Force `cell` into `state`, clearing whatever it held before.
  *
- * A drag paints marks across every cell the pointer crosses, and a stroke that
- * happens to pass over a piece the player already placed should not silently
- * un-place it: the common move is dragging out a run of exclusions, and
- * destroying a piece on the way is a surprise with no way to see it coming. The
- * piece is still removable, by clicking it, which cycles it away.
- *
- * The unchanged state is returned as-is, which is also what lets a stroke that
- * crossed nothing but pieces settle as a no-op: the board compares the before
- * and after states when the pointer lifts, and equal states mean no undo entry.
+ * A primitive with no policy in it: it will happily put a mark over a piece or
+ * clear one, because the paths that do that on purpose — a click cycling a piece
+ * away, the keyboard clearing a cell — need it to. The rule about strokes not
+ * touching pieces lives in `paintStroke`, where it can be read and tested.
  */
 export function setCell(game: GameState, cell: number, state: CellState): GameState {
-  if (state === 'mark' && game.queens.has(cell)) return game
   return {
     board: game.board,
     queens: state === 'queen' ? withValue(game.queens, cell) : without(game.queens, cell),
     marks: state === 'mark' ? withValue(game.marks, cell) : without(game.marks, cell),
   }
+}
+
+/**
+ * One cell of a drag stroke.
+ *
+ * A stroke only ever adds or removes marks, so a piece is not its business:
+ * dragging out a run of exclusions should not un-place a queen on the way, which
+ * is a surprise with nothing on screen to predict it. Both targets are covered,
+ * not just painting a cross — a stroke that *starts* on a marked cell erases,
+ * and its target is `empty`, so guarding only the `mark` case would let an erase
+ * stroke sweep pieces off the board just as destructively.
+ *
+ * Pieces are still removable: clicking one cycles it away, which is a
+ * deliberate act on a cell the player aimed at.
+ */
+export function paintStroke(
+  game: GameState,
+  cell: number,
+  target: 'mark' | 'empty',
+): GameState {
+  if (game.queens.has(cell)) return game
+  return setCell(game, cell, target)
 }
 
 /**

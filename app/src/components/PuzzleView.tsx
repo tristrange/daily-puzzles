@@ -8,8 +8,8 @@ import {
   formatTime,
   isSolved,
   nextCellState,
+  paintStroke,
   placeQueenAutoMark,
-  setCell,
   toggleMark,
   toggleQueen,
   type GameState,
@@ -136,7 +136,7 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
 
   /** Live feedback while dragging: no history, the stroke is not over yet. */
   const paintCell = (cell: number, target: 'mark' | 'empty') => {
-    setGame((current) => setCell(current, cell, target))
+    setGame((current) => paintStroke(current, cell, target))
   }
 
   /**
