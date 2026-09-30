@@ -18,6 +18,7 @@ import { firstHint, type Hint } from '../domain/hints'
 import type { Puzzle } from '../domain/puzzle'
 import { PuzzleNotFoundError, loadPuzzle } from '../lib/puzzles'
 import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } from '../lib/stats'
+import { buildShareText, copyText, puzzleShareLink } from '../lib/share'
 import { InteractiveBoard } from './InteractiveBoard'
 
 type LoadState =
@@ -58,6 +59,9 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
   const [stats, setStats] = useState<Stats | null>(null)
   // The solve already on record for this puzzle, if this was a replay.
   const [firstSolve, setFirstSolve] = useState<SolveRecord | null>(null)
+  const [copied, setCopied] = useState<'idle' | 'copied' | 'failed'>('idle')
+  // Set only when copying failed, so the text can be selected by hand.
+  const [shareText, setShareText] = useState<string | null>(null)
   // The state a click-drag started from, so the whole stroke lands in history
   // as one step instead of one step per cell painted.
   const strokeStart = useRef<GameState | null>(null)
@@ -198,6 +202,37 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
         ? `Place a ${piece} at ${describeCell(puzzle.board, hint.cell)}.`
         : `Mark ${describeCell(puzzle.board, hint.cell)} — it cannot hold a ${piece}.`
 
+  /**
+   * Copy the share text.
+   *
+   * The time and hints come from the record that was just written, not from the
+   * live clock, so sharing a replay reports the solve that actually counts. If
+   * both copy paths fail the text is shown instead, selected and ready: a copy
+   * that silently fails is the worst kind, because the player walks away
+   * believing they have something to paste.
+   */
+  const share = async () => {
+    const counted = firstSolve ?? { elapsedMs: shownTime, hints: hintsUsed }
+    const text = buildShareText({
+      board: puzzle.board,
+      pieces: game.queens,
+      puzzleType: puzzle.puzzleType,
+      elapsedMs: counted.elapsedMs,
+      hints: counted.hints,
+      streak: stats?.currentStreak ?? 0,
+      link: puzzleShareLink(puzzle.id),
+    })
+    const ok = await copyText(text)
+    setCopied(ok ? 'copied' : 'failed')
+    if (ok) {
+      setShareText(null)
+      setAnnouncement('Share text copied to the clipboard.')
+      return
+    }
+    setShareText(text)
+    setAnnouncement('Could not reach the clipboard — the share text is shown below, ready to copy.')
+  }
+
   const statusText = solved
     ? `Solved in ${formatTime(shownTime)}`
     : conflictList.length > 0
@@ -252,20 +287,38 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
       />
       <p className="hint-text">{hintText ?? statusText}</p>
       {solved && (
-        <p className="solved-banner">
-          {firstSolve === null ? (
-            <>
-              Solved — nice!
-              {stats !== null && stats.currentStreak > 1 && (
-                <> {stats.currentStreak}-day streak.</>
-              )}
-            </>
-          ) : (
-            <>
-              Solved again — your first solve, {formatTime(firstSolve.elapsedMs)}, still counts.
-            </>
+        <div className="solved-panel">
+          <p className="solved-banner">
+            {firstSolve === null ? (
+              <>
+                Solved — nice!
+                {stats !== null && stats.currentStreak > 1 && (
+                  <> {stats.currentStreak}-day streak.</>
+                )}
+              </>
+            ) : (
+              <>
+                Solved again — your first solve, {formatTime(firstSolve.elapsedMs)}, still counts.
+              </>
+            )}
+          </p>
+          <button type="button" className="tool-button share" onClick={share}>
+            {copied === 'copied' ? 'Copied' : 'Copy share text'}
+          </button>
+          {shareText !== null && (
+            <textarea
+              className="share-text"
+              readOnly
+              rows={shareText.split('\n').length}
+              aria-label="Share text"
+              ref={(node) => {
+                node?.select()
+              }}
+              onFocus={(event) => event.currentTarget.select()}
+              value={shareText}
+            />
           )}
-        </p>
+        </div>
       )}
       <p className="sr-only" role="status" aria-live="polite">
         {announcement}

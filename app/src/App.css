@@ -172,6 +172,43 @@
   margin: 14px 0 0;
 }
 
+/* The share button and its fallback, under the solved message. */
+.solved-panel {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  margin: 10px 0 0;
+
+  .share {
+    /* The accent, on a page background: 4.5:1, so this is a real text colour
+       and not just a tinted surface. */
+    color: var(--accent);
+    border-color: var(--accent-border);
+  }
+}
+
+.share-text {
+  width: min(100%, 340px);
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  /* The grid is emoji, so the text has to keep its own line breaks and must
+     not be re-wrapped or stretched to the box. */
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: pre;
+  resize: none;
+  /* Deliberately not the theme's own colours. This box previews text that is
+     about to be pasted into someone else's chat client, where a light
+     background is the common case — and the empty cells are black squares,
+     which vanish on a dark one. Previewing it on dark would hide the grid's own
+     cells and read as a bug. The pair is the dark theme's text on white, about
+     16:1. */
+  background: #fff;
+  color: #16171d;
+}
+
 .cell {
   aspect-ratio: 1;
   border-radius: 2px;
