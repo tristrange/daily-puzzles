@@ -99,8 +99,22 @@ export function nextCellState(game: GameState, cell: number): CellState {
   return 'empty'
 }
 
-/** Force `cell` into `state`, clearing whatever it held before. */
+/**
+ * Force `cell` into `state`, clearing whatever it held before — except that a
+ * mark will not be written over a piece.
+ *
+ * A drag paints marks across every cell the pointer crosses, and a stroke that
+ * happens to pass over a piece the player already placed should not silently
+ * un-place it: the common move is dragging out a run of exclusions, and
+ * destroying a piece on the way is a surprise with no way to see it coming. The
+ * piece is still removable, by clicking it, which cycles it away.
+ *
+ * The unchanged state is returned as-is, which is also what lets a stroke that
+ * crossed nothing but pieces settle as a no-op: the board compares the before
+ * and after states when the pointer lifts, and equal states mean no undo entry.
+ */
 export function setCell(game: GameState, cell: number, state: CellState): GameState {
+  if (state === 'mark' && game.queens.has(cell)) return game
   return {
     board: game.board,
     queens: state === 'queen' ? withValue(game.queens, cell) : without(game.queens, cell),

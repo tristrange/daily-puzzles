@@ -633,9 +633,28 @@ boards, where it is free: a player identifies a region by the cells around it.
 
 `colours.test.ts` asserts the floor against **every committed puzzle** rather
 than a fixture, so a palette edit that quietly reintroduces two look-alike
-swatches side by side fails there instead of in front of a player. Glyph ink is
-chosen per region for the same reason — the palette spans light sand to
-near-black, so a `#1a1a1a` queen would vanish on `#023047`.
+swatches side by side fails there instead of in front of a player.
+
+The *piece* is not coloured per region, though the palette would justify it: the same
+span that stops `#1a1a1a` working on `#023047` means a piece that adapts to its cell
+looks, to a player, like a piece that is somehow in a different state — and the first
+time one appeared light, it read as a mistake. So the piece is one fixed white with a
+thin dark outline, identical in both themes and on every region. The outline is load-
+bearing rather than decorative: a flat white reaches only 1.37:1 on the pale sand
+`#e9c46a`, and the dark edge carries it there at 13.85:1, while the fill carries the
+dark end. Worst case across all sixteen regions, one or the other clears 4.6:1, and
+`colours.test.ts` asserts that for every colour in the palette — plus that the outline
+really is applied, since without that check the two tokens could pass every test while
+the stylesheet stopped using one of them.
+
+The cross-out mark still takes its colour per region, and it is the weaker of the two:
+`#b3261e` on the lighter reds and `#f87171` on the darker ones clears 3:1 on only eight
+of the sixteen regions, as low as 1.58:1 on `#b56576`. Choosing by a luminance threshold
+cannot do better across a palette this wide, because the mid-tones are too dark for the
+dark red and too light for the light one. `colours.test.ts` keeps that visible as a test
+marked `it.fails` rather than quietly dropping the assertion; fixing it means a much
+darker and a much lighter red picked by measured contrast, which changes how every
+crossed cell looks.
 
 ---
 

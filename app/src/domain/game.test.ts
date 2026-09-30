@@ -123,10 +123,26 @@ describe('clearCell', () => {
 })
 
 describe('setCell', () => {
-  it('forces a mark, clearing a piece on the way', () => {
+  it('will not write a mark over a piece', () => {
+    // A drag out a run of exclusions must not un-place a queen it passes over.
     const game = setCell(toggleQueen(createGame(BLOCKS), 3), 3, 'mark')
-    expect(cellState(game, 3)).toBe('mark')
-    expect(game.queens.has(3)).toBe(false)
+    expect(cellState(game, 3)).toBe('queen')
+    expect(game.queens.has(3)).toBe(true)
+    expect(game.marks.has(3)).toBe(false)
+  })
+
+  it('leaves the refused cell untouched and marks its neighbours', () => {
+    const start = toggleQueen(createGame(BLOCKS), 3)
+    let game = setCell(start, 3, 'mark')
+    game = setCell(game, 4, 'mark')
+    game = setCell(game, 5, 'mark')
+    expect(game.queens).toEqual(start.queens)
+    expect([...game.marks].sort((a, b) => a - b)).toEqual([4, 5])
+  })
+
+  it('still clears a piece when forced empty, so it can be removed', () => {
+    const game = setCell(toggleQueen(createGame(BLOCKS), 3), 3, 'empty')
+    expect(cellState(game, 3)).toBe('empty')
   })
 
   it('forces a piece, clearing a mark on the way', () => {

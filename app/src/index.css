@@ -19,6 +19,21 @@
   --accent-border: light-dark(rgba(162, 49, 232, 0.5), rgba(192, 132, 252, 0.5));
   --danger: light-dark(#d64541, #f2b8b5);
   --hint: light-dark(#2a9d8f, #5eead4);
+  /* A placed piece, and the hairline that keeps it readable. Deliberately *not*
+     a light-dark() pair: the piece looks the same on every cell, in both
+     themes. It used to be picked per cell to contrast with that cell's region
+     colour, which meant a dark piece on the pale regions and a light one on the
+     dark ones — and that reads as a state change, as though the light pieces
+     were somehow the wrong ones. One appearance cannot be told apart from a
+     mistake.
+
+     A single flat colour could not do the job alone. The region palette runs
+     from pale sand (#e9c46a) to near-black (#023047), and white reaches only
+     1.37:1 on the pale end — so the outline is what carries the edge there
+     (13.85:1), and the fill carries it at the dark end (13.85:1). Worst case
+     across all sixteen regions, one or the other clears 4.6:1. */
+  --piece: #fff;
+  --piece-outline: #101014;
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 

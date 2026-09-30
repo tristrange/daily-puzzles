@@ -262,16 +262,20 @@
   }
 }
 
-/* The cell sets the ink (see lib/colours.ts): the palette spans light sand to
-   near-black, so neither theme's fixed marker colour is readable on all of it. */
+/* A placed piece: one appearance everywhere, white with a hairline dark edge so
+   it reads on a pale region and a dark one alike. The stroke is in `em` so it
+   scales with the glyph rather than sitting at a fixed pixel width, and it is
+   thin on purpose — this is an edge, not an outline that competes with the
+   piece. The cross-out mark keeps its own colour, which is set per region. */
 .marker {
   font-size: 1.5em;
   line-height: 1;
-  color: inherit;
-  text-shadow: 0 0 2px var(--bg), 0 0 2px var(--bg);
+  color: var(--piece);
+  -webkit-text-stroke: 0.035em var(--piece-outline);
 
   &.mark {
     color: var(--mark-ink);
+    -webkit-text-stroke: 0;
   }
 }
 

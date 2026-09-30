@@ -11,11 +11,12 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { contrastRatio } from './contrast'
 import { Board } from '../domain/board'
 import { parsePuzzle } from '../domain/puzzle'
 import {
   colourDistance,
-  inks,
+  markInk,
   MIN_NEIGHBOUR_DISTANCE,
   REGION_COLOURS,
   regionColours,
@@ -161,18 +162,94 @@ describe('regionColours', () => {
   })
 })
 
-describe('inks', () => {
-  it('uses dark ink on light backgrounds and light ink on dark ones', () => {
-    expect(inks('#e9c46a').piece).toBe('#1a1a1a')
-    expect(inks('#023047').piece).toBe('#f8fafc')
+describe('markInk', () => {
+  it('uses dark red on light backgrounds and a lighter red on dark ones', () => {
+    expect(markInk('#e9c46a')).toBe('#b3261e')
+    expect(markInk('#023047')).toBe('#f87171')
   })
 
-  it('gives every palette colour readable ink', () => {
+  it('picks one of the two mark inks for every palette colour', () => {
     for (const colour of REGION_COLOURS) {
-      const { piece, mark } = inks(colour)
-      expect([piece, mark]).toEqual(expect.arrayContaining([expect.any(String)]))
-      expect(piece === '#1a1a1a' || piece === '#f8fafc').toBe(true)
-      expect(mark === '#b3261e' || mark === '#f87171').toBe(true)
+      expect(['#b3261e', '#f87171']).toContain(markInk(colour))
+    }
+  })
+
+  // A known defect, left failing on purpose rather than quietly dropped. The
+  // cross-out is unreadable on 8 of the 16 region colours -- as low as 1.58:1 on
+  // #b56576 -- because choosing by a luminance threshold cannot work across a
+  // palette this wide: the mid-tones are too dark for the dark red to clear
+  // 3:1 and too light for the light one to. Fixing it means picking the
+  // higher-contrast of a much darker and a much lighter red, which changes how
+  // every crossed cell looks, so it wants its own decision and its own change.
+  //
+  // Delete the `.fails` when that lands and this asserts the fix.
+  it.fails('gives every palette colour a mark ink that reads on it', () => {
+    for (const colour of REGION_COLOURS) {
+      expect(
+        contrastRatio(markInk(colour), colour),
+        `${markInk(colour)} on ${colour}`,
+      ).toBeGreaterThanOrEqual(NON_TEXT_MINIMUM)
+    }
+  })
+})
+
+/** The piece tokens as shipped, read from the stylesheet rather than copied. */
+function pieceToken(name: string): string {
+  const css = readFileSync(new URL('../index.css', import.meta.url).pathname, 'utf8')
+  const value = new RegExp(`${name}:\\s*([^;]+);`).exec(css)?.[1]?.trim()
+  if (value === undefined) throw new Error(`index.css no longer declares ${name}`)
+  return value
+}
+
+const PIECE_FILL = () => pieceToken('--piece')
+const PIECE_OUTLINE = () => pieceToken('--piece-outline')
+const NON_TEXT_MINIMUM = 3
+
+describe('the piece colour', () => {
+  // The piece is one fixed white with a dark outline, because a piece that
+  // changed colour with the cell read as a state change — as though the light
+  // ones were misplaced. These are the numbers that make one appearance viable
+  // across a palette running from pale sand to near-black.
+
+  it('is legible on every region colour, by fill or by outline', () => {
+    for (const colour of REGION_COLOURS) {
+      const best = Math.max(
+        contrastRatio(PIECE_FILL(), colour),
+        contrastRatio(PIECE_OUTLINE(), colour),
+      )
+      expect(best, `${colour} has neither fill nor outline at 3:1`).toBeGreaterThanOrEqual(
+        NON_TEXT_MINIMUM,
+      )
+    }
+  })
+
+  it('could not be a single flat colour, which is why the outline exists', () => {
+    // White alone fails at the pale end, and dark alone would fail at the dark
+    // end. Without this test the outline looks like decoration and gets removed
+    // by someone tidying the CSS.
+    expect(contrastRatio(PIECE_FILL(), '#e9c46a')).toBeLessThan(NON_TEXT_MINIMUM)
+    expect(contrastRatio(PIECE_OUTLINE(), '#023047')).toBeLessThan(NON_TEXT_MINIMUM)
+  })
+
+  it('is actually stroked with that outline, not merely defined', () => {
+    // The contrast above only proves the two colours *could* work. Without this,
+    // deleting the stroke in App.css would leave every test green and put a
+    // flat white glyph on the pale regions at 1.37:1.
+    const css = readFileSync(new URL('../App.css', import.meta.url).pathname, 'utf8')
+    const marker = /\.marker\s*\{([^}]*)\}/.exec(css)?.[1]
+    expect(marker, 'App.css no longer styles .marker').toBeDefined()
+    expect(marker).toMatch(/-webkit-text-stroke:[^;]*var\(--piece-outline\)/)
+    expect(marker).toMatch(/color:\s*var\(--piece\)/)
+  })
+
+  it('does not depend on the theme', () => {
+    // One appearance in light and dark is the point; if these were ever moved
+    // into a light-dark() pair the confusion would come straight back.
+    const root = readFileSync(new URL('../index.css', import.meta.url).pathname, 'utf8')
+    for (const token of ['--piece', '--piece-outline']) {
+      const declaration = new RegExp(`${token}:\\s*([^;]+);`).exec(root)?.[1]?.trim()
+      expect(declaration, `${token} is missing from index.css`).toBeDefined()
+      expect(declaration).not.toMatch(/light-dark/)
     }
   })
 })

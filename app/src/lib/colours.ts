@@ -266,13 +266,21 @@ export function regionColours(board: Board): readonly string[] {
 }
 
 /**
- * Ink colours for a background: the piece glyph and the cross-out mark, each
- * picked light or dark to suit. The board paints both straight onto region
- * colours, and the palette spans light sand to near-black, so one fixed marker
- * colour from the page theme cannot stay readable on all of them — a `#1a1a1a`
- * queen vanishes on `#023047`. Returns both so a cell can set them in one pass.
+ * Ink for a cross-out mark on a given background: red on a light region, a
+ * lighter red on a dark one, because the palette spans light sand to near-black
+ * and `#b3261e` disappears on `#023047`.
+ *
+ * The *piece* is not here any more. It used to be, picked light or dark to suit
+ * the cell, on the reasoning that one fixed colour could not stay readable
+ * across the palette. That is true of the piece as a solid shape — and it is why
+ * the piece is now white with a dark outline instead, which keeps one appearance
+ * on every cell. See `--piece` in `index.css`, and `pieceInk.test.ts` for the
+ * contrast arithmetic that a flat colour would fail.
+ *
+ * Returns a bare string because a single value needs no wrapper, and the cell
+ * sets it as a custom property the mark reads.
  */
-export function inks(hex: string): { piece: string; mark: string } {
+export function markInk(hex: string): string {
   const channels = [1, 3, 5].map((offset) => {
     const value = Number.parseInt(hex.slice(offset, offset + 2), 16) / 255
     return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
@@ -281,7 +289,5 @@ export function inks(hex: string): { piece: string; mark: string } {
   // Relative luminance, with the crossover where white and black tie on contrast
   // against mid grey (0.179) rather than where they look equally bright.
   const luminance = 0.2126 * red + 0.7152 * green + 0.0722 * blue
-  return luminance > 0.179
-    ? { piece: '#1a1a1a', mark: '#b3261e' }
-    : { piece: '#f8fafc', mark: '#f87171' }
+  return luminance > 0.179 ? '#b3261e' : '#f87171'
 }
