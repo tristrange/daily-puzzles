@@ -130,7 +130,6 @@ The contract lives in [`schema/puzzle.schema.json`](schema/puzzle.schema.json).
 - `seed` drives a deterministic PRNG, so any puzzle replays byte-for-byte.
 - `regionCapacity` is omitted for Queens (every region holds one queen) and required for
   Star Battle. Keeping it in the format is what lets both puzzle types share one solver.
-
 The schema handles structure. The size-dependent invariants it cannot express — array
 length tied to `size`, contiguous region ids, connectivity — are enforced in code on both
 sides.
@@ -154,7 +153,7 @@ a cell is forced rather than just revealing it.
 | 7 | Game loop: undo, timer, win detection, auto-mark | done |
 | 8 | Daily pipeline: cron generates, commits, CI re-verifies every puzzle | done |
 | 9 | Stretch: share text, local stats, dark mode | |
-| 10 | Stretch: Star Battle as a second puzzle type | |
+| 10 | Stretch: Star Battle as a second puzzle type | done |
 
 Milestones 2 to 4 were the critical path, and they are all Python. The engine alone — a
 CLI with an exact uniqueness prover and property tests — would be worth publishing even if
@@ -355,6 +354,39 @@ The workflows live in [`.github/workflows/`](.github/workflows):
 - `publish.yml` runs from a daily cron (and by hand via `workflow_dispatch`): generators
   and verifies the missing dates, then commits and pushes only when the diff is non-empty,
   so the archive and `git log` tell the whole publishing story.
+
+### The second puzzle type
+
+Star Battle shares nearly everything with Queens, and the design paid off in
+exactly the places the README claimed it would. The rules change from *one*
+star per row, column and region to *k*; everything else — no two stars touching,
+`size` regions, unique solution, the whole file format — is identical. The
+solver was already capacity-parameterised, `Board` already carried a
+`region_capacity`, the schema already required `regionCapacity` for
+`type: "star-battle"`, and both parsers already defaulted it. The generator was
+the last Queens-only piece.
+
+So the real cost of adding a puzzle type was not the engine, it was the honest
+inventory of what is *not* general. The deduction engine models "this line has
+one candidate left" with boolean flags and wipes a region when a queen lands —
+all single-star thinking. Rather than half-generalise it, Star Battle ships with
+the guarantee it can actually back: a **unique** solution, but neither
+logic-gated nor difficulty-scored (`deduce` refuses the board outright, and the
+CLI says so). Extending the rules to k stars is future work with a real design
+question behind it — a region with two candidates is not a single — and it will
+be measured, not guessed.
+
+Two facts the star path depends on. First, **not every size admits a star
+count**: two non-touching stars per row need a row span of three columns and
+each row shadows its neighbour, so within the generator's 5–9 range only 8x8 and
+9x9 admit two stars per row (three stars need at least 12x12, beyond the range).
+A brute-force search over row combinations confirmed the table, and
+`generate_puzzle` fails fast on impossible combinations rather than burning
+20,000 attempts discovering that. Second, `generatorVersion` is part of the
+contract: Queens is version 1 (frozen — the committed files replay through the
+exact PRNG stream that made them) and Star Battle is version 2, a separate
+placement function that cannot perturb the version-1 draws. A new star layout
+bug would be caught by `verify_replay` in CI before it reached a player.
 
 ---
 

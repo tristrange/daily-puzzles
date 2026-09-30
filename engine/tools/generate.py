@@ -2,13 +2,15 @@
 
 Usage:
     python -m tools.generate --date 2026-10-01 [--size 8] [--seed N] [--out DIR]
-                                [--logic-only]
+                                [--logic-only] [--type queens|star-battle] [--stars K]
 
 The seed defaults to a stable value derived from the date, so the same command
 always produces the same puzzle. `--logic-only` accepts only boards the
 deduction engine can solve without guessing, walking the seed upward until it
-finds one (or gives up). See ../README.md for the venv hidden-flag note that
-motivates the explicit sys.path bootstrap here.
+finds one (or gives up) — Queens only, because the deduction engine does not
+yet reason about multi-star boards; Star Battle boards are unique but not
+logic-scored. See ../README.md for the venv hidden-flag note that motivates
+the explicit sys.path bootstrap here.
 """
 
 from __future__ import annotations
@@ -23,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from queens_engine import (
     GenerationConfig,
     GenerationError,
+    PuzzleType,
     deduce,
     dumps_puzzle,
     generate_puzzle,
@@ -49,9 +52,31 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--logic-only",
         action="store_true",
-        help="keep bumping the seed until the board needs no guessing",
+        help="keep bumping the seed until the board needs no guessing (queens only)",
+    )
+    parser.add_argument(
+        "--type",
+        choices=[PuzzleType.QUEENS.value, PuzzleType.STAR_BATTLE.value],
+        default=PuzzleType.QUEENS.value,
+        help="puzzle type to generate",
+    )
+    parser.add_argument(
+        "--stars",
+        type=int,
+        help="stars per row for star-battle (default 2)",
     )
     args = parser.parse_args(argv)
+
+    puzzle_type = PuzzleType(args.type)
+    stars_per_row = None
+    if puzzle_type is PuzzleType.STAR_BATTLE:
+        stars_per_row = args.stars if args.stars is not None else 2
+    if args.logic_only and puzzle_type is PuzzleType.STAR_BATTLE:
+        print(
+            "--logic-only is not available for star-battle (deduction engine is queens-only)",
+            file=sys.stderr,
+        )
+        return 1
 
     base = args.seed if args.seed is not None else seed_from_date(args.date)
     seed = base
@@ -60,7 +85,11 @@ def main(argv: list[str] | None = None) -> int:
             puzzle = generate_puzzle(
                 seed=seed,
                 puzzle_id=args.date,
-                config=GenerationConfig(size=args.size),
+                config=GenerationConfig(
+                    size=args.size,
+                    puzzle_type=puzzle_type,
+                    stars_per_row=stars_per_row,
+                ),
             )
         except GenerationError as error:
             print(f"generation failed: {error}", file=sys.stderr)
@@ -76,9 +105,12 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 1
 
-    difficulty = score_difficulty(puzzle.board)
-    status = "logic" if difficulty.needs_guessing else "pure-logic"
-    print(f"difficulty: {difficulty.level_name} (score {difficulty.score:g}, {status})")
+    if puzzle_type is PuzzleType.STAR_BATTLE:
+        print("difficulty: not rated (star-battle boards are unique but not logic-scored)")
+    else:
+        difficulty = score_difficulty(puzzle.board)
+        status = "logic" if difficulty.needs_guessing else "pure-logic"
+        print(f"difficulty: {difficulty.level_name} (score {difficulty.score:g}, {status})")
 
     if args.out is not None:
         args.out.mkdir(parents=True, exist_ok=True)

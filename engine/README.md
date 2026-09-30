@@ -43,6 +43,39 @@ python -m tools.publish --dry-run --lead 7              # preview without writin
 python -m tools.verify --dir ../app/public/puzzles      # exit 1 on any mismatch
 ```
 
+## Star Battle
+
+The generator emits both puzzle types. Queens (one star per row, column and
+region) is `generatorVersion` 1 — the frozen stream the committed puzzles were
+built with. Star Battle (k stars per row, column and region, still `size`
+regions, still no two stars touching) is `generatorVersion` 2 and a separate
+placement function, so the version-1 boards replay byte-for-byte.
+
+The solver, the board model, the schema and the parsers were already
+capacity-aware; the generator was the last Queens-only piece. Region growth is
+the only stage that changed shape: instead of one queen per region, each region
+seeds from its k stars (bucketed in row-major order) and floods from there, and a
+layout that leaves a region disconnected is rejected like any other invalid
+board.
+
+Two facts the star path depends on, both worth knowing before extending it:
+
+- **Not every size admits a star count.** Two non-touching stars per row need a
+  row span of 3 columns and each row shadows its neighbour's, so within the
+  generator's 5..9 range only 8x8 and 9x9 admit two stars per row; three stars
+  need at least 12x12. `FEASIBLE_STAR_BATTLE` in `generator.py` records the
+  brute-forced result and `generate_puzzle` fails fast on anything else instead
+  of burning its attempt budget on an impossible board.
+- **Uniqueness is the only fairness guarantee here.** `deduce` (and therefore
+  `--logic-only` and `score_difficulty`) still refuses non-Queens boards, so
+  Star Battle files are unique-solution but neither logic-scored nor
+  logic-gated. `tools/generate.py --type star-battle` says so out loud.
+
+```sh
+python -m tools.generate --date 2026-10-04 --type star-battle            # 8x8, 2 stars
+python -m tools.generate --date 2026-10-05 --type star-battle --size 9
+```
+
 ## The rules are a public interface
 
 Since M6, [`deduce.py`](src/queens_engine/deduce.py)'s pure rule passes (singles,
