@@ -2,10 +2,13 @@
 
 Usage:
     python -m tools.generate --date 2026-10-01 [--size 8] [--seed N] [--out DIR]
+                                [--logic-only]
 
 The seed defaults to a stable value derived from the date, so the same command
-always produces the same puzzle. See ../README.md for the venv hidden-flag note
-that motivates the explicit sys.path bootstrap here.
+always produces the same puzzle. `--logic-only` accepts only boards the
+deduction engine can solve without guessing, walking the seed upward until it
+finds one (or gives up). See ../README.md for the venv hidden-flag note that
+motivates the explicit sys.path bootstrap here.
 """
 
 from __future__ import annotations
@@ -20,10 +23,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from queens_engine import (
     GenerationConfig,
     GenerationError,
+    deduce,
     dumps_puzzle,
     generate_puzzle,
     render_puzzle,
+    score_difficulty,
 )
+
+#: How many seed bumps `--logic-only` may try before failing loudly.
+LOGIC_ONLY_TRIES = 32
 
 
 def _seed_from_date(date: str) -> int:
@@ -37,18 +45,39 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--size", type=int, default=8)
     parser.add_argument("--seed", type=int, help="defaults to a hash of --date")
     parser.add_argument("--out", type=Path, help="directory to write the puzzle into")
+    parser.add_argument(
+        "--logic-only",
+        action="store_true",
+        help="keep bumping the seed until the board needs no guessing",
+    )
     args = parser.parse_args(argv)
 
-    seed = args.seed if args.seed is not None else _seed_from_date(args.date)
-    try:
-        puzzle = generate_puzzle(
-            seed=seed,
-            puzzle_id=args.date,
-            config=GenerationConfig(size=args.size),
+    base = args.seed if args.seed is not None else _seed_from_date(args.date)
+    seed = base
+    for _attempt in range(LOGIC_ONLY_TRIES if args.logic_only else 1):
+        try:
+            puzzle = generate_puzzle(
+                seed=seed,
+                puzzle_id=args.date,
+                config=GenerationConfig(size=args.size),
+            )
+        except GenerationError as error:
+            print(f"generation failed: {error}", file=sys.stderr)
+            return 1
+        if not args.logic_only or deduce(puzzle.board, allow_guesses=False).solved:
+            break
+        seed = (seed + 1) % (2**32)
+    else:
+        print(
+            f"no board for {args.date} solved without guessing in "
+            f"{LOGIC_ONLY_TRIES} seed increments",
+            file=sys.stderr,
         )
-    except GenerationError as error:
-        print(f"generation failed: {error}", file=sys.stderr)
         return 1
+
+    difficulty = score_difficulty(puzzle.board)
+    status = "logic" if difficulty.needs_guessing else "pure-logic"
+    print(f"difficulty: {difficulty.level_name} (score {difficulty.score:g}, {status})")
 
     if args.out is not None:
         args.out.mkdir(parents=True, exist_ok=True)

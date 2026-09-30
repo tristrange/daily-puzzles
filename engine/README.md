@@ -22,6 +22,11 @@ A fixed `--seed` overrides the date hash; the seed is stored in the file and
 `verify_replay()` regenerates the board to confirm it. Sizes 5–9 are supported (default 8);
 budget exhaustion surfaces as `GenerationError` instead of a puzzle with a second solution.
 
+`--logic-only` accepts only boards the deduction engine can solve without guessing, bumping
+the seed upward until one appears (see the M4 section in the root [README](../README.md)).
+The difficulty line it prints — band, weighted score, and whether the solve needed a
+hypothesis — is the soft signal the product uses to pick a daily mix.
+
 ## Running a script
 
 `pytest` works out of the box because `pyproject.toml` sets `pythonpath = ["src"]`. Plain

@@ -145,7 +145,7 @@ a cell is forced rather than just revealing it.
 | 1 | Scaffold both toolchains, shared schema, conformance fixtures | done |
 | 2 | Solution counter — exact, parameterised by region capacity | done |
 | 3 | Seeded generator, uniqueness gate, replay, ASCII renderer | done |
-| 4 | Deduction engine and difficulty score (timeboxed, cuttable) | |
+| 4 | Deduction engine and difficulty score (timeboxed, cuttable) | done |
 | 5 | React shell, `puzzleOfToday(date, tz)`, archive routes | |
 | 6 | Board UI, keyboard and screen reader support, hint engine | |
 | 7 | Game loop: undo, timer, win detection, auto-mark | |
@@ -212,11 +212,40 @@ and confirms the board is identical — the CI check the daily pipeline will run
 committed file.
 
 `tools/generate.py` is the day-to-day entry point: it derives a stable seed from a date and
-writes both the puzzle JSON and an ASCII render:
+writes both the puzzle JSON and an ASCII render. It prints the difficulty as a bonus, and
+`--logic-only` keeps bumping the seed until the board needs no guessing:
 
 ```sh
 python -m tools.generate --date 2026-10-01 --out app/public/puzzles
+python -m tools.generate --date 2026-10-01 --logic-only
 ```
+
+### The deduction engine
+
+`solver.py` counts solutions; `deduce.py` asks how a person would *reach* one. It replays
+the rules against the candidate cells until nothing fires, recording each step:
+
+- **Singles** (region, row, column): a group with one candidate left must place its queen.
+- **Intersections**: if a region's candidates all sit in one line, the two share a queen
+  and the line's other cells are dead (and the mirrored region/line claim).
+- **Subsets**: pigeonhole across regions, rows and columns in all six directions. If k
+  regions can only place in k rows, those rows are exactly consumed; the k rows k columns
+  case is the X-wing players know. A set that cannot fit in its cells is a contradiction.
+
+Rules are small-integer weighted (1 / 2 / 4) and the difficulty score is the weighted sum
+of firings, plus a 5-point trial each time the search has to hypothesise. A board that
+stalls on pure logic is **not labelled unsolvable**: it needs a style of reasoning this
+engine does not have, exactly as the soft-signal contract above intends. `deduce` can then
+continue with a bounded hypothesis search (a trial that reaches a contradiction is a
+genuine deduction, courtesy of the unique solution), which is what lets it always find the
+unique solution for the boards the generator ships.
+
+`score_difficulty(board)` maps that trace to a score and a band (Easy..Nightmare), with
+bands calibrated against what the generator actually produces: default 8x8s spread across
+all five levels, 5x5s mostly Easy/Medium. The score is a *soft* signal — it rates how hard
+this engine found the board, not a Platonic difficulty — and it is deliberately **not** in
+the puzzle file. Difficulty belongs to the daily pipeline's choice of which seed to ship,
+which is M8's subject.
 
 ---
 

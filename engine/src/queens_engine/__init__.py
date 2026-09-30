@@ -1,6 +1,21 @@
 """Engine for generating, validating and rating daily logic puzzles."""
 
 from .board import MAX_SIZE, MIN_SIZE, Board, BoardError, PuzzleType
+from .deduce import (
+    DEFAULT_GUESS_CAP,
+    DeductionError,
+    DeductionStep,
+    DeductionTrace,
+    deduce,
+)
+from .difficulty import (
+    GUESSING_FLOOR,
+    LEVEL_NAMES,
+    RULE_WEIGHTS,
+    SCORE_BANDS,
+    Difficulty,
+    score_difficulty,
+)
 from .generator import (
     DEFAULT_ATTEMPTS,
     DEFAULT_SIZE,
@@ -32,14 +47,23 @@ from .solver import (
 
 __all__ = [
     "DEFAULT_ATTEMPTS",
+    "DEFAULT_GUESS_CAP",
     "DEFAULT_LIMIT",
     "DEFAULT_SIZE",
+    "GUESSING_FLOOR",
+    "LEVEL_NAMES",
     "MAX_GENERATABLE_SIZE",
     "MAX_SIZE",
     "MIN_GENERATABLE_SIZE",
     "MIN_SIZE",
+    "RULE_WEIGHTS",
+    "SCORE_BANDS",
     "Board",
     "BoardError",
+    "DeductionError",
+    "DeductionStep",
+    "DeductionTrace",
+    "Difficulty",
     "GenerationConfig",
     "GenerationError",
     "Prng",
@@ -48,6 +72,7 @@ __all__ = [
     "PuzzleType",
     "SolverError",
     "count_solutions",
+    "deduce",
     "dumps_puzzle",
     "format_solution",
     "generate_puzzle",
@@ -58,5 +83,6 @@ __all__ = [
     "puzzle_to_dict",
     "render_board",
     "render_puzzle",
+    "score_difficulty",
     "verify_replay",
 ]
