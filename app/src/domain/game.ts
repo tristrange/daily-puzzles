@@ -76,6 +76,72 @@ export function cellState(game: GameState, cell: number): CellState {
   return 'empty'
 }
 
+/**
+ * Every cell a queen at `cell` rules out: its row, column, region and the eight
+ * surrounding cells, deduplicated and sorted. This is exactly the set the hint
+ * engine eliminates when it simulates a placement, so auto-marking the same
+ * cells keeps the visible board in lockstep with the engine.
+ */
+export function cellsEliminatedByQueen(board: Board, cell: number): readonly number[] {
+  const { row, col } = board.coords(cell)
+  const region = board.regionAt(cell)
+  const eliminated = new Set<number>()
+  for (let step = 0; step < board.size; step += 1) {
+    eliminated.add(board.index(row, step))
+    eliminated.add(board.index(step, col))
+  }
+  for (const sibling of board.cellsOfRegion(region)) eliminated.add(sibling)
+  for (const neighbour of touching(board, cell)) eliminated.add(neighbour)
+  return [...eliminated].sort((a, b) => a - b)
+}
+
+/**
+ * Place a queen and mark every cell it rules out, unless a queen already sits
+ * there (conflicts are the player's to resolve). Toggling a queen off behaves
+ * exactly like `toggleQueen`; the marks it created are not withdrawn.
+ */
+export function placeQueenAutoMark(game: GameState, cell: number): GameState {
+  if (game.queens.has(cell)) {
+    return { ...game, queens: without(game.queens, cell) }
+  }
+  const queens = withValue(game.queens, cell)
+  const marks = new Set(game.marks)
+  marks.delete(cell)
+  for (const eliminated of cellsEliminatedByQueen(game.board, cell)) {
+    if (!queens.has(eliminated)) marks.add(eliminated)
+  }
+  return { board: game.board, queens, marks }
+}
+
+/** The board is solved when every row holds a queen and no two conflict. */
+export function isSolved(game: GameState): boolean {
+  return game.queens.size === game.board.size && conflicts(game).length === 0
+}
+
+/** A duration in milliseconds, formatted `m:ss` (e.g. `9:07`, `45:00`). */
+export function formatTime(totalMs: number): string {
+  const totalSeconds = Math.max(0, Math.floor(totalMs / 1000))
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes}:${String(seconds).padStart(2, '0')}`
+}
+
+function touching(board: Board, cell: number): readonly number[] {
+  const { row, col } = board.coords(cell)
+  const found: number[] = []
+  for (let dRow = -1; dRow <= 1; dRow += 1) {
+    for (let dCol = -1; dCol <= 1; dCol += 1) {
+      if (dRow === 0 && dCol === 0) continue
+      const nextRow = row + dRow
+      const nextCol = col + dCol
+      if (nextRow >= 0 && nextRow < board.size && nextCol >= 0 && nextCol < board.size) {
+        found.push(board.index(nextRow, nextCol))
+      }
+    }
+  }
+  return found
+}
+
 /** Every conflict among the placed queens; empty when the queens are valid. */
 export function conflicts(game: GameState): readonly Conflict[] {
   const found: Conflict[] = []
