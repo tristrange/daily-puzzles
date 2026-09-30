@@ -24,4 +24,8 @@ There is no commit history from which to infer existing conventions. Use concise
 
 Pull requests should explain the change, its purpose, and how it was verified. Link relevant issues and include screenshots for visual changes. Call out new dependencies, configuration requirements, and any checks that could not be run.
 
-Never merge a pull request. Open it, wait for the checks, and report the result so the maintainer can review and merge.
+Use a pull request for anything with a product or design decision in it — a new feature, a change in behaviour, a puzzle published for a date, anything where a maintainer might reasonably have wanted a say. Open it, wait for the checks, report the result, and let the maintainer review and merge it. Never merge such a pull request yourself.
+
+Commit straight to `main` for small, low-risk changes where the only reasonable outcome is the one being implemented: documentation, CI configuration, dependency bumps, a one-line fix. Verify locally first, keep the commit to that single thing, and say plainly what was pushed. When it is not obvious which kind of change something is, treat it as the kind that needs review.
+
+The reasoning is that a maintainer's attention is the scarce resource. A second pair of eyes earns its cost on a decision, and does not on a typo; sending everything through a pull request trains the reviewer to skim.
