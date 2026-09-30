@@ -338,11 +338,19 @@ Two decisions are worth knowing:
 
 - **The first solve of a day is the one that counts.** Replaying a puzzle leaves the
   record alone rather than overwriting it, because "when did you first get this" is what
-  a streak is answering. A duplicated or hand-edited file cannot invent a longer streak
-  either: a repeated id keeps its earliest `solvedAt`.
+  a streak is answering -- and because a second attempt at a puzzle you have already
+  solved is played knowing the answer, so its time would flatter the record. The banner
+  says so when it happens ("your first solve still counts") rather than silently ignoring
+  the attempt. A duplicated or hand-edited file cannot invent a longer streak either: a
+  repeated id keeps its earliest `solvedAt`.
 - **An unplayed today does not break the streak.** A streak counts back from yesterday
   when today is still unsolved, so the number does not read zero every morning and become
   something a player stops looking at.
+
+`mostRecentSolves` orders by `solvedAt`, not by puzzle id. The records themselves are
+sorted by day, which is what the arithmetic wants, but "recently solved" is a statement
+about the player: finishing an older archive puzzle today is the most recent thing they
+did, and sorting by its date would file it at the far end of the list.
 
 Hints are counted when one is *shown*, not when one is asked for: a request with nothing
 forced to say is not help, and counting it would make the stat a measure of nerves.
