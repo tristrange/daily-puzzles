@@ -1,12 +1,18 @@
 /**
- * Player state for one puzzle: which cells hold a queen and which are marked
- * out. Cell interactions (place/take-back/mark) are pure transitions so the
- * game loop in M7 can layer undo and win detection on top without UI state.
+ * Player state for one puzzle: which cells hold a placed piece and which are
+ * marked out. Cell interactions (place/take-back/mark) are pure transitions so
+ * the game loop in M7 can layer undo and win detection on top without UI state.
  *
- * A queen is only meaningful when it does not share a row, column or region
- * with another queen, and is not adjacent (diagonally included) to one.
- * `conflicts` reports violations so the UI can flag them and the hint engine
- * can refuse to reason over a poisoned board.
+ * The state field is named `queens` throughout, and a placed piece is called a
+ * queen, because the hint contract (`Hint.action: 'queen'`, the Python engine's
+ * `ForcedMove`) is shared with the engine and the engine speaks of stars. For a
+ * Star Battle board the same set holds stars: the *rules* are capacity-aware
+ * (`starsPerRow`), so "queens" here is a name, not a claim.
+ *
+ * A piece is only meaningful when it does not overfill a row, column or region
+ * and is not adjacent (diagonally included) to another. `conflicts` reports
+ * violations so the UI can flag them and the hint engine can refuse to reason
+ * over a poisoned board.
  */
 
 import type { Board } from './board'
@@ -29,6 +35,15 @@ export interface Conflict {
 
 export function createGame(board: Board): GameState {
   return { board, queens: new Set(), marks: new Set() }
+}
+
+/**
+ * Stars every row must hold: 1 for Queens, k for a k-star Star Battle. Read
+ * from the board's own capacities, the same numbers the solver honours.
+ */
+export function starsPerRow(board: Board): number {
+  const total = board.regionCapacity.reduce((sum, capacity) => sum + capacity, 0)
+  return total / board.size
 }
 
 function without(set: ReadonlySet<number>, value: number): ReadonlySet<number> {
@@ -77,12 +92,19 @@ export function cellState(game: GameState, cell: number): CellState {
 }
 
 /**
- * Every cell a queen at `cell` rules out: its row, column, region and the eight
- * surrounding cells, deduplicated and sorted. This is exactly the set the hint
- * engine eliminates when it simulates a placement, so auto-marking the same
- * cells keeps the visible board in lockstep with the engine.
+ * Every cell a piece at `cell` rules out on its own. For Queens (one per row,
+ * column, region) that is its row, column, region and the eight surrounding
+ * cells, deduplicated and sorted — exactly the set the hint engine eliminates
+ * when it simulates a placement, so auto-marking the same cells keeps the
+ * visible board in lockstep with the engine. A k-star board keeps a piece's
+ * row, column and region open to more stars, so only the eight touching cells
+ * are ever dead: a deliberately conservative auto-mark, and the only set that
+ * is correct without consulting the rest of the player's stars.
  */
-export function cellsEliminatedByQueen(board: Board, cell: number): readonly number[] {
+export function cellsEliminated(board: Board, cell: number): readonly number[] {
+  if (board.puzzleType !== 'queens') {
+    return [...touching(board, cell)].sort((a, b) => a - b)
+  }
   const { row, col } = board.coords(cell)
   const region = board.regionAt(cell)
   const eliminated = new Set<number>()
@@ -96,8 +118,8 @@ export function cellsEliminatedByQueen(board: Board, cell: number): readonly num
 }
 
 /**
- * Place a queen and mark every cell it rules out, unless a queen already sits
- * there (conflicts are the player's to resolve). Toggling a queen off behaves
+ * Place a piece and mark every cell it rules out, unless a piece already sits
+ * there (conflicts are the player's to resolve). Toggling a piece off behaves
  * exactly like `toggleQueen`; the marks it created are not withdrawn.
  */
 export function placeQueenAutoMark(game: GameState, cell: number): GameState {
@@ -107,15 +129,21 @@ export function placeQueenAutoMark(game: GameState, cell: number): GameState {
   const queens = withValue(game.queens, cell)
   const marks = new Set(game.marks)
   marks.delete(cell)
-  for (const eliminated of cellsEliminatedByQueen(game.board, cell)) {
+  for (const eliminated of cellsEliminated(game.board, cell)) {
     if (!queens.has(eliminated)) marks.add(eliminated)
   }
   return { board: game.board, queens, marks }
 }
 
-/** The board is solved when every row holds a queen and no two conflict. */
+/**
+ * The board is solved once it holds `starsPerRow * size` pieces that conflict
+ * with nothing. With no conflicts that count fills every row, column and region
+ * exactly (the capacities sum to the same total), which is the win condition
+ * for both puzzle types.
+ */
 export function isSolved(game: GameState): boolean {
-  return game.queens.size === game.board.size && conflicts(game).length === 0
+  const needed = starsPerRow(game.board) * game.board.size
+  return game.queens.size === needed && conflicts(game).length === 0
 }
 
 /** A duration in milliseconds, formatted `m:ss` (e.g. `9:07`, `45:00`). */
@@ -142,32 +170,69 @@ function touching(board: Board, cell: number): readonly number[] {
   return found
 }
 
-/** Every conflict among the placed queens; empty when the queens are valid. */
+/** Every conflict among the placed pieces; empty when the placement is valid. */
 export function conflicts(game: GameState): readonly Conflict[] {
   const found: Conflict[] = []
   const queens = [...game.queens].sort((a, b) => a - b)
   const board = game.board
+  const perRow = starsPerRow(board)
+  const rowCount = new Map<number, number>()
+  const colCount = new Map<number, number>()
+  const regionCount = new Map<number, number>()
+  for (const cell of queens) {
+    const { row, col } = board.coords(cell)
+    const region = board.regionAt(cell)
+    rowCount.set(row, (rowCount.get(row) ?? 0) + 1)
+    colCount.set(col, (colCount.get(col) ?? 0) + 1)
+    regionCount.set(region, (regionCount.get(region) ?? 0) + 1)
+  }
   for (let i = 0; i < queens.length; i += 1) {
     const a = queens[i]
     if (a === undefined) continue
     for (let j = i + 1; j < queens.length; j += 1) {
       const b = queens[j]
       if (b === undefined) continue
-      const conflict = conflictBetween(board, a, b)
+      const conflict = conflictBetween(board, a, b, { perRow, rowCount, colCount, regionCount })
       if (conflict) found.push(conflict)
     }
   }
   return found
 }
 
-/** The conflict between two placed queens, or `null` if they are compatible. */
-function conflictBetween(board: Board, a: number, b: number): Conflict | null {
+interface GroupCounts {
+  perRow: number
+  rowCount: ReadonlyMap<number, number>
+  colCount: ReadonlyMap<number, number>
+  regionCount: ReadonlyMap<number, number>
+}
+
+/**
+ * The conflict between two placed pieces, or `null` if they are compatible.
+ *
+ * Rule precedence is row > column > region > touch, so a pair is reported under
+ * the most specific rule it breaks. A shared group only *breaks* a rule once it
+ * is over capacity: two stars in one k-star region are exactly what the region
+ * asked for. For Queens (capacity 1) every shared group is over capacity, so
+ * the behaviour is the one M6 shipped.
+ */
+function conflictBetween(
+  board: Board,
+  a: number,
+  b: number,
+  counts: GroupCounts,
+): Conflict | null {
   const { row: ar, col: ac } = board.coords(a)
   const { row: br, col: bc } = board.coords(b)
-  const rule: ConflictRule =
-    ar === br ? 'row' : ac === bc ? 'column' : board.regionAt(a) === board.regionAt(b) ? 'region' : 'touch'
-  if (rule !== 'touch' || (Math.abs(ar - br) <= 1 && Math.abs(ac - bc) <= 1)) {
-    return { rule, cells: [a, b] }
+  const over = (used: number | undefined, capacity: number): boolean => (used ?? 0) > capacity
+  if (ar === br && over(counts.rowCount.get(ar), counts.perRow)) return { rule: 'row', cells: [a, b] }
+  if (ac === bc && over(counts.colCount.get(ac), counts.perRow)) {
+    return { rule: 'column', cells: [a, b] }
   }
+  const region = board.regionAt(a)
+  if (region === board.regionAt(b)) {
+    const capacity = board.regionCapacity[region] ?? 1
+    if (over(counts.regionCount.get(region), capacity)) return { rule: 'region', cells: [a, b] }
+  }
+  if (Math.abs(ar - br) <= 1 && Math.abs(ac - bc) <= 1) return { rule: 'touch', cells: [a, b] }
   return null
 }

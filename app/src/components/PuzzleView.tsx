@@ -57,6 +57,11 @@ function PuzzleStage({ puzzle }: { puzzle: Puzzle }) {
     return cellSet
   }, [conflictList])
 
+  // The hint engine is a Queens port; a Star Battle board plays without hints
+  // rather than with wrong ones (see `firstHint`).
+  const hintsAvailable = puzzle.board.puzzleType === 'queens'
+  const piece = puzzle.board.puzzleType === 'queens' ? 'queen' : 'star'
+
   const solved = isSolved(game)
   const shownTime = solvedAt === null ? elapsed : solvedAt - startedAt
 
@@ -90,8 +95,9 @@ function PuzzleStage({ puzzle }: { puzzle: Puzzle }) {
   }
 
   const requestHint = () => {
+    if (!hintsAvailable) return
     if (conflictList.length > 0) {
-      announce('Remove the conflicting queen before asking for a hint.')
+      announce(`Remove the conflicting ${piece} before asking for a hint.`)
       return
     }
     const next = firstHint(puzzle.board, game.queens, game.marks)
@@ -99,7 +105,7 @@ function PuzzleStage({ puzzle }: { puzzle: Puzzle }) {
       if (game.queens.size === puzzle.board.size) {
         announce('All queens are placed.')
       } else {
-        announce('No forced move right now — try placing a queen somewhere.')
+        announce(`No forced move right now — try placing a ${piece} somewhere.`)
       }
       return
     }
@@ -107,7 +113,7 @@ function PuzzleStage({ puzzle }: { puzzle: Puzzle }) {
     const position = describeCell(puzzle.board, next.cell)
     setAnnouncement(
       next.action === 'queen'
-        ? `Hint: place a queen at ${position}.`
+        ? `Hint: place a ${piece} at ${position}.`
         : `Hint: ${position} is dead — mark it.`,
     )
   }
@@ -116,13 +122,13 @@ function PuzzleStage({ puzzle }: { puzzle: Puzzle }) {
     hint === null
       ? null
       : hint.action === 'queen'
-        ? `Place a queen at ${describeCell(puzzle.board, hint.cell)}.`
-        : `Mark ${describeCell(puzzle.board, hint.cell)} — it cannot hold a queen.`
+        ? `Place a ${piece} at ${describeCell(puzzle.board, hint.cell)}.`
+        : `Mark ${describeCell(puzzle.board, hint.cell)} — it cannot hold a ${piece}.`
 
   const statusText = solved
     ? `Solved in ${formatTime(shownTime)}`
     : conflictList.length > 0
-      ? 'Two queens are in conflict — fix them.'
+      ? `Two ${piece}s are in conflict — fix them.`
       : ' '
 
   return (
@@ -148,9 +154,11 @@ function PuzzleStage({ puzzle }: { puzzle: Puzzle }) {
         >
           Auto-mark {autoMark ? 'on' : 'off'}
         </button>
-        <button type="button" className="tool-button" onClick={requestHint} disabled={solved}>
-          Hint
-        </button>
+        {hintsAvailable && (
+          <button type="button" className="tool-button" onClick={requestHint} disabled={solved}>
+            Hint
+          </button>
+        )}
       </div>
       <InteractiveBoard
         board={puzzle.board}

@@ -344,12 +344,18 @@ function huntSubsets(state: CandidateState): Hint | null {
  * The first move the rules force, or `null` when nothing is forced (either the
  * board is complete or the rules have stalled). Player-conflict validation is
  * the caller's job.
+ *
+ * Queens only: the port's rules are single-star (a group with one candidate
+ * left, regions consumed whole), so a Star Battle board would get hints that
+ * are simply wrong. A wrong hint is worse than none — `null` is returned and
+ * the UI hides the button, until the rules are ported for k stars.
  */
 export function firstHint(
   board: Board,
   queens: ReadonlySet<number> = new Set(),
   marks: ReadonlySet<number> = new Set(),
 ): Hint | null {
+  if (board.puzzleType !== 'queens') return null
   const state = initialState(board, queens, marks)
   const singles = huntSingles(state)
   if (singles) return singles

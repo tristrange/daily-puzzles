@@ -8,6 +8,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { Board } from './board'
 import { firstHint } from './hints'
 import { parsePuzzle } from './puzzle'
 
@@ -48,5 +49,16 @@ describe('firstHint', () => {
     const { board } = puzzle('2026-05-11.puzzle.json')
     const queens = new Set([3, 5, 12, 19, 21])
     expect(firstHint(board, queens)).toBeNull()
+  })
+
+  it('returns null for a star battle board rather than a wrong hint', () => {
+    // The ported rules are single-star, so a star battle has no hint at all.
+    const board = new Board(
+      8,
+      Array.from({ length: 64 }, (_, cell) => Math.floor(cell / 8)),
+      Array.from({ length: 8 }, () => 2),
+      'star-battle',
+    )
+    expect(firstHint(board)).toBeNull()
   })
 })

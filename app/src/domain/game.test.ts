@@ -1,26 +1,30 @@
 /**
- * Player state transitions and queen-conflict detection.
+ * Player state transitions and conflict detection, for both puzzle types.
  *
- * The conflict rules mirror the puzzle's constraints: no two queens may share a
- * row, column or region, and no two may touch (diagonals included). Rule
- * precedence is row > column > region > touch so a pair is reported under the
- * most specific rule that applies.
+ * For Queens (one piece per row, column and region) the conflict rules mirror
+ * the puzzle's constraints: no two pieces may share a row, column or region, and
+ * no two may touch (diagonals included). Rule precedence is row > column >
+ * region > touch so a pair is reported under the most specific rule that
+ * applies. For a k-star board a shared group only breaks its rule once it is
+ * over capacity, which is what the Star Battle cases below pin.
  */
 
 import { describe, expect, it } from 'vitest'
 import { Board } from './board'
 import {
   cellState,
-  cellsEliminatedByQueen,
+  cellsEliminated,
   clearCell,
   conflicts,
   createGame,
   formatTime,
   isSolved,
   placeQueenAutoMark,
+  starsPerRow,
   toggleMark,
   toggleQueen,
 } from './game'
+import { parsePuzzle } from './puzzle'
 
 const BLOCKS = new Board(4, [
   0, 0, 1, 1,
@@ -28,6 +32,28 @@ const BLOCKS = new Board(4, [
   2, 2, 3, 3,
   2, 2, 3, 3,
 ], [1, 1, 1, 1], 'queens')
+
+/** 4x4, four 2x2 regions, two stars per region (so two per row and column). */
+const STAR_BLOCKS = new Board(4, [
+  0, 0, 1, 1,
+  0, 0, 1, 1,
+  2, 2, 3, 3,
+  2, 2, 3, 3,
+], [2, 2, 2, 2], 'star-battle')
+
+/** 8x8, one region per row band, two stars per region. Has a legal solution. */
+const STAR_BANDS = new Board(
+  8,
+  Array.from({ length: 64 }, (_, cell) => Math.floor(cell / 8)),
+  Array.from({ length: 8 }, () => 2),
+  'star-battle',
+)
+
+/**
+ * A complete 2-star solution: 2 per row, 2 per column, 2 per band, and no two
+ * cells touching (found and verified by search, not by hand).
+ */
+const STAR_BANDS_SOLUTION = [1, 3, 13, 15, 17, 19, 29, 31, 32, 34, 44, 46, 48, 50, 60, 62]
 
 describe('createGame and cellState', () => {
   it('starts empty', () => {
@@ -158,16 +184,34 @@ describe('conflicts', () => {
   })
 })
 
-describe('cellsEliminatedByQueen', () => {
+describe('starsPerRow', () => {
+  it('is 1 for queens, whatever the region capacities say', () => {
+    expect(starsPerRow(BLOCKS)).toBe(1)
+  })
+
+  it('is the star count per row for a star battle', () => {
+    expect(starsPerRow(STAR_BLOCKS)).toBe(2)
+    expect(starsPerRow(STAR_BANDS)).toBe(2)
+  })
+})
+
+describe('cellsEliminated', () => {
   it('covers the row, column, region and neighbouring cells of a corner queen', () => {
     // (0,0): row 0, column 0, region 0 (cells 0,1,4,5) and the corner's only
     // neighbours (cells 1,4,5).
-    expect(cellsEliminatedByQueen(BLOCKS, 0)).toEqual([0, 1, 2, 3, 4, 5, 8, 12])
+    expect(cellsEliminated(BLOCKS, 0)).toEqual([0, 1, 2, 3, 4, 5, 8, 12])
   })
 
   it('covers all eight neighbours of a central queen', () => {
     // (1,2)
-    expect(cellsEliminatedByQueen(BLOCKS, 6)).toEqual([1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 14])
+    expect(cellsEliminated(BLOCKS, 6)).toEqual([1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 14])
+  })
+
+  it('eliminates only the touching cells for a star', () => {
+    // A star leaves its own row, column and region open to a second star, so
+    // only the neighbours (1,4,5) are dead.
+    expect(cellsEliminated(STAR_BLOCKS, 0)).toEqual([1, 4, 5])
+    expect(cellsEliminated(STAR_BANDS, 27)).toEqual([18, 19, 20, 26, 28, 34, 35, 36])
   })
 })
 
@@ -214,6 +258,141 @@ describe('isSolved', () => {
       14,
     )
     expect(isSolved(game)).toBe(true)
+  })
+
+  it('wants size * starsPerRow stars, not size', () => {
+    expect(starsPerRow(STAR_BANDS) * STAR_BANDS.size).toBe(16)
+  })
+
+  it('is true for a valid 2-star solution', () => {
+    const game = STAR_BANDS_SOLUTION.reduce(
+      (state, cell) => toggleQueen(state, cell),
+      createGame(STAR_BANDS),
+    )
+    expect(game.queens.size).toBe(16)
+    expect(conflicts(game)).toEqual([])
+    expect(isSolved(game)).toBe(true)
+  })
+
+  it('is false for a 2-star board with 15 stars', () => {
+    const game = STAR_BANDS_SOLUTION.slice(1).reduce(
+      (state, cell) => toggleQueen(state, cell),
+      createGame(STAR_BANDS),
+    )
+    expect(isSolved(game)).toBe(false)
+  })
+})
+
+describe('conflicts with star battle capacities', () => {
+  it('allows two stars in one row, column and region', () => {
+    // (0,0) and (1,1) share region 0, which holds two stars, and they touch.
+    const game = toggleQueen(toggleQueen(createGame(STAR_BLOCKS), 0), 5)
+    // Same region but within capacity, so the only pair that still breaks a
+    // rule is the touching one.
+    expect(conflicts(game)).toEqual([{ rule: 'touch', cells: [0, 5] }])
+  })
+
+  it('allows two stars sharing a row when capacity allows', () => {
+    // (0,0) and (0,3): same row and same band, both within capacity 2, and
+    // three columns apart so they do not touch.
+    const game = toggleQueen(toggleQueen(createGame(STAR_BLOCKS), 0), 3)
+    expect(conflicts(game)).toEqual([])
+  })
+
+  it('flags a third star in a two-star row', () => {
+    // (0,0), (0,1), (0,2): row 0 holds three, over its capacity of two.
+    const game = [0, 1, 2].reduce((state, cell) => toggleQueen(state, cell), createGame(STAR_BLOCKS))
+    expect(conflicts(game)).toContainEqual({ rule: 'row', cells: [0, 1] })
+    expect(conflicts(game)).toContainEqual({ rule: 'row', cells: [0, 2] })
+    expect(conflicts(game)).toContainEqual({ rule: 'row', cells: [1, 2] })
+  })
+
+  it('flags a third star in a two-star region', () => {
+    // (0,0), (0,1) and (1,1) all sit in region 0, which holds two.
+    const game = [0, 1, 5].reduce((state, cell) => toggleQueen(state, cell), createGame(STAR_BLOCKS))
+    expect(conflicts(game)).toContainEqual({ rule: 'region', cells: [0, 1] })
+    expect(conflicts(game)).toContainEqual({ rule: 'region', cells: [0, 5] })
+  })
+
+  it('still flags touching stars across a region boundary', () => {
+    // (1,1) region 0 and (1,2) region 1: adjacent, and both regions have room.
+    const game = toggleQueen(toggleQueen(createGame(STAR_BLOCKS), 5), 6)
+    expect(conflicts(game)).toEqual([{ rule: 'touch', cells: [5, 6] }])
+  })
+})
+
+describe('star battle parity with the engine', () => {
+  // A real engine puzzle: `tools.generate --date 2026-10-04 --type star-battle`
+  // (seed 894026858, generatorVersion 2) with the unique solution the engine's
+  // own solver returns. The app must accept exactly what the engine calls solved.
+  const ENGINE_PUZZLE = {
+    id: '2026-10-04',
+    type: 'star-battle',
+    size: 8,
+    seed: 894026858,
+    generatorVersion: 2,
+    regions: [
+      0, 0, 0, 0, 0, 0, 0, 1,
+      0, 0, 0, 2, 1, 1, 1, 1,
+      2, 2, 2, 2, 2, 3, 3, 1,
+      4, 4, 4, 2, 3, 3, 3, 3,
+      4, 4, 4, 4, 4, 4, 5, 3,
+      4, 4, 4, 5, 5, 5, 5, 5,
+      6, 6, 6, 5, 5, 5, 5, 5,
+      6, 6, 6, 7, 7, 7, 7, 5,
+    ],
+    regionCapacity: [2, 2, 2, 2, 2, 2, 2, 2],
+  }
+  const ENGINE_SOLUTION = [1, 3, 13, 15, 17, 19, 29, 31, 32, 34, 44, 46, 48, 50, 60, 62]
+
+  it('parses and reads 2 stars per row', () => {
+    const { board, puzzleType } = parsePuzzle(ENGINE_PUZZLE)
+    expect(puzzleType).toBe('star-battle')
+    expect(starsPerRow(board)).toBe(2)
+  })
+
+  it('accepts the engine solution as solved', () => {
+    const { board } = parsePuzzle(ENGINE_PUZZLE)
+    const game = ENGINE_SOLUTION.reduce(
+      (state, cell) => toggleQueen(state, cell),
+      createGame(board),
+    )
+    expect(conflicts(game)).toEqual([])
+    expect(isSolved(game)).toBe(true)
+  })
+
+  it('rejects a swap of two stars that would leave a gap', () => {
+    // Move the star at 1 to 2, which puts two stars in cell 2's region corner
+    // and leaves region 0 with one; 15 stars is not a solution.
+    const { board } = parsePuzzle(ENGINE_PUZZLE)
+    const moved = [2, ...ENGINE_SOLUTION.slice(1)]
+    const game = moved.reduce((state, cell) => toggleQueen(state, cell), createGame(board))
+    expect(conflicts(game).length).toBeGreaterThan(0)
+    expect(isSolved(game)).toBe(false)
+  })
+
+  it('flags a star placed next to another star', () => {
+    const { board } = parsePuzzle(ENGINE_PUZZLE)
+    // Cell 2 is diagonally adjacent to the solution's star at 1.
+    const game = toggleQueen(toggleQueen(createGame(board), 1), 2)
+    expect(conflicts(game)).toEqual([{ rule: 'touch', cells: [1, 2] }])
+  })
+})
+
+describe('placeQueenAutoMark on star battle', () => {
+  it('marks only the touching cells around a star', () => {
+    const game = placeQueenAutoMark(createGame(STAR_BANDS), 27)
+    expect(cellState(game, 27)).toBe('queen')
+    expect([...game.marks].sort((a, b) => a - b)).toEqual([18, 19, 20, 26, 28, 34, 35, 36])
+  })
+
+  it('leaves a second star in the same row and band unmarked', () => {
+    // (0,0) and (0,4) share row 0 and band 0, which holds two stars, and are
+    // far enough apart not to touch.
+    const game = placeQueenAutoMark(placeQueenAutoMark(createGame(STAR_BANDS), 0), 4)
+    expect([...game.queens].sort((a, b) => a - b)).toEqual([0, 4])
+    expect(conflicts(game)).toEqual([])
+    expect(game.marks.has(4)).toBe(false)
   })
 })
 

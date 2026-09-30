@@ -35,13 +35,20 @@ const PALETTE_SIZE = REGION_COLORS.length
  * The playable board: a semantic ARIA grid a keyboard user can drive end to
  * end. The focused cell uses a roving tabindex (exactly one cell is in the
  * tab order), and the arrow keys move the focus. Enter/Space place or take
- * back a queen, X toggles an X mark, Delete/Backspace clears the cell and H
+ * back a piece, X toggles an X mark, Delete/Backspace clears the cell and H
  * asks for a hint; Ctrl/Command+Z undoes. A `locked` board still navigates by
- * keyboard but refuses to change any cell. Screen-reader users get a per-cell
+ * keyboard but refuses to change any cell. The piece's name and glyph follow
+ * the board's puzzle type (queen / star). Screen-reader users get a per-cell
  * label describing the position and contents; longer announcements (hint text,
  * conflict warnings) live in a visually hidden `aria-live` region owned by the
  * puzzle view.
  */
+
+/** What a placed piece is called and drawn as, per puzzle type. */
+const PIECES: Record<Board['puzzleType'], { noun: string; glyph: string }> = {
+  queens: { noun: 'queen', glyph: '♛' },
+  'star-battle': { noun: 'star', glyph: '★' },
+}
 
 export interface CellActionProps {
   board: Board
@@ -69,6 +76,8 @@ export function InteractiveBoard({
   onUndo,
 }: CellActionProps) {
   const [focusIndex, setFocusIndex] = useState(0)
+  const piece = PIECES[board.puzzleType]
+  const puzzleName = board.puzzleType === 'queens' ? 'queens' : 'star battle'
 
   const moveFocus = (cell: number) => {
     setFocusIndex(Math.max(0, Math.min(board.cellCount - 1, cell)))
@@ -135,11 +144,11 @@ export function InteractiveBoard({
     const position = `Row ${row + 1}, column ${col + 1}`
     const contents =
       cellState(game, cell) === 'queen'
-        ? 'queen'
+        ? piece.noun
         : cellState(game, cell) === 'mark'
           ? 'marked'
           : 'empty'
-    const conflict = conflictCells.has(cell) ? ', conflicting queen' : ''
+    const conflict = conflictCells.has(cell) ? `, conflicting ${piece.noun}` : ''
     return `${position}, ${contents}${conflict}`
   }
 
@@ -171,7 +180,7 @@ export function InteractiveBoard({
     >
       {cellState(game, cell) === 'queen' && (
         <span className="marker" aria-hidden="true">
-          ♛
+          {piece.glyph}
         </span>
       )}
       {cellState(game, cell) === 'mark' && (
@@ -186,7 +195,7 @@ export function InteractiveBoard({
     <div
       className="board playable"
       role="grid"
-      aria-label={`${board.size} by ${board.size} queens puzzle with ${board.regionCount} regions`}
+      aria-label={`${board.size} by ${board.size} ${puzzleName} puzzle with ${board.regionCount} regions`}
       style={{ gridTemplateColumns: `repeat(${board.size}, 1fr)` }}
       onKeyDown={onKeyDown}
     >

@@ -388,6 +388,45 @@ exact PRNG stream that made them) and Star Battle is version 2, a separate
 placement function that cannot perturb the version-1 draws. A new star layout
 bug would be caught by `verify_replay` in CI before it reached a player.
 
+### Playing a star
+
+The app side turned out to be smaller than the engine side, because the puzzle
+*type* was never the thing the game loop assumed — the *rules* were. Every
+player-facing rule was phrased as "one per row, column, region", so the fix was
+to read the number off the board instead of hard-coding it:
+`starsPerRow(board) = sum(regionCapacity) / size`, which is 1 for Queens and k
+for Star Battle. Conflict detection then asks the right question per group: not
+"do these two share a row?" but "is this row over capacity?". A shared group is
+only a conflict once it holds more than its share, so two stars in one k-star
+region are exactly what the region asked for, while three are not. Precedence
+(row > column > region > touch) is unchanged, and it falls through rather than
+returning early, so a pair that shares a row *within* capacity but still touches
+is reported as touching instead of being waved through. The win condition falls
+out of the same number: `size * starsPerRow` pieces with no conflicts fills
+every group exactly, so there is no separate per-type win check.
+
+Auto-mark is the one place the honest answer is less than the exhaustive one. A
+queen does rule out its whole row, column and region, which is why
+`cellsEliminated` can reproduce the hint engine's elimination set exactly. A star
+does not: its row, column and region may still hold more stars, and whether a
+cell survives depends on the *rest* of the player's stars, not on this one. So
+auto-marking a star marks only the eight touching cells. That is a deliberate
+under-mark, never a wrong mark — the alternative is recomputing the whole board
+on every click, and silently marking a cell the player can still legally use is
+worse than leaving it unmarked.
+
+The hint engine stayed single-star on purpose, and the app follows it rather
+than papering over it: `firstHint` returns `null` for a Star Battle board and
+the Hint button is not rendered. A hint engine that reasons in one star and
+speaks in two produces confident nonsense, and `null` is the only honest answer
+until the rules are ported.
+
+The one gap this leaves is editorial, not technical: `tools.publish` is still
+Queens-only and no star file is committed, so there is nothing to click yet. The
+app plays any valid star file today — verified end to end against a generated
+one — but choosing which day is a star day is a content decision, not a code
+one.
+
 ---
 
 ## Conventions

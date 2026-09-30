@@ -37,6 +37,31 @@ describe('loadPuzzle', () => {
     expect(puzzle.board.size).toBe(3)
   })
 
+  it('loads a star battle file with its region capacities', async () => {
+    const starBattle = {
+      id: '2026-10-04',
+      type: 'star-battle',
+      size: 8,
+      seed: 894026858,
+      generatorVersion: 2,
+      regions: [
+        0, 0, 0, 0, 0, 0, 0, 1,
+        0, 0, 0, 2, 1, 1, 1, 1,
+        2, 2, 2, 2, 2, 3, 3, 1,
+        4, 4, 4, 2, 3, 3, 3, 3,
+        4, 4, 4, 4, 4, 4, 5, 3,
+        4, 4, 4, 5, 5, 5, 5, 5,
+        6, 6, 6, 5, 5, 5, 5, 5,
+        6, 6, 6, 7, 7, 7, 7, 5,
+      ],
+      regionCapacity: [2, 2, 2, 2, 2, 2, 2, 2],
+    }
+    const fetcher = async () => stubResponse(starBattle)
+    const puzzle = await loadPuzzle('2026-10-04', fetcher)
+    expect(puzzle.puzzleType).toBe('star-battle')
+    expect(puzzle.board.regionCapacity).toEqual([2, 2, 2, 2, 2, 2, 2, 2])
+  })
+
   it('rejects ids that are not calendar dates', async () => {
     await expect(loadPuzzle('not-a-date', fetch)).rejects.toBeInstanceOf(PuzzleNotFoundError)
   })
