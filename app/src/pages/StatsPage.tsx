@@ -2,7 +2,10 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatPuzzleLabel, puzzleOfToday } from '../domain/dates'
 import { formatTime } from '../domain/game'
-import { readStoredStats, summarise } from '../lib/stats'
+import { readStoredStats, mostRecentSolves, summarise } from '../lib/stats'
+
+/** How many solves the page lists under "Recent solves". */
+const RECENT_LIMIT = 10
 
 /** A stat that has nothing to report yet, so it is not shown as a zero. */
 function stat(label: string, value: string | null): { label: string; value: string } | null {
@@ -17,7 +20,7 @@ export function StatsPage() {
   const [records] = useState(() => readStoredStats())
   const [todayId] = useState(() => puzzleOfToday(new Date(), timeZone))
   const stats = summarise(records, todayId)
-  const recent = records.slice(-10).reverse()
+  const recent = mostRecentSolves(records, RECENT_LIMIT)
 
   if (stats.solved === 0) {
     return (

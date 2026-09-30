@@ -17,7 +17,7 @@ import {
 import { firstHint, type Hint } from '../domain/hints'
 import type { Puzzle } from '../domain/puzzle'
 import { PuzzleNotFoundError, loadPuzzle } from '../lib/puzzles'
-import { storeSolve, summarise, type Stats } from '../lib/stats'
+import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } from '../lib/stats'
 import { InteractiveBoard } from './InteractiveBoard'
 
 type LoadState =
@@ -56,6 +56,8 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
   // Set once this puzzle has been solved, so the banner can show what the solve
   // did to the history without re-reading storage on every render.
   const [stats, setStats] = useState<Stats | null>(null)
+  // The solve already on record for this puzzle, if this was a replay.
+  const [firstSolve, setFirstSolve] = useState<SolveRecord | null>(null)
   // The state a click-drag started from, so the whole stroke lands in history
   // as one step instead of one step per cell painted.
   const strokeStart = useRef<GameState | null>(null)
@@ -102,8 +104,10 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
     if (solvedAt === null && isSolved(next)) {
       const when = Date.now()
       setSolvedAt(when)
-      // Recorded once, at the moment it happens, and never revised: a replay
-      // cannot restate when a day was first solved.
+      // Read before storing, so a replay can be told why its time was not kept.
+      const earlier = readStoredStats().find((record) => record.id === puzzle.id)
+      // Recorded once, at the moment it happens, and never revised: a replay is
+      // played knowing the answer, so its time would flatter the record.
       setStats(
         summarise(
           storeSolve({
@@ -117,6 +121,7 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
           puzzleOfToday(new Date(when), timeZone),
         ),
       )
+      setFirstSolve(earlier ?? null)
       setAnnouncement(`Solved in ${formatTime(when - startedAt)}!`)
     }
   }
@@ -248,9 +253,17 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
       <p className="hint-text">{hintText ?? statusText}</p>
       {solved && (
         <p className="solved-banner">
-          Solved — nice!
-          {stats !== null && stats.currentStreak > 1 && (
-            <> {stats.currentStreak}-day streak.</>
+          {firstSolve === null ? (
+            <>
+              Solved — nice!
+              {stats !== null && stats.currentStreak > 1 && (
+                <> {stats.currentStreak}-day streak.</>
+              )}
+            </>
+          ) : (
+            <>
+              Solved again — your first solve, {formatTime(firstSolve.elapsedMs)}, still counts.
+            </>
           )}
         </p>
       )}

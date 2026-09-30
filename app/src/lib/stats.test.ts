@@ -4,6 +4,7 @@ import {
   addSolve,
   bestStreak,
   currentStreak,
+  mostRecentSolves,
   parseStats,
   summarise,
   type SolveRecord,
@@ -156,6 +157,42 @@ describe('bestStreak', () => {
 
   it('is zero with no history', () => {
     expect(bestStreak([])).toBe(0)
+  })
+})
+
+describe('mostRecentSolves', () => {
+  it('orders by when the solve happened, not by which day it is', () => {
+    // Ten newer days on record, then a return to an older puzzle completed
+    // today. Ordered by puzzle id it would fall off the end of the list.
+    const records = [
+      ...['2026-09-20', '2026-09-21', '2026-09-22', '2026-09-23', '2026-09-24',
+        '2026-09-25', '2026-09-26', '2026-09-27', '2026-09-28', '2026-09-29',
+      ].map((id, index) => record({ id, solvedAt: index })),
+      record({ id: '2026-09-05', solvedAt: 100 }),
+    ]
+    const recent = mostRecentSolves(records, 3)
+    expect(recent.map((held) => held.id)).toEqual(['2026-09-05', '2026-09-29', '2026-09-28'])
+  })
+
+  it('keeps every solve when there are fewer than the limit', () => {
+    const records = [record({ id: '2026-09-30', solvedAt: 2 }), record({ id: '2026-09-29', solvedAt: 1 })]
+    expect(mostRecentSolves(records, 10)).toHaveLength(2)
+  })
+
+  it('is empty for no history and for a zero limit', () => {
+    expect(mostRecentSolves([], 10)).toEqual([])
+    expect(mostRecentSolves([record({ id: '2026-09-30' })], 0)).toEqual([])
+  })
+
+  it('breaks a tie on the same completion time by day, newest first', () => {
+    const records = [record({ id: '2026-09-28', solvedAt: 5 }), record({ id: '2026-09-30', solvedAt: 5 })]
+    expect(mostRecentSolves(records, 2).map((held) => held.id)).toEqual(['2026-09-30', '2026-09-28'])
+  })
+
+  it('does not reorder the records it was given', () => {
+    const records = [record({ id: '2026-09-28', solvedAt: 1 }), record({ id: '2026-09-30', solvedAt: 2 })]
+    mostRecentSolves(records, 2)
+    expect(records.map((held) => held.id)).toEqual(['2026-09-28', '2026-09-30'])
   })
 })
 

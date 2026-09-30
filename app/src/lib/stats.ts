@@ -151,6 +151,23 @@ export function bestStreak(records: readonly SolveRecord[]): number {
   return best
 }
 
+/**
+ * The `limit` most recently *completed* solves, newest completion first.
+ *
+ * Ordered by when the solve happened, not by which day it is: a player who
+ * returns to an older archive puzzle completes it today, and sorting by puzzle
+ * id would file that under its date — pushing it off a list of the latest
+ * solves entirely, which is the one list a player looks at.
+ */
+export function mostRecentSolves(
+  records: readonly SolveRecord[],
+  limit: number,
+): readonly SolveRecord[] {
+  return [...records]
+    .sort((a, b) => b.solvedAt - a.solvedAt || (a.id < b.id ? 1 : -1))
+    .slice(0, Math.max(0, limit))
+}
+
 /** Everything the stats page shows, derived from the records. */
 export function summarise(records: readonly SolveRecord[], todayId: string): Stats {
   const solved = records.length
