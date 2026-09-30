@@ -152,7 +152,7 @@ a cell is forced rather than just revealing it.
 | 6 | Board UI, keyboard and screen reader support, hint engine | done |
 | 7 | Game loop: undo, timer, win detection, auto-mark | done |
 | 8 | Daily pipeline: cron generates, commits, CI re-verifies every puzzle | done |
-| 9 | Stretch: share text, local stats, dark mode | |
+| 9 | Stretch: share text, local stats, dark mode | dark mode done |
 | 10 | Stretch: Star Battle as a second puzzle type | done |
 
 Milestones 2 to 4 were the critical path, and they are all Python. The engine alone — a
@@ -457,6 +457,39 @@ Pointer events do the work rather than mouse events, with
 captures the pointer to the first cell touched, so the event target is not the
 one being painted. `touch-action: none` and `user-select: none` on the board keep
 a stroke from turning into a scroll or a text selection.
+
+### Theme
+
+The app follows the operating system by default, which for anyone whose machine
+switches at dusk is the behaviour they want and never have to think about. The
+header adds a three-way control — **Auto**, **Light**, **Dark** — for anyone
+who would rather pin it, and Auto stays the default rather than becoming a
+"system" mode you have to opt back into.
+
+What is stored is the *choice*, not a resolved light or dark value, and that one
+decision removes most of the code. `data-theme` is set to `system`, `light` or
+`dark` and the stylesheet does the rest: `color-scheme` on the root decides
+which side of every `light-dark()` pair is used, so the app carries **one** set
+of values rather than a light block, a dark media query and a dark override. The
+alternative needs the dark values written twice, and two copies of a palette are
+exactly the kind of thing that silently drifts apart. `color-scheme` also keeps
+scrollbars and form controls in step, which swapping colours alone would not.
+
+Nothing listens for OS changes, because nothing needs to: with the attribute
+absent or set to `system`, the media-query behaviour of `color-scheme` keeps
+tracking the OS on its own. A stored value that no longer parses falls back to
+`system` rather than leaving the app in a theme it has no colours for, and
+`localStorage` access is wrapped because private browsing throws on *read*, not
+just on write.
+
+A small inline script in `index.html` applies a pinned choice before the first
+paint, so a player who has chosen dark does not get a flash of white while the
+bundle loads. It only writes an explicit choice — with nothing stored the
+attribute is left absent, which already means Auto.
+
+Region colours are deliberately independent of all this. The board picks its
+glyph ink per region rather than per theme, because the palette spans light sand
+to near-black and neither theme's fixed marker colour is readable on all of it.
 
 ### Region colours
 

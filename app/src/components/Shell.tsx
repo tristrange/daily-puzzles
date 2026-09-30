@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import { ThemePicker } from './ThemePicker'
 
 function navClass({ isActive }: { isActive: boolean }): string {
   return isActive ? 'nav-link active' : 'nav-link'
@@ -19,6 +20,7 @@ export function Shell() {
             Archive
           </NavLink>
         </nav>
+        <ThemePicker />
       </header>
       <main className="content">
         <Outlet />
