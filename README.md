@@ -146,16 +146,16 @@ a cell is forced rather than just revealing it.
 | 2 | Solution counter — exact, parameterised by region capacity | done |
 | 3 | Seeded generator, uniqueness gate, replay, ASCII renderer | done |
 | 4 | Deduction engine and difficulty score (timeboxed, cuttable) | done |
-| 5 | React shell, `puzzleOfToday(date, tz)`, archive routes | |
+| 5 | React shell, `puzzleOfToday(date, tz)`, archive routes | done |
 | 6 | Board UI, keyboard and screen reader support, hint engine | |
 | 7 | Game loop: undo, timer, win detection, auto-mark | |
 | 8 | Daily pipeline: cron generates, commits, CI re-verifies every puzzle | |
 | 9 | Stretch: share text, local stats, dark mode | |
 | 10 | Stretch: Star Battle as a second puzzle type | |
 
-Milestones 2 to 4 are the critical path, and they are all Python. If the app half slips,
-the engine alone — a CLI with an exact uniqueness prover and property tests — is still
-worth publishing.
+Milestones 2 to 4 were the critical path, and they are all Python. The engine alone — a
+CLI with an exact uniqueness prover and property tests — would be worth publishing even if
+the app half slipped. The milestones that shipped it are historical now.
 
 ### The solution counter
 
@@ -246,6 +246,35 @@ all five levels, 5x5s mostly Easy/Medium. The score is a *soft* signal — it ra
 this engine found the board, not a Platonic difficulty — and it is deliberately **not** in
 the puzzle file. Difficulty belongs to the daily pipeline's choice of which seed to ship,
 which is M8's subject.
+
+### The app shell
+
+The app is a static React SPA with no server, so it routes with `HashRouter` — a URL like
+`#/archive/2026-09-30` works on any static host without rewrite rules. Three shapes of
+route:
+
+- `/` — today's puzzle, where "today" is the *player's* calendar day.
+- `/archive` — the list of published puzzles, discovered by probing the recent-window
+  files (`public/puzzles/<date>.json`) rather than an index manifest that could rot.
+- `/archive/:id` — a specific puzzle by id.
+
+`puzzleOfToday(date, tz)` is the seam between the engine's date-keyed files and the
+player's clock:
+
+```ts
+puzzleOfToday(new Date('2026-09-30T22:30:00Z'), 'Asia/Tokyo') // '2026-10-01'
+puzzleOfToday(new Date('2026-09-30T22:30:00Z'), 'America/Los_Angeles') // '2026-09-30'
+```
+
+It is a pure function of an instant and an IANA zone, resolved through `Intl` rather than a
+hand-rolled UTC offset, so a player near a date line never guesses which day they are owed.
+Puzzle ids are validated as real calendar days (`2026-02-30` is rejected) before they are
+even fetched, and every file the app reads is passed through the same JSON schema +
+`Board` validation as the engine uses.
+
+A week of sample puzzles (`2026-09-27`..`2026-10-03`) is committed so the archive has
+content before the daily pipeline exists; the pipeline replaces the manual `generate.py`
+invocation in M8.
 
 ---
 
