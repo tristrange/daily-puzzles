@@ -152,7 +152,7 @@ a cell is forced rather than just revealing it.
 | 6 | Board UI, keyboard and screen reader support, hint engine | done |
 | 7 | Game loop: undo, timer, win detection, auto-mark | done |
 | 8 | Daily pipeline: cron generates, commits, CI re-verifies every puzzle | done |
-| 9 | Stretch: share text, local stats, dark mode | stats + dark mode done |
+| 9 | Stretch: share text, local stats, dark mode | done |
 | 10 | Stretch: Star Battle as a second puzzle type | done |
 
 Milestones 2 to 4 were the critical path, and they are all Python. The engine alone — a
@@ -359,6 +359,34 @@ Stored data is treated as untrusted, like the theme's. Every field is checked ra
 cast, so a truncated write or a record from a future version drops that one record
 instead of putting `undefined` in the middle of a streak calculation — and the rest of
 the history survives.
+
+### Share text
+
+The last M9 item. Finishing a puzzle offers a **Copy share text** button that puts a
+finished grid, the time, the hint count, the streak and a link on the clipboard. The
+text is built by a pure function in `app/src/lib/share.ts` from the board, the placed
+pieces and the recorded solve, because the shape of the output is the part worth
+testing: a grid that is `size` rows of `size` cells, a time that reads the way the
+timer reads, and a link that opens the same puzzle.
+
+Three decisions that are not obvious:
+
+- **The link puts the route after the `#`.** The app routes on the hash, so
+  `https://host/archive/2026-09-30` would be the site root and quietly show *today's*
+  puzzle instead. It links to the archive entry rather than the daily route because a
+  share is most often read later, when "today" is a different puzzle.
+- **Empty cells are black squares, not white.** Both cell glyphs are the same emoji
+  family and the same advance width — measured, not assumed, since a mismatch shears
+  the whole grid — but a white square is invisible on the light background chat
+  clients default to, and a share that has lost its empty cells reads as scattered
+  dots. The failure box in the app previews the text on a light background for the
+  same reason.
+- **A failed copy shows the text instead of pretending.** `navigator.clipboard` is
+  absent outside a secure context and can be refused, so there is a fallback to
+  `execCommand`, and if that fails too the text appears in a selected, read-only box
+  to copy by hand. A copy that silently fails is the worst kind: the player walks
+  away believing they have something to paste. Both outcomes are announced, not just
+  shown on the button.
 
 ### The daily pipeline
 
