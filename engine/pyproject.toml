@@ -25,7 +25,9 @@ testpaths = ["tests"]
 addopts = "--strict-markers --strict-config"
 # Belt and braces: tests import the package from src directly, so a stale editable
 # install can never make a green commit look broken (or a broken one look green).
-pythonpath = ["src"]
+# `.` makes `tools/` importable for the pipeline tool tests under a plain `pytest`
+# invocation (not just `python -m pytest`, which adds the cwd itself).
+pythonpath = ["src", "."]
 
 [tool.ruff]
 line-length = 100
