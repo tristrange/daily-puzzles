@@ -1,0 +1,40 @@
+name: publish-daily
+
+on:
+  schedule:
+    - cron: '17 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: engine
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync --frozen
+      - name: Publish any missing puzzles
+        run: |
+          uv run python -m tools.publish --out ../app/public/puzzles
+          uv run python -m tools.verify --dir ../app/public/puzzles
+      - name: Commit and push
+        run: |
+          git config user.name 'daily-puzzles bot'
+          git config user.email 'bot@users.noreply.github.com'
+          git add ../app/public/puzzles
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish daily puzzles"
+            git push origin main
+          else
+            echo 'already up to date'
+          fi

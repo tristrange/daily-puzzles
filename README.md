@@ -91,6 +91,8 @@ uv run pytest        # unit + property-based tests
 uv run ruff check .  # lint
 uv run ruff format . # format
 uv run pyright       # strict type check
+uv run python -m tools.publish --out ../app/public/puzzles  # publish daily puzzles
+uv run python -m tools.verify --dir ../app/public/puzzles   # replay-verify them
 ```
 
 App:
@@ -150,7 +152,7 @@ a cell is forced rather than just revealing it.
 | 5 | React shell, `puzzleOfToday(date, tz)`, archive routes | done |
 | 6 | Board UI, keyboard and screen reader support, hint engine | done |
 | 7 | Game loop: undo, timer, win detection, auto-mark | done |
-| 8 | Daily pipeline: cron generates, commits, CI re-verifies every puzzle | |
+| 8 | Daily pipeline: cron generates, commits, CI re-verifies every puzzle | done |
 | 9 | Stretch: share text, local stats, dark mode | |
 | 10 | Stretch: Star Battle as a second puzzle type | |
 
@@ -209,7 +211,7 @@ The stream is a pinned SplitMix64 PRNG ([`prng.py`](engine/src/queens_engine/prn
 **not** Python's `random`, whose streams are not guaranteed stable across versions. The
 first outputs are pinned by golden vectors in `tests/test_prng.py`; changing the stream is a
 breaking change, not a refactor. `verify_replay(puzzle)` regenerates a puzzle from its seed
-and confirms the board is identical — the CI check the daily pipeline will run on every
+and confirms the board is identical — the check `tools/verify.py` and CI run on every
 committed file.
 
 `tools/generate.py` is the day-to-day entry point: it derives a stable seed from a date and
@@ -245,8 +247,8 @@ unique solution for the boards the generator ships.
 bands calibrated against what the generator actually produces: default 8x8s spread across
 all five levels, 5x5s mostly Easy/Medium. The score is a *soft* signal — it rates how hard
 this engine found the board, not a Platonic difficulty — and it is deliberately **not** in
-the puzzle file. Difficulty belongs to the daily pipeline's choice of which seed to ship,
-which is M8's subject.
+the puzzle file. Difficulty is the daily pipeline's steer on *which* seed to ship, not a
+property the client needs.
 
 ### The app shell
 
@@ -273,9 +275,8 @@ Puzzle ids are validated as real calendar days (`2026-02-30` is rejected) before
 even fetched, and every file the app reads is passed through the same JSON schema +
 `Board` validation as the engine uses.
 
-A week of sample puzzles (`2026-09-27`..`2026-10-03`) is committed so the archive has
-content before the daily pipeline exists; the pipeline replaces the manual `generate.py`
-invocation in M8.
+A week of sample puzzles (`2026-09-27`..`2026-10-03`) is committed so the archive had
+content before the pipeline existed; `tools/publish.py` now keeps it filled from a cron.
 
 ### The board and the hint engine
 
@@ -325,6 +326,35 @@ rather than inverse actions, undo is exact even for an auto-mark sprawl. The tim
 zero-cost to the engine: it counts up from when the puzzle appears and freezes at the
 solve instant; there is no server to check with, so the only clock that matters is the
 player's.
+
+### The daily pipeline
+
+M8 closes the loop the samples were propping open: the archive publishes itself. Two
+tools and two workflows do it.
+
+```sh
+cd engine
+uv run python -m tools.publish --out ../app/public/puzzles   # fill the gap to lead days ahead
+uv run python -m tools.verify --dir ../app/public/puzzles    # replay every committed puzzle
+```
+
+`tools/publish.py` scans the archive for missing dates and fills them from the first
+missing day through today plus a `--lead` (default 3), using exactly the same recipe as
+`tools/generate --logic-only` — a seed hashed from the date, size 8, bumped upward until
+`deduce` reaches a solution without guessing. It is idempotent by construction: an
+existing file is never rewritten, and a date always maps to one puzzle, so running it
+twice in a day is a no-op and a missed week self-heals on the next run. `tools/verify.py`
+re-parses every committed puzzle and calls `verify_replay` on it, so a generator change
+that would have drifted the archive fails loudly before anything is merged.
+
+The workflows live in [`.github/workflows/`](.github/workflows):
+
+- `ci.yml` runs on every pull request and push to `main`: the shared-engine gates
+  (pytest, pyright, ruff) plus `tools.verify` over the committed puzzles, and the app
+  gates (vitest, typecheck, oxlint, build).
+- `publish.yml` runs from a daily cron (and by hand via `workflow_dispatch`): generators
+  and verifies the missing dates, then commits and pushes only when the diff is non-empty,
+  so the archive and `git log` tell the whole publishing story.
 
 ---
 

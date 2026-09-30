@@ -34,7 +34,8 @@ from queens_engine import (
 LOGIC_ONLY_TRIES = 32
 
 
-def _seed_from_date(date: str) -> int:
+def seed_from_date(date: str) -> int:
+    """Deterministic seed for a puzzle id, shared by every publishing tool."""
     digest = hashlib.sha256(date.encode("utf-8")).digest()
     return int.from_bytes(digest[:4], "big")
 
@@ -52,7 +53,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    base = args.seed if args.seed is not None else _seed_from_date(args.date)
+    base = args.seed if args.seed is not None else seed_from_date(args.date)
     seed = base
     for _attempt in range(LOGIC_ONLY_TRIES if args.logic_only else 1):
         try:
