@@ -109,6 +109,54 @@ npm run build    # production build
 Both suites must be green in the same commit. A fixture change and the code change that
 motivated it belong together.
 
+## Deployment
+
+The site is published to GitHub Pages by the `deploy` job in `ci.yml`, on every push to
+`main`, at:
+
+```
+https://<user>.github.io/daily-puzzles/
+```
+
+Three things about that arrangement are worth knowing.
+
+**The deploy waits for the other two jobs.** `needs: [engine, app]` means the puzzle
+verification has to pass before anything is published, so a malformed puzzle file can be
+committed to `main` without a site going out that serves it. That is the reason the job
+lives in `ci.yml` rather than in a workflow of its own: it reuses the verification instead
+of repeating it.
+
+**The daily publisher has to ask for the deploy explicitly.** This is the one part of the
+arrangement that is counter-intuitive. A commit made with the default `GITHUB_TOKEN`
+raises no workflow event at all, by design — GitHub suppresses it so a workflow cannot
+re-trigger itself. So the `git push` in `publish.yml` publishes the puzzle and, on its
+own, would never verify it or deploy it: the site would go stale every night while the
+repository carried on looking perfectly healthy.
+
+So after a successful push the publisher dispatches `ci.yml` on `main`, which needs
+`actions: write` and a `workflow_dispatch` trigger to be allowed. It dispatches the whole
+workflow rather than a deploy-only one, so the nightly puzzle gets the same engine
+verification a human push does — a gap that was there before Pages existed, because those
+commits were never running CI either.
+
+**The build knows it is served from a sub-path.** A Pages *project* site lives at
+`/<repo>/`, not at the domain root, so the deploy step sets `BASE_PATH` and
+`app/vite.config.ts` reads it. Every asset URL and the app's own puzzle fetches derive from
+it, which is the same `BASE_URL` the share link reads — see [Share text](#share-text). A
+local `npm run build` with no `BASE_PATH` still builds for the root, so nothing about
+local development changes.
+
+**No SPA rewrite is needed.** The app routes on the hash, so the server only ever sees a
+request for `/daily-puzzles/`; the route lives in the fragment. Every link the app emits
+therefore survives being pasted anywhere, and there is no 404 page to keep in step with the
+routes. The `gh-pages` branch and Jekyll are absent too: `actions/deploy-pages` serves the
+uploaded artifact directly.
+
+If the repository is renamed, the deploy follows automatically — `BASE_PATH` is derived
+from `github.event.repository.name` rather than written down. A repository that should be
+served from the domain root instead (a `<user>.github.io` repository) would need that one
+line changed.
+
 ---
 
 ## Puzzle file format

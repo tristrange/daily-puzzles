@@ -7,6 +7,10 @@ on:
 
 permissions:
   contents: write
+  # Only to dispatch the ci workflow below. A push made with the default
+  # GITHUB_TOKEN deliberately raises no workflow event, so without this the
+  # nightly puzzle would be committed and never verified or deployed.
+  actions: write
 
 jobs:
   publish:
@@ -28,6 +32,7 @@ jobs:
           uv run python -m tools.publish --out ../app/public/puzzles
           uv run python -m tools.verify --dir ../app/public/puzzles
       - name: Commit and push
+        id: commit
         run: |
           git config user.name 'daily-puzzles bot'
           git config user.email 'bot@users.noreply.github.com'
@@ -35,6 +40,18 @@ jobs:
           if ! git diff --cached --quiet; then
             git commit -m "Publish daily puzzles"
             git push origin main
+            echo "published=true" >> "$GITHUB_OUTPUT"
           else
+            echo "published=false" >> "$GITHUB_OUTPUT"
             echo 'already up to date'
           fi
+      - name: Trigger the checks and the site deploy
+        # The push above raised no workflow event, because it was made with the
+        # default GITHUB_TOKEN. Dispatching ci.yml is what actually gets this
+        # commit verified by the engine job and published to Pages — and it runs
+        # the whole workflow rather than a deploy-only one, so the nightly puzzle
+        # gets the same verification a human push does.
+        if: steps.commit.outputs.published == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run ci.yml --ref main
