@@ -23,3 +23,5 @@ No test framework or coverage threshold exists yet. Add tests alongside new beha
 There is no commit history from which to infer existing conventions. Use concise, imperative commit subjects, such as `Add puzzle validation`. Keep commits focused on one coherent change.
 
 Pull requests should explain the change, its purpose, and how it was verified. Link relevant issues and include screenshots for visual changes. Call out new dependencies, configuration requirements, and any checks that could not be run.
+
+Never merge a pull request. Open it, wait for the checks, and report the result so the maintainer can review and merge.
