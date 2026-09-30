@@ -69,7 +69,14 @@ Two facts the star path depends on, both worth knowing before extending it:
 - **Uniqueness is the only fairness guarantee here.** `deduce` (and therefore
   `--logic-only` and `score_difficulty`) still refuses non-Queens boards, so
   Star Battle files are unique-solution but neither logic-scored nor
-  logic-gated. `tools/generate.py --type star-battle` says so out loud.
+  logic-gated. `tools/generate.py --type star-battle` says so out loud. The app
+  matches: it plays a star file but hides the Hint button, because
+  `firstHint` returns `null` rather than reasoning in one star about a board
+  that holds two.
+
+`tools.publish.py` is still Queens-only, and no star file is committed, so
+deciding which day is a star day is a content decision that has not been made
+yet. The app can play one as soon as it exists.
 
 ```sh
 python -m tools.generate --date 2026-10-04 --type star-battle            # 8x8, 2 stars
