@@ -152,7 +152,7 @@ a cell is forced rather than just revealing it.
 | 6 | Board UI, keyboard and screen reader support, hint engine | done |
 | 7 | Game loop: undo, timer, win detection, auto-mark | done |
 | 8 | Daily pipeline: cron generates, commits, CI re-verifies every puzzle | done |
-| 9 | Stretch: share text, local stats, dark mode | dark mode done |
+| 9 | Stretch: share text, local stats, dark mode | stats + dark mode done |
 | 10 | Stretch: Star Battle as a second puzzle type | done |
 
 Milestones 2 to 4 were the critical path, and they are all Python. The engine alone — a
@@ -326,7 +326,34 @@ zero-cost to the engine: it counts up from when the puzzle appears and freezes a
 solve instant; there is no server to check with, so the only clock that matters is the
 player's.
 
+### Local stats
+
+M9 records what this browser has finished. There is no account and no server, so a solve
+is written to `localStorage` the moment it happens and never revised afterwards — the
+whole feature is a list of facts plus arithmetic over them, and the arithmetic is in
+`app/src/lib/stats.ts` as pure functions that touch no globals, so the interesting part
+is testable without a browser.
+
+Two decisions are worth knowing:
+
+- **The first solve of a day is the one that counts.** Replaying a puzzle leaves the
+  record alone rather than overwriting it, because "when did you first get this" is what
+  a streak is answering. A duplicated or hand-edited file cannot invent a longer streak
+  either: a repeated id keeps its earliest `solvedAt`.
+- **An unplayed today does not break the streak.** A streak counts back from yesterday
+  when today is still unsolved, so the number does not read zero every morning and become
+  something a player stops looking at.
+
+Hints are counted when one is *shown*, not when one is asked for: a request with nothing
+forced to say is not help, and counting it would make the stat a measure of nerves.
+
+Stored data is treated as untrusted, like the theme's. Every field is checked rather than
+cast, so a truncated write or a record from a future version drops that one record
+instead of putting `undefined` in the middle of a streak calculation — and the rest of
+the history survives.
+
 ### The daily pipeline
+
 
 M8 closes the loop the samples were propping open: the archive publishes itself. Two
 tools and two workflows do it.

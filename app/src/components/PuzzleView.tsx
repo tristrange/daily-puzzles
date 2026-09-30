@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { formatPuzzleLabel } from '../domain/dates'
+import { formatPuzzleLabel, puzzleOfToday } from '../domain/dates'
 import {
   clearCell,
   conflicts,
@@ -17,6 +17,7 @@ import {
 import { firstHint, type Hint } from '../domain/hints'
 import type { Puzzle } from '../domain/puzzle'
 import { PuzzleNotFoundError, loadPuzzle } from '../lib/puzzles'
+import { storeSolve, summarise, type Stats } from '../lib/stats'
 import { InteractiveBoard } from './InteractiveBoard'
 
 type LoadState =
@@ -40,7 +41,7 @@ function sameState(a: GameState, b: GameState): boolean {
  * (board, timer, undo history) starts fresh whenever a different puzzle is
  * shown.
  */
-function PuzzleStage({ puzzle }: { puzzle: Puzzle }) {
+function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string }) {
   const [game, setGame] = useState<GameState>(() => createGame(puzzle.board))
   const [history, setHistory] = useState<GameState[]>([])
   const [hint, setHint] = useState<Hint | null>(null)
@@ -49,6 +50,12 @@ function PuzzleStage({ puzzle }: { puzzle: Puzzle }) {
   const [solvedAt, setSolvedAt] = useState<number | null>(null)
   const [startedAt] = useState(() => Date.now())
   const [elapsed, setElapsed] = useState(0)
+  // Hints actually shown, not hints asked for: a request that had nothing forced
+  // to say is not help, and counting it would make the stat a measure of nerves.
+  const [hintsUsed, setHintsUsed] = useState(0)
+  // Set once this puzzle has been solved, so the banner can show what the solve
+  // did to the history without re-reading storage on every render.
+  const [stats, setStats] = useState<Stats | null>(null)
   // The state a click-drag started from, so the whole stroke lands in history
   // as one step instead of one step per cell painted.
   const strokeStart = useRef<GameState | null>(null)
@@ -95,6 +102,21 @@ function PuzzleStage({ puzzle }: { puzzle: Puzzle }) {
     if (solvedAt === null && isSolved(next)) {
       const when = Date.now()
       setSolvedAt(when)
+      // Recorded once, at the moment it happens, and never revised: a replay
+      // cannot restate when a day was first solved.
+      setStats(
+        summarise(
+          storeSolve({
+            id: puzzle.id,
+            puzzleType: puzzle.puzzleType,
+            size: puzzle.board.size,
+            elapsedMs: when - startedAt,
+            hints: hintsUsed,
+            solvedAt: when,
+          }),
+          puzzleOfToday(new Date(when), timeZone),
+        ),
+      )
       setAnnouncement(`Solved in ${formatTime(when - startedAt)}!`)
     }
   }
@@ -155,6 +177,7 @@ function PuzzleStage({ puzzle }: { puzzle: Puzzle }) {
       return
     }
     setHint(next)
+    setHintsUsed((count) => count + 1)
     const position = describeCell(puzzle.board, next.cell)
     setAnnouncement(
       next.action === 'queen'
@@ -223,7 +246,14 @@ function PuzzleStage({ puzzle }: { puzzle: Puzzle }) {
         onGestureEnd={endStroke}
       />
       <p className="hint-text">{hintText ?? statusText}</p>
-      {solved && <p className="solved-banner">Solved — nice!</p>}
+      {solved && (
+        <p className="solved-banner">
+          Solved — nice!
+          {stats !== null && stats.currentStreak > 1 && (
+            <> {stats.currentStreak}-day streak.</>
+          )}
+        </p>
+      )}
       <p className="sr-only" role="status" aria-live="polite">
         {announcement}
       </p>
@@ -270,7 +300,7 @@ export function PuzzleView({ id }: { id: string }) {
     <article className="puzzle">
       <h1>{formatPuzzleLabel(id, timeZone)}</h1>
       <div key={state.puzzle.id}>
-        <PuzzleStage puzzle={state.puzzle} />
+        <PuzzleStage puzzle={state.puzzle} timeZone={timeZone} />
       </div>
     </article>
   )
