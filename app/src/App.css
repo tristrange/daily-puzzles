@@ -48,6 +48,43 @@
   padding: 24px 0 32px;
 }
 
+/* A segmented control rather than a select: three options, always visible, and
+   the pressed one is legible without opening anything. Sized to sit beside the
+   nav on the same baseline. */
+.theme-picker {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.theme-option {
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  padding: 2px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text-h);
+  }
+
+  &.active {
+    color: var(--accent);
+    background: var(--accent-border);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+}
+
 .page-title {
   font-size: 26px;
   letter-spacing: -0.5px;
@@ -228,13 +265,7 @@
   color: var(--text);
 
   &.error {
-    color: #b3261e;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .status.error {
-    color: #f2b8b5;
+    color: var(--text-error);
   }
 }
 

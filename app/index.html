@@ -5,6 +5,20 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Daily Puzzles</title>
+    <script>
+      // Applied before the first paint, so a pinned theme never flashes the
+      // other one on load. Only an explicit choice is written: with no
+      // attribute the stylesheet follows the OS, which is the default anyway.
+      // The key matches THEME_STORAGE_KEY in src/lib/theme.ts; keep them in step.
+      try {
+        var choice = localStorage.getItem('daily-puzzles:theme')
+        if (choice === 'light' || choice === 'dark') {
+          document.documentElement.dataset.theme = choice
+        }
+      } catch (error) {
+        // Storage can be blocked outright; the OS preference still applies.
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
