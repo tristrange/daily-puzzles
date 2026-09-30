@@ -144,7 +144,7 @@ a cell is forced rather than just revealing it.
 | --- | --- | --- |
 | 1 | Scaffold both toolchains, shared schema, conformance fixtures | done |
 | 2 | Solution counter — exact, parameterised by region capacity | done |
-| 3 | Seeded generator, uniqueness gate, replay, ASCII renderer | next |
+| 3 | Seeded generator, uniqueness gate, replay, ASCII renderer | done |
 | 4 | Deduction engine and difficulty score (timeboxed, cuttable) | |
 | 5 | React shell, `puzzleOfToday(date, tz)`, archive routes | |
 | 6 | Board UI, keyboard and screen reader support, hint engine | |
@@ -183,6 +183,40 @@ Three decisions worth knowing before building on it:
 Capacity comes from `Board.region_capacity` rather than a separate argument, so the capacity
 the solver honours is the same one `Board` validated. Queens and Star Battle run the same
 code; only the number of stars per row differs.
+
+### The generator
+
+`engine/src/queens_engine/generator.py` is deterministic end to end. Given a seed it:
+
+1. Places a random queens solution by backtracking over rows with a random column order.
+   The main-diagonal and anti-diagonal invariants are kept in **separate sets** — a value
+   from one can equal a value from the other for cells that do not attack, so a shared set
+   would reject valid placements (a subtle bug the prototype actually had).
+2. Grows regions outward from their queens, one cell at a time, from a random frontier.
+   Each region keeps its queen, stays 4-connected by construction, and the grid is fully
+   claimed because the frontier is connected.
+3. Runs the exact counter as a **uniqueness gate**: boards with more than one solution are
+   discarded and the stream moves on (rejection sampling).
+
+Every stage is a pure function of the seed, so the same seed always produces the same
+board — replay is byte-for-byte. Sizes 5–9 are supported; the default is 8. The attempt
+budget grows with size (a 9x9 board is a genuinely rare arrangement), and if it is
+exhausted a `GenerationError` is raised rather than shipping a puzzle with a second
+solution.
+
+The stream is a pinned SplitMix64 PRNG ([`prng.py`](engine/src/queens_engine/prng.py)) —
+**not** Python's `random`, whose streams are not guaranteed stable across versions. The
+first outputs are pinned by golden vectors in `tests/test_prng.py`; changing the stream is a
+breaking change, not a refactor. `verify_replay(puzzle)` regenerates a puzzle from its seed
+and confirms the board is identical — the CI check the daily pipeline will run on every
+committed file.
+
+`tools/generate.py` is the day-to-day entry point: it derives a stable seed from a date and
+writes both the puzzle JSON and an ASCII render:
+
+```sh
+python -m tools.generate --date 2026-10-01 --out app/public/puzzles
+```
 
 ---
 

@@ -115,6 +115,48 @@ def load_puzzle(path: Path) -> Puzzle:
     return parse_puzzle(raw)
 
 
+def puzzle_to_dict(puzzle: Puzzle) -> dict[str, JsonValue]:
+    """The schema-shaped dict for `puzzle`, in the order the CLI writes it."""
+    data: dict[str, JsonValue] = {
+        "id": puzzle.id,
+        "type": puzzle.puzzle_type.value,
+        "size": puzzle.size,
+        "seed": puzzle.seed,
+        "generatorVersion": puzzle.generator_version,
+        "regions": list(puzzle.board.regions),
+    }
+    if puzzle.puzzle_type is PuzzleType.STAR_BATTLE:
+        data["regionCapacity"] = list(puzzle.board.region_capacity)
+    return data
+
+
+def dumps_puzzle(puzzle: Puzzle) -> str:
+    """Serialise `puzzle` to the canonical file form.
+
+    A puzzle file is a circle: it must parse back into the same `Puzzle`, so the
+    file a CLI writes and the file CI re-verifies are byte-identical. Objects
+    are indented two spaces but arrays stay on one line, matching the committed
+    fixtures under `conformance/schema-cases/` so `diff` stays readable.
+    """
+    return _canonical_dumps(puzzle_to_dict(puzzle))
+
+
+def _canonical_dumps(data: dict[str, JsonValue]) -> str:
+    lines: list[str] = ["{"]
+    for i, (key, value) in enumerate(data.items()):
+        rendered = _render(value)
+        comma = "," if i < len(data) - 1 else ""
+        lines.append(f"  {json.dumps(key)}: {rendered}{comma}")
+    lines.append("}")
+    return "\n".join(lines) + "\n"
+
+
+def _render(value: JsonValue) -> str:
+    if isinstance(value, list):
+        return "[" + ", ".join(_render(item) for item in value) + "]"
+    return json.dumps(value)
+
+
 def _require_str(value: JsonValue | None, field: str) -> str:
     if not isinstance(value, str):
         raise PuzzleParseError(f"{field} must be a string")
@@ -151,6 +193,8 @@ __all__ = [
     "JsonValue",
     "Puzzle",
     "PuzzleParseError",
+    "dumps_puzzle",
     "load_puzzle",
     "parse_puzzle",
+    "puzzle_to_dict",
 ]

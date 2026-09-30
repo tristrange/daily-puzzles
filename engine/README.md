@@ -6,6 +6,22 @@ for the architecture and commands.
 The package `queens_engine` is pure Python with no web dependencies. Everything under
 `tools/` is a thin CLI on top of it.
 
+## Generating a puzzle
+
+`tools/generate.py` produces a unique-solution puzzle and prints its ASCII render (the
+given solution marked with `Q`). The seed defaults to a stable hash of the date, so the
+same command always writes the same file:
+
+```sh
+python -m tools.generate --date 2026-10-01            # render only
+python -m tools.generate --date 2026-10-01 --out ..   # also write <date>.json
+python -m tools.generate --date 2026-10-01 --size 6 --seed 42
+```
+
+A fixed `--seed` overrides the date hash; the seed is stored in the file and
+`verify_replay()` regenerates the board to confirm it. Sizes 5–9 are supported (default 8);
+budget exhaustion surfaces as `GenerationError` instead of a puzzle with a second solution.
+
 ## Running a script
 
 `pytest` works out of the box because `pyproject.toml` sets `pythonpath = ["src"]`. Plain
