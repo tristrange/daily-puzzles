@@ -81,16 +81,39 @@ export function buildShareText(input: ShareInput): string {
 }
 
 /**
- * A link to this exact puzzle.
+ * The address this deployment is served from: the origin plus whatever sub-path
+ * it lives under. Vite's `BASE_URL` is that sub-path, and it is the same value
+ * `puzzleUrl` uses to find the puzzle files, so a share link and a puzzle fetch
+ * can never disagree about where the site is.
  *
- * The app routes on the hash, so the path has to go after the `#` to survive a
- * paste into a chat window: `https://host/#/archive/2026-09-30`, not
- * `https://host/archive/2026-09-30`, which would be the site root and quietly
- * show today's puzzle instead. Archive rather than the daily route, because a
- * share is most often read later, when "today" is a different puzzle.
+ * A project page on GitHub Pages is served from `/<repo>/`, where the origin
+ * alone would drop the repository and every shared link would point at the
+ * domain root.
  */
-export function puzzleShareLink(origin: string, id: string): string {
-  return `${origin.replace(/\/$/, '')}/#/archive/${id}`
+export function appBase(origin: string, basePath: string): string {
+  const path = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath
+  return `${origin.replace(/\/$/, '')}${path}`
+}
+
+/**
+ * A link to this exact puzzle, for the page as it is actually being served.
+ *
+ * Everything about the address comes from `window.location` and Vite's
+ * `BASE_URL`, which is the same value `puzzleUrl` uses to find puzzle files, so
+ * a share link and a puzzle fetch cannot disagree about where the site lives.
+ * The pieces are read here rather than at the call site on purpose: a caller
+ * that assembled the address itself is a caller that can quietly drop the
+ * sub-path, and a unit test cannot see what a component passed in.
+ *
+ * The route goes after the `#`, because the app routes on the hash:
+ * `https://host/app/#/archive/2026-09-30`. Written before it, the path is the
+ * site root and shows today's puzzle instead of the shared one. Archive rather
+ * than the daily route, because a share is most often read later, when "today"
+ * is a different puzzle.
+ */
+export function puzzleShareLink(id: string): string {
+  const base = appBase(window.location.origin, import.meta.env.BASE_URL)
+  return `${base.replace(/\/$/, '')}/#/archive/${id}`
 }
 
 /**

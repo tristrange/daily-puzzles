@@ -371,10 +371,14 @@ timer reads, and a link that opens the same puzzle.
 
 Three decisions that are not obvious:
 
-- **The link puts the route after the `#`.** The app routes on the hash, so
-  `https://host/archive/2026-09-30` would be the site root and quietly show *today's*
-  puzzle instead. It links to the archive entry rather than the daily route because a
-  share is most often read later, when "today" is a different puzzle.
+- **The link is built from where the app is actually served.** It puts the route after
+  the `#` — the app routes on the hash, so `https://host/app/archive/2026-09-30` would
+  be the site root and quietly show *today's* puzzle — and it takes the sub-path from
+  Vite's `BASE_URL`, the same value `puzzleUrl` uses to find puzzle files, so a share
+  link and a puzzle fetch cannot disagree about where the site lives. A project page on
+  GitHub Pages is served from `/<repo>/`, where the origin alone would drop the
+  repository. It links to the archive entry rather than the daily route because a share
+  is most often read later, when "today" is a different puzzle.
 - **Empty cells are black squares, not white.** Both cell glyphs are the same emoji
   family and the same advance width — measured, not assumed, since a mismatch shears
   the whole grid — but a white square is invisible on the light background chat

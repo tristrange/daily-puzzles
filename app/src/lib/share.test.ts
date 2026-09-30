@@ -1,6 +1,31 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Board } from '../domain/board'
-import { buildShareText, boardGrid, puzzleShareLink } from './share'
+import { appBase, buildShareText, boardGrid, puzzleShareLink } from './share'
+
+/**
+ * Stand in for a browser at `href`, with Vite's `BASE_URL` set to `basePath`.
+ *
+ * `puzzleShareLink` reads the address from the environment on purpose, so that
+ * the one caller cannot quietly drop the deployment sub-path. That makes it
+ * untestable in a node environment until something puts a `window` and a
+ * `BASE_URL` there — which is what this does, and what the old version's tests
+ * quietly failed to do.
+ */
+function withBrowserUrl(href: string, basePath: string, run: () => void): void {
+  vi.stubGlobal('window', { location: { origin: new URL(href).origin } })
+  vi.stubEnv('BASE_URL', basePath)
+  try {
+    run()
+  } finally {
+    vi.unstubAllGlobals()
+    vi.unstubAllEnvs()
+  }
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.unstubAllEnvs()
+})
 
 /**
  * A valid board of any size. The regions are one per row: this suite is about
@@ -93,24 +118,53 @@ describe('buildShareText', () => {
   })
 })
 
+describe('appBase', () => {
+  it('is the origin alone when the site is served from the root', () => {
+    expect(appBase('https://example.com', '/')).toBe('https://example.com')
+    expect(appBase('https://example.com', '')).toBe('https://example.com')
+  })
+
+  it('keeps the sub-path a project page is served from', () => {
+    // GitHub Pages serves a project site from /<repo>/, where the origin alone
+    // would drop the repository and every shared link would point at the root.
+    expect(appBase('https://example.com', '/daily-puzzles/')).toBe('https://example.com/daily-puzzles')
+  })
+
+  it('copes with a sub-path that has no trailing slash', () => {
+    expect(appBase('https://example.com', '/daily-puzzles')).toBe('https://example.com/daily-puzzles')
+  })
+
+  it('does not double a slash on a trailing-slash origin', () => {
+    expect(appBase('https://example.com/', '/daily-puzzles/')).toBe('https://example.com/daily-puzzles')
+    expect(appBase('https://example.com/', '/')).toBe('https://example.com')
+  })
+})
+
 describe('puzzleShareLink', () => {
-  it('keeps the route after the hash', () => {
-    // The app routes on the hash, so a path before it opens the site root and
-    // shows the wrong puzzle.
-    expect(puzzleShareLink('https://puzzles.example', '2026-09-30')).toBe(
-      'https://puzzles.example/#/archive/2026-09-30',
-    )
+  /**
+   * Deployments this has to get right, as `[origin, BASE_URL]`. The sub-path row
+   * is the bug this exists for: the helper used to be handed a base that already
+   * had the sub-path, so its own tests passed while the only caller — which had
+   * nothing but an origin — dropped it on the floor.
+   */
+  const deployments = [
+    { label: 'domain root', origin: 'https://puzzles.example', base: '/', link: 'https://puzzles.example/#/archive/2026-09-30' },
+    { label: 'project page', origin: 'https://example.com', base: '/daily-puzzles/', link: 'https://example.com/daily-puzzles/#/archive/2026-09-30' },
+    { label: 'trailing-slash origin', origin: 'https://example.com/', base: '/daily-puzzles/', link: 'https://example.com/daily-puzzles/#/archive/2026-09-30' },
+    { label: 'sub-path without a trailing slash', origin: 'https://example.com', base: '/daily-puzzles', link: 'https://example.com/daily-puzzles/#/archive/2026-09-30' },
+  ]
+
+  it.each(deployments)('is right when served from $label', ({ origin, base, link }) => {
+    withBrowserUrl(`${origin}/`, base, () => {
+      expect(puzzleShareLink('2026-09-30')).toBe(link)
+    })
   })
 
-  it('does not double the slash on a trailing-slash origin', () => {
-    expect(puzzleShareLink('https://puzzles.example/', '2026-09-30')).toBe(
-      'https://puzzles.example/#/archive/2026-09-30',
-    )
-  })
-
-  it('survives a site served from a sub-path', () => {
-    expect(puzzleShareLink('https://example.com/queens', '2026-09-30')).toBe(
-      'https://example.com/queens/#/archive/2026-09-30',
-    )
+  it('puts the route after the hash, so it survives a paste', () => {
+    // Written before the hash it is just a path, which the app serves as its
+    // root: the recipient gets today's puzzle instead of the shared one.
+    withBrowserUrl('https://puzzles.example/', '/', () => {
+      expect(puzzleShareLink('2026-09-30')).toContain('/#/archive/')
+    })
   })
 })

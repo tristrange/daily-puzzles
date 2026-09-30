@@ -220,7 +220,7 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
       elapsedMs: counted.elapsedMs,
       hints: counted.hints,
       streak: stats?.currentStreak ?? 0,
-      link: puzzleShareLink(window.location.origin, puzzle.id),
+      link: puzzleShareLink(puzzle.id),
     })
     const ok = await copyText(text)
     setCopied(ok ? 'copied' : 'failed')
