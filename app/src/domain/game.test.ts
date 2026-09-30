@@ -11,9 +11,13 @@ import { describe, expect, it } from 'vitest'
 import { Board } from './board'
 import {
   cellState,
+  cellsEliminatedByQueen,
   clearCell,
   conflicts,
   createGame,
+  formatTime,
+  isSolved,
+  placeQueenAutoMark,
   toggleMark,
   toggleQueen,
 } from './game'
@@ -151,5 +155,76 @@ describe('conflicts', () => {
       { rule: 'row', cells: [0, 2] },
       { rule: 'row', cells: [1, 2] },
     ])
+  })
+})
+
+describe('cellsEliminatedByQueen', () => {
+  it('covers the row, column, region and neighbouring cells of a corner queen', () => {
+    // (0,0): row 0, column 0, region 0 (cells 0,1,4,5) and the corner's only
+    // neighbours (cells 1,4,5).
+    expect(cellsEliminatedByQueen(BLOCKS, 0)).toEqual([0, 1, 2, 3, 4, 5, 8, 12])
+  })
+
+  it('covers all eight neighbours of a central queen', () => {
+    // (1,2)
+    expect(cellsEliminatedByQueen(BLOCKS, 6)).toEqual([1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 14])
+  })
+})
+
+describe('placeQueenAutoMark', () => {
+  it('places a queen and mounts X marks on everything it rules out', () => {
+    const game = placeQueenAutoMark(createGame(BLOCKS), 0)
+    expect(cellState(game, 0)).toBe('queen')
+    const expectedMarks = [1, 2, 3, 4, 5, 8, 12]
+    expect([...game.marks].sort((a, b) => a - b)).toEqual(expectedMarks)
+  })
+
+  it('accumulates marks across placements but never marks over a queen', () => {
+    const first = placeQueenAutoMark(createGame(BLOCKS), 0)
+    const game = placeQueenAutoMark(first, 5)
+    expect([...game.queens].sort((a, b) => a - b)).toEqual([0, 5])
+    // (0,0) stays a queen; everything placement 5 rules out is marked.
+    expect([...game.marks].sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 6, 7, 8, 9, 10, 12, 13])
+  })
+
+  it('takes the queen back on a second placement, leaving existing marks alone', () => {
+    const first = placeQueenAutoMark(createGame(BLOCKS), 0)
+    const game = placeQueenAutoMark(first, 0)
+    expect(game.queens.size).toBe(0)
+    expect([...game.marks].sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 8, 12])
+  })
+})
+
+describe('isSolved', () => {
+  it('is false for an empty board and for a partial one', () => {
+    expect(isSolved(createGame(BLOCKS))).toBe(false)
+    expect(isSolved(toggleQueen(createGame(BLOCKS), 0))).toBe(false)
+  })
+
+  it('is false when all queens are placed but two conflict', () => {
+    // (0,1) and (1,1) share column 1.
+    const game = toggleQueen(toggleQueen(toggleQueen(toggleQueen(createGame(BLOCKS), 1), 7), 8), 13)
+    expect(game.queens.size).toBe(4)
+    expect(isSolved(game)).toBe(false)
+  })
+
+  it('is true for a valid complete solution', () => {
+    const game = toggleQueen(
+      toggleQueen(toggleQueen(toggleQueen(createGame(BLOCKS), 1), 7), 8),
+      14,
+    )
+    expect(isSolved(game)).toBe(true)
+  })
+})
+
+describe('formatTime', () => {
+  it('formats durations as m:ss', () => {
+    expect(formatTime(0)).toBe('0:00')
+    expect(formatTime(94321)).toBe('1:34')
+    expect(formatTime(2700000)).toBe('45:00')
+  })
+
+  it('never dips below 0:00', () => {
+    expect(formatTime(-500)).toBe('0:00')
   })
 })

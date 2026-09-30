@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import { formatPuzzleLabel } from '../domain/dates'
-import { conflicts, createGame, clearCell, toggleMark, toggleQueen, type GameState } from '../domain/game'
+import {
+  clearCell,
+  conflicts,
+  createGame,
+  formatTime,
+  isSolved,
+  placeQueenAutoMark,
+  toggleMark,
+  toggleQueen,
+  type GameState,
+} from '../domain/game'
 import { firstHint, type Hint } from '../domain/hints'
 import type { Puzzle } from '../domain/puzzle'
 import { PuzzleNotFoundError, loadPuzzle } from '../lib/puzzles'
@@ -11,14 +21,31 @@ type LoadState =
   | { status: 'ready'; puzzle: Puzzle }
   | { status: 'error'; message: string }
 
+/** Keep the most recent moves so undo is bounded and cheap. */
+const HISTORY_LIMIT = 100
+
 /**
  * The playing area for one loaded puzzle. Keyed by puzzle id so the game state
- * starts fresh whenever a different puzzle is shown.
+ * (board, timer, undo history) starts fresh whenever a different puzzle is
+ * shown.
  */
 function PuzzleStage({ puzzle }: { puzzle: Puzzle }) {
   const [game, setGame] = useState<GameState>(() => createGame(puzzle.board))
+  const [history, setHistory] = useState<GameState[]>([])
   const [hint, setHint] = useState<Hint | null>(null)
   const [announcement, setAnnouncement] = useState('')
+  const [autoMark, setAutoMark] = useState(false)
+  const [solvedAt, setSolvedAt] = useState<number | null>(null)
+  const [startedAt] = useState(() => Date.now())
+  const [elapsed, setElapsed] = useState(0)
+
+  useEffect(() => {
+    if (solvedAt !== null) return
+    const timer = setInterval(() => {
+      setElapsed(Date.now() - startedAt)
+    }, 500)
+    return () => clearInterval(timer)
+  }, [solvedAt, startedAt])
 
   const conflictList = useMemo(() => conflicts(game), [game])
   const conflictCells = useMemo(() => {
@@ -30,13 +57,36 @@ function PuzzleStage({ puzzle }: { puzzle: Puzzle }) {
     return cellSet
   }, [conflictList])
 
-  const resetHint = () => {
-    setHint(null)
-  }
+  const solved = isSolved(game)
+  const shownTime = solvedAt === null ? elapsed : solvedAt - startedAt
 
   const announce = (message: string) => {
     setAnnouncement(message)
     setHint(null)
+  }
+
+  const resetHint = () => {
+    setHint(null)
+  }
+
+  const applyGame = (next: GameState) => {
+    setHistory((past) => [...past.slice(1 - HISTORY_LIMIT), game])
+    setGame(next)
+    resetHint()
+    if (solvedAt === null && isSolved(next)) {
+      const when = Date.now()
+      setSolvedAt(when)
+      setAnnouncement(`Solved in ${formatTime(when - startedAt)}!`)
+    }
+  }
+
+  const undo = () => {
+    const previous = history[history.length - 1]
+    if (previous === undefined) return
+    setHistory(history.slice(0, -1))
+    setGame(previous)
+    resetHint()
+    setAnnouncement('Undid the last move.')
   }
 
   const requestHint = () => {
@@ -69,38 +119,55 @@ function PuzzleStage({ puzzle }: { puzzle: Puzzle }) {
         ? `Place a queen at ${describeCell(puzzle.board, hint.cell)}.`
         : `Mark ${describeCell(puzzle.board, hint.cell)} — it cannot hold a queen.`
 
+  const statusText = solved
+    ? `Solved in ${formatTime(shownTime)}`
+    : conflictList.length > 0
+      ? 'Two queens are in conflict — fix them.'
+      : ' '
+
   return (
     <>
+      <div className="puzzle-tools">
+        <span className="timer" role="timer" aria-label="Elapsed time">
+          {formatTime(shownTime)}
+        </span>
+        <button
+          type="button"
+          className="tool-button"
+          onClick={undo}
+          disabled={history.length === 0 || solved}
+          aria-label="Undo last move"
+        >
+          Undo
+        </button>
+        <button
+          type="button"
+          className="tool-button auto-mark"
+          aria-pressed={autoMark}
+          onClick={() => setAutoMark((current) => !current)}
+        >
+          Auto-mark {autoMark ? 'on' : 'off'}
+        </button>
+        <button type="button" className="tool-button" onClick={requestHint} disabled={solved}>
+          Hint
+        </button>
+      </div>
       <InteractiveBoard
         board={puzzle.board}
         game={game}
         hint={hint}
         conflictCells={conflictCells}
+        locked={solved}
         onToggleQueen={(cell) => {
-          setGame((current) => toggleQueen(current, cell))
-          resetHint()
+          applyGame(autoMark ? placeQueenAutoMark(game, cell) : toggleQueen(game, cell))
         }}
-        onToggleMark={(cell) => {
-          setGame((current) => toggleMark(current, cell))
-          resetHint()
-        }}
-        onClear={(cell) => {
-          setGame((current) => clearCell(current, cell))
-          resetHint()
-        }}
+        onToggleMark={(cell) => applyGame(toggleMark(game, cell))}
+        onClear={(cell) => applyGame(clearCell(game, cell))}
         onRequestHint={requestHint}
+        onUndo={undo}
       />
-      <div className="controls" aria-label="Puzzle tools">
-        <button type="button" className="hint-button" onClick={requestHint}>
-          Hint
-        </button>
-        <p className="hint-text">{hintText ?? (
-            conflictList.length > 0 ? 'Two queens are in conflict — fix them.' : ' '
-          )}</p>
-        <p className="meta">
-          {puzzle.board.size}×{puzzle.board.size} queens puzzle
-        </p>
-      </div>
+      <p className="hint-text">{hintText ?? statusText}</p>
+      {solved && <p className="solved-banner">Solved — nice!</p>}
       <p className="sr-only" role="status" aria-live="polite">
         {announcement}
       </p>

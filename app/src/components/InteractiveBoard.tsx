@@ -36,9 +36,11 @@ const PALETTE_SIZE = REGION_COLORS.length
  * end. The focused cell uses a roving tabindex (exactly one cell is in the
  * tab order), and the arrow keys move the focus. Enter/Space place or take
  * back a queen, X toggles an X mark, Delete/Backspace clears the cell and H
- * asks for a hint. Screen-reader users get a per-cell label describing the
- * position and contents; longer announcements (hint text, conflict warnings)
- * live in a visually hidden `aria-live` region owned by the puzzle view.
+ * asks for a hint; Ctrl/Command+Z undoes. A `locked` board still navigates by
+ * keyboard but refuses to change any cell. Screen-reader users get a per-cell
+ * label describing the position and contents; longer announcements (hint text,
+ * conflict warnings) live in a visually hidden `aria-live` region owned by the
+ * puzzle view.
  */
 
 export interface CellActionProps {
@@ -46,10 +48,12 @@ export interface CellActionProps {
   game: GameState
   hint: Hint | null
   conflictCells: ReadonlySet<number>
+  locked?: boolean
   onToggleQueen: (cell: number) => void
   onToggleMark: (cell: number) => void
   onClear: (cell: number) => void
   onRequestHint: () => void
+  onUndo: () => void
 }
 
 export function InteractiveBoard({
@@ -57,10 +61,12 @@ export function InteractiveBoard({
   game,
   hint,
   conflictCells,
+  locked = false,
   onToggleQueen,
   onToggleMark,
   onClear,
   onRequestHint,
+  onUndo,
 }: CellActionProps) {
   const [focusIndex, setFocusIndex] = useState(0)
 
@@ -69,6 +75,12 @@ export function InteractiveBoard({
   }
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
+      event.preventDefault()
+      onUndo()
+      return
+    }
+    if (locked) return
     const { row, col } = board.coords(focusIndex)
     switch (event.key) {
       case 'ArrowUp':
@@ -148,10 +160,12 @@ export function InteractiveBoard({
       className={classNameFor(cell)}
       style={{ backgroundColor: REGION_COLORS[region % PALETTE_SIZE] }}
       tabIndex={cell === focusIndex ? 0 : -1}
-      onClick={() => onToggleQueen(cell)}
+      onClick={() => {
+        if (!locked) onToggleQueen(cell)
+      }}
       onContextMenu={(event) => {
         event.preventDefault()
-        onToggleMark(cell)
+        if (!locked) onToggleMark(cell)
       }}
       onFocus={() => setFocusIndex(cell)}
     >

@@ -149,7 +149,7 @@ a cell is forced rather than just revealing it.
 | 4 | Deduction engine and difficulty score (timeboxed, cuttable) | done |
 | 5 | React shell, `puzzleOfToday(date, tz)`, archive routes | done |
 | 6 | Board UI, keyboard and screen reader support, hint engine | done |
-| 7 | Game loop: undo, timer, win detection, auto-mark | |
+| 7 | Game loop: undo, timer, win detection, auto-mark | done |
 | 8 | Daily pipeline: cron generates, commits, CI re-verifies every puzzle | |
 | 9 | Stretch: share text, local stats, dark mode | |
 | 10 | Stretch: Star Battle as a second puzzle type | |
@@ -309,6 +309,22 @@ to clear, `H` for a hint. Screen readers get a per-cell label (`Row 3, column 4,
 and a visually hidden `aria-live` region carries hint and conflict announcements, so a
 keyboard-only player drives the board end to end. A hint highlights the one cell it
 advises, and conflicting queens glow red until resolved.
+
+### The game loop
+
+M7 adds what makes the board a game. `placeQueenAutoMark` mounts X marks on everything
+the placed queen rules out (using the *same* elimination set the hint engine simulates,
+so the visible board and the engine never disagree); `Auto-mark on` makes that the
+default placement. Win detection is reactive: the state is solved the moment it holds
+`size` queens with no conflicts, which freezes the timer, locks the board and announces
+the time.
+
+Every placement, mark and clear is a pure state transition pushed onto a 100-entry undo
+stack — a button and Ctrl/Command+Z pop it. Because the history stores whole states
+rather than inverse actions, undo is exact even for an auto-mark sprawl. The timer is
+zero-cost to the engine: it counts up from when the puzzle appears and freezes at the
+solve instant; there is no server to check with, so the only clock that matters is the
+player's.
 
 ---
 
