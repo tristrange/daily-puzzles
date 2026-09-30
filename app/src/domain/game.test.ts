@@ -17,9 +17,12 @@ import {
   clearCell,
   conflicts,
   createGame,
+  cycleCell,
   formatTime,
   isSolved,
+  nextCellState,
   placeQueenAutoMark,
+  setCell,
   starsPerRow,
   toggleMark,
   toggleQueen,
@@ -116,6 +119,83 @@ describe('clearCell', () => {
   it('is a no-op on an empty cell', () => {
     const game = clearCell(createGame(BLOCKS), 3)
     expect(cellState(game, 3)).toBe('empty')
+  })
+})
+
+describe('setCell', () => {
+  it('forces a mark, clearing a piece on the way', () => {
+    const game = setCell(toggleQueen(createGame(BLOCKS), 3), 3, 'mark')
+    expect(cellState(game, 3)).toBe('mark')
+    expect(game.queens.has(3)).toBe(false)
+  })
+
+  it('forces a piece, clearing a mark on the way', () => {
+    const game = setCell(toggleMark(createGame(BLOCKS), 3), 3, 'queen')
+    expect(cellState(game, 3)).toBe('queen')
+    expect(game.marks.has(3)).toBe(false)
+  })
+
+  it('forces empty, clearing either', () => {
+    expect(cellState(setCell(toggleMark(createGame(BLOCKS), 3), 3, 'empty'), 3)).toBe('empty')
+    expect(cellState(setCell(toggleQueen(createGame(BLOCKS), 3), 3, 'empty'), 3)).toBe('empty')
+  })
+
+  it('is idempotent, which is what a drag stroke relies on', () => {
+    // Painting the same cell twice during one stroke has to be a no-op, or the
+    // stroke's own history entry would depend on how fast the pointer moved.
+    const once = setCell(createGame(BLOCKS), 3, 'mark')
+    expect(cellState(setCell(once, 3, 'mark'), 3)).toBe('mark')
+    expect(setCell(once, 3, 'mark')).toEqual(once)
+  })
+
+  it('leaves the rest of the board alone', () => {
+    const start = toggleQueen(createGame(BLOCKS), 0)
+    const game = setCell(start, 7, 'mark')
+    expect(game.queens).toEqual(start.queens)
+    expect([...game.marks]).toEqual([7])
+  })
+})
+
+describe('cycleCell', () => {
+  it('goes empty -> mark -> piece -> empty', () => {
+    const start = createGame(BLOCKS)
+    expect(cellState(start, 3)).toBe('empty')
+    const marked = cycleCell(start, 3)
+    expect(cellState(marked, 3)).toBe('mark')
+    const placed = cycleCell(marked, 3)
+    expect(cellState(placed, 3)).toBe('queen')
+    expect(cellState(cycleCell(placed, 3), 3)).toBe('empty')
+  })
+
+  it('returns to exactly the starting state after three clicks', () => {
+    const start = createGame(BLOCKS)
+    const after = [3, 3, 3].reduce(cycleCell, start)
+    expect(after.queens).toEqual(start.queens)
+    expect(after.marks).toEqual(start.marks)
+  })
+
+  it('does not need a mark to already be there to place a piece', () => {
+    // The second click promotes the mark the first click made, so this is the
+    // ordinary "cross it out, then commit" path rather than a special case.
+    const game = cycleCell(cycleCell(createGame(BLOCKS), 3), 3)
+    expect(game.marks.has(3)).toBe(false)
+    expect(game.queens.has(3)).toBe(true)
+  })
+
+  it('works the same on a star battle board', () => {
+    // A star is stored as a queen internally, so the cycle has no notion of
+    // puzzle type; this pins that so it cannot drift.
+    const start = createGame(STAR_BLOCKS)
+    expect(cellState(cycleCell(cycleCell(start, 0), 0), 0)).toBe('queen')
+  })
+})
+
+describe('nextCellState', () => {
+  it('reports the state a click would produce', () => {
+    const start = createGame(BLOCKS)
+    expect(nextCellState(start, 3)).toBe('mark')
+    expect(nextCellState(cycleCell(start, 3), 3)).toBe('queen')
+    expect(nextCellState(cycleCell(cycleCell(start, 3), 3), 3)).toBe('empty')
   })
 })
 

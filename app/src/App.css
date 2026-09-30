@@ -139,6 +139,17 @@
   cursor: pointer;
 }
 
+/* A stroke is a drag, not a text selection or a scroll gesture. */
+.board.playable {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.board.playable.painting .cell {
+  cursor: crosshair;
+}
+
 .board.playable .cell {
   outline: 2px solid transparent;
   outline-offset: -2px;
@@ -173,14 +184,16 @@
   }
 }
 
+/* The cell sets the ink (see lib/colours.ts): the palette spans light sand to
+   near-black, so neither theme's fixed marker colour is readable on all of it. */
 .marker {
   font-size: 1.5em;
   line-height: 1;
-  color: var(--marker);
+  color: inherit;
   text-shadow: 0 0 2px var(--bg), 0 0 2px var(--bg);
 
   &.mark {
-    color: var(--marker-mark);
+    color: var(--mark-ink);
   }
 }
 

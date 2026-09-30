@@ -427,6 +427,68 @@ app plays any valid star file today — verified end to end against a generated
 one — but choosing which day is a star day is a content decision, not a code
 one.
 
+### Playing with a mouse
+
+The keyboard was the first interface and it still is: every action has a key,
+and a click is a convenience rather than a rule the keyboard has to pay for. A
+left click therefore cycles a cell through **empty → mark → piece → empty**,
+which is the shortest path to the two things a player does most — cross a cell
+out, and commit to a cell — without ever needing a modifier. Right-click keeps
+its old meaning of toggling the mark directly, so muscle memory from the first
+build still works.
+
+Pressing and dragging paints marks across every cell the pointer crosses, which
+is how you cross out a row in one motion instead of eight clicks. The stroke
+takes its direction from where it started: begin on a cell that is already
+marked and it erases for its whole length, begin anywhere else and it marks.
+Re-dragging along a stroke you did not mean is therefore the correction, rather
+than hunting for Ctrl+Z. A press that never leaves its cell is a click and
+cycles as above.
+
+Undo granularity is the part worth stating plainly. Painting a cell is live
+feedback, but the board reports the whole *gesture* to the view rather than the
+individual cells: the view snapshots on `onGestureStart` and pushes exactly one
+history entry on `onGestureEnd`, with a click applying its cycle from the
+pre-press snapshot. So one drag across eight cells is one Ctrl+Z, and eight
+clicks are eight.
+
+Pointer events do the work rather than mouse events, with
+`document.elementFromPoint` to find the cell under the cursor — touch implicitly
+captures the pointer to the first cell touched, so the event target is not the
+one being painted. `touch-action: none` and `user-select: none` on the board keep
+a stroke from turning into a scroll or a text selection.
+
+### Region colours
+
+Regions used to be coloured `regionId % palette.length`, which knew nothing
+about where the regions were. Two near-identical swatches could end up sharing
+an edge — `#219ebc` and `#2a9d8f` are 0.068 apart in OKLab, `#f4a261` and
+`#eaac8b` 0.046 — and against a shared border they read as one shape.
+
+`lib/colours.ts` keeps the palette exactly as it shipped and only changes the
+assignment. Distance is Euclidean in OKLab, which tracks human judgement far
+better than RGB does, and neighbours include diagonals, because two regions
+meeting at a corner point are as easy to misread as two sharing an edge. The
+assignment is then *climbed* rather than guessed: the old mapping plus one
+greedy pass per palette rotation are each improved by trying every colour for
+every region until nothing helps, and the best result wins. A single greedy pass
+is not enough — how many colours a region must avoid depends on how many
+*distinct* colours its neighbours hold, and three neighbours on three swatches
+can rule out nearly the whole palette.
+
+Candidates are ranked on three things in order: clearing a minimum distance of
+0.2 (over four times the worst pair the old mapping could place side by side),
+then using more distinct colours, then the narrowest border. The second term is
+why a solved board still gets eight colours for eight regions rather than the
+three that a pure contrast objective settles for. Reuse survives on denser
+boards, where it is free: a player identifies a region by the cells around it.
+
+`colours.test.ts` asserts the floor against **every committed puzzle** rather
+than a fixture, so a palette edit that quietly reintroduces two look-alike
+swatches side by side fails there instead of in front of a player. Glyph ink is
+chosen per region for the same reason — the palette spans light sand to
+near-black, so a `#1a1a1a` queen would vanish on `#023047`.
+
 ---
 
 ## Conventions

@@ -1,36 +1,3 @@
-import { useState, type KeyboardEvent } from 'react'
-import type { Board } from '../domain/board'
-import type { GameState } from '../domain/game'
-import { cellState } from '../domain/game'
-import type { Hint } from '../domain/hints'
-
-/**
- * Region colours, laid out to stay distinguishable on both light and dark
- * backgrounds. Region ids are dense (0..regionCount-1) and regionCount <= 16,
- * so each region maps to a stable colour. The palette is shared with `board.ts`
- * consumers and is tuned for the overlay markers to stay readable on top.
- */
-const REGION_COLORS = [
-  '#e76f51',
-  '#f4a261',
-  '#e9c46a',
-  '#2a9d8f',
-  '#264653',
-  '#8ecae6',
-  '#219ebc',
-  '#023047',
-  '#ffb703',
-  '#fb8500',
-  '#6d597a',
-  '#b56576',
-  '#eaac8b',
-  '#a4c3b2',
-  '#cc8b86',
-  '#7f9cf5',
-] as const
-
-const PALETTE_SIZE = REGION_COLORS.length
-
 /**
  * The playable board: a semantic ARIA grid a keyboard user can drive end to
  * end. The focused cell uses a roving tabindex (exactly one cell is in the
@@ -42,7 +9,40 @@ const PALETTE_SIZE = REGION_COLORS.length
  * label describing the position and contents; longer announcements (hint text,
  * conflict warnings) live in a visually hidden `aria-live` region owned by the
  * puzzle view.
+ *
+ * ## Pointer
+ *
+ * A left click cycles the cell — empty, then a mark, then a piece, then empty
+ * again — so crossing out (by far the most common move) is one click and placing
+ * a piece is two. Right-click still toggles a mark directly, for anyone who
+ * would rather not cycle, and the keyboard keeps one key per state, because
+ * cycling is a convenience for a mouse, not a rule the keyboard should pay for.
+ *
+ * Pressing and dragging paints marks across every cell the pointer crosses,
+ * which is how a real player crosses out a row: the stroke starts wherever the
+ * press landed, and starting on a cell that is *already* a mark erases instead,
+ * so a misjudged stroke is undone by re-dragging along it. The whole stroke is
+ * one gesture as far as undo is concerned, which is why the board reports the
+ * gesture rather than the individual cells: the view snapshots the state on
+ * `onGestureStart` and pushes a single history entry on `onGestureEnd`, and a
+ * press that never left its cell is reported as a click so the view can apply
+ * the full cycle over the top of the paint.
  */
+
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type PointerEvent,
+} from 'react'
+import type { Board } from '../domain/board'
+import type { GameState } from '../domain/game'
+import { cellState } from '../domain/game'
+import type { Hint } from '../domain/hints'
+import { inks, regionColours } from '../lib/colours'
 
 /** What a placed piece is called and drawn as, per puzzle type. */
 const PIECES: Record<Board['puzzleType'], { noun: string; glyph: string }> = {
@@ -61,6 +61,20 @@ export interface CellActionProps {
   onClear: (cell: number) => void
   onRequestHint: () => void
   onUndo: () => void
+  /** A left press landed: snapshot the state so the stroke is one undo step. */
+  onGestureStart: () => void
+  /** A cell entered mid-drag; `target` is fixed for the whole stroke. */
+  onPaintCell: (cell: number, target: 'mark' | 'empty') => void
+  /** The stroke ended. A non-null `clickedCell` means it never became a drag. */
+  onGestureEnd: (clickedCell: number | null) => void
+}
+
+interface Stroke {
+  pointerId: number
+  firstCell: number
+  lastCell: number
+  target: 'mark' | 'empty'
+  dragged: boolean
 }
 
 export function InteractiveBoard({
@@ -74,10 +88,85 @@ export function InteractiveBoard({
   onClear,
   onRequestHint,
   onUndo,
+  onGestureStart,
+  onPaintCell,
+  onGestureEnd,
 }: CellActionProps) {
   const [focusIndex, setFocusIndex] = useState(0)
+  const [painting, setPainting] = useState(false)
+  const stroke = useRef<Stroke | null>(null)
   const piece = PIECES[board.puzzleType]
   const puzzleName = board.puzzleType === 'queens' ? 'queens' : 'star battle'
+  const colours = useMemo(() => regionColours(board), [board])
+  // One style object per region rather than per cell: 64 cells re-deriving the
+  // same eight colours on every pointer move during a stroke is waste.
+  const styles = useMemo(
+    () =>
+      Array.from({ length: board.regionCount }, (_, region) => {
+        const background = colours[region] ?? '#e5e4e7'
+        const ink = inks(background)
+        return {
+          backgroundColor: background,
+          color: ink.piece,
+          '--mark-ink': ink.mark,
+        } as CSSProperties
+      }),
+    [board, colours],
+  )
+
+  // The stroke ends wherever the pointer is released, including outside the
+  // board, so the listener is on the window for as long as a stroke is live.
+  // The handler is held in a ref because painting re-renders on every cell the
+  // pointer crosses, and re-subscribing per cell would be pure churn.
+  const end = useRef(onGestureEnd)
+  useEffect(() => {
+    end.current = onGestureEnd
+  })
+  useEffect(() => {
+    if (!painting) return
+    const finish = (event: WindowEventMap['pointerup']) => {
+      const current = stroke.current
+      if (current === null || event.pointerId !== current.pointerId) return
+      stroke.current = null
+      setPainting(false)
+      end.current(current.dragged ? null : current.firstCell)
+    }
+    window.addEventListener('pointerup', finish)
+    window.addEventListener('pointercancel', finish)
+    return () => {
+      window.removeEventListener('pointerup', finish)
+      window.removeEventListener('pointercancel', finish)
+    }
+  }, [painting])
+
+  const beginStroke = (event: PointerEvent<HTMLDivElement>, cell: number) => {
+    if (locked || event.button !== 0) return
+    stroke.current = {
+      pointerId: event.pointerId,
+      firstCell: cell,
+      lastCell: cell,
+      // Starting on a mark means "undo these crosses", so the stroke erases.
+      target: cellState(game, cell) === 'mark' ? 'empty' : 'mark',
+      dragged: false,
+    }
+    onGestureStart()
+    onPaintCell(cell, stroke.current.target)
+    setPainting(true)
+  }
+
+  const continueStroke = (event: PointerEvent<HTMLDivElement>) => {
+    const current = stroke.current
+    if (current === null || locked || event.pointerId !== current.pointerId) return
+    // The pointer is captured by the first cell for touch, so the event target
+    // is not the cell under the cursor; ask the document what is there.
+    const under = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-cell]')
+    if (under === null || under === undefined) return
+    const cell = Number(under.getAttribute('data-cell'))
+    if (!Number.isInteger(cell) || cell === current.lastCell) return
+    current.lastCell = cell
+    if (cell !== current.firstCell) current.dragged = true
+    onPaintCell(cell, current.target)
+  }
 
   const moveFocus = (cell: number) => {
     setFocusIndex(Math.max(0, Math.min(board.cellCount - 1, cell)))
@@ -165,13 +254,12 @@ export function InteractiveBoard({
     <div
       key={cell}
       role="gridcell"
+      data-cell={cell}
       aria-label={labelFor(cell)}
       className={classNameFor(cell)}
-      style={{ backgroundColor: REGION_COLORS[region % PALETTE_SIZE] }}
+      style={styles[region]}
       tabIndex={cell === focusIndex ? 0 : -1}
-      onClick={() => {
-        if (!locked) onToggleQueen(cell)
-      }}
+      onPointerDown={(event) => beginStroke(event, cell)}
       onContextMenu={(event) => {
         event.preventDefault()
         if (!locked) onToggleMark(cell)
@@ -193,11 +281,12 @@ export function InteractiveBoard({
 
   return (
     <div
-      className="board playable"
+      className={painting ? 'board playable painting' : 'board playable'}
       role="grid"
       aria-label={`${board.size} by ${board.size} ${puzzleName} puzzle with ${board.regionCount} regions`}
       style={{ gridTemplateColumns: `repeat(${board.size}, 1fr)` }}
       onKeyDown={onKeyDown}
+      onPointerMove={continueStroke}
     >
       {Array.from({ length: board.size }, (_, row) => (
         <div key={row} role="row" style={{ display: 'contents' }}>

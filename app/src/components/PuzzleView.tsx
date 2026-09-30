@@ -1,12 +1,15 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { formatPuzzleLabel } from '../domain/dates'
 import {
   clearCell,
   conflicts,
   createGame,
+  cycleCell,
   formatTime,
   isSolved,
+  nextCellState,
   placeQueenAutoMark,
+  setCell,
   toggleMark,
   toggleQueen,
   type GameState,
@@ -24,6 +27,14 @@ type LoadState =
 /** Keep the most recent moves so undo is bounded and cheap. */
 const HISTORY_LIMIT = 100
 
+/** Whether two states hold exactly the same pieces and marks. */
+function sameState(a: GameState, b: GameState): boolean {
+  if (a.queens.size !== b.queens.size || a.marks.size !== b.marks.size) return false
+  for (const cell of a.queens) if (!b.queens.has(cell)) return false
+  for (const cell of a.marks) if (!b.marks.has(cell)) return false
+  return true
+}
+
 /**
  * The playing area for one loaded puzzle. Keyed by puzzle id so the game state
  * (board, timer, undo history) starts fresh whenever a different puzzle is
@@ -38,6 +49,9 @@ function PuzzleStage({ puzzle }: { puzzle: Puzzle }) {
   const [solvedAt, setSolvedAt] = useState<number | null>(null)
   const [startedAt] = useState(() => Date.now())
   const [elapsed, setElapsed] = useState(0)
+  // The state a click-drag started from, so the whole stroke lands in history
+  // as one step instead of one step per cell painted.
+  const strokeStart = useRef<GameState | null>(null)
 
   useEffect(() => {
     if (solvedAt !== null) return
@@ -74,8 +88,8 @@ function PuzzleStage({ puzzle }: { puzzle: Puzzle }) {
     setHint(null)
   }
 
-  const applyGame = (next: GameState) => {
-    setHistory((past) => [...past.slice(1 - HISTORY_LIMIT), game])
+  const applyGame = (next: GameState, before: GameState = game) => {
+    setHistory((past) => [...past.slice(1 - HISTORY_LIMIT), before])
     setGame(next)
     resetHint()
     if (solvedAt === null && isSolved(next)) {
@@ -83,6 +97,37 @@ function PuzzleStage({ puzzle }: { puzzle: Puzzle }) {
       setSolvedAt(when)
       setAnnouncement(`Solved in ${formatTime(when - startedAt)}!`)
     }
+  }
+
+  const beginStroke = () => {
+    strokeStart.current = game
+  }
+
+  /** Live feedback while dragging: no history, the stroke is not over yet. */
+  const paintCell = (cell: number, target: 'mark' | 'empty') => {
+    setGame((current) => setCell(current, cell, target))
+  }
+
+  /**
+   * A press that never became a drag is a click, and the board has already
+   * painted its first cell, so the cycle is applied from the pre-press snapshot
+   * instead of from the live state. A real drag is already on screen and just
+   * needs committing.
+   */
+  const endStroke = (clickedCell: number | null) => {
+    const before = strokeStart.current
+    strokeStart.current = null
+    if (before === null) return
+    if (clickedCell === null) {
+      // A stroke that painted cells already in the target state changed nothing,
+      // and an undo step that appears to do nothing is worse than no step.
+      if (!sameState(before, game)) applyGame(game, before)
+      return
+    }
+    const placing = nextCellState(before, clickedCell) === 'queen'
+    const next =
+      placing && autoMark ? placeQueenAutoMark(before, clickedCell) : cycleCell(before, clickedCell)
+    applyGame(next, before)
   }
 
   const undo = () => {
@@ -173,6 +218,9 @@ function PuzzleStage({ puzzle }: { puzzle: Puzzle }) {
         onClear={(cell) => applyGame(clearCell(game, cell))}
         onRequestHint={requestHint}
         onUndo={undo}
+        onGestureStart={beginStroke}
+        onPaintCell={paintCell}
+        onGestureEnd={endStroke}
       />
       <p className="hint-text">{hintText ?? statusText}</p>
       {solved && <p className="solved-banner">Solved — nice!</p>}

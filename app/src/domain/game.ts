@@ -85,6 +85,38 @@ export function clearCell(game: GameState, cell: number): GameState {
   }
 }
 
+/**
+ * The state one click would move `cell` to, without changing anything: empty
+ * becomes a mark, a mark becomes a piece, a piece goes back to empty. Split
+ * out from `cycleCell` so callers that need to know the target first (the auto-
+ * mark toggle wants to know whether a click is about to place a piece) do not
+ * have to apply a transition just to inspect it.
+ */
+export function nextCellState(game: GameState, cell: number): CellState {
+  const current = cellState(game, cell)
+  if (current === 'empty') return 'mark'
+  if (current === 'mark') return 'queen'
+  return 'empty'
+}
+
+/** Force `cell` into `state`, clearing whatever it held before. */
+export function setCell(game: GameState, cell: number, state: CellState): GameState {
+  return {
+    board: game.board,
+    queens: state === 'queen' ? withValue(game.queens, cell) : without(game.queens, cell),
+    marks: state === 'mark' ? withValue(game.marks, cell) : without(game.marks, cell),
+  }
+}
+
+/**
+ * One click on a cell, cycling empty -> mark -> piece -> empty. Crossing out
+ * is the first stop because it is by far the most common action, and a second
+ * click promotes a mark to a piece.
+ */
+export function cycleCell(game: GameState, cell: number): GameState {
+  return setCell(game, cell, nextCellState(game, cell))
+}
+
 export function cellState(game: GameState, cell: number): CellState {
   if (game.queens.has(cell)) return 'queen'
   if (game.marks.has(cell)) return 'mark'
