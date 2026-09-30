@@ -410,12 +410,26 @@ the history survives.
 
 ### Share text
 
-The last M9 item. Finishing a puzzle offers a **Copy share text** button that puts a
-finished grid, the time, the hint count, the streak and a link on the clipboard. The
-text is built by a pure function in `app/src/lib/share.ts` from the board, the placed
-pieces and the recorded solve, because the shape of the output is the part worth
-testing: a grid that is `size` rows of `size` cells, a time that reads the way the
-timer reads, and a link that opens the same puzzle.
+The last M9 item. Finishing a puzzle offers **Copy result** and **Copy with solution**.
+
+**The default does not contain the board.** That is the whole design. A daily puzzle is
+only worth sharing because a friend has not done it yet, and a share that prints where
+the pieces went has already done their work for them — it is the opposite of a
+challenge. Wordle gets away with a grid because the grid encodes *feedback*; ours encoded
+the *answer*. So the plain share carries only what describes how the solve went: the
+puzzle and its size, the time, the hint count, the streak, and a link. None of that gives
+the puzzle away, and `share.test.ts` asserts the text contains no run of cell glyphs at
+all — a grid is exactly the sort of thing that otherwise gets added back as a nice touch.
+
+The board is still there, behind a button that says what it is, for showing a solution to
+someone who has already finished it or who asked for one. It is a separate function taking
+the board and the pieces rather than a flag on the first, so the spoiler has to be asked
+for by name and the default cannot grow one by accident.
+
+The text is built by pure functions in `app/src/lib/share.ts`, because the shape of the
+output is the part worth testing: a time that reads the way the timer reads, a link that
+opens the same puzzle, and a board that is `size` rows of `size` cells when — and only
+when — a board was asked for.
 
 Three decisions that are not obvious:
 

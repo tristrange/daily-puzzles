@@ -18,7 +18,7 @@ import { firstHint, type Hint } from '../domain/hints'
 import type { Puzzle } from '../domain/puzzle'
 import { PuzzleNotFoundError, loadPuzzle } from '../lib/puzzles'
 import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } from '../lib/stats'
-import { buildShareText, copyText, puzzleShareLink } from '../lib/share'
+import { buildShareText, buildSolutionShareText, copyText, puzzleShareLink } from '../lib/share'
 import { InteractiveBoard } from './InteractiveBoard'
 
 type LoadState =
@@ -59,7 +59,7 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
   const [stats, setStats] = useState<Stats | null>(null)
   // The solve already on record for this puzzle, if this was a replay.
   const [firstSolve, setFirstSolve] = useState<SolveRecord | null>(null)
-  const [copied, setCopied] = useState<'idle' | 'copied' | 'failed'>('idle')
+  const [copied, setCopied] = useState<'idle' | 'result' | 'solution' | 'failed'>('idle')
   // Set only when copying failed, so the text can be selected by hand.
   const [shareText, setShareText] = useState<string | null>(null)
   // The state a click-drag started from, so the whole stroke lands in history
@@ -203,7 +203,13 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
         : `Mark ${describeCell(puzzle.board, hint.cell)} — it cannot hold a ${piece}.`
 
   /**
-   * Copy the share text.
+   * Copy a share, optionally with the solution on it.
+   *
+   * The plain one is the default because a share is a challenge: it reports how
+   * the solve went, and the board is the one thing that would do the
+   * recipient's work for them. The board version is a separate, named choice
+   * rather than a flag, for showing a solution to someone who has already
+   * finished it.
    *
    * The time and hints come from the record that was just written, not from the
    * live clock, so sharing a replay reports the solve that actually counts. If
@@ -211,22 +217,29 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
    * that silently fails is the worst kind, because the player walks away
    * believing they have something to paste.
    */
-  const share = async () => {
+  const share = async (variant: 'result' | 'solution') => {
     const counted = firstSolve ?? { elapsedMs: shownTime, hints: hintsUsed }
-    const text = buildShareText({
-      board: puzzle.board,
-      pieces: game.queens,
+    const result = {
+      size: puzzle.board.size,
       puzzleType: puzzle.puzzleType,
       elapsedMs: counted.elapsedMs,
       hints: counted.hints,
       streak: stats?.currentStreak ?? 0,
       link: puzzleShareLink(puzzle.id),
-    })
+    }
+    const text =
+      variant === 'solution'
+        ? buildSolutionShareText(result, puzzle.board, game.queens)
+        : buildShareText(result)
     const ok = await copyText(text)
-    setCopied(ok ? 'copied' : 'failed')
+    setCopied(ok ? variant : 'failed')
     if (ok) {
       setShareText(null)
-      setAnnouncement('Share text copied to the clipboard.')
+      setAnnouncement(
+        variant === 'solution'
+          ? 'Share text with the solution copied — that one gives the puzzle away.'
+          : 'Share text copied to the clipboard.',
+      )
       return
     }
     setShareText(text)
@@ -302,9 +315,23 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
               </>
             )}
           </p>
-          <button type="button" className="tool-button share" onClick={share}>
-            {copied === 'copied' ? 'Copied' : 'Copy share text'}
-          </button>
+          <div className="share-buttons">
+            <button
+              type="button"
+              className="tool-button share"
+              onClick={() => share('result')}
+            >
+              {copied === 'result' ? 'Copied result' : 'Copy result'}
+            </button>
+            <button
+              type="button"
+              className="tool-button share"
+              onClick={() => share('solution')}
+              title="Includes the finished board — this one gives the puzzle away"
+            >
+              {copied === 'solution' ? 'Copied solution' : 'Copy with solution'}
+            </button>
+          </div>
           {shareText !== null && (
             <textarea
               className="share-text"

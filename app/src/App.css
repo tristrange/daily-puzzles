@@ -172,19 +172,26 @@
   margin: 14px 0 0;
 }
 
-/* The share button and its fallback, under the solved message. */
+/* The share buttons and their fallback, under the solved message. */
 .solved-panel {
   display: grid;
   justify-items: center;
   gap: 10px;
   margin: 10px 0 0;
+}
 
-  .share {
-    /* The accent, on a page background: 4.5:1, so this is a real text colour
-       and not just a tinted surface. */
-    color: var(--accent);
-    border-color: var(--accent-border);
-  }
+.share-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.tool-button.share {
+  /* The accent, on a page background: 4.5:1, so this is a real text colour
+     and not just a tinted surface. */
+  color: var(--accent);
+  border-color: var(--accent-border);
 }
 
 .share-text {
