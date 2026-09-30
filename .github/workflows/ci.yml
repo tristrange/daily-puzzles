@@ -5,6 +5,12 @@ on:
   push:
     branches: [main]
 
+# Least privilege: CI checks out the repository and runs tests, and that is all.
+# Without this the workflow inherits whatever the repository's default token
+# permissions happen to be, which is not something a test run needs.
+permissions:
+  contents: read
+
 jobs:
   engine:
     runs-on: ubuntu-latest
