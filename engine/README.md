@@ -27,6 +27,22 @@ the seed upward until one appears (see the M4 section in the root [README](../RE
 The difficulty line it prints — band, weighted score, and whether the solve needed a
 hypothesis — is the soft signal the product uses to pick a daily mix.
 
+## Publishing and verifying the archive
+
+`tools/publish.py` and `tools/verify.py` are the daily pipeline (M8 in the root
+[README](../README.md)). `publish` fills the archive with the same deterministic recipe as
+`generate --logic-only` but *scans for gaps*: it publishes from the first missing date or
+the latest committed one — whichever is later — through today plus a `--lead` (default 3).
+It is idempotent, so the cron can run every day and re-runs are no-ops. `verify`
+re-parses every committed puzzle and replays it from its seed, which is exactly what CI
+runs over `../app/public/puzzles/` on every push.
+
+```sh
+python -m tools.publish --out ../app/public/puzzles     # idempotent, deterministic
+python -m tools.publish --dry-run --lead 7              # preview without writing
+python -m tools.verify --dir ../app/public/puzzles      # exit 1 on any mismatch
+```
+
 ## The rules are a public interface
 
 Since M6, [`deduce.py`](src/queens_engine/deduce.py)'s pure rule passes (singles,
