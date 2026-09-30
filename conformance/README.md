@@ -10,10 +10,19 @@ rule, so every shared claim is pinned here and asserted from both sides.
 | --- | --- | --- |
 | `schema-cases/` | The JSON file format is accepted or rejected as expected. Structure only. | M1 |
 | `board-cases/` | Full board semantics: region validity, and (from M2) solution count. | M2+ |
+| `hint-cases/` | The *first forced move* the deduction rules produce, from an empty board or an explicit player state. | M6 |
 
 These are deliberately separate. `schema-cases/` proves the two languages parse a file
-identically; `board-cases/` proves they *reason* about a board identically. A board can
-be structurally valid and logically broken, so the suites must not be conflated.
+identically; `board-cases/` proves they *reason* about a board identically; `hint-cases/`
+proves the app's live hint engine and the engine's own solver deduce the same first move.
+A board can be structurally valid and logically broken, so the suites must not be
+conflated.
+
+`hint-cases/` is worth one precise caveat. A "subset" firing can only ever occur *after*
+some cells are already dead (on an untouched board every region, row and column has a full
+candidate set, so the pigeonhole never triggers), which is why a subset case ships an
+explicit player state — the marks the player has already made — rather than an empty
+board.
 
 ## Running
 

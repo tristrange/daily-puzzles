@@ -1,0 +1,71 @@
+{
+  "cases": [
+    {
+      "file": "2026-05-11.puzzle.json",
+      "hint": {
+        "cell": 5,
+        "action": "queen",
+        "rule": "single-region"
+      }
+    },
+    {
+      "file": "2026-05-12.puzzle.json",
+      "hint": {
+        "cell": 4,
+        "action": "x",
+        "rule": "intersection"
+      }
+    },
+    {
+      "file": "2026-05-13.puzzle.json",
+      "hint": {
+        "cell": 9,
+        "action": "queen",
+        "rule": "single-region"
+      }
+    },
+    {
+      "file": "2026-05-14.puzzle.json",
+      "hint": {
+        "cell": 0,
+        "action": "queen",
+        "rule": "single-region"
+      }
+    },
+    {
+      "file": "2026-05-15.puzzle.json",
+      "hint": {
+        "cell": 22,
+        "action": "queen",
+        "rule": "single-region"
+      }
+    },
+    {
+      "file": "2026-05-16.puzzle.json",
+      "hint": {
+        "cell": 18,
+        "action": "queen",
+        "rule": "single-region"
+      }
+    },
+    {
+      "file": "2026-05-17.puzzle.json",
+      "state": {
+        "queens": [],
+        "marks": [
+          0,
+          11,
+          16,
+          17,
+          21,
+          22
+        ]
+      },
+      "hint": {
+        "cell": 5,
+        "action": "x",
+        "rule": "subset"
+      }
+    }
+  ]
+}

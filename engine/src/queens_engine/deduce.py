@@ -30,9 +30,10 @@ unique solution the generator guarantees). Weight of any trial step is 5.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from itertools import combinations
-from typing import Final
+from typing import Final, Literal
 
 from queens_engine.board import Board, PuzzleType
 
@@ -435,6 +436,51 @@ def _subset_one(
                 trace.append(DeductionStep(SUBSET, round_num, None, tuple(dead)))
                 changed = True
     return changed
+
+
+@dataclass(frozen=True, slots=True)
+class ForcedMove:
+    """One hinted move: place a queen at `cell`, or mark `cell` dead."""
+
+    cell: int
+    action: Literal["queen", "x"]
+    rule: str
+
+
+def first_forced_move(
+    board: Board, *, queens: Iterable[int] = (), marks: Iterable[int] = ()
+) -> ForcedMove | None:
+    """The first move the pure rules force from a player state, or `None`.
+
+    This is the engine's half of the app's hint engine: the app's TypeScript
+    `firstHint` is a port of this function's rule order (singles, then
+    intersections, then subsets, all within the first round), pinned by the
+    shared `conformance/hint-cases/` suite asserted from both languages.
+
+    `None` means nothing is forced — either the board is complete or the rules
+    have stalled. A contradictory *queen* position must be rejected by the caller
+    before calling: the app validates queens with `conflicts` first, because a
+    poisoned candidate state would produce nonsense hints.
+    """
+    state = _State(board)
+    for cell in marks:
+        _eliminate(state, cell)
+    for queen in queens:
+        _place_queen(state, queen)
+
+    trace: list[DeductionStep] = []
+    if _rule_singles(state, trace, 1) or _rule_intersections(state, trace, 1):
+        pass
+    else:
+        _rule_subsets(state, trace, 1)
+    if not trace:
+        return None
+    step = trace[0]
+    cell = step.queen if step.queen is not None else step.cells[0]
+    action: Literal["queen", "x"] = (
+        "queen" if step.rule in (SINGLE_REGION, SINGLE_ROW, SINGLE_COLUMN) else "x"
+    )
+    return ForcedMove(cell=cell, action=action, rule=step.rule)
 
 
 def _run_pure_rules(state: _State, trace: list[DeductionStep], rounds_seen: list[int]) -> None:
