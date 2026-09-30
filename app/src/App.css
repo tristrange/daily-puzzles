@@ -75,7 +75,11 @@
   }
 
   &.active {
-    color: var(--accent);
+    /* The label takes --text-h, not the accent: the accent background is a 50%
+       wash, and accent-on-accent measured 2.1:1 in light and 2.6:1 in dark,
+       well under the 4.5:1 a 14px label needs. The wash still says "selected",
+       and this says it legibly. */
+    color: var(--text-h);
     background: var(--accent-border);
   }
 

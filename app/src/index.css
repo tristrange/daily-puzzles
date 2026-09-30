@@ -11,8 +11,12 @@
   --text-error: light-dark(#b3261e, #f2b8b5);
   --bg: light-dark(#fff, #16171d);
   --border: light-dark(#e5e4e7, #2e303a);
-  --accent: light-dark(#aa3bff, #c084fc);
-  --accent-border: light-dark(rgba(170, 59, 255, 0.5), rgba(192, 132, 252, 0.5));
+  /* The light accent is a shade deeper than the dark one because it has to work
+     as *text* on white: #aa3bff only reached 4.39:1 there, and #a231e8 clears
+     4.5:1 with the same hue. See App.css for the one place it is a background
+     under text, which uses --text-h rather than the accent. */
+  --accent: light-dark(#a231e8, #c084fc);
+  --accent-border: light-dark(rgba(162, 49, 232, 0.5), rgba(192, 132, 252, 0.5));
   --danger: light-dark(#d64541, #f2b8b5);
   --hint: light-dark(#2a9d8f, #5eead4);
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
