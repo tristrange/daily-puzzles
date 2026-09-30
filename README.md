@@ -126,6 +126,19 @@ committed to `main` without a site going out that serves it. That is the reason 
 lives in `ci.yml` rather than in a workflow of its own: it reuses the verification instead
 of repeating it.
 
+**The daily publisher has to ask for the deploy explicitly.** This is the one part of the
+arrangement that is counter-intuitive. A commit made with the default `GITHUB_TOKEN`
+raises no workflow event at all, by design — GitHub suppresses it so a workflow cannot
+re-trigger itself. So the `git push` in `publish.yml` publishes the puzzle and, on its
+own, would never verify it or deploy it: the site would go stale every night while the
+repository carried on looking perfectly healthy.
+
+So after a successful push the publisher dispatches `ci.yml` on `main`, which needs
+`actions: write` and a `workflow_dispatch` trigger to be allowed. It dispatches the whole
+workflow rather than a deploy-only one, so the nightly puzzle gets the same engine
+verification a human push does — a gap that was there before Pages existed, because those
+commits were never running CI either.
+
 **The build knows it is served from a sub-path.** A Pages *project* site lives at
 `/<repo>/`, not at the domain root, so the deploy step sets `BASE_PATH` and
 `app/vite.config.ts` reads it. Every asset URL and the app's own puzzle fetches derive from
