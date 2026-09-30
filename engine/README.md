@@ -27,6 +27,16 @@ the seed upward until one appears (see the M4 section in the root [README](../RE
 The difficulty line it prints — band, weighted score, and whether the solve needed a
 hypothesis — is the soft signal the product uses to pick a daily mix.
 
+## The rules are a public interface
+
+Since M6, [`deduce.py`](src/queens_engine/deduce.py)'s pure rule passes (singles,
+intersections, subsets) are replayed by the TypeScript app as its live hint engine.
+`first_forced_move(board, queens, marks)` is the engine's public half of that contract:
+the first move the rules force from a player state, in the exact rule order the app
+mirrors. The two implementations must stay byte-identical in firing order, so
+`tests/test_conformance_hints.py` asserts the shared `../conformance/hint-cases/`
+fixtures — exactly the same expectations the app runs as its `hintConformance.test.ts`.
+
 ## Running a script
 
 `pytest` works out of the box because `pyproject.toml` sets `pythonpath = ["src"]`. Plain

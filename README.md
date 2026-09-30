@@ -60,7 +60,8 @@ That boundary is why the format is owned by neither language. `schema/puzzle.sch
 is validated by `jsonschema` in Python and `ajv` in TypeScript, so the two parsers cannot
 drift. The `conformance/` suites extend the same idea from parsing to *reasoning*: a
 board can be structurally valid and logically broken, so board-level fixtures are a
-separate suite from schema-level ones.
+separate suite from schema-level ones, and hint fixtures a further step still — they pin
+what each side *deduces* from a player's live board, not just what it parses.
 
 The engine is pure TypeScript-free Python that runs in a terminal. The UI cannot use
 Python (no WASM in the bundle), so the app keeps its own `Board` model — but that is
@@ -147,7 +148,7 @@ a cell is forced rather than just revealing it.
 | 3 | Seeded generator, uniqueness gate, replay, ASCII renderer | done |
 | 4 | Deduction engine and difficulty score (timeboxed, cuttable) | done |
 | 5 | React shell, `puzzleOfToday(date, tz)`, archive routes | done |
-| 6 | Board UI, keyboard and screen reader support, hint engine | |
+| 6 | Board UI, keyboard and screen reader support, hint engine | done |
 | 7 | Game loop: undo, timer, win detection, auto-mark | |
 | 8 | Daily pipeline: cron generates, commits, CI re-verifies every puzzle | |
 | 9 | Stretch: share text, local stats, dark mode | |
@@ -275,6 +276,39 @@ even fetched, and every file the app reads is passed through the same JSON schem
 A week of sample puzzles (`2026-09-27`..`2026-10-03`) is committed so the archive has
 content before the daily pipeline exists; the pipeline replaces the manual `generate.py`
 invocation in M8.
+
+### The board and the hint engine
+
+M6 turns the static region poster from M5 into the playable board. `game.ts` holds the
+player's state — which cells hold a queen and which are marked out — as pure transitions
+(`toggleQueen`, `toggleMark`, `clearCell`), and computes `conflicts` between placed
+queens. Rule precedence there is row > column > region > touch, so a pair is reported
+under the most specific rule: two queens that share a region *and* a row are called a row
+conflict first.
+
+`hints.ts` is a port of the **pure-logic half** of `deduce.py` (the singles, intersections
+and subsets passes, in that exactly order) with two differences:
+
+- it stops at the **first** firing instead of running to a fixpoint, and
+- it starts from the player's live queens and marks, so nothing about the puzzle's
+  solution is ever sent to the browser.
+
+The answer is pinned by the `hint-cases/` conformance suite, which both languages assert:
+Python replays its own rules from the same player states and must agree with the app's
+hint. Because the fixture cases cover every rule — including a mid-game state where the
+**subset** pigeonhole is genuinely the next forced move, which no empty board can ever
+produce — the app's hint cannot contradict the engine that rated the puzzle. A hint is
+either `place a queen here` or `mark this cell dead`; when nothing is forced the app says
+so rather than guessing, and a contradictory queen set is caught by `conflicts()` *before*
+the rules run, because a poisoned candidate state would produce nonsense.
+
+The board itself is a semantic ARIA grid: `role=grid` over `role=row`/`role=gridcell`,
+with a roving tabindex (exactly one cell in the tab order) and full keyboard play —
+arrows to move, Enter/Space to place or take back a queen, `X` to mark, Delete/Backspace
+to clear, `H` for a hint. Screen readers get a per-cell label (`Row 3, column 4, marked`)
+and a visually hidden `aria-live` region carries hint and conflict announcements, so a
+keyboard-only player drives the board end to end. A hint highlights the one cell it
+advises, and conflicting queens glow red until resolved.
 
 ---
 

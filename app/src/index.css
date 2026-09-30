@@ -5,6 +5,10 @@
   --border: #e5e4e7;
   --accent: #aa3bff;
   --accent-border: rgba(170, 59, 255, 0.5);
+  --danger: #d64541;
+  --hint: #2a9d8f;
+  --marker: #1a1a1a;
+  --marker-mark: #b3261e;
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
@@ -27,6 +31,10 @@
     --border: #2e303a;
     --accent: #c084fc;
     --accent-border: rgba(192, 132, 252, 0.5);
+    --danger: #f2b8b5;
+    --hint: #5eead4;
+    --marker: #f8fafc;
+    --marker-mark: #f87171;
   }
 }
 

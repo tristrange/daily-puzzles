@@ -6,7 +6,9 @@ from .deduce import (
     DeductionError,
     DeductionStep,
     DeductionTrace,
+    ForcedMove,
     deduce,
+    first_forced_move,
 )
 from .difficulty import (
     GUESSING_FLOOR,
@@ -64,6 +66,7 @@ __all__ = [
     "DeductionStep",
     "DeductionTrace",
     "Difficulty",
+    "ForcedMove",
     "GenerationConfig",
     "GenerationError",
     "Prng",
@@ -74,6 +77,7 @@ __all__ = [
     "count_solutions",
     "deduce",
     "dumps_puzzle",
+    "first_forced_move",
     "format_solution",
     "generate_puzzle",
     "has_unique_solution",
