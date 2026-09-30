@@ -57,3 +57,50 @@ jobs:
         run: npm run lint
       - name: Build
         run: npm run build
+
+  deploy:
+    # Main only, and only after both gates are green. The engine job re-verifies
+    # every published puzzle, and shipping a site whose puzzle files do not
+    # verify is the one failure worth waiting for — so this waits rather than
+    # repeating the verification.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [engine, app]
+    runs-on: ubuntu-latest
+    # Overrides the workflow-level grant: deploying needs to write the Pages
+    # site and to mint an OIDC token for the attestation. Nothing else in this
+    # workflow does.
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      # Queue deploys rather than cancelling one in flight: a half-published
+      # site is worse than a slightly stale one.
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Install
+        run: npm ci
+        working-directory: app
+      - name: Build
+        working-directory: app
+        env:
+          # A Pages project site is served from /<repo>/, so the built asset
+          # URLs and the app's own puzzle fetches both need that prefix.
+          BASE_PATH: /${{ github.event.repository.name }}
+        run: npm run build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: app/dist
+      - id: deployment
+        uses: actions/deploy-pages@v4
