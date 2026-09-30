@@ -19,6 +19,9 @@ export function Shell() {
           <NavLink to="/archive" className={navClass}>
             Archive
           </NavLink>
+          <NavLink to="/stats" className={navClass}>
+            Stats
+          </NavLink>
         </nav>
         <ThemePicker />
       </header>

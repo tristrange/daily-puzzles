@@ -295,3 +295,37 @@
   border-top: 1px solid var(--border);
   font-size: 14px;
 }
+
+/* Stats tiles. Left on the page background with a hairline frame so the numbers
+   lead: a tinted tile per stat turns the page into six blocks of accent, and the
+   accent is meant to mark the things you can act on. */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin: 16px 0 20px;
+}
+
+.stat {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+
+  dt {
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  dd {
+    margin: 4px 0 0;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    color: var(--text-h);
+  }
+}
+
+.stat-detail {
+  color: var(--text);
+  font-size: 15px;
+}
