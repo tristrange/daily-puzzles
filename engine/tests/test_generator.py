@@ -24,10 +24,12 @@ from queens_engine import (
     PuzzleType,
     dumps_puzzle,
     generate_puzzle,
+    parse_puzzle,
     render_puzzle,
     verify_replay,
 )
 from queens_engine.solver import iter_solutions
+from test_solver import obeys_the_rules
 
 SIZES = (5, 6, 7, 8, 9)
 
@@ -168,3 +170,143 @@ def test_render_shows_a_queen_per_row_and_column() -> None:
         sum(line.split()[col] == "Q" for line in board_lines) == 1
         for col in range(puzzle.board.size)
     )
+
+
+# ---------------------------------------------------------------------------
+# Star Battle
+# ---------------------------------------------------------------------------
+
+# The only (size, stars_per_row) pairs within the generator's size range that
+# admit a legal no-touching layout (see FEASIBLE_STAR_BATTLE in generator.py).
+FEASIBLE_STAR_BATTLE = ((8, 2), (9, 2))
+STAR_KNOWN_GOOD = {(8, 2): 0, (9, 2): 0}  # verified to generate within default attempts
+STAR_SEEDS = st.integers(min_value=0, max_value=7)
+
+
+def _generate_star(
+    seed: int,
+    size: int,
+    stars: int,
+    puzzle_id: str = "2026-01-01",
+    max_attempts: int | None = None,
+) -> Puzzle:
+    return generate_puzzle(
+        seed=seed,
+        puzzle_id=puzzle_id,
+        config=GenerationConfig(
+            size=size,
+            puzzle_type=PuzzleType.STAR_BATTLE,
+            stars_per_row=stars,
+            max_attempts=max_attempts or DEFAULT_ATTEMPTS[size],
+        ),
+    )
+
+
+@settings(max_examples=15, deadline=None)
+@given(STAR_SEEDS)
+def test_star_battle_same_seed_generates_the_same_board(seed: int) -> None:
+    a = _generate_star(seed, 8, 2)
+    b = _generate_star(seed, 8, 2)
+    assert a.board == b.board
+    assert a.seed == b.seed
+    assert a.generator_version == 2
+
+
+@settings(max_examples=15, deadline=None)
+@given(STAR_SEEDS)
+def test_star_battle_has_exactly_one_solution(seed: int) -> None:
+    puzzle = _generate_star(seed, 8, 2)
+    assert len(_solutions(puzzle.board)) == 1
+
+
+def test_every_supported_star_battle_combo_generates() -> None:
+    for size, stars in FEASIBLE_STAR_BATTLE:
+        puzzle = _generate_star(STAR_KNOWN_GOOD[(size, stars)], size, stars)
+        assert puzzle.board.size == size
+        assert puzzle.puzzle_type is PuzzleType.STAR_BATTLE
+        assert puzzle.board.region_count == size
+        assert puzzle.board.region_capacity == (stars,) * size
+
+
+def test_star_battle_solution_is_legal_and_fits_the_board() -> None:
+    puzzle = _generate_star(0, 8, 2)
+    solution = _solutions(puzzle.board)[0]
+    assert obeys_the_rules(puzzle.board, solution)
+
+
+def test_star_battle_verify_replay_rebuilds_the_same_board() -> None:
+    puzzle = _generate_star(0, 8, 2)
+    assert verify_replay(puzzle).board == puzzle.board
+
+
+def test_star_battle_verify_replay_detects_tampering() -> None:
+    puzzle = _generate_star(0, 8, 2)
+    swapped = [1 - region if region < 2 else region for region in puzzle.board.regions]
+    forged = Puzzle(
+        id=puzzle.id,
+        puzzle_type=puzzle.puzzle_type,
+        size=puzzle.size,
+        seed=puzzle.seed,
+        generator_version=puzzle.generator_version,
+        board=Board(
+            size=puzzle.size,
+            regions=tuple(swapped),
+            region_capacity=puzzle.board.region_capacity,
+            puzzle_type=puzzle.board.puzzle_type,
+        ),
+    )
+    assert forged.board != puzzle.board
+    with pytest.raises(GenerationError):
+        verify_replay(forged)
+
+
+def test_star_battle_requires_stars_per_row() -> None:
+    with pytest.raises(GenerationError):
+        generate_puzzle(
+            seed=1,
+            puzzle_id="x",
+            config=GenerationConfig(size=8, puzzle_type=PuzzleType.STAR_BATTLE),
+        )
+
+
+def test_queens_rejects_an_explicit_star_count() -> None:
+    with pytest.raises(GenerationError):
+        generate_puzzle(
+            seed=1,
+            puzzle_id="x",
+            config=GenerationConfig(size=8, puzzle_type=PuzzleType.QUEENS, stars_per_row=2),
+        )
+
+
+def test_infeasible_star_battle_combos_are_rejected() -> None:
+    for size, stars in ((6, 2), (8, 3), (9, 3)):
+        with pytest.raises(GenerationError):
+            _generate_star(0, size, stars)
+
+
+def test_star_battle_stars_out_of_range_are_rejected() -> None:
+    for stars in (1, 9):
+        with pytest.raises(GenerationError):
+            _generate_star(0, 8, stars)
+
+
+def test_star_battle_dumps_round_trips_with_capacity() -> None:
+    puzzle = _generate_star(0, 8, 2, puzzle_id="2026-02-03")
+    text = dumps_puzzle(puzzle)
+    assert text == dumps_puzzle(puzzle)
+    parsed = json.loads(text)
+    assert parsed["type"] == "star-battle"
+    assert list(parsed["regionCapacity"]) == list(puzzle.board.region_capacity)
+    assert dumps_puzzle(parse_puzzle(parsed)) == text
+
+
+def test_star_battle_render_shows_two_stars_per_row_and_column() -> None:
+    puzzle = _generate_star(0, 8, 2, puzzle_id="2026-04-05")
+    lines = render_puzzle(puzzle).splitlines()
+    assert "2026-04-05" in lines[0] and "seed=0" in lines[0]
+    board_lines = lines[1:]
+    assert len(board_lines) == puzzle.board.size
+    for line in board_lines:
+        assert line.count("Q") == 2
+    for col in range(puzzle.board.size):
+        assert sum(line.split()[col] == "Q" for line in board_lines) == 2

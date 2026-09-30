@@ -2,17 +2,23 @@
 
 A board is generated in three stages, all driven by one deterministic PRNG:
 
-1. A random queens solution is placed by backtracking over rows with random
-   column order.
-2. Regions grow outward from their queens, one cell at a time, from a random
-   frontier. Each region keeps its queen and stays 4-connected by construction,
-   and every cell is eventually claimed because the frontier is connected.
+1. A random solution is placed by backtracking over rows with random column
+   order — one star per row for Queens, `stars_per_row` for Star Battle.
+2. Regions grow outward from their stars, one cell at a time, from a random
+   frontier. Each region keeps its stars and stays 4-connected by
+   construction, and every cell is eventually claimed because the frontier is
+   connected.
 3. The exact solver is the uniqueness gate: boards with more than one solution
    are discarded and the PRNG moves on. Because every stage is a pure function
    of the seed, the same seed always produces the same board.
 
 If no unique board appears within the attempt budget, `GenerationError` is
 raised rather than silently shipping a puzzle with a second solution.
+
+`generator_version` records the algorithm that produced a puzzle: 1 is the
+Queens path, 2 is the Star Battle path (multi-star placement). The committed
+version-1 files must replay byte-for-byte, so the Queens functions are frozen;
+Star Battle consumption lives in separate functions that cannot perturb them.
 """
 
 from __future__ import annotations
@@ -20,7 +26,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Final
 
-from .board import Board, PuzzleType
+from .board import Board, BoardError, PuzzleType
 from .prng import Prng
 from .puzzle import Puzzle
 from .solver import has_unique_solution
@@ -29,10 +35,23 @@ DEFAULT_SIZE: Final[int] = 8
 MIN_GENERATABLE_SIZE: Final[int] = 5
 MAX_GENERATABLE_SIZE: Final[int] = 9
 MAX_SEED: Final[int] = 0xFFFFFFFF
+MIN_STARS_PER_ROW: Final[int] = 2
+
+#: (size, stars_per_row) pairs that admit any legal no-touching layout. Two
+#: stars separated by one gap need a row span of 2*stars - 1 columns, and the
+#: shadow a row casts on its neighbour (used columns plus their +/-1) shrinks
+#: the next row further — the smallest boards that work are 8x8 and 9x9 for
+#: two stars; three stars need at least 12x12, beyond the generator's range.
+#: This is the placement gate, not an opinion: a brute-force search over row
+#: combinations confirms every pair in sizes 5..9, x stars 2..4 satisfies this
+#: table and only these entries do.
+FEASIBLE_STAR_BATTLE: Final[frozenset[tuple[int, int]]] = frozenset({(8, 2), (9, 2)})
 
 # Attempts to allow before giving up, per size. Uniqueness is a rare accident
 # of region arrangement (see the M3 note in README), so bigger grids need
-# progressively more tries; 9 is deliberately slow but achievable.
+# progressively more tries; 9 is deliberately slow but achievable. The same
+# budget table drives both puzzle types: Star Battle boards are rarer to find
+# but cheaper to verify, and the totals hold either way.
 DEFAULT_ATTEMPTS: Final[dict[int, int]] = {
     5: 200,
     6: 1_000,
@@ -48,17 +67,25 @@ class GenerationError(ValueError):
 
 @dataclass(frozen=True, slots=True)
 class GenerationConfig:
-    """Knobs for generation. `size` relates to capacity; see board.py."""
+    """Knobs for generation. `size` relates to capacity; see board.py.
+
+    Queens implies one star per row/column/region. Star Battle requires
+    `stars_per_row` in 2..size; every region then holds exactly that many
+    stars, and there are still `size` regions.
+    """
 
     size: int = DEFAULT_SIZE
+    puzzle_type: PuzzleType = PuzzleType.QUEENS
+    stars_per_row: int | None = None
     max_attempts: int | None = None
 
 
 def generate_puzzle(*, seed: int, puzzle_id: str, config: GenerationConfig | None = None) -> Puzzle:
-    """Generate a unique-solution Queen's puzzle from `seed`.
+    """Generate a unique-solution puzzle from `seed`.
 
     `seed` must fit the schema's 0..2^32-1 range so it can be stored in a
-    puzzle file and replayed later.
+    puzzle file and replayed later. See `GenerationConfig` for the puzzle-type
+    knobs.
     """
     if not 0 <= seed <= MAX_SEED:
         raise GenerationError(f"seed {seed} outside [0, 2**32-1]")
@@ -67,43 +94,93 @@ def generate_puzzle(*, seed: int, puzzle_id: str, config: GenerationConfig | Non
         raise GenerationError(
             f"size {cfg.size} outside [{MIN_GENERATABLE_SIZE}, {MAX_GENERATABLE_SIZE}]"
         )
+    stars_per_row = _resolve_stars_per_row(cfg)
+    if (
+        cfg.puzzle_type is PuzzleType.STAR_BATTLE
+        and (cfg.size, stars_per_row) not in FEASIBLE_STAR_BATTLE
+    ):
+        raise GenerationError(
+            f"no legal {cfg.size}x{cfg.size} star-battle board with "
+            f"{stars_per_row} stars per row exists (feasible sizes within the "
+            "generator's range: 8x8 and 9x9 for two stars)"
+        )
     max_attempts = cfg.max_attempts or DEFAULT_ATTEMPTS[cfg.size]
 
     rng = Prng(seed)
     for _ in range(max_attempts):
-        solution = _place_queens(cfg.size, rng)
-        if solution is None:
-            continue
-        regions = _grow_regions(cfg.size, solution, rng)
-        board = Board(
-            size=cfg.size,
-            regions=regions,
-            region_capacity=(1,) * cfg.size,
-            puzzle_type=PuzzleType.QUEENS,
-        )
+        if cfg.puzzle_type is PuzzleType.QUEENS:
+            solution = _place_queens(cfg.size, rng)
+            if solution is None:
+                continue
+            regions = _grow_regions(cfg.size, solution, rng)
+            board = Board(
+                size=cfg.size,
+                regions=regions,
+                region_capacity=(1,) * cfg.size,
+                puzzle_type=PuzzleType.QUEENS,
+            )
+            generator_version = 1
+        else:
+            rows = _place_stars(cfg.size, stars_per_row, rng)
+            if rows is None:
+                continue
+            regions = _grow_regions_star(cfg.size, _star_seeds(cfg.size, rows), rng)
+            try:
+                board = Board(
+                    size=cfg.size,
+                    regions=regions,
+                    region_capacity=(stars_per_row,) * cfg.size,
+                    puzzle_type=PuzzleType.STAR_BATTLE,
+                )
+            except BoardError:
+                continue
+            generator_version = 2
         if has_unique_solution(board):
             return Puzzle(
                 id=puzzle_id,
-                puzzle_type=PuzzleType.QUEENS,
+                puzzle_type=board.puzzle_type,
                 size=cfg.size,
                 seed=seed,
-                generator_version=1,
+                generator_version=generator_version,
                 board=board,
             )
 
     raise GenerationError(f"no unique board found for seed {seed} in {max_attempts} attempts")
 
 
+def _resolve_stars_per_row(cfg: GenerationConfig) -> int:
+    if cfg.puzzle_type is PuzzleType.QUEENS:
+        if cfg.stars_per_row not in (None, 1):
+            raise GenerationError(f"queens implies one star per row, not {cfg.stars_per_row}")
+        return 1
+    if cfg.stars_per_row is None:
+        raise GenerationError("star-battle requires stars_per_row")
+    if not MIN_STARS_PER_ROW <= cfg.stars_per_row <= cfg.size:
+        raise GenerationError(
+            f"stars_per_row {cfg.stars_per_row} outside [{MIN_STARS_PER_ROW}, {cfg.size}]"
+        )
+    return cfg.stars_per_row
+
+
 def verify_replay(puzzle: Puzzle) -> Puzzle:
     """Regenerate `puzzle` from its seed and confirm the board is identical.
 
     This is the CI check in the daily pipeline: a puzzle file is trustworthy
-    only if the committed regions are exactly what the seed produces.
+    only if the committed regions are exactly what the seed produces. The
+    config is rebuilt from the file's own type and capacity, so a Star Battle
+    file replays through the Star Battle path.
     """
+    stars_per_row = (
+        puzzle.board.region_capacity[0] if puzzle.puzzle_type is PuzzleType.STAR_BATTLE else None
+    )
     regenerated = generate_puzzle(
         seed=puzzle.seed,
         puzzle_id=puzzle.id,
-        config=GenerationConfig(size=puzzle.size),
+        config=GenerationConfig(
+            size=puzzle.size,
+            puzzle_type=puzzle.puzzle_type,
+            stars_per_row=stars_per_row,
+        ),
     )
     if regenerated.board != puzzle.board:
         raise GenerationError(
@@ -148,13 +225,103 @@ def _place_queens(size: int, rng: Prng) -> list[int] | None:
     return result
 
 
+def _place_stars(size: int, stars: int, rng: Prng) -> list[frozenset[int]] | None:
+    """One random Star Battle solution: `result[row]` is that row's star columns.
+
+    `stars` stars per row and per column, no two of them touching (orthogonal
+    or diagonal). Regions are not considered here — the stars are bucketed
+    into regions afterwards, exactly as Queens treats each row as a region.
+    """
+    rows: list[frozenset[int]] = [frozenset() for _ in range(size)]
+    col_usage = [0] * size
+
+    def free_columns(prev: set[int] | frozenset[int]) -> list[int]:
+        forbidden = set(prev)
+        for col in prev:
+            forbidden.add(col - 1)
+            forbidden.add(col + 1)
+        return [c for c in rng.shuffled(range(size)) if c not in forbidden and col_usage[c] < stars]
+
+    def pick_in_row(row: int, free: list[int], needed: int, chosen: set[int]) -> bool:
+        if needed == 0:
+            rows[row] = frozenset(chosen)
+            return True if row == size - 1 else pick_row(row + 1, rows[row])
+        for i, col in enumerate(free):
+            remaining = [c for j, c in enumerate(free) if j > i and c not in (col - 1, col + 1)]
+            chosen.add(col)
+            col_usage[col] += 1
+            if pick_in_row(row, remaining, needed - 1, chosen):
+                return True
+            chosen.discard(col)
+            col_usage[col] -= 1
+        return False
+
+    def pick_row(row: int, prev: set[int] | frozenset[int]) -> bool:
+        return pick_in_row(row, free_columns(prev), stars, set())
+
+    if not pick_row(0, set()):
+        return None
+    return rows
+
+
+def _star_seeds(size: int, rows: list[frozenset[int]]) -> list[tuple[int, int]]:
+    """Bucket the solution stars into `size` regions of `stars` each.
+
+    Cells are visited in row-major order and cut into contiguous groups, so
+    region `r` gets the `r`-th group. The cut is arbitrary (the regions then
+    grow outward exactly like Queens regions do) but it is the seed ordering
+    that pins the Star Battle stream, so it stays part of the contract.
+    """
+    cells = [row * size + col for row, cols in enumerate(rows) for col in sorted(cols)]
+    stars = len(rows[0])
+    return [
+        (cell, region)
+        for region, base in enumerate(range(0, len(cells), stars))
+        for cell in cells[base : base + stars]
+    ]
+
+
+def _grow_regions_star(size: int, seeds: list[tuple[int, int]], rng: Prng) -> tuple[int, ...]:
+    """Flood-fill the grid, growing every region from its seed cells.
+
+    The address-shaped analogue of `_grow_regions`: each region seeds from the
+    `stars` cells assigned to it, and the flood fill works cell by cell from a
+    random frontier. A disconnected layout (two seed islands of one region cut
+    off by other regions) is rejected by the caller via `Board` validation.
+    """
+    regions = [-1] * (size * size)
+    frontier: list[tuple[int, int]] = []
+    for cell, region in seeds:
+        regions[cell] = region
+        row, col = divmod(cell, size)
+        for next_row, next_col in _neighbours(row, col, size):
+            if regions[next_row * size + next_col] < 0:
+                frontier.append((next_row * size + next_col, region))
+
+    while frontier:
+        i = rng.below(len(frontier))
+        cell, region = frontier[i]
+        frontier[i], frontier[-1] = frontier[-1], frontier[i]
+        frontier.pop()
+        if regions[cell] >= 0:
+            continue
+        regions[cell] = region
+        row, col = divmod(cell, size)
+        for next_row, next_col in _neighbours(row, col, size):
+            if regions[next_row * size + next_col] < 0:
+                frontier.append((next_row * size + next_col, region))
+
+    return tuple(regions)
+
+
 def _grow_regions(size: int, solution: list[int], rng: Prng) -> tuple[int, ...]:
     """Flood-fill the grid, growing every region from its queen's cell.
 
     Cells are claimed one at a time from a random frontier; a claimed cell adds
     its unclaimed neighbours to the frontier, so growth cannot strand a cell.
     Regions are 4-connected and each holds exactly its queen because the queen
-    cells are the region seeds.
+    cells are the region seeds. Frozen for replay: the committed version-1
+    puzzles were grown by this exact stream of draws.
     """
     regions = [-1] * (size * size)
     frontier: list[tuple[int, int]] = []
