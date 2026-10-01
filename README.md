@@ -325,6 +325,28 @@ even fetched, and every file the app reads is passed through the same JSON schem
 A week of sample puzzles (`2026-09-27`..`2026-10-03`) is committed so the archive had
 content before the pipeline existed; `tools/publish.py` now keeps it filled from a cron.
 
+### Fitting the window
+
+The board is `width: min(76vw, 480px, 54svh)`, and the third term is the one that earns
+its place. At 480px the board is most of the page, so on a laptop it pushed the footer
+below the fold: there was nothing to scroll *to*, which is the worst kind of scroll. The
+board now yields to the viewport instead, and `svh` rather than `vh` because it is
+measured against the smallest viewport, which is the one that has to fit.
+
+One subtlety cost a real bug. Both `#root` and `.shell` claim `min-height: 100svh`, and
+`#root` also had a bottom padding — so the page was a viewport-height box *plus* 24px of
+padding, and the shell fitted perfectly while the footer still ended up off-screen by
+exactly that padding. The spacing now lives on the footer, which is where it belongs.
+
+The result, measured in WebKit (Safari's engine) at 1280×760, a MacBook Air's viewport
+once the browser chrome is taken off: **0px of overflow, footer fully visible**, with the
+board at 410px and 51px cells. At 1440×900 the 480px cap is the binding term and nothing
+changes.
+
+Solving still adds about 88px — the banner and the share buttons — so the solved state
+overflows by that much on a short window. That is left deliberately: there *is* something
+to scroll to, which is the distinction that matters.
+
 ### The board and the hint engine
 
 M6 turns the static region poster from M5 into the playable board. `game.ts` holds the
@@ -689,14 +711,18 @@ dark end. Worst case across all sixteen regions, one or the other clears 4.6:1, 
 really is applied, since without that check the two tokens could pass every test while
 the stylesheet stopped using one of them.
 
-The cross-out mark still takes its colour per region, and it is the weaker of the two:
-`#b3261e` on the lighter reds and `#f87171` on the darker ones clears 3:1 on only eight
-of the sixteen regions, as low as 1.58:1 on `#b56576`. Choosing by a luminance threshold
-cannot do better across a palette this wide, because the mid-tones are too dark for the
-dark red and too light for the light one. `colours.test.ts` keeps that visible as a test
-marked `it.fails` rather than quietly dropping the assertion; fixing it means a much
-darker and a much lighter red picked by measured contrast, which changes how every
-crossed cell looks.
+The cross-out mark does still take its colour per region, because unlike the piece it has
+no outline to fall back on. Choosing by a luminance threshold is what used to pick it,
+and that failed on half the palette: a mid-red cannot clear 3:1 against a mid-tone region
+however it is chosen, and against `#b56576` a red has to be at or below luminance 0.033 or
+at or above 0.7, with every comfortable red in between. So `#b3261e`/`#f87171` left 8 of
+the 16 regions short, as low as 1.58:1.
+
+The two inks are now a near-black red and a pale one, and the choice is made by
+*measuring* — whichever contrasts higher against this background — so the guarantee is
+simply that the better of the two clears 3:1, which `colours.test.ts` asserts for every
+region in the palette. Worst case 4.08:1. The cross is therefore darker than it was on
+most cells; that is the cost of the guarantee, and the × glyph still carries the meaning.
 
 ---
 

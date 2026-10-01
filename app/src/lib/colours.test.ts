@@ -11,11 +11,12 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { contrastRatio } from './contrast'
+
 import { Board } from '../domain/board'
 import { parsePuzzle } from '../domain/puzzle'
 import {
   colourDistance,
+  contrastRatio,
   markInk,
   MIN_NEIGHBOUR_DISTANCE,
   REGION_COLOURS,
@@ -253,32 +254,48 @@ describe('regionColours', () => {
 })
 
 describe('markInk', () => {
-  it('uses dark red on light backgrounds and a lighter red on dark ones', () => {
-    expect(markInk('#e9c46a')).toBe('#b3261e')
-    expect(markInk('#023047')).toBe('#f87171')
+  it('uses the dark ink on a pale region and the light one on a near-black one', () => {
+    expect(markInk('#e9c46a')).toBe('#3d0a0a')
+    expect(markInk('#023047')).toBe('#ffd6d6')
   })
 
   it('picks one of the two mark inks for every palette colour', () => {
     for (const colour of REGION_COLOURS) {
-      expect(['#b3261e', '#f87171']).toContain(markInk(colour))
+      expect(['#3d0a0a', '#ffd6d6']).toContain(markInk(colour))
     }
   })
 
-  // A known defect, left failing on purpose rather than quietly dropped. The
-  // cross-out is unreadable on 8 of the 16 region colours -- as low as 1.58:1 on
-  // #b56576 -- because choosing by a luminance threshold cannot work across a
-  // palette this wide: the mid-tones are too dark for the dark red to clear
-  // 3:1 and too light for the light one to. Fixing it means picking the
-  // higher-contrast of a much darker and a much lighter red, which changes how
-  // every crossed cell looks, so it wants its own decision and its own change.
-  //
-  // Delete the `.fails` when that lands and this asserts the fix.
-  it.fails('gives every palette colour a mark ink that reads on it', () => {
+  it('gives every palette colour a mark ink that reads on it', () => {
+    // This one was marked `it.fails` for a while: choosing the ink by a
+    // luminance threshold put a mid-red on mid-tone regions, where nothing
+    // comfortable clears 3:1, and 8 of the 16 failed — as low as 1.58:1. The ink
+    // is chosen by measuring now, so this asserts the fix rather than recording
+    // the bug.
     for (const colour of REGION_COLOURS) {
       expect(
         contrastRatio(markInk(colour), colour),
         `${markInk(colour)} on ${colour}`,
       ).toBeGreaterThanOrEqual(NON_TEXT_MINIMUM)
+    }
+  })
+
+  it('picks the ink by measuring, not by a luminance threshold', () => {
+    // Both inks are legal on every colour; which one wins is a measurement, and
+    // a threshold would get the middle of the palette wrong.
+    const dark = paletteNeeding('#ffd6d6')
+    expect(dark.length).toBeGreaterThan(0)
+    for (const colour of REGION_COLOURS) {
+      const ink = markInk(colour)
+      const other = ink === '#3d0a0a' ? '#ffd6d6' : '#3d0a0a'
+      expect(contrastRatio(ink, colour)).toBeGreaterThanOrEqual(contrastRatio(other, colour))
+    }
+  })
+
+  it('picks the light ink only where the dark one would fail', () => {
+    // Ties the choice to the palette rather than leaving it to inspection.
+    for (const colour of REGION_COLOURS) {
+      const needsLight = contrastRatio('#3d0a0a', colour) < NON_TEXT_MINIMUM
+      expect(markInk(colour) === '#ffd6d6', `${colour}`).toBe(needsLight)
     }
   })
 })
@@ -293,7 +310,14 @@ function pieceToken(name: string): string {
 
 const PIECE_FILL = () => pieceToken('--piece')
 const PIECE_OUTLINE = () => pieceToken('--piece-outline')
+
+/** WCAG's minimum for a meaningful graphic: 3:1. */
 const NON_TEXT_MINIMUM = 3
+
+/** How many palette colours end up with `ink`. */
+function paletteNeeding(ink: string): string[] {
+  return REGION_COLOURS.filter((colour) => markInk(colour) === ink)
+}
 
 describe('the piece colour', () => {
   // The piece is one fixed white with a dark outline, because a piece that
