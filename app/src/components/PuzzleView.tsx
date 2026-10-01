@@ -18,6 +18,7 @@ import { firstHint, type Hint } from '../domain/hints'
 import type { Puzzle } from '../domain/puzzle'
 import { PuzzleNotFoundError, loadPuzzle } from '../lib/puzzles'
 import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } from '../lib/stats'
+import { readStoredAutoMark, storeAutoMark } from '../lib/autoMark'
 import { buildShareText, buildSolutionShareText, copyText, puzzleShareLink } from '../lib/share'
 import { InteractiveBoard } from './InteractiveBoard'
 
@@ -47,7 +48,7 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
   const [history, setHistory] = useState<GameState[]>([])
   const [hint, setHint] = useState<Hint | null>(null)
   const [announcement, setAnnouncement] = useState('')
-  const [autoMark, setAutoMark] = useState(false)
+  const [autoMark, setAutoMark] = useState(readStoredAutoMark)
   const [solvedAt, setSolvedAt] = useState<number | null>(null)
   const [startedAt] = useState(() => Date.now())
   const [elapsed, setElapsed] = useState(0)
@@ -161,6 +162,16 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
     applyGame(next, before)
   }
 
+  /**
+   * Stored on the way out rather than inside the state updater: updaters must be
+   * pure, and React is free to run one twice in development.
+   */
+  const toggleAutoMark = () => {
+    const next = !autoMark
+    setAutoMark(next)
+    storeAutoMark(next)
+  }
+
   const undo = () => {
     const previous = history[history.length - 1]
     if (previous === undefined) return
@@ -271,7 +282,7 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
           type="button"
           className="tool-button auto-mark"
           aria-pressed={autoMark}
-          onClick={() => setAutoMark((current) => !current)}
+          onClick={toggleAutoMark}
         >
           Auto-mark {autoMark ? 'on' : 'off'}
         </button>

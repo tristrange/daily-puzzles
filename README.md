@@ -208,6 +208,7 @@ a cell is forced rather than just revealing it.
 | 11 | Both puzzles every day: a Star Battle companion per date, and the format work to carry it | done |
 | 12 | A landing page that offers both of today's puzzles instead of assuming one | done |
 | 13 | A How to play page, and the region star counts it needs to be able to point at | done |
+| 14 | Remember the auto-mark choice between visits | done |
 
 Milestones 2 to 4 were the critical path, and they are all Python. The engine alone — a
 CLI with an exact uniqueness prover and property tests — would be worth publishing even if
@@ -355,6 +356,14 @@ from a familiar Queens loses to that second rule unless it is written down.
 Every claim on the page was verified against a running board rather than assumed: the click
 cycle, dragging, right-click, all eight keyboard bindings, auto-mark being off by default, a
 drag counting as one undo step, and hints being absent from Star Battle.
+
+Auto-mark is off by default, and stays off until someone asks for it: auto-mark draws
+conclusions, and a cross the player did not draw is an answer they were given rather than one
+they reached. Once asked for, the choice is remembered — it is a preference about how someone
+plays, not a decision about one board, and re-asking every day would be a small daily tax for
+no reason. It is stored like the theme choice, in one namespaced key that parses to `false`
+for anything unrecognised, so a value from a future version cannot quietly start drawing
+conclusions nobody consented to.
 - `/archive/:id` — a specific puzzle by id.
 
 `puzzleOfToday(date, tz)` is the seam between the engine's date-keyed files and the
