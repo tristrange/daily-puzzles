@@ -22,6 +22,9 @@ export function Shell() {
           <NavLink to="/stats" className={navClass}>
             Stats
           </NavLink>
+          <NavLink to="/how-to-play" className={navClass}>
+            How to play
+          </NavLink>
         </nav>
         <ThemePicker />
       </header>
