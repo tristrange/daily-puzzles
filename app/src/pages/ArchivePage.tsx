@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatPuzzleLabel, puzzleOfToday } from '../domain/dates'
+import { PUZZLE_TYPE_LABEL } from '../domain/games'
 import { listPublishedPuzzles, type PublishedPuzzle } from '../lib/puzzles'
 
-const FAMILY_LABEL = { queens: 'Queens', 'star-battle': 'Star Battle' } as const
 
 type LoadState =
   | { status: 'loading' }
@@ -49,7 +49,7 @@ export function ArchivePage() {
                 </Link>{' '}
                 {/* Two puzzles share each day, so the date alone cannot say which
                     link goes where. */}
-                <span className="stat-detail">{FAMILY_LABEL[puzzle.type]}</span>
+                <span className="stat-detail">{PUZZLE_TYPE_LABEL[puzzle.type]}</span>
               </li>
             ))}
           </ul>

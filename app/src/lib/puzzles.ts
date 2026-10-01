@@ -47,6 +47,29 @@ async function fetchPuzzle(id: string, fetcher: Fetcher): Promise<Puzzle | null>
   }
 }
 
+/** One id asked for, and the puzzle behind it if the day has one published. */
+export type ProbedPuzzle = {
+  readonly id: string
+  readonly puzzle: Puzzle | null
+}
+
+/**
+ * Ask for several puzzles at once, reporting a miss as an absent entry rather
+ * than a rejection.
+ *
+ * The chooser needs this because "today" is not guaranteed to be complete: a
+ * companion can be missing on a day the Queens board is already out, and a
+ * rejection there would take the whole page down over one absent file.
+ */
+export async function probePuzzles(
+  ids: readonly string[],
+  fetcher: Fetcher = fetch,
+): Promise<readonly ProbedPuzzle[]> {
+  return Promise.all(
+    ids.map(async (id) => ({ id, puzzle: await fetchPuzzle(id, fetcher) })),
+  )
+}
+
 /** Fetch and fully validate one puzzle file; throws `PuzzleNotFoundError`. */
 export async function loadPuzzle(id: string, fetcher: Fetcher = fetch): Promise<Puzzle> {
   if (!isPuzzleId(id)) throw new PuzzleNotFoundError(id)

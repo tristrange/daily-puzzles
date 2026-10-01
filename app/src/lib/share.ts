@@ -12,6 +12,7 @@
  */
 
 import type { Board } from '../domain/board'
+import { PUZZLE_TYPE_LABEL } from '../domain/games'
 import { formatTime } from '../domain/game'
 
 /**
@@ -45,7 +46,6 @@ export type ShareResult = {
   readonly link: string
 }
 
-const TYPE_LABEL = { queens: 'Queens', 'star-battle': 'Star Battle' } as const
 
 /** `size` rows of `size` cells, filled where a piece stands. Only for the spoiler variant. */
 export function boardGrid(board: Board, pieces: ReadonlySet<number>): string {
@@ -101,7 +101,7 @@ export function buildSolutionShareText(
 function headerLines(result: ShareResult): [string, string] {
   const hints = result.hints === 0 ? 'no hints' : `${result.hints} hint${result.hints === 1 ? '' : 's'}`
   return [
-    `Daily Puzzles — ${TYPE_LABEL[result.puzzleType]} ${result.size}×${result.size}`,
+    `Daily Puzzles — ${PUZZLE_TYPE_LABEL[result.puzzleType]} ${result.size}×${result.size}`,
     `${formatTime(result.elapsedMs)} · ${hints}`,
   ]
 }

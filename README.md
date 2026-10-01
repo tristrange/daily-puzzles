@@ -206,6 +206,7 @@ a cell is forced rather than just revealing it.
 | 9 | Stretch: share text, local stats, dark mode | done |
 | 10 | Stretch: Star Battle as a second puzzle type | done |
 | 11 | Both puzzles every day: a Star Battle companion per date, and the format work to carry it | done |
+| 12 | A landing page that offers both of today's puzzles instead of assuming one | done |
 
 Milestones 2 to 4 were the critical path, and they are all Python. The engine alone — a
 CLI with an exact uniqueness prover and property tests — would be worth publishing even if
@@ -310,6 +311,23 @@ route:
 - `/` — today's puzzle, where "today" is the *player's* calendar day.
 - `/archive` — the list of published puzzles, discovered by probing the recent-window
   files (`public/puzzles/<date>.json`) rather than an index manifest that could rot.
+
+## The landing page
+
+With two puzzles a day, the site's first question is which one to play, and the old
+answer — render today's Queens board at `/` — made that decision for the player. `/` is
+now a chooser: one card per game, each linking straight to its board under `/archive/:id`,
+so choosing costs one click and the daily `/star-battle` shortcut disappears from the nav
+because the chooser is now what the nav's "Today" means.
+
+Nothing about the chooser assumes today is complete. The publisher writes a companion
+after the Queens board, so a day mid-publish has one file and not the other; `probePuzzles`
+reports a miss per id instead of rejecting, and the absent card says *Not published yet*
+with no link, rather than the whole page failing over one absent file. A solve already
+recorded for today turns that card's action into *Play again*.
+
+The two family names lived in three copies — share text, archive and stats — which is
+three places to forget a rename, so they now come from one table in `domain/games.ts`.
 - `/archive/:id` — a specific puzzle by id.
 
 `puzzleOfToday(date, tz)` is the seam between the engine's date-keyed files and the
@@ -607,8 +625,8 @@ until the rules are ported.
 The gap this left was editorial, not technical, and it is now closed by a
 decision rather than by a rule: **every day carries both puzzles**, so there is
 no schedule to keep and no day that silently falls back to Queens. Each is its own
-game with its own solve — Today is the Queens board, Star Battle is the companion —
-and the archive lists both under their shared date.
+game with its own solve — Queens and Star Battle, one id each — and the archive lists
+both under their shared date.
 
 That decision forced the one genuinely awkward change in the format. Two puzzles a day
 cannot both be identified by a date, so the companion's id carries a `-star` suffix, in

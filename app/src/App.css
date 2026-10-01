@@ -352,6 +352,39 @@
 /* Stats tiles. Left on the page background with a hairline frame so the numbers
    lead: a tinted tile per stat turns the page into six blocks of accent, and the
    accent is meant to mark the things you can act on. */
+/* The landing page's two cards. A grid rather than a stack so both puzzles are
+   visible at once on a wide screen: the choice is the point of the page. */
+.game-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 260px));
+  gap: 12px;
+  margin: 16px 0 20px;
+  padding: 0;
+  list-style: none;
+}
+
+.game-card {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.game-card-title {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text-h);
+}
+
+.game-card-detail {
+  margin: 0;
+  color: var(--text);
+  font-size: 15px;
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));

@@ -4,6 +4,7 @@ import {
   PuzzleNotFoundError,
   listPublishedPuzzles,
   loadPuzzle,
+  probePuzzles,
   puzzleUrl,
 } from './puzzles'
 
@@ -205,5 +206,33 @@ describe('listPublishedPuzzles', () => {
 
   it('returns nothing when no day has a puzzle', async () => {
     expect(await listPublishedPuzzles('2026-10-03', fetcherFor([]))).toEqual([])
+  })
+})
+
+describe('probePuzzles', () => {
+  it('returns the puzzle behind each id it can reach', async () => {
+    const probes = await probePuzzles(['2026-10-01', '2026-10-01-star'], fetcherFor(['2026-10-01', '2026-10-01-star']))
+    expect(probes.map((probe) => probe.puzzle?.puzzleType)).toEqual(['queens', 'star-battle'])
+  })
+
+  it('reports an absent id as null instead of rejecting', async () => {
+    // A day mid-publish has its Queens board out and no companion yet.
+    const probes = await probePuzzles(['2026-10-01', '2026-10-01-star'], fetcherFor(['2026-10-01']))
+    expect(probes).toHaveLength(2)
+    expect(probes[0]?.puzzle?.puzzleType).toBe('queens')
+    expect(probes[1]).toEqual({ id: '2026-10-01-star', puzzle: null })
+  })
+
+  it('keeps every id in the order asked, so the chooser shows both families', async () => {
+    const probes = await probePuzzles(['2026-10-01-star', '2026-10-01'], fetcherFor([]))
+    expect(probes.map((probe) => probe.id)).toEqual(['2026-10-01-star', '2026-10-01'])
+    expect(probes.every((probe) => probe.puzzle === null)).toBe(true)
+  })
+
+  it('treats a puzzle file that no longer validates as absent', async () => {
+    const broken = async (url: string) =>
+      url.includes('2026-10-01.json') ? jsonResponse({ id: '2026-10-01', type: 'nope' }) : spaShellResponse()
+    const probes = await probePuzzles(['2026-10-01', '2026-10-01-star'], broken)
+    expect(probes.map((probe) => probe.puzzle)).toEqual([null, null])
   })
 })
