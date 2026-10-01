@@ -655,9 +655,27 @@ why a solved board still gets eight colours for eight regions rather than the
 three that a pure contrast objective settles for. Reuse survives on denser
 boards, where it is free: a player identifies a region by the cells around it.
 
+**When the climb cannot clear the floor, an exact search does.** Climbing is a local
+search: it recolours one region at a time and keeps only changes that improve the score,
+so it cannot step past a configuration where every single-region change makes something
+else worse. The first day that proved it was `2026-10-04`, published by the nightly
+pipeline — the climb settled on a touching pair 0.19988 apart against a floor of 0.2,
+which failed the suite and blocked every deploy. A backtracking search, assigning
+most-constrained region first and preferring an unused colour, found a valid assignment
+in nineteen steps, so the floor was never the problem: the search was.
+
+It only runs when the climb has already failed, and that is deliberate. Handing it a
+board the climb handles would repaint days people have already played, for no gain — the
+colours exist only to tell touching regions apart, and where that already holds there is
+nothing to improve. A step budget bounds it regardless, so a board pathological enough to
+exhaust the search costs time rather than hanging the page; `colours.test.ts` measures
+the densest board the app can build (8×8 in 2×2 blocks, 16 regions) at about 11ms.
+
 `colours.test.ts` asserts the floor against **every committed puzzle** rather
 than a fixture, so a palette edit that quietly reintroduces two look-alike
-swatches side by side fails there instead of in front of a player.
+swatches side by side fails there instead of in front of a player. That is also
+what caught the `2026-10-04` board, and both that day's assignment and an older
+one are pinned, so neither can drift.
 
 The *piece* is not coloured per region, though the palette would justify it: the same
 span that stops `#1a1a1a` working on `#023047` means a piece that adapts to its cell

@@ -239,6 +239,72 @@ function climb(pairs: readonly [number, number][], seed: readonly string[]): str
 }
 
 /**
+ * A ceiling on search steps, so that a board pathological enough to exhaust it
+ * costs a bounded amount of time rather than hanging the page. The search is
+ * only reached for boards the climb has already failed on, and those are rare
+ * and shallow; this is here so "rare" is not load-bearing.
+ */
+const SEARCH_BUDGET = 20_000
+
+/**
+ * An exact search for an assignment that clears the floor on every touching
+ * pair, or `null` if it exhausts its budget or no such assignment exists.
+ *
+ * This exists because `climb` is a local search: it recolours one region at a
+ * time and keeps only changes that improve the score, so it cannot step past a
+ * configuration where every single-region change makes something else worse. The
+ * first board that proved it — 2026-10-04, published by the nightly pipeline —
+ * settled on a touching pair 0.19988 apart when a valid assignment was a
+ * handful of steps away. That is a promise this module makes and did not keep.
+ *
+ * Regions are placed most-constrained-first, and each takes a colour it is not
+ * already using where it can, so the answer also tends to use more distinct
+ * swatches — the second thing `score` rewards.
+ */
+function searchAssignment(
+  pairs: readonly [number, number][],
+  regionCount: number,
+): string[] | null {
+  const neighbours: number[][] = Array.from({ length: regionCount }, () => [])
+  for (const [low, high] of pairs) {
+    neighbours[low]?.push(high)
+    neighbours[high]?.push(low)
+  }
+  // Ties broken by id so the order, and so the answer, is deterministic.
+  const order = Array.from({ length: regionCount }, (_, id) => id).sort(
+    (a, b) => (neighbours[b]?.length ?? 0) - (neighbours[a]?.length ?? 0) || a - b,
+  )
+  const assigned: (string | null)[] = Array.from({ length: regionCount }, () => null)
+  const used = new Set<string>()
+  let budget = SEARCH_BUDGET
+
+  const place = (depth: number): boolean => {
+    if (depth === order.length) return true
+    const region = order[depth] as number
+    const taken = (neighbours[region] ?? [])
+      .map((neighbour) => assigned[neighbour])
+      .filter((hex): hex is string => hex !== null)
+    const palette = [
+      ...REGION_COLOURS.filter((hex) => !used.has(hex)),
+      ...REGION_COLOURS.filter((hex) => used.has(hex)),
+    ]
+    for (const colour of palette) {
+      if (budget <= 0) return false
+      budget -= 1
+      if (taken.some((other) => colourDistance(colour, other) < MIN_NEIGHBOUR_DISTANCE)) continue
+      assigned[region] = colour
+      used.add(colour)
+      if (place(depth + 1)) return true
+      used.delete(colour)
+      assigned[region] = null
+    }
+    return false
+  }
+
+  return place(0) ? (assigned as string[]) : null
+}
+
+/**
  * The colour for every region id on `board`, in region order. Pure and
  * deterministic: the same board always paints the same regions the same way.
  */
@@ -260,6 +326,17 @@ export function regionColours(board: Board): readonly string[] {
     if (best.length === 0 || beats(candidateScore, bestScore)) {
       best = candidate
       bestScore = candidateScore
+    }
+  }
+  // Only when the climb could not clear the floor. Handing the search a board
+  // the climb already handles would repaint days that have been played, for no
+  // gain: the colours exist only to tell touching regions apart, and on a board
+  // that already does, there is nothing to improve.
+  if (bestScore[0] === 0) {
+    const exact = searchAssignment(pairs, board.regionCount)
+    if (exact !== null) {
+      const exactScore = score(pairs, exact)
+      if (beats(exactScore, bestScore)) best = exact
     }
   }
   return best
