@@ -1,11 +1,14 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   STATS_STORAGE_KEY,
   addSolve,
+  clearStats,
   bestStreak,
   currentStreak,
   mostRecentSolves,
   parseStats,
+  readStoredStats,
+  storeSolve,
   summarise,
   type SolveRecord,
 } from './stats'
@@ -236,5 +239,103 @@ describe('summarise', () => {
     )
     expect(stats.averageMs).toBe(100_001)
     expect(Number.isInteger(stats.averageMs)).toBe(true)
+  })
+})
+
+/**
+ * A `localStorage` stand-in, because these are the only functions that touch a
+ * player's actual data and they had no coverage at all: the rest of this file
+ * tests the arithmetic, which is pure. A Map is enough — the interface used is
+ * getItem, setItem and removeItem.
+ */
+function stubStorage(initial: Record<string, string> = {}): Map<string, string> {
+  const map = new Map(Object.entries(initial))
+  vi.stubGlobal('localStorage', {
+    getItem: (key: string) => map.get(key) ?? null,
+    setItem: (key: string, value: string) => void map.set(key, value),
+    removeItem: (key: string) => void map.delete(key),
+  })
+  return map
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
+describe('the stored history', () => {
+  const solve = { id: '2026-09-30', puzzleType: 'queens' as const, size: 8, elapsedMs: 60_000, hints: 0, solvedAt: 1 }
+
+  it('records a solve and reads it back', () => {
+    const map = stubStorage()
+    storeSolve(solve)
+    expect(readStoredStats()).toEqual([solve])
+    expect(map.get(STATS_STORAGE_KEY)).toBe('[{"id":"2026-09-30","puzzleType":"queens","size":8,"elapsedMs":60000,"hints":0,"solvedAt":1}]')
+  })
+
+  it('returns nothing when storage is empty', () => {
+    stubStorage()
+    expect(readStoredStats()).toEqual([])
+  })
+
+  it('survives a value it cannot read, keeping what is still valid', () => {
+    stubStorage({ [STATS_STORAGE_KEY]: '{"not":"an array"}' })
+    expect(readStoredStats()).toEqual([])
+  })
+
+  it('survives storage that throws on access, as private browsing does', () => {
+    // Reading throws, not just writing, and this has to be worth having.
+    vi.stubGlobal('localStorage', {
+      getItem: () => { throw new Error('blocked') },
+      setItem: () => { throw new Error('blocked') },
+      removeItem: () => { throw new Error('blocked') },
+    })
+    expect(readStoredStats()).toEqual([])
+    expect(() => storeSolve(solve)).not.toThrow()
+    expect(clearStats()).toEqual([])
+  })
+
+  it('does not overwrite the first solve of a day when replayed', () => {
+    stubStorage()
+    storeSolve({ ...solve, elapsedMs: 600_000 })
+    storeSolve({ ...solve, elapsedMs: 30_000 })
+    const records = readStoredStats()
+    expect(records).toHaveLength(1)
+    expect(records[0]?.elapsedMs).toBe(600_000)
+  })
+
+  it('keeps the history sorted by day however it arrives', () => {
+    stubStorage()
+    storeSolve({ ...solve, id: '2026-09-28' })
+    storeSolve({ ...solve, id: '2026-09-30' })
+    storeSolve({ ...solve, id: '2026-09-29' })
+    expect(readStoredStats().map((held) => held.id)).toEqual(['2026-09-28', '2026-09-29', '2026-09-30'])
+  })
+})
+
+describe('clearStats', () => {
+  it('removes the key rather than leaving an empty one behind', () => {
+    const map = stubStorage()
+    storeSolve({ id: '2026-09-30', puzzleType: 'queens', size: 8, elapsedMs: 1_000, hints: 0, solvedAt: 1 })
+    expect(map.has(STATS_STORAGE_KEY)).toBe(true)
+
+    expect(clearStats()).toEqual([])
+    expect(map.has(STATS_STORAGE_KEY)).toBe(false)
+    expect(readStoredStats()).toEqual([])
+  })
+
+  it('leaves the theme alone', () => {
+    // A player who has cleared their history should not also lose a preference
+    // they set once, and it lives under its own key.
+    const map = stubStorage({ 'daily-puzzles:theme': 'dark' })
+    storeSolve({ id: '2026-09-30', puzzleType: 'queens', size: 8, elapsedMs: 1_000, hints: 0, solvedAt: 1 })
+
+    clearStats()
+    expect(map.get('daily-puzzles:theme')).toBe('dark')
+  })
+
+  it('is harmless when there is nothing to clear', () => {
+    const map = stubStorage()
+    expect(clearStats()).toEqual([])
+    expect(map.size).toBe(0)
   })
 })
