@@ -14,8 +14,14 @@ export const PUZZLE_TYPE_LABEL: Record<PuzzleType, string> = {
   'star-battle': 'Star Battle',
 }
 
-/** What a placed piece is called, per family. */
-export const PUZZLE_PIECE_NAME: Record<PuzzleType, string> = {
-  queens: 'queen',
-  'star-battle': 'star',
+/**
+ * What a placed piece is called and drawn as, per family.
+ *
+ * The board's glyph, the cell's screen-reader noun and the rules page's prose all
+ * read from here, so a cell's accessible name cannot end up calling a star a
+ * queen.
+ */
+export const PUZZLE_PIECE: Record<PuzzleType, { noun: string; plural: string; glyph: string }> = {
+  queens: { noun: 'queen', plural: 'queens', glyph: '♛' },
+  'star-battle': { noun: 'star', plural: 'stars', glyph: '★' },
 }

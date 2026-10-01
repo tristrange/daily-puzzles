@@ -83,8 +83,9 @@ export function HomePage() {
         </ul>
       )}
       <p className="status">
-        Every day so far is in the <Link to="/archive">archive</Link>, and your solves are
-        counted on the <Link to="/stats">stats</Link> page.
+        New to either game? <Link to="/how-to-play">How to play</Link>. Every day so far is in
+        the <Link to="/archive">archive</Link>, and your solves are counted on the{' '}
+        <Link to="/stats">stats</Link> page.
       </p>
     </section>
   )
