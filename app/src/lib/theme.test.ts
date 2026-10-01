@@ -7,6 +7,7 @@
  */
 
 import { readFileSync } from 'node:fs'
+import { contrastRatio } from './contrast'
 import { describe, expect, it } from 'vitest'
 import { parseTheme, THEME_STORAGE_KEY, THEMES } from './theme'
 
@@ -90,21 +91,14 @@ function flatten(
   return composited
 }
 
-function linearise(channel: number): number {
-  const value = channel / 255
-  return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
-}
-
-function luminance(colour: [number, number, number]): number {
-  const [r, g, b] = colour
-  return 0.2126 * linearise(r) + 0.7152 * linearise(g) + 0.0722 * linearise(b)
-}
-
-/** WCAG 2.1 contrast ratio, 1 to 21. */
+/**
+ * The shared WCAG arithmetic works in hex; these tests hold the channels they
+ * have already composited over a background, so they hand it a throwaway hex.
+ */
 function contrast(a: [number, number, number], b: [number, number, number]): number {
-  const lighter = Math.max(luminance(a), luminance(b))
-  const darker = Math.min(luminance(a), luminance(b))
-  return (lighter + 0.05) / (darker + 0.05)
+  const toHex = (colour: [number, number, number]) =>
+    `#${colour.map((channel) => channel.toString(16).padStart(2, '0')).join('')}`
+  return contrastRatio(toHex(a), toHex(b))
 }
 
 const TEXT_MINIMUM = 4.5

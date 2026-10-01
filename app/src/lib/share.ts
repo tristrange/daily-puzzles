@@ -27,10 +27,15 @@ import { formatTime } from '../domain/game'
 const FILLED = '🟪'
 const EMPTY = '⬛'
 
-export type ShareInput = {
-  readonly board: Board
-  /** Cell indices of the placed pieces, i.e. `GameState.queens`. */
-  readonly pieces: ReadonlySet<number>
+/**
+ * What a share says about the solve. Deliberately not the board: the point of
+ * sharing a daily puzzle is to have a go at the same one, and a share that
+ * prints where the pieces went has already done the recipient's work. The
+ * facts here are the ones that describe how it went rather than what the answer
+ * was, and none of them give the puzzle away.
+ */
+export type ShareResult = {
+  readonly size: number
   readonly puzzleType: 'queens' | 'star-battle'
   readonly elapsedMs: number
   readonly hints: number
@@ -42,7 +47,7 @@ export type ShareInput = {
 
 const TYPE_LABEL = { queens: 'Queens', 'star-battle': 'Star Battle' } as const
 
-/** `size` rows of `size` cells, filled where a piece stands. */
+/** `size` rows of `size` cells, filled where a piece stands. Only for the spoiler variant. */
 export function boardGrid(board: Board, pieces: ReadonlySet<number>): string {
   const rows: string[] = []
   for (let row = 0; row < board.size; row += 1) {
@@ -55,29 +60,50 @@ export function boardGrid(board: Board, pieces: ReadonlySet<number>): string {
   return rows.join('\n')
 }
 
-function detailLine(input: ShareInput): string {
-  const parts = [`${formatTime(input.elapsedMs)}`]
-  parts.push(input.hints === 0 ? 'no hints' : `${input.hints} hint${input.hints === 1 ? '' : 's'}`)
-  return parts.join(' · ')
+/**
+ * The share, with no solution in it.
+ *
+ * Line order is deliberate: what was solved, how long it took, the streak, then
+ * the link — the last two are what a recipient acts on.
+ */
+export function buildShareText(result: ShareResult): string {
+  return [
+    ...headerLines(result),
+    ...(result.streak > 1 ? [`${result.streak}-day streak`] : []),
+    result.link,
+  ].join('\n')
 }
 
 /**
- * The whole share. Line order is deliberate: what was solved, how long it took,
- * the board, then the streak and the link — the last two are what a recipient
- * acts on, so they are not buried above the grid.
+ * The share *with* the finished board, for showing a solution to someone who
+ * has already finished it — or who asked for it.
+ *
+ * Kept as a separate function rather than a flag, so the spoiler is something a
+ * caller has to ask for by name and the default cannot grow one by accident. It
+ * takes the board and the pieces because without them there is nothing to show;
+ * `buildShareText` cannot show a board at all, which is the point.
  */
-export function buildShareText(input: ShareInput): string {
-  const header = `Daily Puzzles — ${TYPE_LABEL[input.puzzleType]} ${input.board.size}×${input.board.size}`
-  const streak = input.streak > 1 ? `${input.streak}-day streak` : null
+export function buildSolutionShareText(
+  result: ShareResult,
+  board: Board,
+  pieces: ReadonlySet<number>,
+): string {
   return [
-    header,
-    detailLine(input),
+    ...headerLines(result),
     '',
-    boardGrid(input.board, input.pieces),
+    boardGrid(board, pieces),
     '',
-    ...(streak === null ? [] : [streak]),
-    input.link,
+    ...(result.streak > 1 ? [`${result.streak}-day streak`] : []),
+    result.link,
   ].join('\n')
+}
+
+function headerLines(result: ShareResult): [string, string] {
+  const hints = result.hints === 0 ? 'no hints' : `${result.hints} hint${result.hints === 1 ? '' : 's'}`
+  return [
+    `Daily Puzzles — ${TYPE_LABEL[result.puzzleType]} ${result.size}×${result.size}`,
+    `${formatTime(result.elapsedMs)} · ${hints}`,
+  ]
 }
 
 /**

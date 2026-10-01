@@ -42,7 +42,7 @@ import type { Board } from '../domain/board'
 import type { GameState } from '../domain/game'
 import { cellState } from '../domain/game'
 import type { Hint } from '../domain/hints'
-import { inks, regionColours } from '../lib/colours'
+import { markInk, regionColours } from '../lib/colours'
 
 /** What a placed piece is called and drawn as, per puzzle type. */
 const PIECES: Record<Board['puzzleType'], { noun: string; glyph: string }> = {
@@ -104,11 +104,11 @@ export function InteractiveBoard({
     () =>
       Array.from({ length: board.regionCount }, (_, region) => {
         const background = colours[region] ?? '#e5e4e7'
-        const ink = inks(background)
         return {
           backgroundColor: background,
-          color: ink.piece,
-          '--mark-ink': ink.mark,
+          // Only the cross-out varies by cell. The piece is one fixed colour with
+          // an outline, so a cell no longer has to say anything about it.
+          '--mark-ink': markInk(background),
         } as CSSProperties
       }),
     [board, colours],

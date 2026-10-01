@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Board } from '../domain/board'
-import { appBase, buildShareText, boardGrid, puzzleShareLink } from './share'
+import { appBase, boardGrid, buildShareText, buildSolutionShareText, puzzleShareLink } from './share'
 
 /**
  * Stand in for a browser at `href`, with Vite's `BASE_URL` set to `basePath`.
@@ -39,6 +39,10 @@ function board(size = 4, puzzleType: 'queens' | 'star-battle' = 'queens'): Board
 
 const b4 = board()
 
+/** The two cell glyphs, named here so the "no board" test does not restate them. */
+const FILLED_CELL = '\u{1F7EA}'
+const EMPTY_CELL = '\u{2B1B}'
+
 describe('boardGrid', () => {
   it('is one row per rank and one cell per file', () => {
     const rows = boardGrid(b4, new Set()).split('\n')
@@ -69,52 +73,86 @@ describe('boardGrid', () => {
   })
 })
 
-describe('buildShareText', () => {
-  const input = {
-    board: b4,
-    pieces: new Set([0, 5, 10, 15]),
-    puzzleType: 'queens' as const,
-    elapsedMs: 263_000,
-    hints: 0,
-    streak: 4,
-    link: 'https://puzzles.example/#/archive/2026-09-30',
-  }
+const result = {
+  size: 4,
+  puzzleType: 'queens' as const,
+  elapsedMs: 263_000,
+  hints: 0,
+  streak: 4,
+  link: 'https://puzzles.example/#/archive/2026-09-30',
+}
 
+describe('buildShareText', () => {
   it('names the puzzle and its size', () => {
-    expect(buildShareText(input).split('\n')[0]).toBe('Daily Puzzles — Queens 4×4')
+    expect(buildShareText(result).split('\n')[0]).toBe('Daily Puzzles — Queens 4×4')
   })
 
   it('calls a star battle a Star Battle', () => {
-    const text = buildShareText({ ...input, puzzleType: 'star-battle' })
-    expect(text.split('\n')[0]).toBe('Daily Puzzles — Star Battle 4×4')
+    expect(buildShareText({ ...result, puzzleType: 'star-battle' }).split('\n')[0]).toBe(
+      'Daily Puzzles — Star Battle 4×4',
+    )
   })
 
   it('reports the time the way the timer does', () => {
-    expect(buildShareText(input).split('\n')[1]).toBe('4:23 · no hints')
+    expect(buildShareText(result).split('\n')[1]).toBe('4:23 · no hints')
   })
 
   it('counts hints, singular and plural', () => {
-    expect(buildShareText({ ...input, hints: 1 }).split('\n')[1]).toBe('4:23 · 1 hint')
-    expect(buildShareText({ ...input, hints: 3 }).split('\n')[1]).toBe('4:23 · 3 hints')
-  })
-
-  it('includes the finished board and the link', () => {
-    const lines = buildShareText(input).split('\n')
-    expect(lines).toContain('🟪⬛⬛⬛')
-    expect(lines).toContain(input.link)
+    expect(buildShareText({ ...result, hints: 1 }).split('\n')[1]).toBe('4:23 · 1 hint')
+    expect(buildShareText({ ...result, hints: 3 }).split('\n')[1]).toBe('4:23 · 3 hints')
   })
 
   it('shows the streak only once there is one to show', () => {
-    expect(buildShareText(input)).toContain('4-day streak')
+    expect(buildShareText(result)).toContain('4-day streak')
     // A streak of one is not a streak worth claiming, and a broken one is not
     // worth mentioning at all.
-    expect(buildShareText({ ...input, streak: 1 })).not.toContain('streak')
-    expect(buildShareText({ ...input, streak: 0 })).not.toContain('streak')
+    expect(buildShareText({ ...result, streak: 1 })).not.toContain('streak')
+    expect(buildShareText({ ...result, streak: 0 })).not.toContain('streak')
   })
 
-  it('puts the link last so it is not scrolled past the grid', () => {
-    const lines = buildShareText(input).split('\n')
-    expect(lines.at(-1)).toBe(input.link)
+  it('puts the link last so it is not scrolled past', () => {
+    expect(buildShareText(result).split('\n').at(-1)).toBe(result.link)
+  })
+
+  it('does not give the solution away', () => {
+    // The whole reason for the split. A share is meant to be a challenge, and
+    // one that prints the pieces has already done the recipient's work — so
+    // this is asserted rather than left to review, because a grid is exactly
+    // the kind of thing that gets added back as a "nice touch".
+    const text = buildShareText(result)
+    expect(text).not.toContain(FILLED_CELL)
+    expect(text).not.toContain(EMPTY_CELL)
+    for (const line of text.split('\n')) {
+      // No run of cell glyphs at all, whatever they are.
+      expect(line).not.toMatch(/[\u{1F300}-\u{1FAFF}⯐-⯿\u{2B00}-\u{2BFF}]{2,}/u)
+    }
+  })
+
+  it('cannot show a board at all, however it is called', () => {
+    // It does not take one. There is nothing to pass.
+    expect(buildShareText.length).toBe(1)
+  })
+})
+
+describe('buildSolutionShareText', () => {
+  const pieces = new Set([0, 5, 10, 15])
+
+  it('includes the finished board, for showing to someone who has finished it', () => {
+    const text = buildSolutionShareText(result, b4, pieces)
+    expect(text).toContain(boardGrid(b4, pieces))
+    expect(text).toContain(result.link)
+  })
+
+  it('keeps the same facts as the plain share', () => {
+    const withBoard = buildSolutionShareText(result, b4, pieces)
+    const plain = buildShareText(result)
+    for (const line of plain.split('\n')) {
+      expect(withBoard).toContain(line)
+    }
+  })
+
+  it('puts the link last even with a board above it', () => {
+    expect(buildSolutionShareText(result, b4, pieces).split('\n').at(-1)).toBe(result.link)
   })
 })
 

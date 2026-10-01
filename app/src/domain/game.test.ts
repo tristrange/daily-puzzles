@@ -21,6 +21,7 @@ import {
   formatTime,
   isSolved,
   nextCellState,
+  paintStroke,
   placeQueenAutoMark,
   setCell,
   starsPerRow,
@@ -124,6 +125,8 @@ describe('clearCell', () => {
 
 describe('setCell', () => {
   it('forces a mark, clearing a piece on the way', () => {
+    // A primitive with no policy: the paths that remove a piece on purpose
+    // depend on it being able to. `paintStroke` is where strokes are stopped.
     const game = setCell(toggleQueen(createGame(BLOCKS), 3), 3, 'mark')
     expect(cellState(game, 3)).toBe('mark')
     expect(game.queens.has(3)).toBe(false)
@@ -153,6 +156,58 @@ describe('setCell', () => {
     const game = setCell(start, 7, 'mark')
     expect(game.queens).toEqual(start.queens)
     expect([...game.marks]).toEqual([7])
+  })
+})
+
+describe('paintStroke', () => {
+  const withPiece = toggleQueen(createGame(BLOCKS), 3)
+  const withPieceAndMarks = toggleMark(withPiece, 4)
+
+  it('marks a cell that holds nothing', () => {
+    expect(cellState(paintStroke(createGame(BLOCKS), 2, 'mark'), 2)).toBe('mark')
+  })
+
+  it('erases a mark when the stroke started on one', () => {
+    expect(cellState(paintStroke(withPieceAndMarks, 4, 'empty'), 4)).toBe('empty')
+  })
+
+  it('will not paint a mark over a piece', () => {
+    // Dragging out a run of exclusions must not un-place a queen it crosses.
+    const game = paintStroke(withPiece, 3, 'mark')
+    expect(cellState(game, 3)).toBe('queen')
+    expect(game.marks.has(3)).toBe(false)
+  })
+
+  it('will not erase over a piece either', () => {
+    // The half that was missed first time. A stroke that starts on a marked
+    // cell has the target 'empty', so guarding only 'mark' left this path
+    // sweeping pieces off the board exactly as destructively.
+    const game = paintStroke(withPieceAndMarks, 3, 'empty')
+    expect(cellState(game, 3)).toBe('queen')
+    expect(game.queens.has(3)).toBe(true)
+  })
+
+  it('leaves a crossed piece alone while still painting its neighbours', () => {
+    let game = paintStroke(withPiece, 2, 'mark')
+    game = paintStroke(game, 3, 'mark')
+    game = paintStroke(game, 4, 'mark')
+    expect(game.queens).toEqual(withPiece.queens)
+    expect([...game.marks].sort((a, b) => a - b)).toEqual([2, 4])
+  })
+
+  it('is a no-op on a cell holding a piece, so the stroke adds no undo step', () => {
+    expect(paintStroke(withPiece, 3, 'mark')).toBe(withPiece)
+    expect(paintStroke(withPiece, 3, 'empty')).toBe(withPiece)
+  })
+
+  it('never places a piece, so a drag cannot solve the puzzle by accident', () => {
+    const game = paintStroke(createGame(BLOCKS), 1, 'mark')
+    expect(game.queens.size).toBe(0)
+  })
+
+  it('leaves a piece removable by clicking it', () => {
+    const removed = cycleCell(withPiece, 3)
+    expect(cellState(removed, 3)).toBe('empty')
   })
 })
 
