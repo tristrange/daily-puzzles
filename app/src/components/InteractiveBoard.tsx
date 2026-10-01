@@ -41,14 +41,9 @@ import {
 import type { Board } from '../domain/board'
 import type { GameState } from '../domain/game'
 import { cellState } from '../domain/game'
+import { PUZZLE_PIECE } from '../domain/games'
 import type { Hint } from '../domain/hints'
 import { markInk, regionColours } from '../lib/colours'
-
-/** What a placed piece is called and drawn as, per puzzle type. */
-const PIECES: Record<Board['puzzleType'], { noun: string; glyph: string }> = {
-  queens: { noun: 'queen', glyph: '♛' },
-  'star-battle': { noun: 'star', glyph: '★' },
-}
 
 export interface CellActionProps {
   board: Board
@@ -95,7 +90,7 @@ export function InteractiveBoard({
   const [focusIndex, setFocusIndex] = useState(0)
   const [painting, setPainting] = useState(false)
   const stroke = useRef<Stroke | null>(null)
-  const piece = PIECES[board.puzzleType]
+  const piece = PUZZLE_PIECE[board.puzzleType]
   const puzzleName = board.puzzleType === 'queens' ? 'queens' : 'star battle'
   const colours = useMemo(() => regionColours(board), [board])
   // One style object per region rather than per cell: 64 cells re-deriving the
@@ -228,6 +223,29 @@ export function InteractiveBoard({
     }
   }
 
+  /**
+   * The cell each region's star count is drawn in.
+   *
+   * The first cell of a region in row-major order is its top-left cell, which is
+   * where Star Battle puts the count and where it does not collide with the
+   * marker in the middle. Only regions needing more than one are drawn: in
+   * Queens every region holds exactly one, so a digit on all of them would be
+   * 64 redundant numbers saying nothing.
+   */
+  const countAnchors = useMemo(() => {
+    const anchors = new Map<number, number>()
+    for (let cell = 0; cell < board.cellCount; cell += 1) {
+      const region = board.regionAt(cell)
+      if ((board.regionCapacity[region] ?? 0) > 1 && !anchors.has(region)) anchors.set(region, cell)
+    }
+    return anchors
+  }, [board])
+
+  const countFor = (cell: number): number => {
+    const region = board.regionAt(cell)
+    return countAnchors.get(region) === cell ? (board.regionCapacity[region] ?? 0) : 0
+  }
+
   const labelFor = (cell: number): string => {
     const { row, col } = board.coords(cell)
     const position = `Row ${row + 1}, column ${col + 1}`
@@ -237,8 +255,13 @@ export function InteractiveBoard({
         : cellState(game, cell) === 'mark'
           ? 'marked'
           : 'empty'
+    const region = board.regionAt(cell)
+    // Only stated where it is not already implied. A screen reader user landing
+    // on a cell in a Star Battle region needs to know what that region owes.
+    const capacity = board.regionCapacity[region] ?? 0
+    const needs = capacity > 1 ? `, region holds ${capacity} ${piece.plural}` : ''
     const conflict = conflictCells.has(cell) ? `, conflicting ${piece.noun}` : ''
-    return `${position}, ${contents}${conflict}`
+    return `${position}, ${contents}${needs}${conflict}`
   }
 
   const classNameFor = (cell: number): string => {
@@ -266,6 +289,11 @@ export function InteractiveBoard({
       }}
       onFocus={() => setFocusIndex(cell)}
     >
+      {countFor(cell) > 1 && (
+        <span className="capacity" aria-hidden="true">
+          {countFor(cell)}
+        </span>
+      )}
       {cellState(game, cell) === 'queen' && (
         <span className="marker" aria-hidden="true">
           {piece.glyph}

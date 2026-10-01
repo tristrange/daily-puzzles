@@ -207,6 +207,8 @@ a cell is forced rather than just revealing it.
 | 10 | Stretch: Star Battle as a second puzzle type | done |
 | 11 | Both puzzles every day: a Star Battle companion per date, and the format work to carry it | done |
 | 12 | A landing page that offers both of today's puzzles instead of assuming one | done |
+| 13 | A How to play page, and the region star counts it needs to be able to point at | done |
+| 14 | Remember the auto-mark choice between visits | done |
 
 Milestones 2 to 4 were the critical path, and they are all Python. The engine alone — a
 CLI with an exact uniqueness prover and property tests — would be worth publishing even if
@@ -328,6 +330,40 @@ recorded for today turns that card's action into *Play again*.
 
 The two family names lived in three copies — share text, archive and stats — which is
 three places to forget a rename, so they now come from one table in `domain/games.ts`.
+
+### How to play, and the counts it needed
+
+Writing the rules page surfaced a display gap rather than a rules question. The engine has
+always enforced region capacity — `solver.py` reads it off `Board.region_capacity` so the
+solver and the validator cannot disagree — but `InteractiveBoard` never drew it. For Queens
+that costs nothing, since every region holds exactly one. For Star Battle it hid the puzzle's
+defining constraint, and it made an honest tutorial impossible: the page would have had to
+describe a number that is not on the screen.
+
+Each region's count is now drawn in its top-left cell, the first cell of the region in
+row-major order, which is also where the genre puts it and where it does not collide with the
+marker in the middle of the cell. Only counts above one are drawn. Printing `1` in all 64
+regions of a Queens board would be 64 numbers saying nothing, so Queens renders exactly as
+before, down to the byte in its cells' accessible names; Star Battle gains the digit and, in
+each cell's label, the region it belongs to and what it owes.
+
+The tutorial itself is at `/how-to-play`. Its one job is to correct an assumption rather than
+recite a genre: **this app's Queens is not the puzzle most people meet under that name.** A
+region holds exactly one piece *and* no two pieces touch, not even diagonally — the
+no-touching rule is shared by both games and enforced by the same solver. A player arriving
+from a familiar Queens loses to that second rule unless it is written down.
+
+Every claim on the page was verified against a running board rather than assumed: the click
+cycle, dragging, right-click, all eight keyboard bindings, auto-mark being off by default, a
+drag counting as one undo step, and hints being absent from Star Battle.
+
+Auto-mark is off by default, and stays off until someone asks for it: auto-mark draws
+conclusions, and a cross the player did not draw is an answer they were given rather than one
+they reached. Once asked for, the choice is remembered — it is a preference about how someone
+plays, not a decision about one board, and re-asking every day would be a small daily tax for
+no reason. It is stored like the theme choice, in one namespaced key that parses to `false`
+for anything unrecognised, so a value from a future version cannot quietly start drawing
+conclusions nobody consented to.
 - `/archive/:id` — a specific puzzle by id.
 
 `puzzleOfToday(date, tz)` is the seam between the engine's date-keyed files and the
