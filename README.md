@@ -7,6 +7,9 @@ them.
 There is no server, no database and no account. The entire product is a static site plus
 a directory of committed puzzle files.
 
+Two games ship: **Queens**, the daily puzzle, and **Star Battle**, the second puzzle type,
+published every day alongside it. Each day has its own solve for each.
+
 ---
 
 ## The puzzle: Queens
@@ -202,6 +205,7 @@ a cell is forced rather than just revealing it.
 | 8 | Daily pipeline: cron generates, commits, CI re-verifies every puzzle | done |
 | 9 | Stretch: share text, local stats, dark mode | done |
 | 10 | Stretch: Star Battle as a second puzzle type | done |
+| 11 | Both puzzles every day: a Star Battle companion per date, and the format work to carry it | done |
 
 Milestones 2 to 4 were the critical path, and they are all Python. The engine alone — a
 CLI with an exact uniqueness prover and property tests — would be worth publishing even if
@@ -503,12 +507,25 @@ uv run python -m tools.publish --out ../app/public/puzzles   # fill the gap to l
 uv run python -m tools.verify --dir ../app/public/puzzles    # replay every committed puzzle
 ```
 
-`tools/publish.py` scans the archive for missing dates and fills them from the first
-missing day through today plus a `--lead` (default 3), using exactly the same recipe as
-`tools/generate --logic-only` — a seed hashed from the date, size 8, bumped upward until
-`deduce` reaches a solution without guessing. It is idempotent by construction: an
-existing file is never rewritten, and a date always maps to one puzzle, so running it
-twice in a day is a no-op and a missed week self-heals on the next run. `tools/verify.py`
+`tools/publish.py` scans the archive for missing puzzles and fills them from the first
+missing day through today plus a `--lead` (default 3). It writes **two puzzles per day**:
+the Queens board named after the day, and its Star Battle companion named
+`<date>-star.json`. Both use a seed hashed from the id, size 8, but they are gated
+differently, because they can promise different things. Queens walks the seed upward
+until `deduce` reaches a solution without guessing, exactly as
+`tools/generate --logic-only` does. A star board cannot: `deduce` is single-star and
+refuses a star board outright, so the companion takes the guarantee the generator
+actually provides — a unique solution — and says "unique, not logic-gated" rather than
+printing a difficulty number that would mean something weaker than the same number on a
+Queens board.
+
+Skipping is per puzzle rather than per day, which is what makes this safe to run against
+an archive published before companions existed: a committed Queens board does not stop
+its missing companion from being filled in.
+
+It is idempotent by construction: an existing file is never rewritten and an id always
+maps to one puzzle, so running it twice in a day is a no-op and a missed week self-heals
+on the next run. `tools/verify.py`
 re-parses every committed puzzle and calls `verify_replay` on it, so a generator change
 that would have drifted the archive fails loudly before anything is merged.
 
@@ -587,11 +604,22 @@ the Hint button is not rendered. A hint engine that reasons in one star and
 speaks in two produces confident nonsense, and `null` is the only honest answer
 until the rules are ported.
 
-The one gap this leaves is editorial, not technical: `tools.publish` is still
-Queens-only and no star file is committed, so there is nothing to click yet. The
-app plays any valid star file today — verified end to end against a generated
-one — but choosing which day is a star day is a content decision, not a code
-one.
+The gap this left was editorial, not technical, and it is now closed by a
+decision rather than by a rule: **every day carries both puzzles**, so there is
+no schedule to keep and no day that silently falls back to Queens. Each is its own
+game with its own solve — Today is the Queens board, Star Battle is the companion —
+and the archive lists both under their shared date.
+
+That decision forced the one genuinely awkward change in the format. Two puzzles a day
+cannot both be identified by a date, so the companion's id carries a `-star` suffix, in
+the filename, the file's `id` and the URL alike. The suffix is not decoration: a solve is
+recorded against an id and first-solve-wins, so had both puzzles of a day shared the bare
+date, solving Queens would have made the day's Star Battle permanently unrecordable.
+Suffixing keeps the archive's existing keying, needs no migration for history already
+stored, and leaves one honest invariant — **the bare date is the Queens puzzle and
+`-star` is the companion** — which is why the one Star Battle board that predates
+companions, 2026-09-26, was moved into the companion slot and given the Queens board its
+date had been missing.
 
 ### Playing with a mouse
 

@@ -198,6 +198,16 @@ describe('puzzleShareLink', () => {
     })
   })
 
+  it('keeps the Star Battle suffix in the link, so it opens that board', () => {
+    // A link that dropped the suffix would land on the day's Queens puzzle, and
+    // the recipient would be told they had been sent a Star Battle.
+    withBrowserUrl('https://puzzles.example/', '/', () => {
+      expect(puzzleShareLink('2026-10-05-star')).toBe(
+        'https://puzzles.example/#/archive/2026-10-05-star',
+      )
+    })
+  })
+
   it('puts the route after the hash, so it survives a paste', () => {
     // Written before the hash it is just a path, which the app serves as its
     // root: the recipient gets today's puzzle instead of the shared one.

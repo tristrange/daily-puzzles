@@ -4,9 +4,18 @@
  * Puzzle files are named `YYYY-MM-DD` and committed daily. The date a player is
  * owed is *their* calendar day, so "today" is a function of the instant and an
  * IANA time zone, never a guess about where the server sits.
+ *
+ * Each day can carry two puzzles, so an id may name which: the Queens puzzle is
+ * the bare date and the Star Battle companion appends `-star`. The suffix is part
+ * of the identity rather than a detail of the file, because a solve is recorded
+ * against an id and first-solve-wins would otherwise let one of the two block the
+ * other for the whole day.
  */
 
-const PUZZLE_ID_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/
+/** The variant suffix on a puzzle id, and the id of that puzzle's companion. */
+export const STAR_SUFFIX = '-star' as const
+
+const PUZZLE_ID_PATTERN = /^(\d{4})-(\d{2})-(\d{2})(-star)?$/
 
 export function isPuzzleId(value: string): boolean {
   const match = PUZZLE_ID_PATTERN.exec(value)
@@ -20,6 +29,28 @@ export function isPuzzleId(value: string): boolean {
     normalised.getUTCMonth() === month - 1 &&
     normalised.getUTCDate() === day
   )
+}
+
+/** True for the Star Battle companion's id, false for the day's Queens puzzle. */
+export function isStarPuzzleId(value: string): boolean {
+  return PUZZLE_ID_PATTERN.exec(value)?.[4] !== undefined
+}
+
+/** The bare date shared by both of a day's puzzles. */
+export function puzzleDay(id: string): string {
+  const match = PUZZLE_ID_PATTERN.exec(id)
+  if (match === null) throw new RangeError(`${id} is not a YYYY-MM-DD puzzle id`)
+  return `${match[1]}-${match[2]}-${match[3]}`
+}
+
+/** The day's other puzzle: the Star Battle companion of a Queens id, and back. */
+export function companionPuzzleId(id: string): string {
+  return isStarPuzzleId(id) ? puzzleDay(id) : `${puzzleDay(id)}${STAR_SUFFIX}`
+}
+
+/** Both puzzle ids for a calendar day, Queens first. */
+export function puzzleIdsForDay(day: string): string[] {
+  return [day, `${day}${STAR_SUFFIX}`]
 }
 
 /** The puzzle id owed to a player in `timeZone` at the instant `date`. */

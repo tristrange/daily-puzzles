@@ -3,12 +3,20 @@
 Usage:
     python -m tools.publish [--out DIR] [--lead 3] [--start YYYY-MM-DD] [--dry-run]
 
-Scans DIR for committed `<date>.json` files and fills the gaps from the first
-missing day through (today + `--lead` days), using the same deterministic
-recipe as `tools.generate`: a seed hashed from the date, size 8, and a
-logic-only walk upward until the board needs no guessing. Idempotent —
-existing files are never rewritten, and a given date always maps to one puzzle
-— so it is safe to run from cron every day and to run again by hand.
+Each day carries two puzzles: the Queens board named after the day, and its
+Star Battle companion named `<date>-star.json`. The suffix is part of the
+puzzle's identity rather than only its filename, because a solve is recorded
+against an id and first-solve-wins would otherwise let one of the day's two
+puzzles block the other.
+
+Scans DIR for committed puzzle files and fills the gaps from the first missing
+day through (today + `--lead` days), using the same deterministic recipe as
+`tools.generate`: a seed hashed from the id, size 8. Queens walks the seed
+upward until the board needs no guessing. Star Battle cannot — the deduction
+engine is Queens-only and refuses a star board outright — so it takes the
+guarantee the generator actually provides, a unique solution. Idempotent:
+existing files are never rewritten and a given id always maps to one puzzle, so
+it is safe to run from cron every day and to run again by hand.
 """
 
 from __future__ import annotations
@@ -27,6 +35,7 @@ from queens_engine import (
     GenerationConfig,
     GenerationError,
     Puzzle,
+    PuzzleType,
     deduce,
     dumps_puzzle,
     generate_puzzle,
@@ -39,24 +48,57 @@ PUZZLE_SIZE = 8
 #: How many days ahead of "today" the archive should stay published.
 DEFAULT_LEAD_DAYS = 3
 
-DATE_FILE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})\.json$")
+#: Stars per row on the Star Battle companion.
+STARS_PER_ROW = 2
+
+STAR_SUFFIX = "-star"
+
+DATE_FILE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})(\-star)?\.json$")
 
 
-def _existing_dates(out_dir: Path) -> set[date]:
-    existing: set[date] = set()
+def _existing_ids(out_dir: Path) -> set[str]:
+    """Every puzzle id already committed, e.g. `2026-10-01` and `2026-10-01-star`."""
+    existing: set[str] = set()
     for path in out_dir.glob("*.json"):
         match = DATE_FILE.match(path.name)
         if match is None:
             continue
         try:
-            existing.add(date(int(match.group(1)), int(match.group(2)), int(match.group(3))))
+            day = date(int(match.group(1)), int(match.group(2)), int(match.group(3)))
         except ValueError:
             continue
+        existing.add(day.isoformat() + (match.group(4) or ""))
     return existing
 
 
-def _generate_one(puzzle_id: str, seed: int) -> tuple[Puzzle, float]:
-    """Generate a logic-only puzzle, bumping the seed on any failure.
+def _existing_days(out_dir: Path) -> set[date]:
+    """Every calendar day that has at least one puzzle committed."""
+    ids = _existing_ids(out_dir)
+    return {date.fromisoformat(puzzle_id.rstrip(STAR_SUFFIX)) for puzzle_id in ids}
+
+
+def _ids_for_day(day: date) -> tuple[str, str]:
+    """The two puzzle ids a day carries, Queens first."""
+    return day.isoformat(), f"{day.isoformat()}{STAR_SUFFIX}"
+
+
+def _first_incomplete_day(existing: set[str], first: date, end: date) -> date | None:
+    """The earliest day up to `end` that is missing either of its puzzles.
+
+    Deliberately the earliest rather than the latest: a run that died between
+    writing one puzzle of a day and writing the other has left a half-published
+    day, and resuming after the newest committed day would step straight over it
+    and never fill it in.
+    """
+    for offset in range((end - first).days + 1):
+        day = first + timedelta(days=offset)
+        if any(puzzle_id not in existing for puzzle_id in _ids_for_day(day)):
+            return day
+    return None
+
+
+def _generate_queens(puzzle_id: str, seed: int) -> tuple[Puzzle, float]:
+    """Generate a logic-only Queens puzzle, bumping the seed on any failure.
 
     Returns the parsed puzzle (already schema-valid) and its difficulty score.
     Raises `RuntimeError` if the seed budget runs out.
@@ -77,6 +119,30 @@ def _generate_one(puzzle_id: str, seed: int) -> tuple[Puzzle, float]:
     raise RuntimeError(f"{puzzle_id}: no logic-only board in {LOGIC_ONLY_TRIES} seed bumps")
 
 
+def _generate_star(puzzle_id: str, seed: int) -> Puzzle:
+    """Generate a Star Battle companion, bumping the seed on any failure.
+
+    The generator already guarantees a unique solution, which is the promise a
+    star board can keep: unlike Queens it cannot also promise that no guessing is
+    needed, because `deduce` refuses a star board rather than scoring it.
+    Raises `RuntimeError` if the seed budget runs out.
+    """
+    for _bump in range(LOGIC_ONLY_TRIES):
+        try:
+            return generate_puzzle(
+                seed=seed,
+                puzzle_id=puzzle_id,
+                config=GenerationConfig(
+                    size=PUZZLE_SIZE,
+                    puzzle_type=PuzzleType.STAR_BATTLE,
+                    stars_per_row=STARS_PER_ROW,
+                ),
+            )
+        except GenerationError:
+            seed = (seed + 1) % (2**32)
+    raise RuntimeError(f"{puzzle_id}: no star board in {LOGIC_ONLY_TRIES} seed bumps")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="tools.publish")
     parser.add_argument("--out", type=Path, default=Path("./puzzles"))
@@ -88,34 +154,50 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     args.out.mkdir(parents=True, exist_ok=True)
-    existing = _existing_dates(args.out)
+    existing = _existing_ids(args.out)
+    days = _existing_days(args.out)
     today = date.today()
+
+    end = today + timedelta(days=args.lead)
 
     if args.start is not None:
         start = date.fromisoformat(args.start)
-    elif existing:
-        start = max(existing) + timedelta(days=1)
+    elif days:
+        # Resume at the first day that is not completely published, which may be
+        # long before the newest one; if everything up to the lead horizon is
+        # complete there is nothing to do.
+        incomplete = _first_incomplete_day(existing, min(days), end)
+        start = incomplete if incomplete is not None else end + timedelta(days=1)
     else:
         start = today
-    end = today + timedelta(days=args.lead)
 
     window = start
     while window <= end:
-        puzzle_id = window.isoformat()
-        if window in existing:
-            print(f"skip   {puzzle_id} (already published)")
-        else:
+        for puzzle_id, generate in (
+            (window.isoformat(), _generate_queens),
+            (f"{window.isoformat()}{STAR_SUFFIX}", _generate_star),
+        ):
+            if puzzle_id in existing:
+                print(f"skip   {puzzle_id} (already published)")
+                continue
             print(f"publish {puzzle_id}" + (" (dry run)" if args.dry_run else ""))
-            if not args.dry_run:
-                seed = seed_from_date(puzzle_id)
-                try:
-                    puzzle, score = _generate_one(puzzle_id, seed)
-                except RuntimeError as error:
-                    print(f"error: {error}", file=sys.stderr)
-                    return 1
-                target = args.out / f"{puzzle_id}.json"
-                target.write_text(dumps_puzzle(puzzle), encoding="utf-8")
-                print(f"  seed {puzzle.seed} score {score:g}")
+            if args.dry_run:
+                continue
+            seed = seed_from_date(puzzle_id)
+            try:
+                generated = generate(puzzle_id, seed)
+            except RuntimeError as error:
+                print(f"error: {error}", file=sys.stderr)
+                return 1
+            puzzle, score = generated if isinstance(generated, tuple) else (generated, None)
+            (args.out / f"{puzzle_id}.json").write_text(dumps_puzzle(puzzle), encoding="utf-8")
+            # A star board is unique but not logic-gated and not scored, so it has
+            # no difficulty to report. Saying "not rated" beats printing a number
+            # that means something weaker than the same number on a Queens board.
+            print(
+                f"  seed {puzzle.seed}"
+                + (f" score {score:g}" if score is not None else " (unique, not logic-gated)")
+            )
         window += timedelta(days=1)
     return 0
 

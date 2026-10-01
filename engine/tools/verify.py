@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from queens_engine import PuzzleParseError, load_puzzle, verify_replay
 
-DATE_FILE = re.compile(r"^\d{4}-\d{2}-\d{2}\.json$")
+DATE_FILE = re.compile(r"^\d{4}-\d{2}-\d{2}(-star)?\.json$")
 
 
 def main(argv: list[str] | None = None) -> int:

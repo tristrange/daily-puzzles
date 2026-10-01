@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatPuzzleLabel, puzzleOfToday } from '../domain/dates'
-import { listPublishedPuzzleIds } from '../lib/puzzles'
+import { listPublishedPuzzles, type PublishedPuzzle } from '../lib/puzzles'
+
+const FAMILY_LABEL = { queens: 'Queens', 'star-battle': 'Star Battle' } as const
 
 type LoadState =
   | { status: 'loading' }
-  | { status: 'ready'; ids: readonly string[] }
+  | { status: 'ready'; puzzles: readonly PublishedPuzzle[] }
   | { status: 'error' }
 
 export function ArchivePage() {
@@ -15,9 +17,9 @@ export function ArchivePage() {
 
   useEffect(() => {
     let cancelled = false
-    listPublishedPuzzleIds(todayId).then(
-      (ids) => {
-        if (!cancelled) setState({ status: 'ready', ids })
+    listPublishedPuzzles(todayId).then(
+      (puzzles) => {
+        if (!cancelled) setState({ status: 'ready', puzzles })
       },
       () => {
         if (!cancelled) setState({ status: 'error' })
@@ -36,13 +38,18 @@ export function ArchivePage() {
         <p className="status error">Could not read the archive.</p>
       )}
       {state.status === 'ready' &&
-        (state.ids.length === 0 ? (
+        (state.puzzles.length === 0 ? (
           <p className="status">No puzzles have been published yet.</p>
         ) : (
           <ul className="archive">
-            {state.ids.map((id) => (
-              <li key={id}>
-                <Link to={`/archive/${id}`}>{formatPuzzleLabel(id, timeZone)}</Link>
+            {state.puzzles.map((puzzle) => (
+              <li key={puzzle.id}>
+                <Link to={`/archive/${puzzle.id}`}>
+                  {formatPuzzleLabel(puzzle.id, timeZone)}
+                </Link>{' '}
+                {/* Two puzzles share each day, so the date alone cannot say which
+                    link goes where. */}
+                <span className="stat-detail">{FAMILY_LABEL[puzzle.type]}</span>
               </li>
             ))}
           </ul>

@@ -359,7 +359,14 @@ function describeCell(board: Puzzle['board'], cell: number): string {
   return `row ${row + 1}, column ${col + 1}`
 }
 
-export function PuzzleView({ id }: { id: string }) {
+export function PuzzleView({
+  id,
+  notFoundMessage,
+}: {
+  id: string
+  /** Shown instead of the raw miss when this puzzle may simply not be out yet. */
+  notFoundMessage?: string
+}) {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
   const [state, setState] = useState<LoadState>({ status: 'loading' })
 
@@ -373,7 +380,7 @@ export function PuzzleView({ id }: { id: string }) {
         if (cancelled) return
         const message =
           error instanceof PuzzleNotFoundError
-            ? error.message
+            ? (notFoundMessage ?? error.message)
             : 'Something went wrong loading that puzzle.'
         setState({ status: 'error', message })
       },
@@ -381,7 +388,7 @@ export function PuzzleView({ id }: { id: string }) {
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [id, notFoundMessage])
 
   if (state.status === 'loading') {
     return <p className="status">Loading puzzle…</p>
