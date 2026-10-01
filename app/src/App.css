@@ -10,7 +10,7 @@
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  padding: 20px 0 12px;
+  padding: 16px 0 10px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -45,7 +45,7 @@
 
 .content {
   flex: 1;
-  padding: 24px 0 32px;
+  padding: 18px 0 24px;
 }
 
 /* A segmented control rather than a select: three options, always visible, and
@@ -113,7 +113,12 @@
 .board {
   display: grid;
   gap: 3px;
-  width: min(76vw, 480px);
+  /* The third term is the one that matters on a short screen. At 480px the board
+     is most of the page, so on a laptop where the whole puzzle should fit without
+     scrolling it was pushing the footer below the fold — the puzzle has no reason
+     to be larger than the window can show. `svh` rather than `vh` so it is measured
+     against the smallest viewport, which is the one that has to fit. */
+  width: min(76vw, 480px, 54svh);
   padding: 1px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -339,7 +344,7 @@
 }
 
 .site-footer {
-  padding: 14px 0 0;
+  padding: 10px 0 24px;
   border-top: 1px solid var(--border);
   font-size: 14px;
 }

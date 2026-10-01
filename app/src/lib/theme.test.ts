@@ -7,7 +7,7 @@
  */
 
 import { readFileSync } from 'node:fs'
-import { contrastRatio } from './contrast'
+import { contrastRatio } from './colours'
 import { describe, expect, it } from 'vitest'
 import { parseTheme, THEME_STORAGE_KEY, THEMES } from './theme'
 
