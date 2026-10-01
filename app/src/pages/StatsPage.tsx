@@ -32,29 +32,6 @@ export function StatsPage() {
     setNotice('Your solve history has been deleted from this browser.')
   }
 
-  // Announced from one place for both states: clearing swaps the page to the empty
-  // state, so a live region living only in the full layout would be torn down in
-  // the same render that needed to say something.
-  const announcement = (
-    <p className="sr-only" role="status" aria-live="polite">
-      {notice}
-    </p>
-  )
-
-  if (stats.solved === 0) {
-    return (
-      <section>
-        <h2 className="page-title">Your stats</h2>
-        <p className="status">Nothing yet — solve a puzzle and it will show up here.</p>
-        <p className="status">
-          These stay in this browser. There is no account and nothing is sent anywhere.{' '}
-          <Link to="/">Play today&rsquo;s puzzle</Link>.
-        </p>
-        {announcement}
-      </section>
-    )
-  }
-
   const tiles = [
     stat('Solved', String(stats.solved)),
     stat('Current streak', stats.currentStreak === 0 ? '—' : `${stats.currentStreak} day${stats.currentStreak === 1 ? '' : 's'}`),
@@ -67,63 +44,81 @@ export function StatsPage() {
   return (
     <section>
       <h2 className="page-title">Your stats</h2>
-      <p className="status">Kept in this browser only. Nothing is sent anywhere.</p>
-      <dl className="stats-grid">
-        {tiles.map((tile) => (
-          <div className="stat" key={tile.label}>
-            <dt>{tile.label}</dt>
-            <dd>{tile.value}</dd>
-          </div>
-        ))}
-      </dl>
-      {stats.byType['star-battle'] > 0 && (
-        <p className="status">
-          {stats.byType.queens} Queens and {stats.byType['star-battle']} Star Battle.
-        </p>
-      )}
-      <h3 className="page-title">Recent solves</h3>
-      <ul className="archive">
-        {recent.map((record) => (
-          <li key={record.id}>
-            <Link to={`/archive/${record.id}`}>{formatPuzzleLabel(record.id, timeZone)}</Link>{' '}
-            <span className="stat-detail">
-              {formatTime(record.elapsedMs)}
-              {record.hints > 0 && ` · ${record.hints} hint${record.hints === 1 ? '' : 's'}`}
-            </span>
-          </li>
-        ))}
-      </ul>
-      <div className="stats-footer">
-        {confirming ? (
-          <>
+      {/* One live region, at a fixed position in a single tree shape, so that clearing
+          updates its text instead of swapping the page for a new one carrying the
+          notice already set. A screen reader announces a change to a region that is
+          already there; one mounted with its content in place tends to say nothing. */}
+      <p className="sr-only" role="status" aria-live="polite">
+        {notice}
+      </p>
+      {stats.solved === 0 ? (
+        <>
+          <p className="status">Nothing yet — solve a puzzle and it will show up here.</p>
+          <p className="status">
+            These stay in this browser. There is no account and nothing is sent anywhere.{' '}
+            <Link to="/">Play today&rsquo;s puzzle</Link>.
+          </p>
+        </>
+      ) : (
+        <>
+          <p className="status">Kept in this browser only. Nothing is sent anywhere.</p>
+          <dl className="stats-grid">
+            {tiles.map((tile) => (
+              <div className="stat" key={tile.label}>
+                <dt>{tile.label}</dt>
+                <dd>{tile.value}</dd>
+              </div>
+            ))}
+          </dl>
+          {stats.byType['star-battle'] > 0 && (
             <p className="status">
-              This deletes every solve recorded in this browser, including the streak. It
-              cannot be undone.
+              {stats.byType.queens} Queens and {stats.byType['star-battle']} Star Battle.
             </p>
-            <div className="stats-clear">
-              <button type="button" className="tool-button danger" onClick={forget}>
-                Yes, delete my stats
-              </button>
+          )}
+          <h3 className="page-title">Recent solves</h3>
+          <ul className="archive">
+            {recent.map((record) => (
+              <li key={record.id}>
+                <Link to={`/archive/${record.id}`}>{formatPuzzleLabel(record.id, timeZone)}</Link>{' '}
+                <span className="stat-detail">
+                  {formatTime(record.elapsedMs)}
+                  {record.hints > 0 && ` · ${record.hints} hint${record.hints === 1 ? '' : 's'}`}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <div className="stats-footer">
+            {confirming ? (
+              <>
+                <p className="status">
+                  This deletes every solve recorded in this browser, including the streak. It
+                  cannot be undone.
+                </p>
+                <div className="stats-clear">
+                  <button type="button" className="tool-button danger" onClick={forget}>
+                    Yes, delete my stats
+                  </button>
+                  <button
+                    type="button"
+                    className="tool-button"
+                    onClick={() => setConfirming(false)}
+                  >
+                    Keep them
+                  </button>
+                </div>
+              </>
+            ) : (
               <button
                 type="button"
                 className="tool-button"
-                onClick={() => setConfirming(false)}
+                onClick={() => setConfirming(true)}
               >
-                Keep them
+                Clear my stats
               </button>
-            </div>
-          </>
-        ) : (
-          <button
-            type="button"
-            className="tool-button"
-            onClick={() => setConfirming(true)}
-          >
-            Clear my stats
-          </button>
-        )}
-        {announcement}
-      </div>
+            )}
+          </div>
+        </>
+      )}
     </section>
   )
 }
