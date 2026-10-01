@@ -27,6 +27,7 @@ from dataclasses import dataclass
 from typing import Final
 
 from .board import Board, BoardError, PuzzleType
+from .difficulty import score_difficulty
 from .prng import Prng
 from .puzzle import Puzzle
 from .solver import has_unique_solution
@@ -186,6 +187,13 @@ def verify_replay(puzzle: Puzzle) -> Puzzle:
         raise GenerationError(
             f"replay mismatch for {puzzle.id}: seed {puzzle.seed} produced a different board"
         )
+    if puzzle.difficulty is not None:
+        achieved = score_difficulty(regenerated.board).level
+        if achieved != puzzle.difficulty:
+            raise GenerationError(
+                f"difficulty mismatch for {puzzle.id}: recorded level {puzzle.difficulty}, "
+                f"the board scores {achieved}"
+            )
     return regenerated
 
 

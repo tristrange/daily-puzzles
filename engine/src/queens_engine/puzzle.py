@@ -39,6 +39,9 @@ class Puzzle:
     seed: int
     generator_version: int
     board: Board
+    #: Band index, 1-based into `LEVEL_NAMES`. `None` for boards published
+    #: before the weekly ramp, and for anything generated outside a target.
+    difficulty: int | None = None
 
 
 @cache
@@ -86,6 +89,9 @@ def parse_puzzle(data: object) -> Puzzle:
         else (1,) * region_count
     )
 
+    declared_level = record.get("difficulty")
+    difficulty = None if declared_level is None else _require_int(declared_level, "difficulty")
+
     try:
         board = Board(
             size=size,
@@ -103,6 +109,7 @@ def parse_puzzle(data: object) -> Puzzle:
         seed=_require_int(record.get("seed"), "seed"),
         generator_version=_require_int(record.get("generatorVersion"), "generatorVersion"),
         board=board,
+        difficulty=difficulty,
     )
 
 
@@ -127,6 +134,8 @@ def puzzle_to_dict(puzzle: Puzzle) -> dict[str, JsonValue]:
     }
     if puzzle.puzzle_type is PuzzleType.STAR_BATTLE:
         data["regionCapacity"] = list(puzzle.board.region_capacity)
+    if puzzle.difficulty is not None:
+        data["difficulty"] = puzzle.difficulty
     return data
 
 

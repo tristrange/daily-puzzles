@@ -542,3 +542,44 @@ describe('formatTime', () => {
     expect(formatTime(-500)).toBe('0:00')
   })
 })
+describe('parsePuzzle difficulty band', () => {
+  // A committed post-ramp Queens file: an 8x8 aimed at the Wednesday band.
+  const RAMPED = {
+    id: '2026-10-07',
+    type: 'queens',
+    size: 3,
+    seed: 1,
+    generatorVersion: 1,
+    regions: [0, 0, 1, 0, 1, 1, 0, 0, 2],
+    difficulty: 3,
+  }
+
+  it('reads the band the file records', () => {
+    expect(parsePuzzle(RAMPED).difficulty).toBe(3)
+  })
+
+  it('reads every band in the scale', () => {
+    for (const band of [1, 2, 3, 4, 5] as const) {
+      expect(parsePuzzle({ ...RAMPED, difficulty: band }).difficulty).toBe(band)
+    }
+  })
+
+  it('treats a file with no band as unknown, not as Easy', () => {
+    // Every file published before the ramp lacks the field, and defaulting it to
+    // 1 would put a labelled difficulty on a puzzle the engine never rated.
+    const { difficulty: _omitted, ...withoutBand } = RAMPED
+    expect(parsePuzzle(withoutBand).difficulty).toBeNull()
+  })
+
+  it('rejects a null band rather than storing one', () => {
+    // The schema types `difficulty` as an integer, so an explicit null is a
+    // malformed file, not an "unrated" board. Nothing ever writes it: absence is
+    // how a pre-ramp file says "no band", and the engine omits the key entirely.
+    expect(() => parsePuzzle({ ...RAMPED, difficulty: null })).toThrow(/difficulty/)
+  })
+
+  it('rejects a band outside the scale', () => {
+    expect(() => parsePuzzle({ ...RAMPED, difficulty: 0 })).toThrow(/difficulty/)
+    expect(() => parsePuzzle({ ...RAMPED, difficulty: 6 })).toThrow(/difficulty/)
+  })
+})

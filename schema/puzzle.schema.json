@@ -34,6 +34,12 @@
       "minimum": 1,
       "maximum": 9007199254740991
     },
+    "difficulty": {
+      "description": "Band the board was generated to, 1-based into the engine's LEVEL_NAMES: 1 Easy, 2 Medium, 3 Hard, 4 Expert, 5 Nightmare. The weekly ramp aims each weekday at one band and may fall below it when the seed budget runs out, so this is a floor rather than a promise. Absent from files published before the ramp existed.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
     "regions": {
       "description": "Region id per cell, row-major, length exactly size * size.",
       "type": "array",

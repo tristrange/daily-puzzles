@@ -4,13 +4,39 @@ from __future__ import annotations
 
 import io
 import json
-from contextlib import redirect_stdout
+from collections.abc import Generator
+from contextlib import contextmanager, redirect_stdout
 from datetime import date, timedelta
 from pathlib import Path
+from unittest.mock import patch
 
 from tools import publish, verify
 
-from queens_engine import PuzzleType, parse_puzzle
+from queens_engine import MIN_LEVEL, DifficultyTarget, PuzzleType, parse_puzzle
+
+#: The board size windowing tests publish at. 5x5 is the fastest thing the
+#: generator makes and none of these tests care about the size. The companion
+#: keeps its real 8x8: Star Battle is only feasible at 8x8 and 9x9, so there is
+#: nothing smaller to pin it to.
+SMALL_SIZE = 5
+
+
+@contextmanager
+def cheap_publish() -> Generator[None]:
+    """Run `publish` on a tiny board, so windowing tests stay quick.
+
+    The ramp makes a real publish expensive on purpose: a 9x9 Friday searches for a
+    band it hits only about one time in twelve, so a real run costs seconds. That
+    is right for the daily pipeline and wrong for a test whose subject is *which
+    days get filled in*. Generation is pinned to the smallest board instead; the
+    ramp is covered on its own terms in `test_ramp.py`.
+    """
+
+    def always_small(_day: date) -> DifficultyTarget:
+        return DifficultyTarget(size=SMALL_SIZE, level=MIN_LEVEL)
+
+    with patch.object(publish, "target_for", side_effect=always_small):
+        yield
 
 
 class TestPublishWindow:
@@ -152,7 +178,7 @@ def _run_publish(
     if start is not None:
         args += ["--start", start.isoformat()]
     buffer = io.StringIO()
-    with redirect_stdout(buffer):
+    with cheap_publish(), redirect_stdout(buffer):
         exit_code = publish.main(args)
     assert exit_code == 0
     return buffer.getvalue().splitlines()

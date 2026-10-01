@@ -92,10 +92,12 @@ export async function loadPuzzle(id: string, fetcher: Fetcher = fetch): Promise<
   return puzzle
 }
 
-/** A puzzle that is actually published, with the family its file declares. */
+/** A puzzle that is actually published, with the family and band its file declares. */
 export type PublishedPuzzle = {
   readonly id: string
   readonly type: Puzzle['puzzleType']
+  /** Null for files published before the weekly ramp, which record no band. */
+  readonly difficulty: Puzzle['difficulty']
 }
 
 /**
@@ -121,7 +123,13 @@ export async function listPublishedPuzzles(
   )
   return results.flatMap((result) =>
     result.status === 'fulfilled' && result.value.puzzle !== null
-      ? [{ id: result.value.id, type: result.value.puzzle.puzzleType }]
+      ? [
+          {
+            id: result.value.id,
+            type: result.value.puzzle.puzzleType,
+            difficulty: result.value.puzzle.difficulty,
+          },
+        ]
       : [],
   )
 }
