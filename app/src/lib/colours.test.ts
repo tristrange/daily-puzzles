@@ -34,6 +34,11 @@ function shippedPuzzles(): { id: string; board: Board }[] {
     })
 }
 
+/** One committed puzzle, by date. */
+function shippedPuzzle(id: string): { id: string; board: Board } {
+  return shippedPuzzles().find((entry) => entry.id === id) as { id: string; board: Board }
+}
+
 /** Every pair of regions sharing an edge or a corner, as `[a, b]` id pairs. */
 function touchingPairs(board: Board): [number, number][] {
   const pairs = new Set<string>()
@@ -125,6 +130,91 @@ describe('regionColours', () => {
     // visible regression even with every border technically clear.
     for (const { board } of shippedPuzzles()) {
       expect(new Set(regionColours(board)).size).toBe(board.regionCount)
+    }
+  })
+
+  it('keeps the assignment it shipped for a board the climb already handled', () => {
+    // The exact search only runs when the climb fails the floor, so a board that
+    // already worked is not repainted. Repainting would change the colours of a
+    // day people have already played, for no gain, and this pins that.
+    const { board } = shippedPuzzle('2026-09-30')
+    expect([...regionColours(board)]).toEqual([
+      '#f4a261', '#219ebc', '#e9c46a', '#023047',
+      '#7f9cf5', '#ffb703', '#264653', '#fb8500',
+    ])
+  })
+
+  it('colours 2026-10-04, the board that made the pipeline fail', () => {
+    // Published by the nightly cron, and the first board the climb could not
+    // colour: it settled on a touching pair 0.19988 apart, against a floor of
+    // 0.2, which failed the suite and blocked every deploy. Pinned so the day
+    // cannot quietly go back to being uncolourable.
+    const { board } = shippedPuzzle('2026-10-04')
+    expect([...regionColours(board)]).toEqual([
+      '#264653', '#2a9d8f', '#e76f51', '#8ecae6',
+      '#a4c3b2', '#6d597a', '#f4a261', '#023047',
+    ])
+  })
+
+  it('colours the densest board the app can build, in bounded time', () => {
+    // 8x8 tiled with 2x2 blocks: 16 regions, the most the app can be handed, and
+    // a far denser adjacency graph than any shipped day. The search is only
+    // reached when the climb fails, but "rare" should not be what keeps this
+    // fast, so the worst realistic input is measured rather than assumed.
+    const size = 8
+    const cells = Array.from({ length: size * size }, (_, cell) => {
+      const row = Math.floor(cell / size)
+      const col = cell % size
+      return Math.floor(row / 2) * 4 + Math.floor(col / 2)
+    })
+    const board = new Board(size, cells, new Array(16).fill(1), 'star-battle')
+
+    const started = Date.now()
+    const colours = regionColours(board)
+    const elapsed = Date.now() - started
+
+    for (let a = 0; a < 16; a += 1) {
+      for (let b = a + 1; b < 16; b += 1) {
+        const touching =
+          Math.abs(Math.floor(a / 4) - Math.floor(b / 4)) <= 1 &&
+          Math.abs((a % 4) - (b % 4)) <= 1
+        if (!touching) continue
+        expect(
+          colourDistance(colours[a] as string, colours[b] as string),
+          `regions ${a} and ${b} touch`,
+        ).toBeGreaterThanOrEqual(MIN_NEIGHBOUR_DISTANCE)
+      }
+    }
+    expect(elapsed).toBeLessThan(1000)
+  })
+
+  it('counts a colour once per holder, so reuse does not shrink the palette', () => {
+    // Found by growing connected 8-region boards and keeping the ones the climb
+    // cannot colour. The search first tracked reuse with a Set, so a colour
+    // shared by two regions that do not touch was dropped from it when the inner
+    // one backtracked — the outer one still held it. Nothing invalid came out:
+    // the floor held either way, because it is checked against the neighbours
+    // directly. But the search then preferred colours already in use and settled
+    // for six distinct swatches here instead of seven, and a board that looks
+    // flatter than it needs to is the whole thing this module is for.
+    const board = new Board(
+      8,
+      [
+        5, 1, 1, 1, 1, 1, 2, 2, 5, 5, 6, 6, 6, 7, 2, 2,
+        0, 5, 5, 6, 7, 7, 2, 2, 3, 3, 3, 7, 7, 7, 2, 2,
+        3, 3, 3, 3, 7, 7, 7, 7, 3, 3, 3, 7, 7, 4, 4, 4,
+        3, 3, 3, 7, 7, 4, 4, 4, 3, 3, 3, 4, 4, 4, 4, 4,
+      ],
+      new Array(8).fill(1),
+      'queens',
+    )
+    const colours = regionColours(board)
+    expect(new Set(colours).size).toBe(7)
+    for (const [a, b] of touchingPairs(board)) {
+      expect(
+        colourDistance(colours[a] as string, colours[b] as string),
+        `regions ${a} and ${b} touch`,
+      ).toBeGreaterThanOrEqual(MIN_NEIGHBOUR_DISTANCE)
     }
   })
 
