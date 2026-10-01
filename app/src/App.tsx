@@ -2,7 +2,7 @@ import { HashRouter, Route, Routes } from 'react-router-dom'
 import './App.css'
 import { Shell } from './components/Shell'
 import { ArchivePage } from './pages/ArchivePage'
-import { DailyPage } from './pages/DailyPage'
+import { HomePage } from './pages/HomePage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PuzzlePage } from './pages/PuzzlePage'
 import { StarBattlePage } from './pages/StarBattlePage'
@@ -13,7 +13,7 @@ function App() {
     <HashRouter>
       <Routes>
         <Route element={<Shell />}>
-          <Route index element={<DailyPage />} />
+          <Route index element={<HomePage />} />
           <Route path="archive" element={<ArchivePage />} />
           <Route path="archive/:id" element={<PuzzlePage />} />
           <Route path="star-battle" element={<StarBattlePage />} />

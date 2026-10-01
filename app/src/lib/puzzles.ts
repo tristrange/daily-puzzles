@@ -47,6 +47,43 @@ async function fetchPuzzle(id: string, fetcher: Fetcher): Promise<Puzzle | null>
   }
 }
 
+/** One id asked for, and the puzzle behind it if the day has one published. */
+export type ProbedPuzzle = {
+  readonly id: string
+  readonly puzzle: Puzzle | null
+}
+
+/**
+ * Ask for several puzzles at once, reporting a miss as an absent entry rather
+ * than a rejection. Never rejects.
+ *
+ * The chooser needs this because "today" is not guaranteed to be complete: a
+ * companion can be missing on a day the Queens board is already out, and a
+ * rejection there would take the whole page down over one absent file.
+ *
+ * Never rejecting is the whole point, and it has to be per probe rather than
+ * around the group. `Promise.all` rejects on the first failure and throws away
+ * the results already in hand, so a request that fails at the network layer --
+ * offline, blocked, a transient 5xx -- would report the *other* puzzle as
+ * unpublished too. One unreachable file would take out a board that had already
+ * loaded perfectly. Caught per probe, a failure costs exactly the card it
+ * belongs to and no more.
+ */
+export async function probePuzzles(
+  ids: readonly string[],
+  fetcher: Fetcher = fetch,
+): Promise<readonly ProbedPuzzle[]> {
+  return Promise.all(
+    ids.map(async (id): Promise<ProbedPuzzle> => {
+      try {
+        return { id, puzzle: await fetchPuzzle(id, fetcher) }
+      } catch {
+        return { id, puzzle: null }
+      }
+    }),
+  )
+}
+
 /** Fetch and fully validate one puzzle file; throws `PuzzleNotFoundError`. */
 export async function loadPuzzle(id: string, fetcher: Fetcher = fetch): Promise<Puzzle> {
   if (!isPuzzleId(id)) throw new PuzzleNotFoundError(id)
