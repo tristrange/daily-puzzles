@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 
 /**
  * How to play, for both games.
@@ -11,6 +12,20 @@ import { Link } from 'react-router-dom'
  * only described the well-known version would be confidently wrong.
  */
 export function RulesPage() {
+  // The app routes on the URL fragment, so `#crosses` is a *route* here, not an
+  // anchor: a plain `href="#crosses"` replaces `/how-to-play` with it and the
+  // router renders the not-found page. Links carry the section as the router's
+  // hash instead, which leaves the route intact -- and the browser will not do
+  // the scrolling for us, because its fragment is now `/how-to-play#crosses`
+  // rather than `crosses`. So it is done here, which also makes a shared or
+  // reloaded link land on the section it names.
+  const { hash } = useLocation()
+
+  useEffect(() => {
+    const id = hash.replace(/^#/, '')
+    if (id !== '') document.getElementById(id)?.scrollIntoView()
+  }, [hash])
+
   return (
     <section className="rules">
       <h2 className="page-title">How to play</h2>
@@ -52,7 +67,7 @@ export function RulesPage() {
       <p>
         Place one queen in each row, in each column and in each region, with no two queens
         touching, not even at a corner. Crosses are yours to place as notes; see{' '}
-        <a href="#crosses">Crosses and auto-mark</a>.
+        <Link to={{ pathname: '/how-to-play', hash: '#crosses' }}>Crosses and auto-mark</Link>.
       </p>
 
       <h3>Star Battle</h3>
