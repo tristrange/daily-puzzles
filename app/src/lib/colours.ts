@@ -275,7 +275,13 @@ function searchAssignment(
     (a, b) => (neighbours[b]?.length ?? 0) - (neighbours[a]?.length ?? 0) || a - b,
   )
   const assigned: (string | null)[] = Array.from({ length: regionCount }, () => null)
-  const used = new Set<string>()
+  // A count per colour, not a set. Two regions that do not touch may share one,
+  // and a set would then drop it on the inner region's backtrack while the outer
+  // one still held it — which does not produce an invalid answer, since the hard
+  // constraint is checked against the neighbours directly, but it does reorder the
+  // remaining branches and so can spend the budget on a search that would
+  // otherwise have succeeded, and it undercounts distinct colours.
+  const usage = new Map<string, number>()
   let budget = SEARCH_BUDGET
 
   const place = (depth: number): boolean => {
@@ -285,17 +291,19 @@ function searchAssignment(
       .map((neighbour) => assigned[neighbour])
       .filter((hex): hex is string => hex !== null)
     const palette = [
-      ...REGION_COLOURS.filter((hex) => !used.has(hex)),
-      ...REGION_COLOURS.filter((hex) => used.has(hex)),
+      ...REGION_COLOURS.filter((hex) => !usage.has(hex)),
+      ...REGION_COLOURS.filter((hex) => usage.has(hex)),
     ]
     for (const colour of palette) {
       if (budget <= 0) return false
       budget -= 1
       if (taken.some((other) => colourDistance(colour, other) < MIN_NEIGHBOUR_DISTANCE)) continue
       assigned[region] = colour
-      used.add(colour)
+      usage.set(colour, (usage.get(colour) ?? 0) + 1)
       if (place(depth + 1)) return true
-      used.delete(colour)
+      const remaining = (usage.get(colour) ?? 1) - 1
+      if (remaining === 0) usage.delete(colour)
+      else usage.set(colour, remaining)
       assigned[region] = null
     }
     return false

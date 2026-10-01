@@ -188,6 +188,36 @@ describe('regionColours', () => {
     expect(elapsed).toBeLessThan(1000)
   })
 
+  it('counts a colour once per holder, so reuse does not shrink the palette', () => {
+    // Found by growing connected 8-region boards and keeping the ones the climb
+    // cannot colour. The search first tracked reuse with a Set, so a colour
+    // shared by two regions that do not touch was dropped from it when the inner
+    // one backtracked — the outer one still held it. Nothing invalid came out:
+    // the floor held either way, because it is checked against the neighbours
+    // directly. But the search then preferred colours already in use and settled
+    // for six distinct swatches here instead of seven, and a board that looks
+    // flatter than it needs to is the whole thing this module is for.
+    const board = new Board(
+      8,
+      [
+        5, 1, 1, 1, 1, 1, 2, 2, 5, 5, 6, 6, 6, 7, 2, 2,
+        0, 5, 5, 6, 7, 7, 2, 2, 3, 3, 3, 7, 7, 7, 2, 2,
+        3, 3, 3, 3, 7, 7, 7, 7, 3, 3, 3, 7, 7, 4, 4, 4,
+        3, 3, 3, 7, 7, 4, 4, 4, 3, 3, 3, 4, 4, 4, 4, 4,
+      ],
+      new Array(8).fill(1),
+      'queens',
+    )
+    const colours = regionColours(board)
+    expect(new Set(colours).size).toBe(7)
+    for (const [a, b] of touchingPairs(board)) {
+      expect(
+        colourDistance(colours[a] as string, colours[b] as string),
+        `regions ${a} and ${b} touch`,
+      ).toBeGreaterThanOrEqual(MIN_NEIGHBOUR_DISTANCE)
+    }
+  })
+
   it('separates touching regions on a 16-region board too', () => {
     const colours = regionColours(MANY_REGIONS)
     for (const [a, b] of touchingPairs(MANY_REGIONS)) {
