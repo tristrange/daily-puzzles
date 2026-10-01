@@ -211,6 +211,27 @@ export function readStoredStats(): readonly SolveRecord[] {
   }
 }
 
+/**
+ * Forget everything: the key is removed rather than written empty, so a player who
+ * has cleared their history is not left with an artefact of having had one.
+ *
+ * Only the solve history goes. The theme is a separate key on purpose — clearing
+ * your solves should not also reset a preference you made once, and a player who
+ * wants that back has a control for it in the header.
+ *
+ * Returns the empty history, which is what the page renders afterwards, so the
+ * caller does not have to know what clearing means for its state.
+ */
+export function clearStats(): readonly SolveRecord[] {
+  try {
+    localStorage.removeItem(STATS_STORAGE_KEY)
+  } catch {
+    // Nothing to do: a browser that refuses the removal has not kept a history
+    // this page can see either, since reading it is guarded the same way.
+  }
+  return []
+}
+
 /** Record a solve, keeping the history sorted. A puzzle already solved is left alone. */
 export function storeSolve(record: SolveRecord): readonly SolveRecord[] {
   const records = addSolve(readStoredStats(), record)

@@ -430,6 +430,21 @@ cast, so a truncated write or a record from a future version drops that one reco
 instead of putting `undefined` in the middle of a streak calculation — and the rest of
 the history survives.
 
+**It can be deleted.** A feature that keeps a record of what you have played has to offer
+a way to forget it — on a shared machine the history outlives the session, and a streak is
+the sort of thing a player may simply want to start over. `clearStats` removes the key
+rather than writing an empty list, so a cleared player leaves no artefact of having had
+one, and it touches nothing else: the theme lives under its own key, and losing a
+preference you set once because you cleared your solves would be its own small betrayal.
+The control takes two clicks and says plainly that it cannot be undone, because it cannot
+be — and the outcome is announced, since the page swaps to its empty state in the same
+render that needs to say so.
+
+The storage wrappers in that module are the only code in `lib/` that touches a player's
+data, and they are covered directly: a `localStorage` stand-in exercises reading, writing,
+a value that cannot be parsed, a store that throws on *access* as private browsing does,
+and clearing.
+
 ### Share text
 
 The last M9 item. Finishing a puzzle offers **Copy result** and **Copy with solution**.
