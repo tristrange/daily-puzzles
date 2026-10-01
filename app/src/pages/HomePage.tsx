@@ -31,15 +31,11 @@ export function HomePage() {
 
   useEffect(() => {
     let cancelled = false
-    probePuzzles(puzzleIdsForDay(todayId)).then(
-      (probes) => {
-        if (!cancelled) setState({ status: 'ready', probes })
-      },
-      () => {
-        // Nothing loaded means nothing can be offered; say so rather than spin.
-        if (!cancelled) setState({ status: 'ready', probes: puzzleIdsForDay(todayId).map((id) => ({ id, puzzle: null })) })
-      },
-    )
+    // `probePuzzles` never rejects: each id fails alone, so there is no whole-page
+    // failure left to handle here.
+    probePuzzles(puzzleIdsForDay(todayId)).then((probes) => {
+      if (!cancelled) setState({ status: 'ready', probes })
+    })
     return () => {
       cancelled = true
     }

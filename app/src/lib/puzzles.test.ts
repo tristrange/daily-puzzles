@@ -229,6 +229,26 @@ describe('probePuzzles', () => {
     expect(probes.every((probe) => probe.puzzle === null)).toBe(true)
   })
 
+  it('keeps the other probe when one request fails at the network layer', async () => {
+    // `Promise.all` would reject here and throw away the board that had already
+    // loaded, reporting both cards as unpublished over one unreachable file.
+    const flaky = async (url: string) => {
+      if (url.includes('-star.json')) throw new TypeError('Failed to fetch')
+      return fetcherFor(['2026-10-01'])(url)
+    }
+    const probes = await probePuzzles(['2026-10-01', '2026-10-01-star'], flaky)
+    expect(probes[0]?.puzzle?.puzzleType).toBe('queens')
+    expect(probes[1]).toEqual({ id: '2026-10-01-star', puzzle: null })
+  })
+
+  it('does not reject when every request fails', async () => {
+    const allDown = async () => {
+      throw new TypeError('Failed to fetch')
+    }
+    const probes = await probePuzzles(['2026-10-01', '2026-10-01-star'], allDown)
+    expect(probes.every((probe) => probe.puzzle === null)).toBe(true)
+  })
+
   it('treats a puzzle file that no longer validates as absent', async () => {
     const broken = async (url: string) =>
       url.includes('2026-10-01.json') ? jsonResponse({ id: '2026-10-01', type: 'nope' }) : spaShellResponse()
