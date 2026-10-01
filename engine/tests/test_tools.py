@@ -90,6 +90,25 @@ class TestPublishWindow:
         after = {p.name: p.read_text(encoding="utf-8") for p in tmp_path.glob("*.json")}
         assert after == before
 
+    def test_resumes_at_the_half_published_day_rather_than_past_it(self, tmp_path: Path) -> None:
+        # The scheduled run passes no --start. If the newest committed day has
+        # only one of its two puzzles, resuming after the newest day steps over
+        # the gap and the missing companion is never filled in.
+        today = date.today()
+        yesterday = today - timedelta(days=1)
+        _run_publish(tmp_path, yesterday, 0, dry_run=False)
+        # A run that died between the day's two puzzles.
+        (tmp_path / f"{today.isoformat()}-star.json").unlink()
+
+        lines = _run_publish(tmp_path, None, 0, dry_run=False)
+
+        # Exactly the one file that was missing, and nothing else touched.
+        assert [line for line in lines if line.startswith("publish ")] == [
+            f"publish {today.isoformat()}-star"
+        ]
+        assert (tmp_path / f"{today.isoformat()}-star.json").exists()
+        assert (tmp_path / f"{today.isoformat()}.json").exists()
+
     def test_rerun_resumes_from_the_last_committed_day(self, tmp_path: Path) -> None:
         today = date.today()
         _run_publish(tmp_path, today, 0, dry_run=False)

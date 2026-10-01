@@ -160,6 +160,48 @@ describe('currentStreak', () => {
   })
 })
 
+describe('streaks with both puzzles of a day', () => {
+  const star = (id: string) => record({ id, puzzleType: 'star-battle' })
+
+  it('credits a current streak to a player who only plays Star Battle', () => {
+    // The day key is the bare date, so a record keyed `2026-10-01-star` has to be
+    // collapsed onto `2026-10-01` or this player reads a streak of zero.
+    const records = [star('2026-10-01-star'), star('2026-09-30-star'), star('2026-09-29-star')]
+
+    expect(currentStreak(records, '2026-10-01')).toBe(3)
+  })
+
+  it('counts a day once when both of its puzzles are solved', () => {
+    // The duplicate has to land in the *middle* of the run to be visible: sorted,
+    // a companion sits just after its sibling, resets the run to one, and then
+    // the next real day only reaches two — so three played days read as two. (At
+    // the end of a run the maximum hides it, which is why this case is here.)
+    const records = [
+      record({ id: '2026-10-01' }),
+      record({ id: '2026-10-02' }),
+      star('2026-10-02-star'),
+      record({ id: '2026-10-03' }),
+    ]
+
+    expect(bestStreak(records)).toBe(3)
+  })
+
+  it('reports one day for a single day played twice', () => {
+    expect(bestStreak([record({ id: '2026-10-01' }), star('2026-10-01-star')])).toBe(1)
+  })
+
+  it('gives a current streak of three across both puzzles of the middle day', () => {
+    const records = [
+      record({ id: '2026-10-03' }),
+      star('2026-10-02-star'),
+      record({ id: '2026-10-02' }),
+      star('2026-10-01-star'),
+    ]
+
+    expect(currentStreak(records, '2026-10-03')).toBe(3)
+  })
+})
+
 describe('bestStreak', () => {
   it('finds the longest historical run', () => {
     const records = [
@@ -283,6 +325,50 @@ describe('the stored history', () => {
     storeSolve(solve)
     expect(readStoredStats()).toEqual([solve])
     expect(map.get(STATS_STORAGE_KEY)).toBe('[{"id":"2026-09-30","puzzleType":"queens","size":8,"elapsedMs":60000,"hints":0,"solvedAt":1}]')
+  })
+
+  it('moves a solve of the repurposed 2026-09-26 Star Battle to its new id', () => {
+    // That board shipped under the bare date id before every day had a
+    // companion, and the bare date now holds a Queens puzzle. Left alone, the
+    // legacy record would read as a solve of the new puzzle and first-solve-wins
+    // would block the player's real Queens solve for that date, for ever.
+    stubStorage({
+      [STATS_STORAGE_KEY]: JSON.stringify([
+        { id: '2026-09-26', puzzleType: 'star-battle', size: 8, elapsedMs: 60_000, hints: 0, solvedAt: 1 },
+      ]),
+    })
+
+    const records = readStoredStats()
+
+    expect(records.map((held) => held.id)).toEqual(['2026-09-26-star'])
+    expect(records[0]?.puzzleType).toBe('star-battle')
+    expect(records[0]?.elapsedMs).toBe(60_000)
+  })
+
+  it('leaves a Queens solve of the repurposed id alone', () => {
+    // The migration keys off the puzzle's family, so a record written *after* the
+    // id was reused must not be swept up and moved to a puzzle it was not solved on.
+    const queens = { id: '2026-09-26', puzzleType: 'queens' as const, size: 8, elapsedMs: 60_000, hints: 0, solvedAt: 2 }
+    stubStorage({ [STATS_STORAGE_KEY]: JSON.stringify([queens]) })
+
+    expect(readStoredStats()).toEqual([queens])
+  })
+
+  it('lets a Queens solve of the repurposed date be recorded after the migration', () => {
+    // The bug this exists for: the legacy record and the new Queens record share
+    // an id, so without the migration the second is treated as a replay.
+    stubStorage({
+      [STATS_STORAGE_KEY]: JSON.stringify([
+        { id: '2026-09-26', puzzleType: 'star-battle', size: 8, elapsedMs: 60_000, hints: 0, solvedAt: 1 },
+      ]),
+    })
+
+    storeSolve({ id: '2026-09-26', puzzleType: 'queens', size: 8, elapsedMs: 90_000, hints: 0, solvedAt: 2 })
+
+    expect(readStoredStats().map((held) => `${held.id}:${held.puzzleType}`)).toEqual([
+      '2026-09-26:queens',
+      '2026-09-26-star:star-battle',
+    ])
   })
 
   it('returns nothing when storage is empty', () => {

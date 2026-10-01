@@ -77,6 +77,26 @@ def _existing_days(out_dir: Path) -> set[date]:
     return {date.fromisoformat(puzzle_id.rstrip(STAR_SUFFIX)) for puzzle_id in ids}
 
 
+def _ids_for_day(day: date) -> tuple[str, str]:
+    """The two puzzle ids a day carries, Queens first."""
+    return day.isoformat(), f"{day.isoformat()}{STAR_SUFFIX}"
+
+
+def _first_incomplete_day(existing: set[str], first: date, end: date) -> date | None:
+    """The earliest day up to `end` that is missing either of its puzzles.
+
+    Deliberately the earliest rather than the latest: a run that died between
+    writing one puzzle of a day and writing the other has left a half-published
+    day, and resuming after the newest committed day would step straight over it
+    and never fill it in.
+    """
+    for offset in range((end - first).days + 1):
+        day = first + timedelta(days=offset)
+        if any(puzzle_id not in existing for puzzle_id in _ids_for_day(day)):
+            return day
+    return None
+
+
 def _generate_queens(puzzle_id: str, seed: int) -> tuple[Puzzle, float]:
     """Generate a logic-only Queens puzzle, bumping the seed on any failure.
 
@@ -138,13 +158,18 @@ def main(argv: list[str] | None = None) -> int:
     days = _existing_days(args.out)
     today = date.today()
 
+    end = today + timedelta(days=args.lead)
+
     if args.start is not None:
         start = date.fromisoformat(args.start)
     elif days:
-        start = max(days) + timedelta(days=1)
+        # Resume at the first day that is not completely published, which may be
+        # long before the newest one; if everything up to the lead horizon is
+        # complete there is nothing to do.
+        incomplete = _first_incomplete_day(existing, min(days), end)
+        start = incomplete if incomplete is not None else end + timedelta(days=1)
     else:
         start = today
-    end = today + timedelta(days=args.lead)
 
     window = start
     while window <= end:

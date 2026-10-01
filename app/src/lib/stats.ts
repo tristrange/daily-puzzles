@@ -14,7 +14,7 @@
  * the theme's: anything unrecognised is treated as no history at all.
  */
 
-import { isPuzzleId, parsePuzzleDate, previousPuzzleIds } from '../domain/dates'
+import { isPuzzleId, parsePuzzleDate, previousPuzzleIds, puzzleDay } from '../domain/dates'
 
 /** One finished puzzle. `hints` is how many hints were actually shown, not asked for. */
 export type SolveRecord = {
@@ -119,6 +119,19 @@ function daysBetween(laterId: string, earlierId: string): number {
 }
 
 /**
+ * The calendar days a set of records covers, each counted once.
+ *
+ * A day now carries two puzzles, so a record's id is not its day: streak maths
+ * has to collapse the `-star` companion onto the same day as its Queens
+ * sibling, or a player who only plays Star Battle would be credited no streak
+ * at all, and one who plays both would have their best streak reset by the
+ * second solve of a day they had already counted.
+ */
+function solvedDays(records: readonly SolveRecord[]): Set<string> {
+  return new Set(records.map((record) => puzzleDay(record.id)))
+}
+
+/**
  * Consecutive solved days ending today.
  *
  * A day you have not played yet does not break the streak, so this counts back
@@ -127,7 +140,7 @@ function daysBetween(laterId: string, earlierId: string): number {
  */
 export function currentStreak(records: readonly SolveRecord[], todayId: string): number {
   if (records.length === 0) return 0
-  const solved = new Set(records.map((record) => record.id))
+  const solved = solvedDays(records)
   const days = previousPuzzleIds(todayId, records.length + 1)
   let streak = 0
   for (const day of solved.has(days[0] as string) ? days : days.slice(1)) {
@@ -139,14 +152,14 @@ export function currentStreak(records: readonly SolveRecord[], todayId: string):
 
 /** The longest run of consecutive solved days ever recorded. */
 export function bestStreak(records: readonly SolveRecord[]): number {
-  const ordered = [...records].sort((a, b) => (a.id < b.id ? -1 : 1))
+  const days = [...solvedDays(records)].sort()
   let best = 0
   let run = 0
-  let previousId: string | null = null
-  for (const record of ordered) {
-    run = previousId !== null && daysBetween(record.id, previousId) === 1 ? run + 1 : 1
+  let previousDay: string | null = null
+  for (const day of days) {
+    run = previousDay !== null && daysBetween(day, previousDay) === 1 ? run + 1 : 1
     if (run > best) best = run
-    previousId = record.id
+    previousDay = day
   }
   return best
 }
@@ -199,13 +212,41 @@ export function summarise(records: readonly SolveRecord[], todayId: string): Sta
 }
 
 /**
+ * Ids that were repurposed after the fact, and what they used to name.
+ *
+ * 2026-09-26 shipped as a Star Battle board under the bare date id, long before
+ * every day had a companion. That board moved to `-star` and the bare date now
+ * holds a Queens puzzle, so a record written against the old id would be read as
+ * a solve of the *new* puzzle — and because the first solve of a day wins, the
+ * player's real Queens solve for that date could never be recorded.
+ *
+ * The puzzle's own family is what tells the two apart: a legacy record says
+ * `star-battle`, a Queens solve of that date says `queens`. That makes this
+ * safe to run on every read rather than once behind a migration flag — a record
+ * that arrives later with the same id and the other family is left alone.
+ */
+const REPURPOSED_IDS: readonly (readonly [string, string])[] = [['2026-09-26', '2026-09-26-star']]
+
+function migrateRecords(records: readonly SolveRecord[]): readonly SolveRecord[] {
+  return records.flatMap((record) => {
+    const moved = REPURPOSED_IDS.find(([was]) => was === record.id)
+    if (moved === undefined || record.puzzleType !== 'star-battle') return [record]
+    return [{ ...record, id: moved[1] as string }]
+  })
+}
+
+/**
  * The stored history. Private browsing and blocked storage throw on *access*, not
  * just on write, so this has to be defensive to be worth having — a player who
  * blocks storage should still get a playable game.
+ *
+ * Migration happens here rather than on write, so a player who only ever reads
+ * their stats still sees them under the right puzzle. The next solve persists
+ * the corrected ids, since `storeSolve` writes back everything it read.
  */
 export function readStoredStats(): readonly SolveRecord[] {
   try {
-    return parseStats(localStorage.getItem(STATS_STORAGE_KEY))
+    return migrateRecords(parseStats(localStorage.getItem(STATS_STORAGE_KEY)))
   } catch {
     return []
   }
