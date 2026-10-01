@@ -90,7 +90,8 @@ export function RulesPage() {
         can undo.
       </p>
       <p>
-        <strong>Auto-mark</strong> is off by default. Switched on, placing a piece also crosses
+        <strong>Auto-mark</strong> starts off, and the page remembers your choice for next
+        time. Switched on, placing a piece also crosses
         off the cells that piece rules out &mdash; in Queens the rest of its row, its column and
         its region plus the cells touching it; in Star Battle only the cells touching it. It
         draws conclusions you may not have made yet, so leaving it off keeps the board showing
