@@ -16,6 +16,9 @@ export function Shell() {
           <NavLink to="/" end className={navClass}>
             Today
           </NavLink>
+          <NavLink to="/star-battle" className={navClass}>
+            Star Battle
+          </NavLink>
           <NavLink to="/archive" className={navClass}>
             Archive
           </NavLink>

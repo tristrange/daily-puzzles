@@ -5,6 +5,7 @@ import { ArchivePage } from './pages/ArchivePage'
 import { DailyPage } from './pages/DailyPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PuzzlePage } from './pages/PuzzlePage'
+import { StarBattlePage } from './pages/StarBattlePage'
 import { StatsPage } from './pages/StatsPage'
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
           <Route index element={<DailyPage />} />
           <Route path="archive" element={<ArchivePage />} />
           <Route path="archive/:id" element={<PuzzlePage />} />
+          <Route path="star-battle" element={<StarBattlePage />} />
           <Route path="stats" element={<StatsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>

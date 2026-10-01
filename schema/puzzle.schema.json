@@ -8,9 +8,9 @@
   "required": ["id", "type", "size", "seed", "generatorVersion", "regions"],
   "properties": {
     "id": {
-      "description": "Puzzle date in UTC, YYYY-MM-DD. Also the filename stem.",
+      "description": "Puzzle date in UTC, YYYY-MM-DD, with an optional -star suffix for the Star Battle companion of that day. Also the filename stem.",
       "type": "string",
-      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(-star)?$"
     },
     "type": {
       "description": "Puzzle family. Selects the adapter in the app.",

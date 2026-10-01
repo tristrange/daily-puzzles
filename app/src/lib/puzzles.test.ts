@@ -2,20 +2,22 @@ import { describe, expect, it } from 'vitest'
 import {
   ARCHIVE_WINDOW_DAYS,
   PuzzleNotFoundError,
-  listPublishedPuzzleIds,
+  listPublishedPuzzles,
   loadPuzzle,
   puzzleUrl,
 } from './puzzles'
 
-/** A minimal committed puzzle file. */
+/** A minimal committed puzzle file, shaped for the id given. */
 function puzzleBody(id: string) {
+  const star = id.endsWith('-star')
   return {
     id,
-    type: 'queens',
+    type: star ? 'star-battle' : 'queens',
     size: 3,
     seed: 1,
     generatorVersion: 1,
     regions: [0, 0, 1, 0, 1, 1, 0, 0, 2],
+    ...(star ? { regionCapacity: [1, 1, 1] } : {}),
   }
 }
 
@@ -115,12 +117,28 @@ describe('loadPuzzle', () => {
   })
 })
 
-describe('listPublishedPuzzleIds', () => {
+describe('listPublishedPuzzles', () => {
   const published = ['2026-10-03', '2026-10-01', '2026-09-28']
+  const queens = published.map((id) => ({ id, type: 'queens' }))
 
   it('returns only days with a puzzle file, newest first', async () => {
-    const found = await listPublishedPuzzleIds('2026-10-03', fetcherFor(published))
-    expect(found).toEqual(published)
+    const found = await listPublishedPuzzles('2026-10-03', fetcherFor(published))
+    expect(found).toEqual(queens)
+  })
+
+  it('reports the family the file declares, not the one its id suggests', async () => {
+    // A file committed with a companion's name but the wrong family must show up
+    // as what it is, or the archive would mislabel it.
+    const mislabelled = async (url: string) => {
+      const id = url.split('/').at(-1)?.replace('.json', '') ?? ''
+      return id === '2026-10-03-star'
+        ? jsonResponse({ ...puzzleBody(id), type: 'queens', regionCapacity: undefined })
+        : spaShellResponse()
+    }
+
+    const found = await listPublishedPuzzles('2026-10-03', mislabelled)
+
+    expect(found).toEqual([{ id: '2026-10-03-star', type: 'queens' }])
   })
 
   it('probes a bounded recent window', async () => {
@@ -129,8 +147,32 @@ describe('listPublishedPuzzleIds', () => {
       probes.push(url.split('/').at(-1) ?? '')
       return spaShellResponse()
     }
-    await listPublishedPuzzleIds('2026-10-03', probeFetcher)
-    expect(probes).toHaveLength(ARCHIVE_WINDOW_DAYS)
+    await listPublishedPuzzles('2026-10-03', probeFetcher)
+    // Both ids of every day in the window: a companion that is not published
+    // yet has to be asked for before it can be reported as absent.
+    expect(probes).toHaveLength(ARCHIVE_WINDOW_DAYS * 2)
+    expect(probes).toContain('2026-10-03.json')
+    expect(probes).toContain('2026-10-03-star.json')
+  })
+
+  it('lists both puzzles of a day, the Queens one first', async () => {
+    const both = ['2026-10-03', '2026-10-03-star', '2026-10-02']
+
+    const found = await listPublishedPuzzles('2026-10-03', fetcherFor(both))
+
+    expect(found).toEqual([
+      { id: '2026-10-03', type: 'queens' },
+      { id: '2026-10-03-star', type: 'star-battle' },
+      { id: '2026-10-02', type: 'queens' },
+    ])
+  })
+
+  it('omits a companion that has not been published', async () => {
+    // Days before companions existed have only the Queens puzzle, so the missing
+    // one must be absent from the listing rather than listed as broken.
+    const found = await listPublishedPuzzles('2026-10-03', fetcherFor(['2026-10-03']))
+
+    expect(found).toEqual([{ id: '2026-10-03', type: 'queens' }])
   })
 
   it('ignores days that answer 200 with the SPA shell rather than a puzzle', async () => {
@@ -142,9 +184,9 @@ describe('listPublishedPuzzleIds', () => {
       if (response.ok) answeredOk += 1
       return response
     }
-    const found = await listPublishedPuzzleIds('2026-10-03', countingFetcher)
-    expect(answeredOk).toBe(ARCHIVE_WINDOW_DAYS)
-    expect(found).toEqual(published)
+    const found = await listPublishedPuzzles('2026-10-03', countingFetcher)
+    expect(answeredOk).toBe(ARCHIVE_WINDOW_DAYS * 2)
+    expect(found).toEqual(queens)
   })
 
   it('ignores a day whose file no longer validates', async () => {
@@ -154,11 +196,14 @@ describe('listPublishedPuzzleIds', () => {
         ? jsonResponse({ id, type: 'nope' })
         : fetcherFor(published)(url)
     }
-    const found = await listPublishedPuzzleIds('2026-10-03', broken)
-    expect(found).toEqual(['2026-10-03', '2026-09-28'])
+    const found = await listPublishedPuzzles('2026-10-03', broken)
+    expect(found).toEqual([
+      { id: '2026-10-03', type: 'queens' },
+      { id: '2026-09-28', type: 'queens' },
+    ])
   })
 
   it('returns nothing when no day has a puzzle', async () => {
-    expect(await listPublishedPuzzleIds('2026-10-03', fetcherFor([]))).toEqual([])
+    expect(await listPublishedPuzzles('2026-10-03', fetcherFor([]))).toEqual([])
   })
 })

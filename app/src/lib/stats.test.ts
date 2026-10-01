@@ -100,6 +100,19 @@ describe('addSolve', () => {
     const added = addSolve([first], replay)
     expect(added).toEqual([first])
   })
+
+  it("records both of a day's puzzles, which is what the -star id is for", () => {
+    // Without the suffix the day's two puzzles would share an id and first-solve-
+    // wins would silently drop one of them: solve Queens, and the Star Battle
+    // could never be recorded at all.
+    const queens = record({ id: '2026-10-05', elapsedMs: 600_000, solvedAt: 100 })
+    const star = record({ id: '2026-10-05-star', puzzleType: 'star-battle', solvedAt: 200 })
+
+    const afterQueens = addSolve([], queens)
+    const afterBoth = addSolve(afterQueens, star)
+
+    expect(afterBoth.map((held) => held.id)).toEqual(['2026-10-05', '2026-10-05-star'])
+  })
 })
 
 describe('currentStreak', () => {

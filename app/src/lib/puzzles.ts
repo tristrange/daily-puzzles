@@ -7,7 +7,7 @@
  * probing the recent window and keeping whatever comes back as a puzzle.
  */
 
-import { isPuzzleId, previousPuzzleIds } from '../domain/dates'
+import { isPuzzleId, previousPuzzleIds, puzzleIdsForDay } from '../domain/dates'
 import { parsePuzzle, type Puzzle } from '../domain/puzzle'
 
 export const ARCHIVE_WINDOW_DAYS = 30
@@ -55,16 +55,36 @@ export async function loadPuzzle(id: string, fetcher: Fetcher = fetch): Promise<
   return puzzle
 }
 
-/** Published puzzle ids in the recent window, newest first. */
-export async function listPublishedPuzzleIds(
+/** A puzzle that is actually published, with the family its file declares. */
+export type PublishedPuzzle = {
+  readonly id: string
+  readonly type: Puzzle['puzzleType']
+}
+
+/**
+ * Published puzzles in the recent window, newest day first and each day's
+ * Queens puzzle before its Star Battle companion.
+ *
+ * Both ids of a day are probed rather than assumed, because the companion is a
+ * separate file that a day may not have: it did not exist before companions
+ * were published, and a missing one has to be absent rather than an error.
+ *
+ * The family comes from the file's own `type` rather than from the id's suffix.
+ * Every probe already parses the file it fetched, so reading the answer off it
+ * costs nothing, and it means a mislabelled file shows up as what it is instead
+ * of as what its name promised.
+ */
+export async function listPublishedPuzzles(
   todayId: string,
   fetcher: Fetcher = fetch,
-): Promise<readonly string[]> {
-  const candidates = previousPuzzleIds(todayId, ARCHIVE_WINDOW_DAYS)
+): Promise<readonly PublishedPuzzle[]> {
+  const candidates = previousPuzzleIds(todayId, ARCHIVE_WINDOW_DAYS).flatMap(puzzleIdsForDay)
   const results = await Promise.allSettled(
     candidates.map(async (id) => ({ id, puzzle: await fetchPuzzle(id, fetcher) })),
   )
   return results.flatMap((result) =>
-    result.status === 'fulfilled' && result.value.puzzle !== null ? [result.value.id] : [],
+    result.status === 'fulfilled' && result.value.puzzle !== null
+      ? [{ id: result.value.id, type: result.value.puzzle.puzzleType }]
+      : [],
   )
 }
