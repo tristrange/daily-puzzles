@@ -19,10 +19,12 @@ import {
   createGame,
   cycleCell,
   formatTime,
+  isEmpty,
   isSolved,
   nextCellState,
   paintStroke,
   placeQueenAutoMark,
+  resetGame,
   setCell,
   starsPerRow,
   toggleMark,
@@ -120,6 +122,70 @@ describe('clearCell', () => {
   it('is a no-op on an empty cell', () => {
     const game = clearCell(createGame(BLOCKS), 3)
     expect(cellState(game, 3)).toBe('empty')
+  })
+})
+
+describe('resetGame', () => {
+  it('clears every piece and mark', () => {
+    const played = placeQueenAutoMark(toggleMark(createGame(BLOCKS), 12), 0)
+    expect(isEmpty(played)).toBe(false)
+
+    const fresh = resetGame(played)
+
+    expect(fresh.queens.size).toBe(0)
+    expect(fresh.marks.size).toBe(0)
+    expect(isEmpty(fresh)).toBe(true)
+  })
+
+  it('keeps the same board, so the puzzle is unchanged', () => {
+    const played = toggleQueen(createGame(BLOCKS), 5)
+
+    expect(resetGame(played).board).toBe(played.board)
+  })
+
+  it('does not disturb the state it was given', () => {
+    // Reset is a transition like any other: the caller's state is still theirs,
+    // which is what lets the UI keep it as a single undo step.
+    const played = toggleMark(createGame(BLOCKS), 7)
+
+    resetGame(played)
+
+    expect(cellState(played, 7)).toBe('mark')
+  })
+
+  it('is a no-op on a board that is already empty', () => {
+    const fresh = createGame(BLOCKS)
+
+    const again = resetGame(fresh)
+
+    expect(again.queens.size).toBe(0)
+    expect(again.marks.size).toBe(0)
+  })
+
+  it('leaves a nearly-solved board unsolved', () => {
+    // The reset is applied through the same transition that detects a win, so a
+    // board cleared one move from finished must not read as solved — that would
+    // record a solve time for a board with nothing on it.
+    const nearly = toggleQueen(toggleQueen(toggleQueen(createGame(BLOCKS), 0), 5), 10)
+    expect(isSolved(nearly)).toBe(false)
+
+    expect(isSolved(resetGame(nearly))).toBe(false)
+  })
+})
+
+describe('isEmpty', () => {
+  it('is false with only a mark', () => {
+    expect(isEmpty(toggleMark(createGame(BLOCKS), 1))).toBe(false)
+  })
+
+  it('is false with only a piece', () => {
+    expect(isEmpty(toggleQueen(createGame(BLOCKS), 1))).toBe(false)
+  })
+
+  it('is true once both are gone again', () => {
+    const played = toggleMark(toggleQueen(createGame(BLOCKS), 1), 6)
+
+    expect(isEmpty(clearCell(clearCell(played, 1), 6))).toBe(true)
   })
 })
 
