@@ -11,8 +11,10 @@ from datetime import date, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+from tools import generate as generate_tool
 from tools import publish, verify
-from tools.generate import seed_from_date
+from tools.generate import id_for_day, seed_from_date
 
 from queens_engine import (
     MIN_LEVEL,
@@ -357,6 +359,49 @@ class TestVerifyRamp:
         (tmp_path / f"{day}-star.json").write_text(dumps_puzzle(mislabelled), encoding="utf-8")
 
         assert verify.main(["--dir", str(tmp_path)]) == 1
+
+
+class TestGenerateId:
+    """`--date` names a day and `--type` names a suffix, so the id is derived.
+
+    The bug: `--date 2026-10-04 --type star-battle --out app/public/puzzles`
+    wrote `2026-10-04.json` — the file the day's Queens puzzle owns — and
+    `--out` overwrote it with a board of the wrong type under the wrong name,
+    which the verifier then rejected.
+    """
+
+    def test_the_type_chooses_the_suffix(self) -> None:
+        assert id_for_day("2026-10-04", PuzzleType.QUEENS) == "2026-10-04"
+        assert id_for_day("2026-10-04", PuzzleType.STAR_BATTLE) == "2026-10-04-star"
+
+    def test_a_matching_full_id_is_accepted(self) -> None:
+        assert id_for_day("2026-10-04-star", PuzzleType.STAR_BATTLE) == "2026-10-04-star"
+
+    def test_another_types_suffix_beside_the_wrong_type_is_a_contradiction(self) -> None:
+        # Both flags name a type and they disagree, so neither is quietly dropped.
+        with pytest.raises(ValueError, match="star-battle"):
+            id_for_day("2026-10-04-star", PuzzleType.QUEENS)
+
+    @pytest.mark.parametrize("value", ["20261004", "2026-W42-1", "not-a-date", "2026-13-01"])
+    def test_a_date_that_is_not_canonical_is_rejected(self, value: str) -> None:
+        # A seed is hashed from the id, so an id spelled two ways produces two
+        # different boards for one day, and the app cannot route the loose one.
+        with pytest.raises(ValueError):
+            id_for_day(value, PuzzleType.QUEENS)
+
+    def test_the_seed_comes_from_the_derived_id(self, tmp_path: Path) -> None:
+        # Generating the companion twice must give the same board, and generating
+        # it must not disturb the day's Queens file.
+        args = ["--date", "2026-10-04", "--type", "star-battle", "--out", str(tmp_path)]
+        assert generate_tool.main(args) == 0
+        assert (tmp_path / "2026-10-04-star.json").exists()
+        assert not (tmp_path / "2026-10-04.json").exists()
+        first = (tmp_path / "2026-10-04-star.json").read_text(encoding="utf-8")
+        (tmp_path / "2026-10-04-star.json").unlink()
+
+        assert generate_tool.main(args) == 0
+        assert (tmp_path / "2026-10-04-star.json").read_text(encoding="utf-8") == first
+        assert verify.main(["--dir", str(tmp_path)]) == 0
 
 
 def _run_publish(

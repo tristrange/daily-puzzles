@@ -86,7 +86,20 @@ class TestIds:
 
     @pytest.mark.parametrize(
         "value",
-        ["", "2026-10-12.json", "2026-13-01", "not-a-date", "2026-10-12-nightmare", "12-10-2026"],
+        [
+            "",
+            "2026-10-12.json",
+            "2026-13-01",
+            "not-a-date",
+            "2026-10-12-nightmare",
+            "12-10-2026",
+            # `date.fromisoformat` accepts these two spellings of 2026-10-12, and the
+            # app's `isPuzzleId` routes neither: a file named this way would be a
+            # puzzle `verify` approves and the app can never load, and `publish`
+            # would count it as an archive date and fill past it.
+            "20261012",
+            "2026-W42-1",
+        ],
     )
     def test_names_that_are_not_puzzle_ids_are_rejected(self, value: str) -> None:
         assert split_puzzle_id(value) is None

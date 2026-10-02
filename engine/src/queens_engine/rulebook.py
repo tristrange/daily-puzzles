@@ -218,9 +218,16 @@ def split_puzzle_id(value: str) -> tuple[date, PuzzleType] | None:
             continue
         stem = value[: len(value) - len(suffix)] if suffix else value
         try:
-            return date.fromisoformat(stem), book.puzzle_type
+            day = date.fromisoformat(stem)
         except ValueError:
             continue
+        # `fromisoformat` also accepts the compact and ISO-week spellings
+        # ("20261012", "2026-W42-1"). The app's `isPuzzleId` only routes the
+        # canonical `YYYY-MM-DD`, so a file named any other way would be a puzzle
+        # `verify` approves and the app can never load.
+        if stem != day.isoformat():
+            continue
+        return day, book.puzzle_type
     return None
 
 
