@@ -25,6 +25,9 @@ from queens_engine import (
     generate_puzzle,
     generate_ramped,
     parse_puzzle,
+    rulebook_for,
+    score_difficulty,
+    target_for,
 )
 
 #: The board size windowing tests publish at. 5x5 is the fastest thing the
@@ -320,17 +323,40 @@ class TestVerifyRamp:
 
     def test_never_checks_a_star_companion(self, tmp_path: Path) -> None:
         # Star Battle is off the ramp, so its 8x8 size is not a violation even on
-        # a day whose Queens target is 7x7, and it records no band.
+        # a day whose Queens target is 7x7, and it records no band. The board has
+        # to be a real Star Battle board for this to be testing the exemption: a
+        # queens board under a -star name is a mislabelled file, which is the next
+        # test. This one used to build its board with `generate_ramped`, which meant
+        # it only passed while the ramp check was reading the filename.
         day = self.MONDAY
-        result = generate_ramped(
-            seed=seed_from_date(f"{day}-star"),
-            puzzle_id=f"{day}-star",
-            target=DifficultyTarget(size=SMALL_SIZE, level=MIN_LEVEL),
-            max_attempts=RAMP_ATTEMPTS[SMALL_SIZE],
+        star_id = f"{day}-star"
+        puzzle = rulebook_for(PuzzleType.STAR_BATTLE).generate(
+            seed=seed_from_date(star_id), puzzle_id=star_id
         )
-        (tmp_path / f"{day}-star.json").write_text(dumps_puzzle(result.puzzle), encoding="utf-8")
+        assert puzzle.difficulty is None
+        (tmp_path / f"{star_id}.json").write_text(dumps_puzzle(puzzle), encoding="utf-8")
 
         assert verify.main(["--dir", str(tmp_path)]) == 0
+
+    def test_rejects_a_file_whose_name_and_type_disagree(self, tmp_path: Path) -> None:
+        # The bug this closes: ramp eligibility was read off the filename, so a
+        # Queens board named `-star` was exempt from the ramp. A Monday targets
+        # Medium at 7x7, and this board is a genuine 7x7 Hard, so it is wrong
+        # twice over — the size is right for the day but the band is not, and the
+        # name is not the type. The band is recorded honestly so `verify_replay`
+        # passes and the name/type check is the thing under test.
+        day = self.MONDAY
+        board = generate_puzzle(
+            seed=1,
+            puzzle_id=f"{day}-star",
+            config=GenerationConfig(size=SMALL_SIZE + 2, puzzle_type=PuzzleType.QUEENS),
+        )
+        difficulty = score_difficulty(board.board)
+        mislabelled = replace(board, id=f"{day}-star", difficulty=difficulty.level)
+        assert difficulty.level > target_for(date.fromisoformat(day)).level
+        (tmp_path / f"{day}-star.json").write_text(dumps_puzzle(mislabelled), encoding="utf-8")
+
+        assert verify.main(["--dir", str(tmp_path)]) == 1
 
 
 def _run_publish(
