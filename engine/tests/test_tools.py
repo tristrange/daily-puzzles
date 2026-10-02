@@ -19,8 +19,10 @@ from queens_engine import (
     RAMP_ATTEMPTS,
     RAMP_START,
     DifficultyTarget,
+    GenerationConfig,
     PuzzleType,
     dumps_puzzle,
+    generate_puzzle,
     generate_ramped,
     parse_puzzle,
 )
@@ -162,6 +164,22 @@ class TestPublishWindow:
         ]
 
 
+def _write_queens(tmp_path: Path, day: str) -> Path:
+    """A real pre-ramp Queens board in canonical form, so replay and the ramp pass.
+
+    Pre-ramp dates carry no band and skip the ramp check, leaving the canonical
+    form as the only thing under test.
+    """
+    puzzle = generate_puzzle(
+        seed=seed_from_date(day),
+        puzzle_id=day,
+        config=GenerationConfig(size=SMALL_SIZE, puzzle_type=PuzzleType.QUEENS),
+    )
+    path = tmp_path / f"{day}.json"
+    path.write_text(dumps_puzzle(puzzle), encoding="utf-8")
+    return path
+
+
 class TestVerify:
     def test_flags_a_broken_puzzle_file(self, tmp_path: Path) -> None:
         (tmp_path / "2026-05-11.json").write_text("{not json", encoding="utf-8")
@@ -177,6 +195,31 @@ class TestVerify:
 
         assert result == 0
         assert "0 puzzles verified" in _capture_verify(tmp_path)
+
+    def test_accepts_a_canonically_written_file(self, tmp_path: Path) -> None:
+        """The counterpart to the test below, so the check is not simply always-fail."""
+        _write_queens(tmp_path, "2026-05-11")
+
+        result = verify.main(["--dir", str(tmp_path)])
+
+        assert result == 0
+        assert "1 puzzles verified" in _capture_verify(tmp_path)
+
+    def test_rejects_a_file_that_replays_but_is_not_canonical(self, tmp_path: Path) -> None:
+        """Identical puzzle, reformatted bytes.
+
+        The seed still regenerates the same board, so every replay check passes
+        and the archive is quietly no longer byte-stable. That is the property the
+        next schema migration will rely on, and one committed file was already in
+        this state.
+        """
+        path = _write_queens(tmp_path, "2026-05-11")
+        path.write_text(json.dumps(json.loads(path.read_text()), indent=2), encoding="utf-8")
+
+        result = verify.main(["--dir", str(tmp_path)])
+
+        assert result == 1
+        assert "not in canonical form" in _capture_verify(tmp_path)
 
 
 class TestVerifyRamp:

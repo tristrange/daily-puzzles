@@ -147,10 +147,18 @@ def dumps_puzzle(puzzle: Puzzle) -> str:
     are indented two spaces but arrays stay on one line, matching the committed
     fixtures under `conformance/schema-cases/` so `diff` stays readable.
     """
-    return _canonical_dumps(puzzle_to_dict(puzzle))
+    return canonical_dumps(puzzle_to_dict(puzzle))
 
 
-def _canonical_dumps(data: dict[str, JsonValue]) -> str:
+def canonical_dumps(data: dict[str, JsonValue]) -> str:
+    """Render `data` in the canonical file form: two-space objects, one-line arrays.
+
+    Every committed artefact in this repo is written this way — puzzle files and
+    the deduction baseline alike — so `git diff` shows a changed number rather
+    than a reflowed document, and so a golden file can be regenerated and
+    compared byte-for-byte. Key order is the caller's insertion order, not sorted:
+    the order is chosen to read well and is part of what is being pinned.
+    """
     lines: list[str] = ["{"]
     for i, (key, value) in enumerate(data.items()):
         rendered = _render(value)
@@ -202,6 +210,7 @@ __all__ = [
     "JsonValue",
     "Puzzle",
     "PuzzleParseError",
+    "canonical_dumps",
     "dumps_puzzle",
     "load_puzzle",
     "parse_puzzle",
