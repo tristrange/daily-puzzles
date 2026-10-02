@@ -8,7 +8,11 @@ baseline rather than trusted.
 from __future__ import annotations
 
 import copy
+import io
 import json
+from collections.abc import Generator
+from contextlib import contextmanager, redirect_stderr
+from pathlib import Path
 from typing import Any, cast
 
 from tools.trace_baseline import (
@@ -19,6 +23,16 @@ from tools.trace_baseline import (
     differences,
     main,
 )
+
+from queens_engine import canonical_dumps
+
+
+@contextmanager
+def _capture_stderr() -> Generator[io.StringIO]:
+    """The failure report goes to stderr, so that is where the assertions look."""
+    buffer = io.StringIO()
+    with redirect_stderr(buffer):
+        yield buffer
 
 
 def test_every_traced_board_matches_the_committed_baseline() -> None:
@@ -70,3 +84,51 @@ def test_a_missing_board_is_reported() -> None:
     lines = differences(expected, altered)
     assert len(lines) == 1
     assert "absent" in lines[0]
+
+
+def test_a_non_object_entry_is_a_difference_not_a_match() -> None:
+    """A board pinned as `null` is unpinned, and must not report as matching.
+
+    The keys are all still present, so a key-set check passes and the suite claims
+    every trace matches while one board has no trace at all. The golden file is
+    hand-editable, which is exactly how this state arises.
+    """
+    expected = build_baseline()
+    key = next(iter(expected))
+    altered = copy.deepcopy(expected)
+    altered[key] = None
+
+    lines = differences(expected, altered)
+    assert len(lines) == 1
+    assert key in lines[0]
+    assert "not an object" in lines[0]
+
+
+def test_main_rejects_a_malformed_baseline(tmp_path: Path) -> None:
+    """`main` reports a corrupt file as corrupt, not as a changed trace.
+
+    Counting it among the changed traces would send a reader looking at the
+    engine when the engine is behaving exactly as the committed file describes.
+    """
+    expected = build_baseline()
+    key = next(iter(expected))
+    expected[key] = None
+    baseline = tmp_path / "baseline.json"
+    baseline.write_text(canonical_dumps(expected), encoding="utf-8")
+
+    with _capture_stderr() as captured:
+        result = main(["--baseline", str(baseline)])
+
+    assert result == 1
+    assert "is malformed" in captured.getvalue()
+
+
+def test_main_rejects_a_non_object_baseline(tmp_path: Path) -> None:
+    baseline = tmp_path / "baseline.json"
+    baseline.write_text("[]\n", encoding="utf-8")
+
+    with _capture_stderr() as captured:
+        result = main(["--baseline", str(baseline)])
+
+    assert result == 1
+    assert "not a JSON object" in captured.getvalue()

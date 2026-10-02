@@ -96,6 +96,11 @@ def differences(expected: dict[str, JsonValue], actual: dict[str, JsonValue]) ->
     Reporting the field rather than dumping two traces keeps a real regression
     readable; the baseline is a 40000-character file and a reviewer needs to know
     *that* the subset rule stopped firing before they need to see it.
+
+    Every expected key is examined and nothing is skipped. A non-object entry is
+    a corrupt baseline rather than a matching board, and treating it as a match
+    would leave that board unpinned while reporting success — the golden file is
+    hand-editable, and an earlier version of this skipped exactly that case.
     """
     lines: list[str] = []
     missing = [key for key in expected if key not in actual]
@@ -103,12 +108,28 @@ def differences(expected: dict[str, JsonValue], actual: dict[str, JsonValue]) ->
     lines.extend(f"{key}: absent from the new run" for key in missing)
     lines.extend(f"{key}: not in the baseline" for key in extra)
     for key, want in expected.items():
-        got = actual.get(key)
-        if not isinstance(want, dict) or not isinstance(got, dict) or want == got:
+        if key not in actual:
             continue
-        changed = ", ".join(field for field in want if want.get(field) != got.get(field))
-        lines.append(f"{key}: {changed or 'field order only'}")
+        got = actual[key]
+        if not isinstance(want, dict):
+            lines.append(f"{key}: baseline entry is {_describe(want)}, not an object")
+            continue
+        if not isinstance(got, dict):
+            lines.append(f"{key}: this run produced {_describe(got)}, not an object")
+            continue
+        if want == got:
+            continue
+        # Key order is not a difference: dict equality already ignores it.
+        fields = [
+            field for field in dict.fromkeys([*want, *got]) if want.get(field) != got.get(field)
+        ]
+        lines.append(f"{key}: {', '.join(fields) or 'entries differ'}")
     return lines
+
+
+def _describe(value: JsonValue) -> str:
+    """A short type name for a malformed baseline value, for the failure message."""
+    return "null" if value is None else f"a {type(value).__name__}"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -140,6 +161,24 @@ def main(argv: list[str] | None = None) -> int:
         print(f"{args.baseline} is not a JSON object", file=sys.stderr)
         return 1
     expected = cast("dict[str, JsonValue]", loaded)
+
+    # A corrupt baseline is a different failure from a changed trace, and reports
+    # as one. Left to `differences` it would be counted as a moved board, which
+    # points the reader at the engine when the engine is fine.
+    corrupt = [key for key, value in expected.items() if not isinstance(value, dict)]
+    if corrupt:
+        print(
+            f"{args.baseline} is malformed: {len(corrupt)} entries are not objects:",
+            file=sys.stderr,
+        )
+        for key in corrupt:
+            print(f"  {key}: {_describe(expected[key])}", file=sys.stderr)
+        print(
+            "\nThe committed baseline is hand-editable and a board pinned as anything "
+            "other than an object is not checked at all. Re-run with --write.",
+            file=sys.stderr,
+        )
+        return 1
 
     lines = differences(expected, actual)
     if lines:
