@@ -78,6 +78,15 @@ class DifficultyTarget:
 #: From this date on, a Queens file must carry a band that matches its weekday.
 RAMP_START: Final[date] = date(2026, 10, 5)
 
+#: The type this ramp builds boards for. Not read from the rulebook, because being
+#: on the ramp and being the ramp's type are different claims: a second ramped type
+#: would need its own band search, since `score_difficulty`'s rule weights and
+#: `RAMP_ATTEMPTS` are both tuned for one star per row. `test_rulebook` asserts that
+#: the set of types marked `on_ramp` is exactly this one, so marking a type
+#: `on_ramp` without teaching the ramp to build it fails rather than quietly
+#: publishing boards with no band.
+RAMP_TYPE: Final[PuzzleType] = PuzzleType.QUEENS
+
 #: Monday first, matching `date.weekday()`.
 WEEKLY_RAMP: Final[tuple[DifficultyTarget, ...]] = (
     DifficultyTarget(size=7, level=2),
@@ -141,7 +150,7 @@ def generate_ramped(
     if budget < 1:
         raise ValueError(f"max_attempts must be at least 1, got {max_attempts}")
 
-    config = GenerationConfig(size=target.size, puzzle_type=PuzzleType.QUEENS)
+    config = GenerationConfig(size=target.size, puzzle_type=RAMP_TYPE)
     best: tuple[Puzzle, int] | None = None
     attempts = 0
     cursor = seed

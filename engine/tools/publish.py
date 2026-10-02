@@ -3,27 +3,28 @@
 Usage:
     python -m tools.publish [--out DIR] [--lead 3] [--start YYYY-MM-DD] [--dry-run]
 
-Each day carries two puzzles: the Queens board named after the day, and its
-Star Battle companion named `<date>-star.json`. The suffix is part of the
-puzzle's identity rather than only its filename, because a solve is recorded
-against an id and first-solve-wins would otherwise let one of the day's two
-puzzles block the other.
+Each day carries one puzzle per registered type: the Queens board named after
+the day, and its Star Battle companion named `<date>-star.json`. The suffix is
+part of the puzzle's identity rather than only its filename, because a solve is
+recorded against an id and first-solve-wins would otherwise let one of the day's
+puzzles block the other. Which types exist, what they are called and how each is
+generated all come from the registry in `queens_engine.rulebook`, so this script
+holds no per-type knowledge of its own.
 
 Scans DIR for committed puzzle files and fills the gaps from the first missing
 day through (today + `--lead` days), using the same deterministic recipe as
-`tools.generate`: a seed hashed from the id, size 8. Queens walks the seed
-upward until the board needs no guessing. Star Battle does not — the rules do
-run on a two-star board, but almost none finish without guessing (0.1% of
-generated 8x8 boards, measured), so gating it would reject essentially every
-board. It takes the guarantee the generator actually provides, a unique solution.
-Idempotent: existing files are never rewritten and a given id always maps to one
-puzzle, so it is safe to run from cron every day and to run again by hand.
+`tools.generate`: a seed hashed from the id and the type's published size. How
+each type is generated is its rulebook's `on_ramp` fact. A ramped type walks the
+seed upward until a logic-only board lands within its weekday's band and records
+that band; a type off the ramp takes the guarantee the generator actually
+provides for it, a unique solution, and records no band. Idempotent: existing
+files are never rewritten and a given id always maps to one puzzle, so it is safe
+to run from cron every day and to run again by hand.
 """
 
 from __future__ import annotations
 
 import argparse
-import re
 import sys
 from datetime import date, timedelta
 from pathlib import Path
@@ -36,56 +37,47 @@ from tools.generate import LOGIC_ONLY_TRIES, seed_from_date
 
 from queens_engine import (
     LEVEL_NAMES,
-    GenerationConfig,
     GenerationError,
     Puzzle,
     PuzzleType,
     dumps_puzzle,
-    generate_puzzle,
     generate_ramped,
+    puzzle_id,
+    rulebook_for,
+    rulebooks,
     score_difficulty,
+    split_puzzle_id,
     target_for,
 )
-
-#: Star Battle stays at one size until the deduction engine can rate a star
-#: board; only then can it join the weekly ramp. See `queens_engine.ramp`.
-STAR_PUZZLE_SIZE = 8
 
 #: How many days ahead of "today" the archive should stay published.
 DEFAULT_LEAD_DAYS = 3
 
-#: Stars per row on the Star Battle companion.
-STARS_PER_ROW = 2
 
-STAR_SUFFIX = "-star"
+def _existing(out_dir: Path) -> tuple[set[str], set[date]]:
+    """The committed puzzle ids and the days they cover.
 
-DATE_FILE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})(\-star)?\.json$")
-
-
-def _existing_ids(out_dir: Path) -> set[str]:
-    """Every puzzle id already committed, e.g. `2026-10-01` and `2026-10-01-star`."""
-    existing: set[str] = set()
+    Ids come from `split_puzzle_id`, so what counts as a puzzle file is the
+    registry's set of names rather than a regex written beside it. The day is
+    taken from that same split, which is why this no longer strips the suffix by
+    hand — `rstrip` removes characters, not a suffix, and only looked right
+    because a date always ends in a digit.
+    """
+    ids: set[str] = set()
+    days: set[date] = set()
     for path in out_dir.glob("*.json"):
-        match = DATE_FILE.match(path.name)
-        if match is None:
+        split = split_puzzle_id(path.stem)
+        if split is None:
             continue
-        try:
-            day = date(int(match.group(1)), int(match.group(2)), int(match.group(3)))
-        except ValueError:
-            continue
-        existing.add(day.isoformat() + (match.group(4) or ""))
-    return existing
+        day, _puzzle_type = split
+        ids.add(path.stem)
+        days.add(day)
+    return ids, days
 
 
-def _existing_days(out_dir: Path) -> set[date]:
-    """Every calendar day that has at least one puzzle committed."""
-    ids = _existing_ids(out_dir)
-    return {date.fromisoformat(puzzle_id.rstrip(STAR_SUFFIX)) for puzzle_id in ids}
-
-
-def _ids_for_day(day: date) -> tuple[str, str]:
-    """The two puzzle ids a day carries, Queens first."""
-    return day.isoformat(), f"{day.isoformat()}{STAR_SUFFIX}"
+def _ids_for_day(day: date) -> tuple[str, ...]:
+    """The puzzle ids a day carries, one per registered type, in registry order."""
+    return tuple(puzzle_id(day, book.puzzle_type) for book in rulebooks())
 
 
 def _first_incomplete_day(existing: set[str], first: date, end: date) -> date | None:
@@ -103,54 +95,44 @@ def _first_incomplete_day(existing: set[str], first: date, end: date) -> date | 
     return None
 
 
-def _generate_queens(puzzle_id: str, seed: int) -> tuple[Puzzle, float]:
-    """Generate a logic-only Queens puzzle that meets its weekday's band.
+def _generate(puzzle_type: PuzzleType, day_id: str, seed: int) -> tuple[Puzzle, float | None]:
+    """Generate one day of one type, and its difficulty score if it has one.
 
-    The weekly ramp in `queens_engine.ramp` picks the size and the band from the
-    date; the search then bumps the seed until a board lands at or below that
-    band, so a date always reproduces the same board. Returns the parsed puzzle
-    (already schema-valid) and its difficulty score. Raises `RuntimeError` if no
-    logic-only board turns up at all.
+    Which recipe a type gets is its rulebook's `on_ramp` fact, not a branch
+    written here, so publishing a new type is a registry entry rather than a new
+    function in this file.
+
+    A ramped type goes through the weekly ramp in `queens_engine.ramp`, which
+    picks the size and band from the date and walks the seed upward until a board
+    lands at or below that band, so a date always reproduces the same board. The
+    band is recorded on the file, because the ramp is a claim about difficulty.
+
+    A type off the ramp takes the guarantee the generator actually provides for
+    it — a unique solution, but not a promise that no guessing is needed — and
+    records no band, so nothing in the archive claims a difficulty nothing checks.
+    Its failure path is a seed bump instead, since there is no band to search for.
     """
-    target = target_for(date.fromisoformat(puzzle_id))
-    try:
-        result = generate_ramped(seed=seed, puzzle_id=puzzle_id, target=target)
-    except GenerationError as error:
-        raise RuntimeError(f"{puzzle_id}: {error}") from error
-    if result.achieved.level < target.level:
-        print(
-            f"  note: {target.size}x{target.size} {target.level_name} was not in "
-            f"{result.attempts} boards, published {result.achieved.level_name}"
-        )
-    return replace(result.puzzle, difficulty=result.achieved.level), score_difficulty(
-        result.puzzle.board
-    ).score
-
-
-def _generate_star(puzzle_id: str, seed: int) -> Puzzle:
-    """Generate a Star Battle companion, bumping the seed on any failure.
-
-    The generator already guarantees a unique solution, which is the promise a
-    star board can keep: unlike Queens it cannot also promise that no guessing is
-    needed, not because the rules cannot run on it but because a two-star board
-    almost never reaches a finish by rules alone. That is also why the weekly
-    ramp does not apply here, so there is no band to record. Raises
-    `RuntimeError` if the seed budget runs out.
-    """
+    book = rulebook_for(puzzle_type)
+    if book.on_ramp:
+        target = target_for(date.fromisoformat(day_id))
+        try:
+            result = generate_ramped(seed=seed, puzzle_id=day_id, target=target)
+        except GenerationError as error:
+            raise RuntimeError(f"{day_id}: {error}") from error
+        if result.achieved.level < target.level:
+            print(
+                f"  note: {target.size}x{target.size} {target.level_name} was not in "
+                f"{result.attempts} boards, published {result.achieved.level_name}"
+            )
+        return replace(result.puzzle, difficulty=result.achieved.level), score_difficulty(
+            result.puzzle.board
+        ).score
     for _bump in range(LOGIC_ONLY_TRIES):
         try:
-            return generate_puzzle(
-                seed=seed,
-                puzzle_id=puzzle_id,
-                config=GenerationConfig(
-                    size=STAR_PUZZLE_SIZE,
-                    puzzle_type=PuzzleType.STAR_BATTLE,
-                    stars_per_row=STARS_PER_ROW,
-                ),
-            )
+            return book.generate(seed=seed, puzzle_id=day_id), None
         except GenerationError:
             seed = (seed + 1) % (2**32)
-    raise RuntimeError(f"{puzzle_id}: no star board in {LOGIC_ONLY_TRIES} seed bumps")
+    raise RuntimeError(f"{day_id}: no {puzzle_type.value} board in {LOGIC_ONLY_TRIES} seed bumps")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -164,8 +146,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     args.out.mkdir(parents=True, exist_ok=True)
-    existing = _existing_ids(args.out)
-    days = _existing_days(args.out)
+    existing, days = _existing(args.out)
     today = date.today()
 
     end = today + timedelta(days=args.lead)
@@ -183,27 +164,23 @@ def main(argv: list[str] | None = None) -> int:
 
     window = start
     while window <= end:
-        for puzzle_id, generate in (
-            (window.isoformat(), _generate_queens),
-            (f"{window.isoformat()}{STAR_SUFFIX}", _generate_star),
-        ):
-            if puzzle_id in existing:
-                print(f"skip   {puzzle_id} (already published)")
+        for book in rulebooks():
+            day_id = puzzle_id(window, book.puzzle_type)
+            if day_id in existing:
+                print(f"skip   {day_id} (already published)")
                 continue
-            print(f"publish {puzzle_id}" + (" (dry run)" if args.dry_run else ""))
+            print(f"publish {day_id}" + (" (dry run)" if args.dry_run else ""))
             if args.dry_run:
                 continue
-            seed = seed_from_date(puzzle_id)
+            seed = seed_from_date(day_id)
             try:
-                generated = generate(puzzle_id, seed)
+                puzzle, score = _generate(book.puzzle_type, day_id, seed)
             except RuntimeError as error:
                 print(f"error: {error}", file=sys.stderr)
                 return 1
-            puzzle, score = generated if isinstance(generated, tuple) else (generated, None)
-            (args.out / f"{puzzle_id}.json").write_text(dumps_puzzle(puzzle), encoding="utf-8")
-            # A star board is unique but not logic-gated and not scored, so it has
-            # no difficulty to report. Saying "not rated" beats printing a number
-            # that means something weaker than the same number on a Queens board.
+            (args.out / f"{day_id}.json").write_text(dumps_puzzle(puzzle), encoding="utf-8")
+            # An unrated board says so rather than printing a number that means
+            # something weaker than the same number on a ramped board.
             band = (
                 f" {LEVEL_NAMES[puzzle.difficulty - 1]}"
                 if puzzle.difficulty is not None

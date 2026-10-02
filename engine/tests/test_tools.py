@@ -11,8 +11,10 @@ from datetime import date, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+from tools import generate as generate_tool
 from tools import publish, verify
-from tools.generate import seed_from_date
+from tools.generate import id_for_day, seed_from_date
 
 from queens_engine import (
     MIN_LEVEL,
@@ -25,6 +27,9 @@ from queens_engine import (
     generate_puzzle,
     generate_ramped,
     parse_puzzle,
+    rulebook_for,
+    score_difficulty,
+    target_for,
 )
 
 #: The board size windowing tests publish at. 5x5 is the fastest thing the
@@ -320,16 +325,82 @@ class TestVerifyRamp:
 
     def test_never_checks_a_star_companion(self, tmp_path: Path) -> None:
         # Star Battle is off the ramp, so its 8x8 size is not a violation even on
-        # a day whose Queens target is 7x7, and it records no band.
+        # a day whose Queens target is 7x7, and it records no band. The board has
+        # to be a real Star Battle board for this to be testing the exemption: a
+        # queens board under a -star name is a mislabelled file, which is the next
+        # test. This one used to build its board with `generate_ramped`, which meant
+        # it only passed while the ramp check was reading the filename.
         day = self.MONDAY
-        result = generate_ramped(
-            seed=seed_from_date(f"{day}-star"),
-            puzzle_id=f"{day}-star",
-            target=DifficultyTarget(size=SMALL_SIZE, level=MIN_LEVEL),
-            max_attempts=RAMP_ATTEMPTS[SMALL_SIZE],
+        star_id = f"{day}-star"
+        puzzle = rulebook_for(PuzzleType.STAR_BATTLE).generate(
+            seed=seed_from_date(star_id), puzzle_id=star_id
         )
-        (tmp_path / f"{day}-star.json").write_text(dumps_puzzle(result.puzzle), encoding="utf-8")
+        assert puzzle.difficulty is None
+        (tmp_path / f"{star_id}.json").write_text(dumps_puzzle(puzzle), encoding="utf-8")
 
+        assert verify.main(["--dir", str(tmp_path)]) == 0
+
+    def test_rejects_a_file_whose_name_and_type_disagree(self, tmp_path: Path) -> None:
+        # The bug this closes: ramp eligibility was read off the filename, so a
+        # Queens board named `-star` was exempt from the ramp. A Monday targets
+        # Medium at 7x7, and this board is a genuine 7x7 Hard, so it is wrong
+        # twice over — the size is right for the day but the band is not, and the
+        # name is not the type. The band is recorded honestly so `verify_replay`
+        # passes and the name/type check is the thing under test.
+        day = self.MONDAY
+        board = generate_puzzle(
+            seed=1,
+            puzzle_id=f"{day}-star",
+            config=GenerationConfig(size=SMALL_SIZE + 2, puzzle_type=PuzzleType.QUEENS),
+        )
+        difficulty = score_difficulty(board.board)
+        mislabelled = replace(board, id=f"{day}-star", difficulty=difficulty.level)
+        assert difficulty.level > target_for(date.fromisoformat(day)).level
+        (tmp_path / f"{day}-star.json").write_text(dumps_puzzle(mislabelled), encoding="utf-8")
+
+        assert verify.main(["--dir", str(tmp_path)]) == 1
+
+
+class TestGenerateId:
+    """`--date` names a day and `--type` names a suffix, so the id is derived.
+
+    The bug: `--date 2026-10-04 --type star-battle --out app/public/puzzles`
+    wrote `2026-10-04.json` — the file the day's Queens puzzle owns — and
+    `--out` overwrote it with a board of the wrong type under the wrong name,
+    which the verifier then rejected.
+    """
+
+    def test_the_type_chooses_the_suffix(self) -> None:
+        assert id_for_day("2026-10-04", PuzzleType.QUEENS) == "2026-10-04"
+        assert id_for_day("2026-10-04", PuzzleType.STAR_BATTLE) == "2026-10-04-star"
+
+    def test_a_matching_full_id_is_accepted(self) -> None:
+        assert id_for_day("2026-10-04-star", PuzzleType.STAR_BATTLE) == "2026-10-04-star"
+
+    def test_another_types_suffix_beside_the_wrong_type_is_a_contradiction(self) -> None:
+        # Both flags name a type and they disagree, so neither is quietly dropped.
+        with pytest.raises(ValueError, match="star-battle"):
+            id_for_day("2026-10-04-star", PuzzleType.QUEENS)
+
+    @pytest.mark.parametrize("value", ["20261004", "2026-W42-1", "not-a-date", "2026-13-01"])
+    def test_a_date_that_is_not_canonical_is_rejected(self, value: str) -> None:
+        # A seed is hashed from the id, so an id spelled two ways produces two
+        # different boards for one day, and the app cannot route the loose one.
+        with pytest.raises(ValueError):
+            id_for_day(value, PuzzleType.QUEENS)
+
+    def test_the_seed_comes_from_the_derived_id(self, tmp_path: Path) -> None:
+        # Generating the companion twice must give the same board, and generating
+        # it must not disturb the day's Queens file.
+        args = ["--date", "2026-10-04", "--type", "star-battle", "--out", str(tmp_path)]
+        assert generate_tool.main(args) == 0
+        assert (tmp_path / "2026-10-04-star.json").exists()
+        assert not (tmp_path / "2026-10-04.json").exists()
+        first = (tmp_path / "2026-10-04-star.json").read_text(encoding="utf-8")
+        (tmp_path / "2026-10-04-star.json").unlink()
+
+        assert generate_tool.main(args) == 0
+        assert (tmp_path / "2026-10-04-star.json").read_text(encoding="utf-8") == first
         assert verify.main(["--dir", str(tmp_path)]) == 0
 
 

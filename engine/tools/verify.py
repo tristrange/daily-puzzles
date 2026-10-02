@@ -13,7 +13,6 @@ the archive silently.
 from __future__ import annotations
 
 import argparse
-import re
 import sys
 from datetime import date
 from pathlib import Path
@@ -26,14 +25,14 @@ from queens_engine import (
     RAMP_START,
     Puzzle,
     PuzzleParseError,
+    PuzzleType,
     dumps_puzzle,
     load_puzzle,
+    rulebook_for,
+    split_puzzle_id,
     target_for,
     verify_replay,
 )
-
-DATE_FILE = re.compile(r"^(\d{4}-\d{2}-\d{2})(-star)?\.json$")
-STAR_SUFFIX = "-star"
 
 
 class RampCheck(NamedTuple):
@@ -47,10 +46,10 @@ class RampCheck(NamedTuple):
     problem: str | None = None
 
 
-def _ramp_check(day_text: str, is_star: bool, puzzle: Puzzle) -> RampCheck:
-    """Check a Queens file against the ramp for its weekday.
+def _ramp_check(day_text: str, puzzle_type: PuzzleType, puzzle: Puzzle) -> RampCheck:
+    """Check a puzzle against the ramp for its weekday.
 
-    Two rules:
+    Four rules:
 
     - A Queens file dated on or after `RAMP_START` must carry a band, and that
       band must be within its weekday's target. Anything earlier predates the
@@ -61,8 +60,13 @@ def _ramp_check(day_text: str, is_star: bool, puzzle: Puzzle) -> RampCheck:
     Falling *short* of the target band is legal — the search reports it and
     publishes the hardest board it found. Falling above it, or a wrong size, is
     not: that is the ramp being broken, and the caller fails the run.
+
+    Eligibility is a property of the type, read from its rulebook, and the type
+    is the one the file declares. It used to come from the filename instead, which
+    meant a 7x7 Queens board named `2026-10-12-star.json` skipped the check
+    entirely and was accepted on a Monday that targets Medium.
     """
-    if is_star:
+    if not rulebook_for(puzzle_type).on_ramp:
         return RampCheck("")
     day = date.fromisoformat(day_text)
     target = target_for(day)
@@ -88,18 +92,28 @@ def main(argv: list[str] | None = None) -> int:
     total = 0
     failed: list[str] = []
     for path in sorted(args.dir.glob("*.json")):
-        match = DATE_FILE.match(path.name)
-        if match is None:
+        split = split_puzzle_id(path.stem)
+        if split is None:
             print(f"skip {path.name} (not a date-keyed puzzle file)")
             continue
+        day, name_type = split
         total += 1
         try:
             raw = path.read_text(encoding="utf-8")
             puzzle = load_puzzle(path)
             verify_replay(puzzle)
-            ramp = _ramp_check(match.group(1), match.group(2) == STAR_SUFFIX, puzzle)
+            # The suffix and the declared type are two claims about one file, and
+            # a disagreement means the archive and the app disagree about what the
+            # file is: the app derives the type from the name, so a file that lies
+            # about its own type is shown under the wrong game's heading.
+            if puzzle.puzzle_type is not name_type:
+                raise ValueError(
+                    f"filename says {name_type.value}, file declares {puzzle.puzzle_type.value}"
+                )
+            ramp = _ramp_check(day.isoformat(), puzzle.puzzle_type, puzzle)
         except (PuzzleParseError, ValueError) as error:
             failed.append(f"{path}: {error}")
+            print(f"{path.name}: FAILED ({error})")
             continue
         if ramp.problem is not None:
             # A board that breaks the ramp is a failed verification, not a note:
