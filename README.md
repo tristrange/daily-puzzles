@@ -635,6 +635,15 @@ on the next run. `tools/verify.py`
 re-parses every committed puzzle and calls `verify_replay` on it, so a generator change
 that would have drifted the archive fails loudly before anything is merged.
 
+Verify also checks each Queens file against the ramp for its weekday, and treats a break
+as a **failure** rather than a remark: a missing band from `RAMP_START` onwards, a board
+of the wrong size, or a band above the target all exit non-zero. Falling *short* of the
+target passes, because the search reports that honestly and publishes the hardest board
+it found. Files dated before `RAMP_START` are skipped — they were published when every
+board was 8x8 with no band recorded, so their size is history rather than a claim — and
+so is every Star Battle companion, which is not on the ramp until the deduction engine
+can rate a star board.
+
 The workflows live in [`.github/workflows/`](.github/workflows):
 
 - `ci.yml` runs on every pull request and push to `main`: the shared-engine gates

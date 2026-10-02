@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import date, timedelta
 from types import SimpleNamespace
+from unittest.mock import patch
 
 import pytest
 
@@ -21,9 +22,11 @@ from queens_engine import (
     RAMP_ATTEMPTS,
     WEEKLY_RAMP,
     DifficultyTarget,
+    GenerationConfig,
     GenerationError,
     Puzzle,
     deduce,
+    generate_puzzle,
     generate_ramped,
     parse_puzzle,
     puzzle_to_dict,
@@ -143,6 +146,31 @@ def test_fallback_keeps_the_hardest_board_not_the_last() -> None:
         for budget in (5, 15, 30, 60)
     ]
     assert bands == sorted(bands)
+
+
+def test_tries_the_supplied_seed_first() -> None:
+    """`max_attempts=1` must test the seed it was given, not the next one.
+
+    The seed-walking contract is that a date's board starts from its own derived
+    seed. If the walk advanced first, a day whose own seed happens to be a
+    logic-only board at the target would be skipped, and the search could run out
+    of budget with nothing to show for it.
+
+    Patched generation makes the seed observable. A Nightmare target on a 5x5 is
+    not reachable, so the search always walks its whole budget and the sequence of
+    seeds is visible rather than stopping on a hit.
+    """
+    asked: list[int] = []
+
+    def record(seed: int, **_kwargs: object) -> Puzzle:
+        asked.append(seed)
+        return generate_puzzle(seed=seed, puzzle_id="2026-10-05", config=GenerationConfig(size=5))
+
+    target = DifficultyTarget(size=5, level=MAX_LEVEL)
+    with patch.object(ramp, "generate_puzzle", record):
+        generate_ramped(seed=1234, puzzle_id="2026-10-05", target=target, max_attempts=3)
+
+    assert asked == [1234, 1235, 1236]
 
 
 def test_generation_is_reproducible_from_the_seed() -> None:

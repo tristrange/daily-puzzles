@@ -72,6 +72,12 @@ class DifficultyTarget:
         return LEVEL_NAMES[self.level - 1]
 
 
+#: The first day published under the ramp. Queens files dated before this were
+#: published when every board was 8x8 and no band was recorded, so their size is
+#: a historical fact rather than a claim, and `tools/verify` leaves them alone.
+#: From this date on, a Queens file must carry a band that matches its weekday.
+RAMP_START: Final[date] = date(2026, 10, 5)
+
 #: Monday first, matching `date.weekday()`.
 WEEKLY_RAMP: Final[tuple[DifficultyTarget, ...]] = (
     DifficultyTarget(size=7, level=2),
@@ -123,8 +129,12 @@ def generate_ramped(
 ) -> RampedPuzzle:
     """Generate a logic-only Queens puzzle at or below `target`'s band.
 
-    Bumps the seed exactly as the daily pipeline already does, so the board a
-    date produces is reproducible from its id alone and CI can replay it.
+    Tries `seed` itself first, then walks upward one seed at a time, exactly as
+    the daily pipeline does, so the board a date produces is reproducible from its
+    id alone and CI can replay it. Stops as soon as a board hits the target band;
+    otherwise settles for the hardest logic-only board at or below it, so a quiet
+    patch never publishes something easier than it had to be.
+
     Raises `GenerationError` if no logic-only board at all turns up.
     """
     budget = max_attempts if max_attempts is not None else RAMP_ATTEMPTS.get(target.size, 200)
@@ -136,13 +146,18 @@ def generate_ramped(
     attempts = 0
     cursor = seed
 
+    # The supplied seed is tried first, then the budget walks upward from it, so
+    # `max_attempts=1` tests exactly the seed it was given and a day that already
+    # has a board at the target keeps it. Matches the seed-bumping contract the
+    # publisher's other path uses.
     while attempts < budget:
         attempts += 1
-        cursor = (cursor + 1) % (2**32)
         try:
             puzzle = generate_puzzle(seed=cursor, puzzle_id=puzzle_id, config=config)
         except GenerationError:
+            cursor = (cursor + 1) % (2**32)
             continue
+        cursor = (cursor + 1) % (2**32)
         if not deduce(puzzle.board, allow_guesses=False).solved:
             continue
         level = score_difficulty(puzzle.board).level
