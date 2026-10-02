@@ -10,6 +10,7 @@ that variety is spread across all supported sizes.
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 
 import pytest
 from hypothesis import given, settings
@@ -114,6 +115,30 @@ def test_verify_replay_detects_tampering() -> None:
     assert forged.board != puzzle.board
     with pytest.raises(GenerationError):
         verify_replay(forged)
+
+
+def test_verify_replay_rejects_a_mislabelled_generator_version() -> None:
+    """The board is right and the seed replays it, but the file lies about its algorithm.
+
+    `generator_version` is the field that says which algorithm produced a puzzle.
+    Nothing compared it until now, so a file could carry another algorithm's
+    number and verify clean — the exact corruption a schema migration introduces
+    when it relabels files it never regenerated.
+    """
+    puzzle = _generate(seed=1)
+    mislabelled = replace(puzzle, generator_version=99)
+
+    with pytest.raises(GenerationError, match="version mismatch"):
+        verify_replay(mislabelled)
+
+
+def test_star_battle_verify_replay_rejects_the_queens_version() -> None:
+    """The two live versions are 1 for Queens and 2 for Star Battle, and both are checked."""
+    puzzle = _generate_star(seed=0, size=8, stars=2)
+    assert puzzle.generator_version == 2
+
+    with pytest.raises(GenerationError, match="version mismatch"):
+        verify_replay(replace(puzzle, generator_version=1))
 
 
 def test_seed_out_of_range_is_rejected() -> None:
