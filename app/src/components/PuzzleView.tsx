@@ -6,10 +6,12 @@ import {
   createGame,
   cycleCell,
   formatTime,
+  isEmpty,
   isSolved,
   nextCellState,
   paintStroke,
   placeQueenAutoMark,
+  resetGame,
   toggleMark,
   toggleQueen,
   type GameState,
@@ -181,6 +183,25 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
     setAnnouncement('Undid the last move.')
   }
 
+  /**
+   * Every piece and mark off the board at once.
+   *
+   * Routed through `applyGame`, so the state on screen becomes one step of history
+   * and a single Undo brings the whole board back. That is why this needs no
+   * confirmation: the thing stats-clearing asks twice about is the one that cannot
+   * be undone, and this can. It also keeps the hint panel from still describing a
+   * board that no longer exists.
+   *
+   * The clock is untouched. Elapsed time is measured from when the puzzle was
+   * opened, so a reset mid-attempt leaves the timer running — the work already done
+   * was still done, and a reset is a correction rather than a new attempt.
+   */
+  const reset = () => {
+    if (isEmpty(game)) return
+    applyGame(resetGame(game))
+    setAnnouncement('Board cleared. Undo brings it back.')
+  }
+
   const requestHint = () => {
     if (!hintsAvailable) return
     if (conflictList.length > 0) {
@@ -285,6 +306,15 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
           onClick={toggleAutoMark}
         >
           Auto-mark {autoMark ? 'on' : 'off'}
+        </button>
+        <button
+          type="button"
+          className="tool-button"
+          onClick={reset}
+          disabled={isEmpty(game) || solved}
+          title="Clears the board. The clock keeps running, and Undo brings it all back."
+        >
+          Reset
         </button>
         {hintsAvailable && (
           <button type="button" className="tool-button" onClick={requestHint} disabled={solved}>

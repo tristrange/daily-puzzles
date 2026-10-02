@@ -86,6 +86,24 @@ export function clearCell(game: GameState, cell: number): GameState {
 }
 
 /**
+ * Every piece and mark off the board, leaving it as newly opened.
+ *
+ * The board is kept rather than rebuilt, so a reset never changes which puzzle is
+ * being played and the same instance stays in the history an undo restores. Nothing
+ * else about the attempt survives: elapsed time is derived from when the puzzle was
+ * opened rather than from anything here, so the clock keeps running across a reset,
+ * which is the point — the time already spent was still spent.
+ */
+export function resetGame(game: GameState): GameState {
+  return { board: game.board, queens: new Set(), marks: new Set() }
+}
+
+/** Whether the board holds no pieces and no marks, so a reset would do nothing. */
+export function isEmpty(game: GameState): boolean {
+  return game.queens.size === 0 && game.marks.size === 0
+}
+
+/**
  * The state one click would move `cell` to, without changing anything: empty
  * becomes a mark, a mark becomes a piece, a piece goes back to empty. Split
  * out from `cycleCell` so callers that need to know the target first (the auto-
