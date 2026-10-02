@@ -26,6 +26,8 @@ export default defineConfig({
   },
   server: { fs: { allow: [repoRoot] } },
   test: {
-    include: ['src/**/*.test.ts'],
+    // `.tsx` as well as `.ts`: the suite renders components to static markup
+    // with react-dom/server, which needs JSX and so needs the extension.
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
   },
 })

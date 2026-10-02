@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest'
+import { PUZZLE_TYPES } from '../domain/board'
+import { PUZZLE_TYPE_LABEL } from '../domain/games'
+import type { DifficultyBand } from '../domain/puzzle'
 import {
   ARCHIVE_WINDOW_DAYS,
   PuzzleNotFoundError,
+  groupPublishedPuzzles,
   listPublishedPuzzles,
   loadPuzzle,
   probePuzzles,
   puzzleUrl,
+  type PublishedPuzzle,
 } from './puzzles'
 
 /**
@@ -260,5 +265,86 @@ describe('probePuzzles', () => {
       url.includes('2026-10-01.json') ? jsonResponse({ id: '2026-10-01', type: 'nope' }) : spaShellResponse()
     const probes = await probePuzzles(['2026-10-01', '2026-10-01-star'], broken)
     expect(probes.map((probe) => probe.puzzle)).toEqual([null, null])
+  })
+})
+
+describe('groupPublishedPuzzles', () => {
+  /** A published entry with the given family and day. */
+  const entry = (
+    id: string,
+    type: 'queens' | 'star-battle',
+    difficulty: DifficultyBand | null = null,
+  ): PublishedPuzzle => ({ id, type, difficulty })
+
+  it('puts each family under its own heading', () => {
+    // The whole point of the change: a date no longer has to carry the family,
+    // so two puzzles from the same day land in different lists.
+    const groups = groupPublishedPuzzles([
+      entry('2026-10-03', 'queens'),
+      entry('2026-10-03-star', 'star-battle'),
+    ])
+    expect(groups.map((group) => group.type)).toEqual(['queens', 'star-battle'])
+    expect(groups[0]?.puzzles.map((puzzle) => puzzle.id)).toEqual(['2026-10-03'])
+    expect(groups[1]?.puzzles.map((puzzle) => puzzle.id)).toEqual(['2026-10-03-star'])
+  })
+
+  it('orders the groups by the declared family order, not by first seen', () => {
+    // A player scrolling a window that opens on a companion day should still meet
+    // the games in the order the app declares them, and a third family added to
+    // `PUZZLE_TYPES` belongs where it was declared rather than at the end.
+    const groups = groupPublishedPuzzles([
+      entry('2026-10-02-star', 'star-battle'),
+      entry('2026-10-01', 'queens'),
+    ])
+    expect(groups.map((group) => group.type)).toEqual(['queens', 'star-battle'])
+  })
+
+  it('keeps the newest day first inside a group', () => {
+    // `listPublishedPuzzles` already returns newest first, and grouping must not
+    // shuffle that on its way to the page.
+    const groups = groupPublishedPuzzles([
+      entry('2026-10-03', 'queens'),
+      entry('2026-10-02', 'queens'),
+      entry('2026-10-01', 'queens'),
+    ])
+    expect(groups[0]?.puzzles.map((puzzle) => puzzle.id)).toEqual([
+      '2026-10-03',
+      '2026-10-02',
+      '2026-10-01',
+    ])
+  })
+
+  it('omits a family with nothing published in the window', () => {
+    // Companions did not exist for the earliest days, and an empty heading over a
+    // game the player cannot yet open is noise rather than information.
+    const groups = groupPublishedPuzzles([entry('2026-09-20', 'queens')])
+    expect(groups.map((group) => group.type)).toEqual(['queens'])
+  })
+
+  it('has nothing to group when nothing is published', () => {
+    expect(groupPublishedPuzzles([])).toEqual([])
+  })
+
+  it('files a mislabelled file under the family it declares', () => {
+    // A file committed with a companion's name but the wrong family is grouped by
+    // its own `type`, so the heading is never a lie about what is underneath it.
+    const groups = groupPublishedPuzzles([entry('2026-10-03', 'queens'), entry('2026-10-03-star', 'queens')])
+    expect(groups.map((group) => group.type)).toEqual(['queens'])
+    expect(groups[0]?.puzzles.map((puzzle) => puzzle.id)).toEqual([
+      '2026-10-03',
+      '2026-10-03-star',
+    ])
+  })
+
+  it('gives every declared family a heading the app can name', () => {
+    // The page prints `PUZZLE_TYPE_LABEL[group.type]`, so a family that reaches the
+    // registry without a name would render as "undefined" rather than fail here.
+    for (const group of groupPublishedPuzzles([
+      entry('2026-10-03', 'queens'),
+      entry('2026-10-03-star', 'star-battle'),
+    ])) {
+      expect(PUZZLE_TYPE_LABEL[group.type]).toBeTruthy()
+    }
+    expect(Object.keys(PUZZLE_TYPE_LABEL).sort()).toEqual([...PUZZLE_TYPES].sort())
   })
 })

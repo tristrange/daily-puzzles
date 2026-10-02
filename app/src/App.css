@@ -345,6 +345,24 @@
   }
 }
 
+/* One block per family, each named. A flat list of dates mixed the families
+   together, so the date was the only thing distinguishing a Queens board from its
+   companion; the heading now carries that, which is also what lets a third family
+   appear without new markup. */
+.archive-group {
+  margin: 0 0 28px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.archive-group-title {
+  font-size: 18px;
+  letter-spacing: -0.2px;
+  margin: 0 0 10px;
+}
+
 .archive {
   list-style: none;
   margin: 0;
