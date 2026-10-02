@@ -193,19 +193,29 @@ correct default: a new game ships with no hints rather than with wrong ones.
 The envelope stays uniform and small; everything game-specific moves under one
 `board` key whose shape is selected by the sibling `type`. These are JSONC, and
 `/* … */` marks an elided run — the arrays abbreviated below are abbreviated in
-this document, not in a real file. Required lengths are named per array, because
-a per-cell array whose length is neither `width * height` nor its own dimension
-is the kind of thing that should fail loudly in the schema rather than be
-discovered by a player:
+this document, not in a real file.
 
-| Field | Length |
-| --- | --- |
-| Queens `regions` | `size * size` |
-| Queens / Tango `regionCapacity` | region count |
-| Tango `givens`, `shaded` | `size * size` |
-| Train Tracks `givens` | `width * height` |
-| Train Tracks `rowClues` | `height` |
-| Train Tracks `colClues` | `width` |
+The lengths in the table are **not** schema constraints, and it is worth being
+explicit about why, because it is the one place this format cannot be
+self-validating. JSON Schema's `minItems` and `maxItems` take fixed integers, so
+they cannot relate an array's length to a sibling property. Enumerating supported
+dimensions instead would mean one conditional branch per `size` for Queens and one
+per `(width, height)` pair for Train Tracks, and `MIN_SIZE`/`MAX_SIZE` already run
+2..16 — so fifteen branches growing to two hundred and twenty-five, to check
+something a parser already checks in one line. So the relational checks live in
+the parsers, which is where this format already keeps them: `puzzle.py` checks
+`len(regions) == size * size` and `board.ts` mirrors it, and the `conformance/`
+suites pin the two against each other. Extending that pattern is the whole of the
+work, and a new game inherits the arrangement rather than inventing one.
+
+| Field | Length | Enforced by |
+| --- | --- | --- |
+| Queens / Star Battle `regions` | `size * size` | parser |
+| Queens / Star Battle `regionCapacity` | region count | parser |
+| Tango `givens`, `shaded` | `size * size` | parser |
+| Train Tracks `givens` | `width * height` | parser |
+| Train Tracks `rowClues` | `height` | parser |
+| Train Tracks `colClues` | `width` | parser |
 
 ```jsonc
 {
@@ -234,19 +244,37 @@ discovered by a player:
   "seed": 993024471, "generatorVersion": 1, "difficulty": 2,
   "board": {
     "width": 9, "height": 7,
-    "rowClues": [5, 5, 5, 7, 5, 5, 2],
-    "colClues": [2, 4, 2, 6, 3, 4, 6, 8, 2],
+    "rowClues": [5, 5, 5, 5, 5, 5, 4],
+    "colClues": [4, 4, 4, 4, 4, 4, 4, 4, 2],
     "givens": [ /* 63 */ ]
   }
 }
 ```
 
-The schema becomes `allOf` over `if type == X then board has shape X`, with
-`additionalProperties: false` inside each shape, plus the length constraints
-above expressed as `minItems`/`maxItems` per type. The alternative — a distinct
-top-level key per type, `queensBoard` / `tangoBoard` / `tracksBoard` — is
-rejected because it makes the top level unbounded and the app's union noisier for
-no benefit; the sibling `type` already discriminates.
+The clue values are not arbitrary. A row holds `width` cells and a column holds
+`height`, so every `rowClues` entry must be at most 9 and every `colClues` entry
+at most 7, and because both sets count the same track cells the two totals must
+be equal — 34 each above. An earlier draft of this example carried a column clue
+of 8 on a 7-row board, which no solution could satisfy, and whose total did not
+match the row clues either. Both are parser checks, and both are the kind of thing
+that should be caught when a file is read rather than when a puzzle is published.
+
+So the schema does the part it can do: hold `additionalProperties: false` inside
+each `board` shape, fix which fields a type requires and which it must not carry,
+and bound values independently of dimension — integers in range, `links` entries
+of exactly three integers, the `type` enum. Everything relational goes to the two
+parsers, mirrored and pinned by conformance, which is the arrangement the format
+already uses. A new game therefore arrives with a fixed split:
+
+| | Checked in the parser |
+| --- | --- |
+| Train Tracks | array lengths per the table; every clue within its line's length; `sum(rowClues) == sum(colClues)`; exactly two cells of `givens` hold a piece pointing off the grid |
+| Tango *(provisional)* | array lengths; `links` pairs orthogonally adjacent, not shared between two pairs, and each sum within the range two values can take; three shaded cells per row and per column |
+
+The alternative to a namespaced `board` — a distinct top-level key per type,
+`queensBoard` / `tangoBoard` / `tracksBoard` — is rejected because it makes the top
+level unbounded and the app's union noisier for no benefit; the sibling `type`
+already discriminates.
 
 ### The `size` question, and what it costs
 
@@ -357,8 +385,9 @@ Real work:
    Small, and it should be its own commit so the 48/48 trace baseline is
    re-verified in isolation.
 2. `Puzzle` as a union, `parse_puzzle` dispatching, schema per-type `board`
-   shapes and their length constraints, and the id suffix table. Mirrored in
-   `app/src/domain/`.
+   shapes for everything dimension-independent, the relational length and clue
+   checks in both parsers, and the id suffix table. Mirrored in
+   `app/src/domain/`, with the schema/parser split pinned by conformance.
 3. The suffix/type registry extended to `puzzleIdsForDay`, so a third game is
    enumerated on the home page and the archive at all. This is the item that
    makes a published third game visible, and it has to land with step 2 rather
