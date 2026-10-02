@@ -42,8 +42,25 @@ class Board:
         validate_board(self)
 
     @property
+    def width(self) -> int:
+        """The grid's width, in cells.
+
+        Equal to `size`, and that is the point: it is the name a rectangular grid
+        would use, so a third game that is not square can adopt the same vocabulary
+        without every caller having to know which board it holds. `Board` stays
+        square-only — see `validate_board` — and a Train Tracks board is a different
+        class implementing the same concepts, not a wider `Board`.
+        """
+        return self.size
+
+    @property
+    def height(self) -> int:
+        """The grid's height, in cells. See `width`."""
+        return self.size
+
+    @property
     def cell_count(self) -> int:
-        return self.size * self.size
+        return self.width * self.height
 
     @property
     def region_count(self) -> int:
@@ -73,10 +90,10 @@ class Board:
         return stars
 
     def index(self, row: int, col: int) -> int:
-        return row * self.size + col
+        return row * self.width + col
 
     def coords(self, index: int) -> tuple[int, int]:
-        return divmod(index, self.size)
+        return divmod(index, self.width)
 
     def region_at(self, index: int) -> int:
         return self.regions[index]
@@ -98,8 +115,8 @@ class Board:
         found: list[int] = []
         for d_row, d_col in deltas:
             next_row, next_col = row + d_row, col + d_col
-            if 0 <= next_row < self.size and 0 <= next_col < self.size:
-                found.append(next_row * self.size + next_col)
+            if 0 <= next_row < self.height and 0 <= next_col < self.width:
+                found.append(next_row * self.width + next_col)
         return tuple(found)
 
 
@@ -107,6 +124,14 @@ def validate_board(board: Board) -> None:
     """Raise `BoardError` unless `board` satisfies every structural guarantee."""
     if not MIN_SIZE <= board.size <= MAX_SIZE:
         raise BoardError(f"size {board.size} outside [{MIN_SIZE}, {MAX_SIZE}]")
+
+    # `width`/`height` are derived from `size`, so this cannot fail today. It is
+    # here so that the square-only promise of `Board` is stated in the one place
+    # that decides what a board may be, rather than implied by the two properties
+    # agreeing. A future rectangular board is a separate class, and if anyone ever
+    # widens this one instead, this is the line that says so out loud.
+    if board.width != board.height:
+        raise BoardError(f"board must be square, got {board.width}x{board.height}")
 
     if len(board.regions) != board.cell_count:
         raise BoardError(f"regions has {len(board.regions)} entries, expected {board.cell_count}")

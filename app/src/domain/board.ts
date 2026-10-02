@@ -36,17 +36,35 @@ export class Board {
     this.regions = regions
     this.regionCapacity = regionCapacity
     this.puzzleType = puzzleType
-    this.cellCount = size * size
+    this.cellCount = this.width * this.height
     this.regionCount = regionCapacity.length
     validateBoard(this)
   }
 
+  /**
+   * The grid's width, in cells.
+   *
+   * Equal to `size`, and that is the point: it is the name a rectangular grid would
+   * use, so a third game that is not square can adopt the same vocabulary without
+   * every caller having to know which board it holds. `Board` stays square-only —
+   * see `validateBoard` — and a Train Tracks board is a different class implementing
+   * the same concepts, not a wider `Board`.
+   */
+  get width(): number {
+    return this.size
+  }
+
+  /** The grid's height, in cells. See `width`. */
+  get height(): number {
+    return this.size
+  }
+
   index(row: number, col: number): number {
-    return row * this.size + col
+    return row * this.width + col
   }
 
   coords(index: number): { row: number; col: number } {
-    return { row: Math.floor(index / this.size), col: index % this.size }
+    return { row: Math.floor(index / this.width), col: index % this.width }
   }
 
   regionAt(index: number): number {
@@ -89,8 +107,8 @@ export class Board {
     for (const [dRow, dCol] of deltas) {
       const nextRow = row + dRow
       const nextCol = col + dCol
-      if (nextRow >= 0 && nextRow < this.size && nextCol >= 0 && nextCol < this.size) {
-        found.push(nextRow * this.size + nextCol)
+      if (nextRow >= 0 && nextRow < this.height && nextCol >= 0 && nextCol < this.width) {
+        found.push(nextRow * this.width + nextCol)
       }
     }
     return found
@@ -100,6 +118,15 @@ export class Board {
 export function validateBoard(board: Board): void {
   if (board.size < MIN_SIZE || board.size > MAX_SIZE) {
     throw new BoardError(`size ${board.size} outside [${MIN_SIZE}, ${MAX_SIZE}]`)
+  }
+
+  // `width`/`height` are derived from `size`, so this cannot fail today. It is
+  // here so that the square-only promise of `Board` is stated in the one place
+  // that decides what a board may be, rather than implied by the two properties
+  // agreeing. A future rectangular board is a separate class, and if anyone ever
+  // widens this one instead, this is the line that says so out loud.
+  if (board.width !== board.height) {
+    throw new BoardError(`board must be square, got ${board.width}x${board.height}`)
   }
 
   if (board.regions.length !== board.cellCount) {

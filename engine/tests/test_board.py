@@ -34,6 +34,20 @@ class TestValidBoards:
         assert board.cell_count == 25
         assert board.region_count == 5
 
+    def test_width_and_height_come_from_size(self) -> None:
+        """The rectangular-grid vocabulary, on a board that is square by definition.
+
+        A third game that is not square adopts these names instead of inventing its
+        own, which is the whole reason they exist. `Board` itself stays square, so
+        these are equal to `size` today and `validate_board` says so explicitly.
+        """
+        board = make_board(4, row_partition(4), (1, 1, 1, 1))
+        assert board.width == 4
+        assert board.height == 4
+        assert board.width == board.size
+        assert board.height == board.size
+        assert board.cell_count == board.width * board.height
+
     def test_geometry_helpers_agree(self) -> None:
         board = make_board(4, row_partition(4), (1, 1, 1, 1))
         assert board.index(2, 3) == 11
