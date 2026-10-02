@@ -209,6 +209,8 @@ a cell is forced rather than just revealing it.
 | 12 | A landing page that offers both of today's puzzles instead of assuming one | done |
 | 13 | A How to play page, and the region star counts it needs to be able to point at | done |
 | 14 | Remember the auto-mark choice between visits | done |
+| 15 | A weekly difficulty ramp for Queens, and the band in the puzzle file | done |
+| 16 | Port the deduction engine to per-group counts so Star Battle can be rated, then ramp it too | open |
 
 Milestones 2 to 4 were the critical path, and they are all Python. The engine alone — a
 CLI with an exact uniqueness prover and property tests — would be worth publishing even if
@@ -297,12 +299,62 @@ continue with a bounded hypothesis search (a trial that reaches a contradiction 
 genuine deduction, courtesy of the unique solution), which is what lets it always find the
 unique solution for the boards the generator ships.
 
-`score_difficulty(board)` maps that trace to a score and a band (Easy..Nightmare), with
-bands calibrated against what the generator actually produces: default 8x8s spread across
-all five levels, 5x5s mostly Easy/Medium. The score is a *soft* signal — it rates how hard
-this engine found the board, not a Platonic difficulty — and it is deliberately **not** in
-the puzzle file. Difficulty is the daily pipeline's steer on *which* seed to ship, not a
-property the client needs.
+`score_difficulty(board)` maps that trace to a score and a band (Easy..Nightmare). The score
+is a *soft* signal — it rates how hard this engine found the board, not a Platonic
+difficulty — and its bands are calibrated against what the generator actually produces.
+
+Measured over logic-only boards (400 at 7x7, 130 at 8x8, 30 at 9x9):
+
+| Size | Easy | Medium | Hard | Expert | Nightmare |
+| ---- | ---- | ------ | ---- | ------ | --------- |
+| 7x7  | 41   | 119    | 31   | 0      | 0         |
+| 8x8  | 6    | 29     | 21   | 1      | 0         |
+| 9x9  | 0    | 1      | 5    | 2      | 0         |
+
+**Nightmare is unreachable without guessing.** Not one logic-only board in 560 scored
+Nightmare, and every Nightmare board found needed at least one hypothesis. So the top of
+the scale is a real ceiling, not a target: reaching past it means giving the deduction
+engine stronger rules so harder boards *become* logic-only, not relaxing the guarantee.
+
+The band is now recorded in the puzzle file as an optional `difficulty` (1-based into
+`LEVEL_NAMES`), which the app shows on the chooser card and the archive. Files published
+before the ramp have no field and display nothing — defaulting them to Easy would put a
+label on a puzzle the engine never rated.
+
+### The weekly ramp
+
+Difficulty used to be a number the pipeline logged and threw away: every day shipped the
+first unique logic-only board its seed produced, which is 8x8 every day and lands on
+Hard, Easy or Nightmare by luck. The ramp turns that into a promise, using both levers
+available:
+
+| Day   | Size | Band   | Measured cost |
+| ----- | ---- | ------ | ------------- |
+| Monday | 7x7 | Medium | 0.4s |
+| Tuesday | 8x8 | Medium | 1.1s |
+| Wednesday | 8x8 | Hard | 17s |
+| Thursday | 8x8 | Hard | 17s |
+| Friday | 9x9 | Hard | 31–46s |
+| Saturday | 9x9 | Expert | 78–163s |
+| Sunday | 9x9 | Expert | 78–163s |
+
+Size sets the floor (a 9x9 board is never Easy whatever seed it lands on), band is what the
+seed search then aims for. Neither regresses: size steps 7, 8, 8, 8, 9, 9, 9 and band
+steps Medium to Expert, so the weekend is both the largest and the deepest. Friday
+introduces the big board a day early, so the week ends on size *and* depth at once.
+
+`generate_ramped` aims at the target and keeps the **hardest board the budget turned up**
+rather than walking a fallback ladder, so a rare target still ships something hard instead
+of nothing. It will never accept a board *harder* than the target: an Expert Tuesday would
+break the ramp as surely as a Nightmare Monday.
+
+Expert is reached far more cheaply at 9x9 than at 8x8 — 1 board in 12 against 1 in 130,
+because 9x9 boards are more constrained to begin with. That measurement is why the ramp
+peaks at 9x9. Forcing Expert at 8x8 instead was tried and abandoned: 400 attempts failed to
+find one for a real date, and a flaky band is worse than a slightly smaller board.
+
+The budget counts *attempts*, not boards produced. A seed that cannot generate at all has
+to count against it, or a size the generator cannot satisfy would loop forever.
 
 ### The app shell
 
@@ -582,6 +634,15 @@ maps to one puzzle, so running it twice in a day is a no-op and a missed week se
 on the next run. `tools/verify.py`
 re-parses every committed puzzle and calls `verify_replay` on it, so a generator change
 that would have drifted the archive fails loudly before anything is merged.
+
+Verify also checks each Queens file against the ramp for its weekday, and treats a break
+as a **failure** rather than a remark: a missing band from `RAMP_START` onwards, a board
+of the wrong size, or a band above the target all exit non-zero. Falling *short* of the
+target passes, because the search reports that honestly and publishes the hardest board
+it found. Files dated before `RAMP_START` are skipped — they were published when every
+board was 8x8 with no band recorded, so their size is history rather than a claim — and
+so is every Star Battle companion, which is not on the ramp until the deduction engine
+can rate a star board.
 
 The workflows live in [`.github/workflows/`](.github/workflows):
 

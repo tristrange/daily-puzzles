@@ -4,13 +4,50 @@ from __future__ import annotations
 
 import io
 import json
-from contextlib import redirect_stdout
+from collections.abc import Generator
+from contextlib import contextmanager, redirect_stdout
+from dataclasses import replace
 from datetime import date, timedelta
 from pathlib import Path
+from unittest.mock import patch
 
 from tools import publish, verify
+from tools.generate import seed_from_date
 
-from queens_engine import PuzzleType, parse_puzzle
+from queens_engine import (
+    MIN_LEVEL,
+    RAMP_ATTEMPTS,
+    RAMP_START,
+    DifficultyTarget,
+    PuzzleType,
+    dumps_puzzle,
+    generate_ramped,
+    parse_puzzle,
+)
+
+#: The board size windowing tests publish at. 5x5 is the fastest thing the
+#: generator makes and none of these tests care about the size. The companion
+#: keeps its real 8x8: Star Battle is only feasible at 8x8 and 9x9, so there is
+#: nothing smaller to pin it to.
+SMALL_SIZE = 5
+
+
+@contextmanager
+def cheap_publish() -> Generator[None]:
+    """Run `publish` on a tiny board, so windowing tests stay quick.
+
+    The ramp makes a real publish expensive on purpose: a 9x9 Friday searches for a
+    band it hits only about one time in twelve, so a real run costs seconds. That
+    is right for the daily pipeline and wrong for a test whose subject is *which
+    days get filled in*. Generation is pinned to the smallest board instead; the
+    ramp is covered on its own terms in `test_ramp.py`.
+    """
+
+    def always_small(_day: date) -> DifficultyTarget:
+        return DifficultyTarget(size=SMALL_SIZE, level=MIN_LEVEL)
+
+    with patch.object(publish, "target_for", side_effect=always_small):
+        yield
 
 
 class TestPublishWindow:
@@ -142,6 +179,117 @@ class TestVerify:
         assert "0 puzzles verified" in _capture_verify(tmp_path)
 
 
+class TestVerifyRamp:
+    """The ramp check has to fail verification, not merely note a problem.
+
+    A mismatch that only prints a label lets the daily pipeline commit and deploy
+    a board that breaks the week, which is exactly what the check is for.
+
+    Boards are generated rather than hand-written so `verify_replay` passes and
+    the ramp check is the only thing under test. `verify_replay` also compares the
+    recorded band against the board, so a relabelled file would fail there first
+    and prove nothing about the ramp.
+    """
+
+    # Two days inside the ramp whose targets are the cheapest to build: Monday
+    # wants 7x7 and Tuesday 8x8, both at Medium. A 9x9 day is avoided on purpose,
+    # since its band search is the slowest thing in the suite and none of these
+    # rules are size-specific.
+    MONDAY = "2026-10-12"
+    TUESDAY = "2026-10-13"
+
+    #: A band every supported size produces within a few attempts.
+    EASY = MIN_LEVEL
+
+    def _write(self, tmp_path: Path, day: str, size: int, level: int) -> Path:
+        """A real, logic-only board of the requested size at the requested band."""
+        target = DifficultyTarget(size=size, level=level)
+        result = generate_ramped(
+            seed=seed_from_date(day),
+            puzzle_id=day,
+            target=target,
+            max_attempts=RAMP_ATTEMPTS[size],
+        )
+        assert result.achieved.level == level
+        path = tmp_path / f"{day}.json"
+        path.write_text(dumps_puzzle(replace(result.puzzle, difficulty=level)), encoding="utf-8")
+        return path
+
+    def test_accepts_a_published_ramp(self, tmp_path: Path) -> None:
+        self._write(tmp_path, self.MONDAY, 7, self.EASY)
+        self._write(tmp_path, self.TUESDAY, 8, self.EASY)
+
+        assert verify.main(["--dir", str(tmp_path)]) == 0
+
+    def test_rejects_a_post_ramp_day_with_no_band(self, tmp_path: Path) -> None:
+        # The schema keeps `difficulty` optional so pre-ramp files still parse, so
+        # nothing but this check stops a new file shipping without one.
+        path = self._write(tmp_path, self.MONDAY, 7, self.EASY)
+        data = json.loads(path.read_text(encoding="utf-8"))
+        del data["difficulty"]
+        path.write_text(json.dumps(data), encoding="utf-8")
+
+        result = verify.main(["--dir", str(tmp_path)])
+
+        assert result == 1
+        assert "no difficulty recorded" in _capture_verify(tmp_path)
+
+    def test_rejects_a_board_of_the_wrong_size(self, tmp_path: Path) -> None:
+        # A Monday board that is 8x8, where the target is 7x7.
+        self._write(tmp_path, self.MONDAY, 8, self.EASY)
+
+        result = verify.main(["--dir", str(tmp_path)])
+
+        assert result == 1
+        assert "expected 7x7" in _capture_verify(tmp_path)
+
+    def test_rejects_a_band_above_the_target(self, tmp_path: Path) -> None:
+        # A Tuesday wants 8x8 Medium, so a Hard board of the right size is over the
+        # target while its size still matches.
+        self._write(tmp_path, self.TUESDAY, 8, 3)
+
+        result = verify.main(["--dir", str(tmp_path)])
+
+        assert result == 1
+        assert "above Medium" in _capture_verify(tmp_path)
+
+    def test_accepts_a_band_below_the_target(self, tmp_path: Path) -> None:
+        # Falling short is legal: the search reports it and publishes the hardest
+        # board it found, so an Easy Tuesday must not fail the build.
+        self._write(tmp_path, self.TUESDAY, 8, self.EASY)
+
+        assert verify.main(["--dir", str(tmp_path)]) == 0
+
+    def test_leaves_a_pre_ramp_file_alone(self, tmp_path: Path) -> None:
+        # Everything before RAMP_START was published when every board was 8x8 with
+        # no band recorded, so there is nothing to check and nothing to complain
+        # about: its size is history, not a claim.
+        day = (RAMP_START - timedelta(days=1)).isoformat()
+        result = generate_ramped(
+            seed=seed_from_date(day),
+            puzzle_id=day,
+            target=DifficultyTarget(size=SMALL_SIZE, level=MIN_LEVEL),
+            max_attempts=RAMP_ATTEMPTS[SMALL_SIZE],
+        )
+        (tmp_path / f"{day}.json").write_text(dumps_puzzle(result.puzzle), encoding="utf-8")
+
+        assert verify.main(["--dir", str(tmp_path)]) == 0
+
+    def test_never_checks_a_star_companion(self, tmp_path: Path) -> None:
+        # Star Battle is off the ramp, so its 8x8 size is not a violation even on
+        # a day whose Queens target is 7x7, and it records no band.
+        day = self.MONDAY
+        result = generate_ramped(
+            seed=seed_from_date(f"{day}-star"),
+            puzzle_id=f"{day}-star",
+            target=DifficultyTarget(size=SMALL_SIZE, level=MIN_LEVEL),
+            max_attempts=RAMP_ATTEMPTS[SMALL_SIZE],
+        )
+        (tmp_path / f"{day}-star.json").write_text(dumps_puzzle(result.puzzle), encoding="utf-8")
+
+        assert verify.main(["--dir", str(tmp_path)]) == 0
+
+
 def _run_publish(
     out_dir: Path, start: date | None, lead: int, *, dry_run: bool = True
 ) -> list[str]:
@@ -152,7 +300,7 @@ def _run_publish(
     if start is not None:
         args += ["--start", start.isoformat()]
     buffer = io.StringIO()
-    with redirect_stdout(buffer):
+    with cheap_publish(), redirect_stdout(buffer):
         exit_code = publish.main(args)
     assert exit_code == 0
     return buffer.getvalue().splitlines()

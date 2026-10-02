@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatPuzzleLabel, isStarPuzzleId, puzzleIdsForDay, puzzleOfToday } from '../domain/dates'
-import { PUZZLE_TYPE_LABEL } from '../domain/games'
+import { DIFFICULTY_LABEL, PUZZLE_TYPE_LABEL } from '../domain/games'
 import { probePuzzles, type ProbedPuzzle } from '../lib/puzzles'
 import { readStoredStats } from '../lib/stats'
 
@@ -57,6 +57,9 @@ export function HomePage() {
                 {formatPuzzleLabel(probe.id, timeZone)}
                 {probe.puzzle !== null && (
                   <> · {probe.puzzle.size}&times;{probe.puzzle.size}</>
+                )}
+                {probe.puzzle?.difficulty != null && (
+                  <> · {DIFFICULTY_LABEL[probe.puzzle.difficulty]}</>
                 )}
               </p>
               {probe.puzzle === null ? (

@@ -29,21 +29,26 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from dataclasses import replace
+
 from tools.generate import LOGIC_ONLY_TRIES, seed_from_date
 
 from queens_engine import (
+    LEVEL_NAMES,
     GenerationConfig,
     GenerationError,
     Puzzle,
     PuzzleType,
-    deduce,
     dumps_puzzle,
     generate_puzzle,
+    generate_ramped,
     score_difficulty,
+    target_for,
 )
 
-#: Default size for daily puzzles, mirroring `tools.generate`.
-PUZZLE_SIZE = 8
+#: Star Battle stays at one size until the deduction engine can rate a star
+#: board; only then can it join the weekly ramp. See `queens_engine.ramp`.
+STAR_PUZZLE_SIZE = 8
 
 #: How many days ahead of "today" the archive should stay published.
 DEFAULT_LEAD_DAYS = 3
@@ -98,25 +103,27 @@ def _first_incomplete_day(existing: set[str], first: date, end: date) -> date | 
 
 
 def _generate_queens(puzzle_id: str, seed: int) -> tuple[Puzzle, float]:
-    """Generate a logic-only Queens puzzle, bumping the seed on any failure.
+    """Generate a logic-only Queens puzzle that meets its weekday's band.
 
-    Returns the parsed puzzle (already schema-valid) and its difficulty score.
-    Raises `RuntimeError` if the seed budget runs out.
+    The weekly ramp in `queens_engine.ramp` picks the size and the band from the
+    date; the search then bumps the seed until a board lands at or below that
+    band, so a date always reproduces the same board. Returns the parsed puzzle
+    (already schema-valid) and its difficulty score. Raises `RuntimeError` if no
+    logic-only board turns up at all.
     """
-    for _bump in range(LOGIC_ONLY_TRIES):
-        try:
-            puzzle = generate_puzzle(
-                seed=seed,
-                puzzle_id=puzzle_id,
-                config=GenerationConfig(size=PUZZLE_SIZE),
-            )
-        except GenerationError:
-            seed = (seed + 1) % (2**32)
-            continue
-        if deduce(puzzle.board, allow_guesses=False).solved:
-            return puzzle, score_difficulty(puzzle.board).score
-        seed = (seed + 1) % (2**32)
-    raise RuntimeError(f"{puzzle_id}: no logic-only board in {LOGIC_ONLY_TRIES} seed bumps")
+    target = target_for(date.fromisoformat(puzzle_id))
+    try:
+        result = generate_ramped(seed=seed, puzzle_id=puzzle_id, target=target)
+    except GenerationError as error:
+        raise RuntimeError(f"{puzzle_id}: {error}") from error
+    if result.achieved.level < target.level:
+        print(
+            f"  note: {target.size}x{target.size} {target.level_name} was not in "
+            f"{result.attempts} boards, published {result.achieved.level_name}"
+        )
+    return replace(result.puzzle, difficulty=result.achieved.level), score_difficulty(
+        result.puzzle.board
+    ).score
 
 
 def _generate_star(puzzle_id: str, seed: int) -> Puzzle:
@@ -124,7 +131,8 @@ def _generate_star(puzzle_id: str, seed: int) -> Puzzle:
 
     The generator already guarantees a unique solution, which is the promise a
     star board can keep: unlike Queens it cannot also promise that no guessing is
-    needed, because `deduce` refuses a star board rather than scoring it.
+    needed, because `deduce` refuses a star board rather than scoring it. That is
+    also why the weekly ramp does not apply here, so there is no band to record.
     Raises `RuntimeError` if the seed budget runs out.
     """
     for _bump in range(LOGIC_ONLY_TRIES):
@@ -133,7 +141,7 @@ def _generate_star(puzzle_id: str, seed: int) -> Puzzle:
                 seed=seed,
                 puzzle_id=puzzle_id,
                 config=GenerationConfig(
-                    size=PUZZLE_SIZE,
+                    size=STAR_PUZZLE_SIZE,
                     puzzle_type=PuzzleType.STAR_BATTLE,
                     stars_per_row=STARS_PER_ROW,
                 ),
@@ -194,8 +202,13 @@ def main(argv: list[str] | None = None) -> int:
             # A star board is unique but not logic-gated and not scored, so it has
             # no difficulty to report. Saying "not rated" beats printing a number
             # that means something weaker than the same number on a Queens board.
+            band = (
+                f" {LEVEL_NAMES[puzzle.difficulty - 1]}"
+                if puzzle.difficulty is not None
+                else " (not rated)"
+            )
             print(
-                f"  seed {puzzle.seed}"
+                f"  seed {puzzle.seed} size {puzzle.size}{band}"
                 + (f" score {score:g}" if score is not None else " (unique, not logic-gated)")
             )
         window += timedelta(days=1)

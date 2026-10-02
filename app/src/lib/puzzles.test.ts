@@ -8,8 +8,13 @@ import {
   puzzleUrl,
 } from './puzzles'
 
-/** A minimal committed puzzle file, shaped for the id given. */
-function puzzleBody(id: string) {
+/**
+ * A minimal committed puzzle file, shaped for the id given.
+ *
+ * No `difficulty` by default, which is what every file published before the
+ * weekly ramp looks like. Pass one to model a ramped file.
+ */
+function puzzleBody(id: string, difficulty?: number) {
   const star = id.endsWith('-star')
   return {
     id,
@@ -19,6 +24,7 @@ function puzzleBody(id: string) {
     generatorVersion: 1,
     regions: [0, 0, 1, 0, 1, 1, 0, 0, 2],
     ...(star ? { regionCapacity: [1, 1, 1] } : {}),
+    ...(difficulty === undefined ? {} : { difficulty }),
   }
 }
 
@@ -120,7 +126,7 @@ describe('loadPuzzle', () => {
 
 describe('listPublishedPuzzles', () => {
   const published = ['2026-10-03', '2026-10-01', '2026-09-28']
-  const queens = published.map((id) => ({ id, type: 'queens' }))
+  const queens = published.map((id) => ({ id, type: 'queens', difficulty: null }))
 
   it('returns only days with a puzzle file, newest first', async () => {
     const found = await listPublishedPuzzles('2026-10-03', fetcherFor(published))
@@ -139,7 +145,7 @@ describe('listPublishedPuzzles', () => {
 
     const found = await listPublishedPuzzles('2026-10-03', mislabelled)
 
-    expect(found).toEqual([{ id: '2026-10-03-star', type: 'queens' }])
+    expect(found).toEqual([{ id: '2026-10-03-star', type: 'queens', difficulty: null }])
   })
 
   it('probes a bounded recent window', async () => {
@@ -162,9 +168,9 @@ describe('listPublishedPuzzles', () => {
     const found = await listPublishedPuzzles('2026-10-03', fetcherFor(both))
 
     expect(found).toEqual([
-      { id: '2026-10-03', type: 'queens' },
-      { id: '2026-10-03-star', type: 'star-battle' },
-      { id: '2026-10-02', type: 'queens' },
+      { id: '2026-10-03', type: 'queens', difficulty: null },
+      { id: '2026-10-03-star', type: 'star-battle', difficulty: null },
+      { id: '2026-10-02', type: 'queens', difficulty: null },
     ])
   })
 
@@ -173,7 +179,7 @@ describe('listPublishedPuzzles', () => {
     // one must be absent from the listing rather than listed as broken.
     const found = await listPublishedPuzzles('2026-10-03', fetcherFor(['2026-10-03']))
 
-    expect(found).toEqual([{ id: '2026-10-03', type: 'queens' }])
+    expect(found).toEqual([{ id: '2026-10-03', type: 'queens', difficulty: null }])
   })
 
   it('ignores days that answer 200 with the SPA shell rather than a puzzle', async () => {
@@ -199,8 +205,8 @@ describe('listPublishedPuzzles', () => {
     }
     const found = await listPublishedPuzzles('2026-10-03', broken)
     expect(found).toEqual([
-      { id: '2026-10-03', type: 'queens' },
-      { id: '2026-09-28', type: 'queens' },
+      { id: '2026-10-03', type: 'queens', difficulty: null },
+      { id: '2026-09-28', type: 'queens', difficulty: null },
     ])
   })
 

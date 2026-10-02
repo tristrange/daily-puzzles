@@ -1,0 +1,9 @@
+{
+  "id": "2026-10-07",
+  "type": "queens",
+  "size": 4,
+  "seed": 1234567890,
+  "generatorVersion": 1,
+  "regions": [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3],
+  "difficulty": 6
+}

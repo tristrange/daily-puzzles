@@ -17,6 +17,16 @@ export class PuzzleParseError extends Error {
   }
 }
 
+/**
+ * A band from the engine's `LEVEL_NAMES`, 1-based.
+ *
+ * Only files published since the weekly ramp carry one; everything earlier is
+ * `null`, and nothing should read a band's absence as "Easy".
+ */
+export type DifficultyBand = 1 | 2 | 3 | 4 | 5
+
+export const DIFFICULTY_BANDS: readonly DifficultyBand[] = [1, 2, 3, 4, 5]
+
 export interface Puzzle {
   readonly id: string
   readonly puzzleType: PuzzleType
@@ -24,6 +34,7 @@ export interface Puzzle {
   readonly seed: number
   readonly generatorVersion: number
   readonly board: Board
+  readonly difficulty: DifficultyBand | null
 }
 
 let compiled: ValidateFunction | undefined
@@ -40,6 +51,13 @@ function describe(errors: readonly ErrorObject[] | null | undefined): string {
 
 function isPuzzleType(value: string): value is PuzzleType {
   return (PUZZLE_TYPES as readonly string[]).includes(value)
+}
+
+function toDifficultyBand(value: unknown): DifficultyBand | null {
+  if (value === undefined || value === null) return null
+  if (typeof value !== 'number' || !Number.isInteger(value)) return null
+  if (value < 1 || value > 5) return null
+  return value as DifficultyBand
 }
 
 export function parsePuzzle(data: unknown): Puzzle {
@@ -95,5 +113,6 @@ export function parsePuzzle(data: unknown): Puzzle {
     seed: Number(record['seed']),
     generatorVersion: Number(record['generatorVersion']),
     board,
+    difficulty: toDifficultyBand(record['difficulty']),
   }
 }

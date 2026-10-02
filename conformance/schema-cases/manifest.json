@@ -21,6 +21,15 @@
       "valid": true
     },
     {
+      "file": "queens-with-band.accept.json",
+      "valid": true
+    },
+    {
+      "file": "band-out-of-range.reject.json",
+      "valid": false,
+      "reason": "difficulty must be a band from 1 to 5, so 6 is not a level this engine scores"
+    },
+    {
       "file": "bad-id.reject.json",
       "valid": false,
       "reason": "id must match YYYY-MM-DD with an optional -star suffix"
