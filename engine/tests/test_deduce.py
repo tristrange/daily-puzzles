@@ -22,6 +22,7 @@ from queens_engine import (
     score_difficulty,
 )
 from queens_engine.deduce import (
+    FILL,
     INTERSECTION,
     SUBSET,
     TRIAL,
@@ -37,6 +38,14 @@ SIZE_ST = st.sampled_from(SIZES)
 
 def _board(size: int, seed: int) -> Board:
     return generate_puzzle(seed=seed, puzzle_id="x", config=GenerationConfig(size=size)).board
+
+
+def _star_board(size: int, seed: int) -> Board:
+    return generate_puzzle(
+        seed=seed,
+        puzzle_id="star",
+        config=GenerationConfig(size=size, puzzle_type=PuzzleType.STAR_BATTLE, stars_per_row=2),
+    ).board
 
 
 def _unique_solution(board: Board) -> set[int]:
@@ -107,19 +116,186 @@ def test_no_guesses_mask_never_tries() -> None:
     assert trace.guesses == 0
 
 
-def test_deduce_rejects_star_battle() -> None:
+def test_deduce_solves_a_star_battle_board() -> None:
+    """The count model reaches k = 2: two stars per row, column and region.
+
+    The engine used to refuse a star board outright. It now reads the capacities
+    off the board, so the same rules carry a one-star and a two-star group.
+    """
+    board = _star_board(8, 3)
+    solution = _unique_solution(board)
+    trace = deduce(board)
+    assert trace.solved
+    assert set(trace.solution or ()) == solution
+    assert not trace.exhausted
+
+
+def test_pure_rules_are_sound_on_star_battle() -> None:
+    """Same soundness contract as Queens, on a two-star board.
+
+    Every placement and elimination is checked against the exact solver, so a
+    rule that over-reaches at k = 2 — killing a cell the region or line still has
+    room for, or placing a third star in a two-star group — fails here rather
+    than in a player's hands.
+    """
+    board = _star_board(8, 3)
+    solution = _unique_solution(board)
+    trace = deduce(board, allow_guesses=False)
+    for step in trace.steps:
+        assert set(step.cells).isdisjoint(solution), f"{step.rule} killed a star"
+        if step.queen is not None:
+            assert step.queen in solution, f"{step.rule} placed a non-star"
+
+
+def test_a_region_count_that_is_not_the_size_still_works() -> None:
+    """Regions are whatever the board declares, which need not be `size`.
+
+    Star Battle states two stars per row, column and region, so a board whose
+    capacities are uniform has exactly `size` regions — but the capacities need
+    not be uniform, and nothing in `Board` requires them to be. This board has
+    six regions on an 8x8 grid, so the two counts differ, k = 2 comes from
+    capacities that total 16, and region 3 is a one-star region among
+    three-star ones.
+
+    Iterating regions over `size` instead of `region_count` was a real crash:
+    `IndexError` on a board with fewer regions, and silently skipped regions on a
+    board with more. The board below comes from a search, and is checked to have
+    exactly one solution, so the engine is compared against the exact solver
+    rather than against itself.
+    """
     board = Board(
-        size=4,
-        regions=(0, 0, 1, 1, 0, 0, 1, 1, 2, 2, 3, 3, 2, 2, 3, 3),
-        region_capacity=(2, 2, 2, 2),
+        size=8,
+        regions=(
+            5,
+            5,
+            5,
+            4,
+            4,
+            2,
+            2,
+            2,
+            5,
+            5,
+            5,
+            4,
+            4,
+            2,
+            2,
+            2,
+            5,
+            5,
+            4,
+            4,
+            4,
+            2,
+            2,
+            2,
+            5,
+            5,
+            4,
+            4,
+            4,
+            3,
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            3,
+            3,
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            3,
+            3,
+            3,
+            2,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            3,
+            1,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+        ),
+        region_capacity=(3, 3, 3, 1, 3, 3),
         puzzle_type=PuzzleType.STAR_BATTLE,
     )
-    try:
-        deduce(board)
-    except DeductionError:
-        pass
-    else:
-        raise AssertionError("expected DeductionError for a star-battle board")
+    assert board.region_count == 6 != board.size
+    assert board.stars_per_row == 2
+    assert board.region_capacity[3] == 1, "the one-star region is the interesting case"
+
+    trace = deduce(board)
+    assert set(trace.solution or ()) == _unique_solution(board)
+
+
+def test_star_solutions_respect_the_no_touching_rule() -> None:
+    """The no-touching rule includes the diagonals, for both puzzle types.
+
+    The star path is where this could quietly change: `deduce` needed a
+    per-type neighbourhood to support k > 1, and a four-neighbour version would
+    still be *sound* — it would only be weaker. Nothing in a soundness test can
+    tell a weaker rule from a correct one, so the rule is asserted directly.
+    """
+    board = _star_board(8, 3)
+    solution = _unique_solution(board)
+    for cell in solution:
+        row, col = board.coords(cell)
+        for d_row, d_col in ((0, 1), (1, 0), (1, 1), (1, -1)):
+            near = (
+                board.index(row + d_row, col + d_col)
+                if (0 <= row + d_row < 8 and 0 <= col + d_col < 8)
+                else None
+            )
+            assert near not in solution, f"star {cell} touches {near}"
+
+
+def test_fill_cannot_fire_on_a_region_at_two_stars() -> None:
+    """`fill` reaches a two-star board, but only ever through a row or column.
+
+    A region of exactly two cells is a pair of orthogonally adjacent cells, and
+    two stars in one region may not touch, so a two-cell region describes an
+    illegal board and `Board` refuses it. A region therefore always keeps slack
+    when the rules first look at it, and a naked pair can only ever be a row or a
+    column that earlier eliminations reduced to two candidates.
+    """
+    for seed in (3, 11):
+        board = _star_board(8, seed)
+        assert board.stars_per_row == 2
+        for region in range(board.region_count):
+            cells = board.cells_of_region(region)
+            assert len(cells) > 2, f"region {region} has no slack, which cannot be legal here"
+            assert any(set(board.orthogonal_neighbours(a)) & set(cells) - {a} for a in cells), (
+                f"region {region} is not connected, so `Board` should have refused it"
+            )
+
+    # And the rule it does reach, on the rare board that finishes without a guess.
+    fired = any(
+        step.rule == FILL
+        for seed in range(60)
+        for step in deduce(_star_board(8, seed), allow_guesses=False).steps
+    )
+    assert fired, "expected fill to be reachable at k = 2"
+
+
+def test_deduce_is_deterministic_on_star_battle() -> None:
+    board = _star_board(8, 11)
+    first, second = deduce(board), deduce(board)
+    assert first.steps == second.steps
+    assert first.solution == second.solution
 
 
 def test_deduce_rejects_bad_guess_cap() -> None:

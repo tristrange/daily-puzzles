@@ -619,11 +619,13 @@ the Queens board named after the day, and its Star Battle companion named
 `<date>-star.json`. Both use a seed hashed from the id, size 8, but they are gated
 differently, because they can promise different things. Queens walks the seed upward
 until `deduce` reaches a solution without guessing, exactly as
-`tools/generate --logic-only` does. A star board cannot: `deduce` is single-star and
-refuses a star board outright, so the companion takes the guarantee the generator
-actually provides — a unique solution — and says "unique, not logic-gated" rather than
-printing a difficulty number that would mean something weaker than the same number on a
-Queens board.
+`tools/generate --logic-only` does. A star board is not gated: `deduce` does run on a
+two-star board, but a two-star board almost never reaches a finish by rules alone — 92%
+offer an opening deduction and 0.1% complete, measured over 1000 generated 8x8 boards.
+Gating on it would reject essentially every board, so the companion takes the guarantee
+the generator actually provides — a unique solution — and says "unique, not logic-gated"
+rather than printing a difficulty number that would mean something weaker than the same
+number on a Queens board.
 
 Skipping is per puzzle rather than per day, which is what makes this safe to run against
 an archive published before companions existed: a committed Queens board does not stop
@@ -665,14 +667,30 @@ solver was already capacity-parameterised, `Board` already carried a
 the last Queens-only piece.
 
 So the real cost of adding a puzzle type was not the engine, it was the honest
-inventory of what is *not* general. The deduction engine models "this line has
-one candidate left" with boolean flags and wipes a region when a queen lands —
-all single-star thinking. Rather than half-generalise it, Star Battle ships with
-the guarantee it can actually back: a **unique** solution, but neither
-logic-gated nor difficulty-scored (`deduce` refuses the board outright, and the
-CLI says so). Extending the rules to k stars is future work with a real design
-question behind it — a region with two candidates is not a single — and it will
-be measured, not guessed.
+inventory of what is *not* general. The deduction engine modelled "this line has
+one candidate left" with boolean flags and wiped a region when a queen landed —
+all single-star thinking. Rather than half-generalise it, Star Battle first
+shipped with the guarantee it could actually back: a **unique** solution, but
+neither logic-gated nor difficulty-scored (`deduce` refused the board outright,
+and the CLI said so).
+
+That inventory has since been paid off. The engine now carries a *count* per
+group instead of a flag, so one code path covers one star and k: a group is
+finished when its need reaches zero, and a group is short when it has fewer free
+cells than stars still owed. The last piece was `fill` — a group with exactly as
+many candidates as stars left, which is a single star at k = 1 and a naked
+pair at k = 2. Queens is provably untouched by it, and all 48 recorded
+Queens traces stay byte-identical; Star Battle uses it ten times on the rare
+board that finishes.
+
+The measurements, rather than the argument, decided what ships. The rules work on
+a two-star board and are sound there, but a two-star board almost never finishes
+without guessing: over 1000 generated 8x8 boards, 92% offer an opening
+deduction and **0.1%** complete by rules alone, against 100% for Queens. So
+`--logic-only` and the weekly ramp stay Queens-only, and the reason is recorded
+here rather than left as "not implemented yet". Making Star Battle logic-gated
+would mean changing the boards — the genre's difficulty lives in the shapes a
+generator can rarely be talked into — which is a design decision, not a bug fix.
 
 Two facts the star path depends on. First, **not every size admits a star
 count**: two non-touching stars per row need a row span of three columns and

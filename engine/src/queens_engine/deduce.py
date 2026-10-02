@@ -10,20 +10,32 @@ signal" the difficulty note in the README describes. We do not pretend
 "solvable without guessing" is formally decidable; we measure what this engine
 can prove.
 
-Rules (each firings removes at least one candidate, so the engine terminates):
+The engine works in *counts*, not booleans. Every rule is stated in terms of how
+many stars a group still needs (`need`) and how many cells it has left (`free`),
+so the same rules cover a one-star group (Queens) and a two-star group (Star
+Battle) with no per-type branching in the rules themselves. `Board.stars_per_row`
+supplies k. Where a rule is genuinely a one-star rule, the docstring says so and
+explains why the general form would be unsound.
+
+Rules (each firing removes at least one candidate, so the engine terminates):
 
 - ``single-region`` / ``single-row`` / ``single-column``: a region, row or
-  column with exactly one candidate left must place its queen there. Weight 1.
-- ``intersection``: if every candidate of a region lies in a single row (resp.
-  column), or every candidate of a row (resp. column) lies in a single region,
-  the two share the queen and the other's remaining candidates are dead.
+  column with exactly one candidate left, and exactly one star still to place,
+  must place it there. Weight 1.
+- ``fill``: a group that still needs exactly as many stars as it has candidate
+  cells has no slack — every one of those cells is a star. Only reachable when
+  k > 1, since a one-star group that hits this case is the single rule above.
   Weight 2.
-- ``subset``: a pigeonhole step. If k regions between them can only place in k
-  rows, those rows are exactly consumed by those regions, so every other region
-  loses the cells it had in them (mirrored for columns). Weight 4.
+- ``intersection``: if every candidate of a region lies in a single row (resp.
+  column), the two share all their remaining stars, and when those counts match
+  the other group's spare candidates are dead. Mirrored for lines. Weight 2.
+- ``subset``: a pigeonhole step. If k groups between them still need n stars and
+  can only place them in fewer than n groups, the board is impossible; if they
+  can only place them in exactly n, those n own every one, so every other group
+  loses the cells it had there. Weight 4.
 
 Pure logic can still stall. `deduce` can then continue with a bounded
-hypothesis search: hypothesise a queen on a candidate cell; if that leads to a
+hypothesis search: hypothesise a star on a candidate cell; if that leads to a
 contradiction, the cell is proven dead (a genuine deduction, courtesy of the
 unique solution the generator guarantees). Weight of any trial step is 5.
 """
@@ -35,11 +47,12 @@ from dataclasses import dataclass
 from itertools import combinations
 from typing import Final, Literal
 
-from queens_engine.board import Board, PuzzleType
+from queens_engine.board import Board
 
 SINGLE_REGION: Final[str] = "single-region"
 SINGLE_ROW: Final[str] = "single-row"
 SINGLE_COLUMN: Final[str] = "single-column"
+FILL: Final[str] = "fill"
 INTERSECTION: Final[str] = "intersection"
 SUBSET: Final[str] = "subset"
 TRIAL: Final[str] = "trial"
@@ -48,8 +61,10 @@ TRIAL: Final[str] = "trial"
 #: the search exists to *score* a board, not to replace the exact solver.
 DEFAULT_GUESS_CAP: Final[int] = 512
 
-#: An intersection binds nothing unless the group has at least two candidates,
-#: and a pigeonhole needs at least two groups. Both are "why bother" cutoffs.
+#: An intersection binds nothing unless it spans at least two groups, and a
+#: pigeonhole needs at least two groups. Both are "why bother" cutoffs. Neither
+#: is about stars per group: a region needing two stars and confined to one row
+#: is already a claim, and saying so early only makes the trace noisier.
 MIN_FREE_TO_BIND: Final[int] = 2
 
 #: Outcome codes for `_guess_search`: a solved branch, a proven dead end, or a
@@ -57,6 +72,23 @@ MIN_FREE_TO_BIND: Final[int] = 2
 DEAD: Final[int] = 0
 SOLVED: Final[int] = 1
 EXHAUSTED: Final[int] = 2
+
+#: Group kinds, for the rules that reason across two kinds at once.
+_REGION: Final[int] = 0
+_ROW: Final[int] = 1
+_COL: Final[int] = 2
+
+#: Every pair of distinct kinds, both directions: region↔row, region↔column and
+#: row↔column. The row↔column case is the X-wing players know; the other two are
+#: its locked-candidate cousins.
+_GROUP_PAIRS: Final[tuple[tuple[int, int], ...]] = (
+    (_REGION, _ROW),
+    (_REGION, _COL),
+    (_ROW, _COL),
+    (_COL, _ROW),
+    (_ROW, _REGION),
+    (_COL, _REGION),
+)
 
 
 class DeductionError(ValueError):
@@ -94,37 +126,48 @@ class DeductionTrace:
 
 
 class _State:
-    """Live candidate board: which cells could still hold a queen."""
+    """Live candidate board: which cells could still hold a star.
+
+    `*_need` counts the stars a group still has to place; `free_*` counts the
+    cells it has left to put them in. A group is finished when its need reaches
+    zero, which is the only condition any rule needs to test — so a one-star
+    group and a two-star group travel through exactly the same code.
+    """
 
     __slots__ = (
         "board",
         "cand",
         "cells_of_region",
-        "col_has_queen",
+        "col_need",
         "contradict",
         "free_cols",
         "free_regions",
         "free_rows",
         "queens",
-        "region_has_queen",
+        "region_need",
         "region_of",
-        "row_has_queen",
+        "row_need",
+        "total",
     )
 
     def __init__(self, board: Board) -> None:
         self.board = board
         size = board.size
+        stars = board.stars_per_row
         self.region_of = board.regions
-        self.cells_of_region = tuple(board.cells_of_region(region) for region in range(size))
+        self.cells_of_region = tuple(
+            board.cells_of_region(region) for region in range(board.region_count)
+        )
         self.cand = bytearray([1] * board.cell_count)
-        self.row_has_queen = bytearray(size)
-        self.col_has_queen = bytearray(size)
-        self.region_has_queen = bytearray(size)
+        self.row_need = [stars] * size
+        self.col_need = [stars] * size
+        self.region_need = list(board.region_capacity)
         self.free_rows = [size] * size
         self.free_cols = [size] * size
         self.free_regions = [len(cells) for cells in self.cells_of_region]
         self.queens: list[int] = []
         self.contradict = False
+        self.total = stars * size
 
     def fork(self) -> _State:
         clone = _State.__new__(_State)
@@ -132,14 +175,15 @@ class _State:
         clone.region_of = self.region_of
         clone.cells_of_region = self.cells_of_region
         clone.cand = bytearray(self.cand)
-        clone.row_has_queen = bytearray(self.row_has_queen)
-        clone.col_has_queen = bytearray(self.col_has_queen)
-        clone.region_has_queen = bytearray(self.region_has_queen)
+        clone.row_need = list(self.row_need)
+        clone.col_need = list(self.col_need)
+        clone.region_need = list(self.region_need)
         clone.free_rows = list(self.free_rows)
         clone.free_cols = list(self.free_cols)
         clone.free_regions = list(self.free_regions)
         clone.queens = list(self.queens)
         clone.contradict = self.contradict
+        clone.total = self.total
         return clone
 
 
@@ -155,8 +199,13 @@ def _eliminate(state: _State, cell: int) -> bool:
     return True
 
 
-def _touching(board: Board, cell: int) -> tuple[int, ...]:
-    """All (up to eight) neighbours of `cell`, including diagonals."""
+def _adjacent(board: Board, cell: int) -> tuple[int, ...]:
+    """Every cell a star at `cell` rules out by the no-touching rule.
+
+    The rule is the same for both puzzle types: no two stars in neighbouring
+    cells, including diagonally. Only the *count* per row, column and region
+    changes from one star to k.
+    """
     row, col = board.coords(cell)
     found: list[int] = []
     for d_row in (-1, 0, 1):
@@ -170,44 +219,67 @@ def _touching(board: Board, cell: int) -> tuple[int, ...]:
 
 
 def _place_queen(state: _State, cell: int) -> tuple[int, ...]:
-    """Place the queen at `cell` and kill everything it rules out.
+    """Place a star at `cell` and kill everything it rules out.
+
+    A group only empties when its last star lands, so at k > 1 the row, column
+    and region survive their earlier stars — which is the whole difference
+    between a one-star and a many-star board.
 
     Returns the cells newly eliminated as a side effect of the placement.
     """
     row, col = state.board.coords(cell)
     region = state.region_of[cell]
     state.queens.append(cell)
-    state.row_has_queen[row] = 1
-    state.col_has_queen[col] = 1
-    state.region_has_queen[region] = 1
+    state.row_need[row] -= 1
+    state.col_need[col] -= 1
+    state.region_need[region] -= 1
 
+    # Consume the cell itself. At k = 1 the sweeps below already do it, because
+    # the last star empties its row and column; at k > 1 they do not, and a cell
+    # left as a candidate can be placed a second time — so the engine would fill
+    # its state with repeats and report a solution the solver never found. Done
+    # last, after the sweeps, so the reported elimination set stays exactly what
+    # a one-star board has always reported.
     dead: list[int] = []
-    for c in range(state.board.size):
-        dead.extend(
-            victim
-            for victim in (state.board.index(row, c), state.board.index(c, col))
-            if _eliminate(state, victim)
-        )
-    dead.extend(v for v in state.cells_of_region[region] if _eliminate(state, v))
-    dead.extend(v for v in _touching(state.board, cell) if _eliminate(state, v))
+    row_full = state.row_need[row] == 0
+    col_full = state.col_need[col] == 0
+    if row_full or col_full:
+        for c in range(state.board.size):
+            if row_full:
+                in_row = state.board.index(row, c)
+                if _eliminate(state, in_row):
+                    dead.append(in_row)
+            if col_full:
+                in_col = state.board.index(c, col)
+                if _eliminate(state, in_col):
+                    dead.append(in_col)
+    if state.region_need[region] == 0:
+        dead.extend(v for v in state.cells_of_region[region] if _eliminate(state, v))
+    dead.extend(v for v in _adjacent(state.board, cell) if _eliminate(state, v))
+
+    if state.cand[cell]:
+        state.cand[cell] = 0
+        state.free_rows[row] -= 1
+        state.free_cols[col] -= 1
+        state.free_regions[region] -= 1
     return tuple(dead)
 
 
 def _contradiction(state: _State) -> bool:
-    """A row, column or region still needs a queen but has no cell left."""
-    size = state.board.size
+    """A group that still needs stars but has fewer cells left than stars."""
     return (
-        any(not state.row_has_queen[row] and state.free_rows[row] == 0 for row in range(size))
-        or any(not state.col_has_queen[col] and state.free_cols[col] == 0 for col in range(size))
-        or any(
-            not state.region_has_queen[region] and state.free_regions[region] == 0
-            for region in range(size)
-        )
+        _short(state.row_need, state.free_rows)
+        or _short(state.col_need, state.free_cols)
+        or _short(state.region_need, state.free_regions)
     )
 
 
+def _short(need: list[int], free: list[int]) -> bool:
+    return any(n > 0 and f < n for n, f in zip(need, free, strict=True))
+
+
 def _solved(state: _State) -> bool:
-    return len(state.queens) == state.board.size
+    return len(state.queens) == state.total
 
 
 def _single_candidate(state: _State, cells: tuple[int, ...]) -> int | None:
@@ -220,37 +292,59 @@ def _single_candidate(state: _State, cells: tuple[int, ...]) -> int | None:
     return found[0] if found else None
 
 
+def _group_cells(state: _State, kind: int, group: int) -> tuple[int, ...]:
+    """Every cell belonging to `group` of the given kind, row-major."""
+    if kind == _REGION:
+        return state.cells_of_region[group]
+    return _row_cells(state.board, group) if kind == _ROW else _col_cells(state.board, group)
+
+
 def _rule_singles(state: _State, trace: list[DeductionStep], round_num: int) -> bool:
+    """Groups with no slack left, and groups down to their last cell.
+
+    Two shapes, and the first is a special case of the second at k = 1:
+
+    - one star to place and one cell to put it in: place it there;
+    - no slack at all — the group still needs exactly as many stars as it has
+      candidate cells, so every one of them is a star. This is the rule that
+      makes many-star boards tractable, and it is unreachable at k = 1, where
+      "one star, one cell" is already the single above.
+
+    The three kinds of group are identical in form, so one loop covers them
+    rather than three copies that could drift apart.
+    """
+    needs = (state.region_need, state.row_need, state.col_need)
+    frees = (state.free_regions, state.free_rows, state.free_cols)
+    singles = (SINGLE_REGION, SINGLE_ROW, SINGLE_COLUMN)
     changed = False
-    size = state.board.size
-    for region in range(size):
-        if state.region_has_queen[region]:
-            continue
-        if state.free_regions[region] == 1:
-            cell = _single_candidate(state, state.cells_of_region[region])
-            if cell is not None:
-                _place_queen(state, cell)
-                trace.append(DeductionStep(SINGLE_REGION, round_num, cell, ()))
-                changed = True
-    for row in range(size):
-        if state.row_has_queen[row]:
-            continue
-        if state.free_rows[row] == 1:
-            cell = _single_candidate(state, tuple(state.board.index(row, c) for c in range(size)))
-            if cell is not None:
-                _place_queen(state, cell)
-                trace.append(DeductionStep(SINGLE_ROW, round_num, cell, ()))
-                changed = True
-    for col in range(size):
-        if state.col_has_queen[col]:
-            continue
-        if state.free_cols[col] == 1:
-            cell = _single_candidate(state, tuple(state.board.index(r, col) for r in range(size)))
-            if cell is not None:
-                _place_queen(state, cell)
-                trace.append(DeductionStep(SINGLE_COLUMN, round_num, cell, ()))
-                changed = True
+    for kind in (_REGION, _ROW, _COL):
+        need_by_group, free_by_group = needs[kind], frees[kind]
+        for group in range(_group_count(state, kind)):
+            need = need_by_group[group]
+            if need == 0:
+                continue
+            if need == 1 and free_by_group[group] == 1:
+                cell = _single_candidate(state, _group_cells(state, kind, group))
+                if cell is not None:
+                    _place_queen(state, cell)
+                    trace.append(DeductionStep(singles[kind], round_num, cell, ()))
+                    changed = True
+            elif need == free_by_group[group]:
+                for cell in _group_cells(state, kind, group):
+                    if state.cand[cell]:
+                        _place_queen(state, cell)
+                        trace.append(DeductionStep(FILL, round_num, cell, ()))
+                        changed = True
     return changed
+
+
+def _row_cells(board: Board, row: int) -> tuple[int, ...]:
+    start = row * board.size
+    return tuple(range(start, start + board.size))
+
+
+def _col_cells(board: Board, col: int) -> tuple[int, ...]:
+    return tuple(range(col, board.cell_count, board.size))
 
 
 def _rule_intersections(state: _State, trace: list[DeductionStep], round_num: int) -> bool:
@@ -270,12 +364,61 @@ def _kill(
     return False
 
 
+def _homes_capacity(state: _State, kind: int, homes: set[int]) -> int:
+    """How many stars the given groups can still take between them.
+
+    A pigeonhole has to compare like with like: k regions needing n stars are
+    only impossible if the rows they can reach have room for fewer than n, and
+    "room" is each row's *remaining need*, not its existence. At k = 1 the two
+    coincide, which is why the original rule could count rows.
+    """
+    need = _needs(state, kind)
+    return sum(need[group] for group in homes)
+
+
+def _needs(state: _State, kind: int) -> list[int]:
+    if kind == _REGION:
+        return state.region_need
+    return state.row_need if kind == _ROW else state.col_need
+
+
+def _group_count(state: _State, kind: int) -> int:
+    """How many groups of `kind` this board has.
+
+    Rows and columns are always `size`. Regions are whatever the board declares,
+    which is only equal to `size` when the capacities are uniform — and nothing
+    here requires them to be. Star Battle states two stars per row, column and
+    region, so a uniform board ties the counts together, but `Board` accepts a
+    board with fewer or more regions than rows, and the solver already counts
+    solutions for one. Iterating regions over `size` therefore crashes on a board
+    with fewer regions and quietly skips some on a board with more.
+    """
+    return state.board.region_count if kind == _REGION else state.board.size
+
+
 def _regions_claim_lines(state: _State, trace: list[DeductionStep], round_num: int) -> bool:
-    """Region -> one row / one column: that line holds the region's queen."""
+    """Region -> rows / columns: those lines hold the region's remaining stars.
+
+    A region needing n stars whose candidates reach fewer than n stars' worth of
+    line space is impossible. That is a contradiction, not an elimination.
+
+    The elimination needs the counts to *balance*: if the region can only reach
+    lines with room for exactly n, those lines are spoken for, so nothing else
+    may use the cells it had in them. At k = 1 this is the familiar "the region's
+    queen is in that row, so the rest of the row is dead" — n = 1, and a single
+    reachable line. Spreading it the other way, "the region has candidates in
+    exactly n lines", would be unsound at k > 1, because a region may put both
+    its stars in one row and none in another.
+
+    Groups with no slack are skipped: a region whose free cells equal its need
+    has already been dealt with by the single or fill rule, and a claim about it
+    would only restate them.
+    """
     changed = False
     size = state.board.size
-    for region in range(size):
-        if state.region_has_queen[region] or state.free_regions[region] < MIN_FREE_TO_BIND:
+    for region in range(_group_count(state, _REGION)):
+        need = state.region_need[region]
+        if need == 0 or state.free_regions[region] <= need:
             continue
         rows: set[int] = set()
         cols: set[int] = set()
@@ -284,18 +427,23 @@ def _regions_claim_lines(state: _State, trace: list[DeductionStep], round_num: i
                 row, col = state.board.coords(cell)
                 rows.add(row)
                 cols.add(col)
-        if len(rows) == 1 and not state.row_has_queen[next(iter(rows))]:
-            row = next(iter(rows))
+        room_rows = _homes_capacity(state, _ROW, rows)
+        room_cols = _homes_capacity(state, _COL, cols)
+        if room_rows < need or room_cols < need:
+            state.contradict = True
+            return True
+        if room_rows == need:
             victims = [
                 state.board.index(row, c)
+                for row in rows
                 for c in range(size)
                 if state.region_of[state.board.index(row, c)] != region
             ]
             changed = _kill(state, victims, trace, INTERSECTION, round_num) or changed
-        if len(cols) == 1 and not state.col_has_queen[next(iter(cols))]:
-            col = next(iter(cols))
+        if room_cols == need:
             victims = [
                 state.board.index(r, col)
+                for col in cols
                 for r in range(size)
                 if state.region_of[state.board.index(r, col)] != region
             ]
@@ -304,49 +452,54 @@ def _regions_claim_lines(state: _State, trace: list[DeductionStep], round_num: i
 
 
 def _lines_claim_regions(state: _State, trace: list[DeductionStep], round_num: int) -> bool:
-    """Row / column -> one region: that region holds the line's queen."""
+    """Row / column -> regions: those regions hold the line's remaining stars.
+
+    The mirror of `_regions_claim_lines`, with the same counting rule: a line
+    needing n stars cannot reach less than n stars' worth of region room, and it
+    consumes that room only when the counts balance. As there, a line with no
+    slack left is the single or fill rule's business, not this one's.
+    """
     changed = False
     size = state.board.size
-    for row in range(size):
-        if state.row_has_queen[row] or state.free_rows[row] < MIN_FREE_TO_BIND:
-            continue
-        regions = {
-            state.region_of[state.board.index(row, c)]
-            for c in range(size)
-            if state.cand[state.board.index(row, c)]
-        }
-        if len(regions) == 1 and not state.region_has_queen[next(iter(regions))]:
-            region = next(iter(regions))
-            victims = [
-                cell for cell in state.cells_of_region[region] if state.board.coords(cell)[0] != row
-            ]
-            changed = _kill(state, victims, trace, INTERSECTION, round_num) or changed
-    for col in range(size):
-        if state.col_has_queen[col] or state.free_cols[col] < MIN_FREE_TO_BIND:
-            continue
-        regions = {
-            state.region_of[state.board.index(r, col)]
-            for r in range(size)
-            if state.cand[state.board.index(r, col)]
-        }
-        if len(regions) == 1 and not state.region_has_queen[next(iter(regions))]:
-            region = next(iter(regions))
-            victims = [
-                cell for cell in state.cells_of_region[region] if state.board.coords(cell)[1] != col
-            ]
-            changed = _kill(state, victims, trace, INTERSECTION, round_num) or changed
+    for kind in (_ROW, _COL):
+        need_by_group = _needs(state, kind)
+        free_by_group = state.free_rows if kind == _ROW else state.free_cols
+        for group in range(size):
+            need = need_by_group[group]
+            if need == 0 or free_by_group[group] <= need:
+                continue
+            regions = {
+                state.region_of[cell]
+                for cell in _group_cells(state, kind, group)
+                if state.cand[cell]
+            }
+            room = _homes_capacity(state, _REGION, regions)
+            if room < need:
+                state.contradict = True
+                return True
+            if room == need:
+                axis = 0 if kind == _ROW else 1
+                victims = [
+                    cell
+                    for region in regions
+                    for cell in state.cells_of_region[region]
+                    if state.board.coords(cell)[axis] != group
+                ]
+                changed = _kill(state, victims, trace, INTERSECTION, round_num) or changed
     return changed
 
 
 def _rule_subsets(state: _State, trace: list[DeductionStep], round_num: int) -> bool:
     """Pigeonhole across any pair of group types.
 
-    If k groups of one type can only place inside k groups of another type,
-    those k groups own the k targets, so every other group loses the cells it
-    had there. Applied across regions, rows and columns in all six directions —
-    the row↔column case is the X-wing players know; row↔region and
-    region↔column are its locked-candidate cousins. If k groups fit within
-    fewer than k targets, the state is impossible.
+    Take some groups of one kind that still need a total of n stars, and see
+    which groups of the other kind they can reach. If those have room for fewer
+    than n, the board is impossible. If they have room for exactly n, every one
+    of those stars lands there, so every other group loses the cells it had in
+    them. Applied across regions, rows and columns in all six directions — the
+    row↔column case is the X-wing players know; row↔region and region↔column are
+    its locked-candidate cousins. At k = 1 the room is just the number of groups
+    reached, which is the original formulation.
     """
     changed = False
     for source, home in _GROUP_PAIRS:
@@ -355,17 +508,6 @@ def _rule_subsets(state: _State, trace: list[DeductionStep], round_num: int) -> 
         if state.contradict:
             return True
     return changed
-
-
-#: region=0, row=1, column=2. Every pair of distinct kinds, both directions.
-_GROUP_PAIRS: Final[tuple[tuple[int, int], ...]] = (
-    (0, 1),
-    (0, 2),
-    (1, 2),
-    (2, 1),
-    (1, 0),
-    (2, 0),
-)
 
 
 def _subset_one(
@@ -379,35 +521,22 @@ def _subset_one(
     changed = False
     region_of = state.region_of
     cell_count = state.board.cell_count
+    needs = (state.region_need, state.row_need, state.col_need)
+    source_need = needs[source]
 
     def source_index(cell: int) -> int:
-        if source == 0:
+        if source == _REGION:
             return region_of[cell]
         row, col = divmod(cell, size)
-        return row if source == 1 else col
+        return row if source == _ROW else col
 
     def home_index(cell: int) -> int:
-        if home == 0:
+        if home == _REGION:
             return region_of[cell]
         row, col = divmod(cell, size)
-        return row if home == 1 else col
+        return row if home == _ROW else col
 
-    def source_has_queen(group: int) -> bool:
-        if source == 0:
-            return bool(state.region_has_queen[group])
-        return bool(state.row_has_queen[group]) if source == 1 else bool(state.col_has_queen[group])
-
-    def group_cells(group: int) -> tuple[int, ...]:
-        if source == 0:
-            return state.cells_of_region[group]
-        start = group * size
-        return (
-            tuple(range(start, start + size))
-            if source == 1
-            else tuple(range(group, cell_count, size))
-        )
-
-    unplaced = [g for g in range(size) if not source_has_queen(g)]
+    unplaced = [g for g in range(_group_count(state, source)) if source_need[g] > 0]
     if len(unplaced) < MIN_FREE_TO_BIND:
         return False
 
@@ -415,14 +544,17 @@ def _subset_one(
         for combo in combinations(unplaced, k):
             combo_set = set(combo)
             homes: set[int] = set()
+            stars = 0
             for group in combo:
-                for cell in group_cells(group):
+                stars += source_need[group]
+                for cell in _group_cells(state, source, group):
                     if state.cand[cell]:
                         homes.add(home_index(cell))
-            if len(homes) < k:
+            room = _homes_capacity(state, home, homes)
+            if room < stars:
                 state.contradict = True
                 return True
-            if len(homes) != k:
+            if room != stars:
                 continue
             victims = [
                 cell
@@ -461,6 +593,10 @@ def first_forced_move(
     have stalled. A contradictory *queen* position must be rejected by the caller
     before calling: the app validates queens with `conflicts` first, because a
     poisoned candidate state would produce nonsense hints.
+
+    The `queens` argument holds the stars already placed. The name predates Star
+    Battle, where the same list is a set of stars; it is kept so the engine and
+    the app name the same thing.
     """
     state = _State(board)
     for cell in marks:
@@ -478,7 +614,7 @@ def first_forced_move(
     step = trace[0]
     cell = step.queen if step.queen is not None else step.cells[0]
     action: Literal["queen", "x"] = (
-        "queen" if step.rule in (SINGLE_REGION, SINGLE_ROW, SINGLE_COLUMN) else "x"
+        "queen" if step.rule in (SINGLE_REGION, SINGLE_ROW, SINGLE_COLUMN, FILL) else "x"
     )
     return ForcedMove(cell=cell, action=action, rule=step.rule)
 
@@ -497,11 +633,15 @@ def _run_pure_rules(state: _State, trace: list[DeductionStep], rounds_seen: list
 
 
 def _pick_guess(state: _State) -> int | None:
-    """The first candidate of the tightest unplaced region, by cell order."""
-    size = state.board.size
+    """The first candidate of the most constrained unfinished region.
+
+    Ranked by *slack* — candidate cells beyond the ones it must fill — rather
+    than by cell count, so a region that needs both of its stars placed soon
+    beats a wide one that only needs one.
+    """
     best = min(
-        (region for region in range(size) if not state.region_has_queen[region]),
-        key=lambda region: (state.free_regions[region], region),
+        (region for region in range(_group_count(state, _REGION)) if state.region_need[region] > 0),
+        key=lambda region: (state.free_regions[region] - state.region_need[region], region),
         default=None,
     )
     if best is None:
@@ -559,14 +699,15 @@ def deduce(
 ) -> DeductionTrace:
     """Deduce everything the board forces, optionally confirming the rest.
 
+    Works for both puzzle types: the rules read `Board.stars_per_row`, so a
+    Queens board (k = 1) and a Star Battle board (k = 2) run the same code.
+
     With `allow_guesses=False` the engine stops at the first fixpoint: a board
     it cannot finish is reported as `needs_guessing=True`. That is the "not
     proveable by this rule set" signal, not a proof of impossibility. With
     `allow_guesses=True` the engine continues by hypothesis and returns a full
     solution whenever one exists.
     """
-    if board.puzzle_type is not PuzzleType.QUEENS:
-        raise DeductionError("the deduction engine currently only supports queens boards")
     if guess_cap < 1:
         raise DeductionError(f"guess_cap must be at least 1, got {guess_cap}")
 
@@ -621,7 +762,7 @@ def _finalize(
     exhausted: bool,
     needs_guessing: bool,
 ) -> DeductionTrace:
-    finished = len(state.queens) == state.board.size
+    finished = len(state.queens) == state.total
     return DeductionTrace(
         solved=finished,
         needs_guessing=needs_guessing,
@@ -635,6 +776,7 @@ def _finalize(
 
 __all__ = [
     "DEFAULT_GUESS_CAP",
+    "FILL",
     "INTERSECTION",
     "SINGLE_COLUMN",
     "SINGLE_REGION",
