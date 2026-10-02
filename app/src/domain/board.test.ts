@@ -21,6 +21,19 @@ describe('board structure', () => {
     expect(makeBoard(5, rowPartition(5), [1, 1, 1, 1, 1]).regionCount).toBe(5)
   })
 
+  it('takes width and height from size', () => {
+    // The rectangular-grid vocabulary, on a board that is square by definition. A
+    // third game that is not square adopts these names instead of inventing its
+    // own, which is the whole reason they exist. `Board` itself stays square, so
+    // these are equal to `size` today and `validateBoard` says so explicitly.
+    const board = makeBoard(4, rowPartition(4), [1, 1, 1, 1])
+    expect(board.width).toBe(4)
+    expect(board.height).toBe(4)
+    expect(board.width).toBe(board.size)
+    expect(board.height).toBe(board.size)
+    expect(board.cellCount).toBe(board.width * board.height)
+  })
+
   it('rejects a region array of the wrong length', () => {
     expect(() => makeBoard(4, [0, 0, 0, 0], [1, 1, 1, 1])).toThrow(/expected 16/)
   })

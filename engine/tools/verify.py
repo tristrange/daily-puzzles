@@ -26,6 +26,7 @@ from queens_engine import (
     RAMP_START,
     Puzzle,
     PuzzleParseError,
+    dumps_puzzle,
     load_puzzle,
     target_for,
     verify_replay,
@@ -93,8 +94,9 @@ def main(argv: list[str] | None = None) -> int:
             continue
         total += 1
         try:
+            raw = path.read_text(encoding="utf-8")
             puzzle = load_puzzle(path)
-            replay = verify_replay(puzzle)
+            verify_replay(puzzle)
             ramp = _ramp_check(match.group(1), match.group(2) == STAR_SUFFIX, puzzle)
         except (PuzzleParseError, ValueError) as error:
             failed.append(f"{path}: {error}")
@@ -106,8 +108,18 @@ def main(argv: list[str] | None = None) -> int:
             failed.append(f"{path}: {problem}")
             print(f"{path.name}: FAILED ({problem})")
             continue
+        # Replaying the seed proves the *puzzle* is unchanged; it says nothing
+        # about the bytes. A file reformatted by hand or by a different writer
+        # still verifies, and the archive then stops being byte-stable, which is
+        # the property the next schema migration depends on. One committed file
+        # was already in this state, with identical data and expanded arrays.
+        if dumps_puzzle(puzzle) != raw:
+            problem = "not in canonical form (arrays must stay on one line)"
+            failed.append(f"{path}: {problem}")
+            print(f"{path.name}: FAILED ({problem})")
+            continue
         label = f"{path.name}: ok ({puzzle.board.size}x{puzzle.board.size}"
-        label += f", seed {puzzle.seed}, replay {'match' if replay else 'MISMATCH'}"
+        label += f", seed {puzzle.seed}, v{puzzle.generator_version}, replay match"
         if ramp.note:
             label += f", {ramp.note}"
         label += ")"

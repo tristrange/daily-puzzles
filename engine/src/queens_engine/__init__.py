@@ -30,8 +30,10 @@ from .generator import (
 )
 from .prng import Prng
 from .puzzle import (
+    JsonValue,
     Puzzle,
     PuzzleParseError,
+    canonical_dumps,
     dumps_puzzle,
     load_puzzle,
     parse_puzzle,
@@ -86,12 +88,14 @@ __all__ = [
     "ForcedMove",
     "GenerationConfig",
     "GenerationError",
+    "JsonValue",
     "Prng",
     "Puzzle",
     "PuzzleParseError",
     "PuzzleType",
     "RampedPuzzle",
     "SolverError",
+    "canonical_dumps",
     "count_solutions",
     "deduce",
     "dumps_puzzle",
