@@ -155,7 +155,9 @@ class _State:
         size = board.size
         stars = board.stars_per_row
         self.region_of = board.regions
-        self.cells_of_region = tuple(board.cells_of_region(region) for region in range(size))
+        self.cells_of_region = tuple(
+            board.cells_of_region(region) for region in range(board.region_count)
+        )
         self.cand = bytearray([1] * board.cell_count)
         self.row_need = [stars] * size
         self.col_need = [stars] * size
@@ -317,7 +319,7 @@ def _rule_singles(state: _State, trace: list[DeductionStep], round_num: int) -> 
     changed = False
     for kind in (_REGION, _ROW, _COL):
         need_by_group, free_by_group = needs[kind], frees[kind]
-        for group in range(state.board.size):
+        for group in range(_group_count(state, kind)):
             need = need_by_group[group]
             if need == 0:
                 continue
@@ -380,6 +382,20 @@ def _needs(state: _State, kind: int) -> list[int]:
     return state.row_need if kind == _ROW else state.col_need
 
 
+def _group_count(state: _State, kind: int) -> int:
+    """How many groups of `kind` this board has.
+
+    Rows and columns are always `size`. Regions are whatever the board declares,
+    which is only equal to `size` when the capacities are uniform — and nothing
+    here requires them to be. Star Battle states two stars per row, column and
+    region, so a uniform board ties the counts together, but `Board` accepts a
+    board with fewer or more regions than rows, and the solver already counts
+    solutions for one. Iterating regions over `size` therefore crashes on a board
+    with fewer regions and quietly skips some on a board with more.
+    """
+    return state.board.region_count if kind == _REGION else state.board.size
+
+
 def _regions_claim_lines(state: _State, trace: list[DeductionStep], round_num: int) -> bool:
     """Region -> rows / columns: those lines hold the region's remaining stars.
 
@@ -400,7 +416,7 @@ def _regions_claim_lines(state: _State, trace: list[DeductionStep], round_num: i
     """
     changed = False
     size = state.board.size
-    for region in range(size):
+    for region in range(_group_count(state, _REGION)):
         need = state.region_need[region]
         if need == 0 or state.free_regions[region] <= need:
             continue
@@ -520,7 +536,7 @@ def _subset_one(
         row, col = divmod(cell, size)
         return row if home == _ROW else col
 
-    unplaced = [g for g in range(size) if source_need[g] > 0]
+    unplaced = [g for g in range(_group_count(state, source)) if source_need[g] > 0]
     if len(unplaced) < MIN_FREE_TO_BIND:
         return False
 
@@ -623,9 +639,8 @@ def _pick_guess(state: _State) -> int | None:
     than by cell count, so a region that needs both of its stars placed soon
     beats a wide one that only needs one.
     """
-    size = state.board.size
     best = min(
-        (region for region in range(size) if state.region_need[region] > 0),
+        (region for region in range(_group_count(state, _REGION)) if state.region_need[region] > 0),
         key=lambda region: (state.free_regions[region] - state.region_need[region], region),
         default=None,
     )

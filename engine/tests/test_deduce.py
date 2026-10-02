@@ -147,6 +147,101 @@ def test_pure_rules_are_sound_on_star_battle() -> None:
             assert step.queen in solution, f"{step.rule} placed a non-star"
 
 
+def test_a_region_count_that_is_not_the_size_still_works() -> None:
+    """Regions are whatever the board declares, which need not be `size`.
+
+    Star Battle states two stars per row, column and region, so a board whose
+    capacities are uniform has exactly `size` regions — but the capacities need
+    not be uniform, and nothing in `Board` requires them to be. This board has
+    six regions on an 8x8 grid, so the two counts differ, k = 2 comes from
+    capacities that total 16, and region 3 is a one-star region among
+    three-star ones.
+
+    Iterating regions over `size` instead of `region_count` was a real crash:
+    `IndexError` on a board with fewer regions, and silently skipped regions on a
+    board with more. The board below comes from a search, and is checked to have
+    exactly one solution, so the engine is compared against the exact solver
+    rather than against itself.
+    """
+    board = Board(
+        size=8,
+        regions=(
+            5,
+            5,
+            5,
+            4,
+            4,
+            2,
+            2,
+            2,
+            5,
+            5,
+            5,
+            4,
+            4,
+            2,
+            2,
+            2,
+            5,
+            5,
+            4,
+            4,
+            4,
+            2,
+            2,
+            2,
+            5,
+            5,
+            4,
+            4,
+            4,
+            3,
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            3,
+            3,
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            3,
+            3,
+            3,
+            2,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            3,
+            1,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+        ),
+        region_capacity=(3, 3, 3, 1, 3, 3),
+        puzzle_type=PuzzleType.STAR_BATTLE,
+    )
+    assert board.region_count == 6 != board.size
+    assert board.stars_per_row == 2
+    assert board.region_capacity[3] == 1, "the one-star region is the interesting case"
+
+    trace = deduce(board)
+    assert set(trace.solution or ()) == _unique_solution(board)
+
+
 def test_star_solutions_respect_the_no_touching_rule() -> None:
     """The no-touching rule includes the diagonals, for both puzzle types.
 
