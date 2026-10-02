@@ -7,6 +7,7 @@
  * probing the recent window and keeping whatever comes back as a puzzle.
  */
 
+import { PUZZLE_TYPES } from '../domain/board'
 import { isPuzzleId, previousPuzzleIds, puzzleIdsForDay } from '../domain/dates'
 import { parsePuzzle, type Puzzle } from '../domain/puzzle'
 
@@ -132,4 +133,42 @@ export async function listPublishedPuzzles(
         ]
       : [],
   )
+}
+
+/** One family's published puzzles, in the order they were listed. */
+export type PublishedGroup = {
+  readonly type: Puzzle['puzzleType']
+  readonly puzzles: readonly PublishedPuzzle[]
+}
+
+/**
+ * Group published puzzles under the family each file declares.
+ *
+ * A flat list of dates mixed the families together, which left the date as the
+ * only thing to tell a Queens board from its companion on a day when both are
+ * present. Naming the family once per run of dates moves that job to the heading
+ * and lets each row be the date and its band alone.
+ *
+ * Groups come out in `PUZZLE_TYPES` order, not in the order they were first seen
+ * in, so the page reads the way the app declares its families and a third family
+ * lands where it was declared rather than wherever its oldest puzzle happened to
+ * fall. A family with nothing published in the window is left out: an empty
+ * heading under a game the player cannot yet play is noise.
+ *
+ * Grouping reads the same `type` field the files declare, so a mislabelled file
+ * is filed as what it is rather than as what its name promised.
+ */
+export function groupPublishedPuzzles(
+  puzzles: readonly PublishedPuzzle[],
+): readonly PublishedGroup[] {
+  const byType = new Map<Puzzle['puzzleType'], PublishedPuzzle[]>()
+  for (const puzzle of puzzles) {
+    const bucket = byType.get(puzzle.type)
+    if (bucket === undefined) byType.set(puzzle.type, [puzzle])
+    else bucket.push(puzzle)
+  }
+  return PUZZLE_TYPES.filter((type) => byType.has(type)).map((type) => ({
+    type,
+    puzzles: byType.get(type) ?? [],
+  }))
 }
