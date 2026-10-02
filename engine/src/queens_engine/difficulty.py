@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from queens_engine.board import Board
 from queens_engine.deduce import (
     DEFAULT_GUESS_CAP,
+    FILL,
     INTERSECTION,
     SINGLE_COLUMN,
     SINGLE_REGION,
@@ -32,10 +33,18 @@ from queens_engine.deduce import (
 #: Weight of each deduction rule. Queens & solver proofs are cold fact; how much
 #: a rule bends a human's mind is a judgement call, so these are named constants
 #: that read as opinions rather than numbers buried in a formula.
+#:
+#: `fill` is the one weight with no measurement behind it: it cannot fire at
+#: k = 1, so no Queens board has ever scored it and none of these numbers are
+#: calibrated against it. Two points puts it with `intersection` — a single step
+#: that resolves a whole group, but one a player can check at a glance, unlike a
+#: pigeonhole. It is a stated opinion, not a fitted weight, and nothing published
+#: depends on it yet.
 RULE_WEIGHTS = {
     SINGLE_REGION: 1,
     SINGLE_ROW: 1,
     SINGLE_COLUMN: 1,
+    FILL: 2,
     INTERSECTION: 2,
     SUBSET: 4,
     TRIAL: 5,

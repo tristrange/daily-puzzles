@@ -12,11 +12,12 @@ puzzles block the other.
 Scans DIR for committed puzzle files and fills the gaps from the first missing
 day through (today + `--lead` days), using the same deterministic recipe as
 `tools.generate`: a seed hashed from the id, size 8. Queens walks the seed
-upward until the board needs no guessing. Star Battle cannot — the deduction
-engine is Queens-only and refuses a star board outright — so it takes the
-guarantee the generator actually provides, a unique solution. Idempotent:
-existing files are never rewritten and a given id always maps to one puzzle, so
-it is safe to run from cron every day and to run again by hand.
+upward until the board needs no guessing. Star Battle does not — the rules do
+run on a two-star board, but almost none finish without guessing (0.1% of
+generated 8x8 boards, measured), so gating it would reject essentially every
+board. It takes the guarantee the generator actually provides, a unique solution.
+Idempotent: existing files are never rewritten and a given id always maps to one
+puzzle, so it is safe to run from cron every day and to run again by hand.
 """
 
 from __future__ import annotations
@@ -131,9 +132,10 @@ def _generate_star(puzzle_id: str, seed: int) -> Puzzle:
 
     The generator already guarantees a unique solution, which is the promise a
     star board can keep: unlike Queens it cannot also promise that no guessing is
-    needed, because `deduce` refuses a star board rather than scoring it. That is
-    also why the weekly ramp does not apply here, so there is no band to record.
-    Raises `RuntimeError` if the seed budget runs out.
+    needed, not because the rules cannot run on it but because a two-star board
+    almost never reaches a finish by rules alone. That is also why the weekly
+    ramp does not apply here, so there is no band to record. Raises
+    `RuntimeError` if the seed budget runs out.
     """
     for _bump in range(LOGIC_ONLY_TRIES):
         try:

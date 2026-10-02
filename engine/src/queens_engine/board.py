@@ -49,6 +49,29 @@ class Board:
     def region_count(self) -> int:
         return len(self.region_capacity)
 
+    @property
+    def stars_per_row(self) -> int:
+        """How many stars every row and every column must hold.
+
+        Neither type stores this number. Queens gets one per line because every
+        region holds one star; Star Battle gets k because its regions hold k
+        between them. Both fall out of the same arithmetic the solver already
+        does: the regions partition the grid, so their capacities total
+        `k * size`, and k is that total divided by the size.
+
+        Deriving it from the capacities rather than reading a stored value means
+        there is no second copy of k to fall out of step with the regions.
+        """
+        total = sum(self.region_capacity)
+        if total % self.size != 0:
+            raise BoardError(
+                f"capacities total {total}, which is not divisible by the grid size {self.size}"
+            )
+        stars = total // self.size
+        if not 1 <= stars <= self.size:
+            raise BoardError(f"capacities imply {stars} stars per row, outside 1..{self.size}")
+        return stars
+
     def index(self, row: int, col: int) -> int:
         return row * self.size + col
 
