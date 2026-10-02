@@ -11,7 +11,7 @@
  * share, and a grid is the form this genre already reads.
  */
 
-import type { Board } from '../domain/board'
+import type { Board, PuzzleType } from '../domain/board'
 import { PUZZLE_TYPE_LABEL } from '../domain/games'
 import { formatTime } from '../domain/game'
 
@@ -37,7 +37,7 @@ const EMPTY = '⬛'
  */
 export type ShareResult = {
   readonly size: number
-  readonly puzzleType: 'queens' | 'star-battle'
+  readonly puzzleType: PuzzleType
   readonly elapsedMs: number
   readonly hints: number
   /** Consecutive days solved ending today; 0 when the streak is broken. */

@@ -352,11 +352,11 @@ it, which is the failure mode worth hunting for by hand in review:
 
 | Site | What happens with a new type |
 | --- | --- |
-| `dates.ts:52` `puzzleIdsForDay` | **the chokepoint.** Returns a hardcoded `[day, day + "-star"]`, and it is the *only* source of candidate ids for both the home page (`HomePage.tsx:36`) and the archive (`puzzles.ts:120`). A third puzzle published correctly is invisible on both pages, because nothing ever asks for it. |
-| `dates.ts:35` `isStarPuzzleId` | the `-star` test behind the id helpers; a new suffix is not recognised |
-| `HomePage.tsx:97` `familyOf` | infers the type from the id when a file 404s, so a new suffix falls back to Queens and renders under the wrong heading |
-| `stats.ts:22`, `share.ts:40` | literal `'queens' \| 'star-battle'` unions — new type rejected by the guard as malformed |
-| `stats.ts:208-209` | per-type tallies written out by hand, so a new type has no bucket |
+| `dates.ts:52` `puzzleIdsForDay` | **the chokepoint.** Returns a hardcoded `[day, day + "-star"]`, and it is the *only* source of candidate ids for both the home page (`HomePage.tsx:36`) and the archive (`puzzles.ts:120`). A third puzzle published correctly is invisible on both pages, because nothing ever asks for it. **Fixed** — enumerates `PUZZLE_TYPES`. |
+| `dates.ts:35` `isStarPuzzleId` | the `-star` test behind the id helpers; a new suffix is not recognised. **Fixed** — renamed `isCompanionPuzzleId`, decided by suffix rather than by spelling. |
+| `HomePage.tsx:97` `familyOf` | infers the type from the id when a file 404s, so a new suffix falls back to Queens and renders under the wrong heading. **Fixed** — reads `puzzleTypeOf`. |
+| `stats.ts:22`, `share.ts:40` | literal `'queens' \| 'star-battle'` unions — new type rejected by the guard as malformed. **Fixed** — both use `PuzzleType`. |
+| `stats.ts:208-209` | per-type tallies written out by hand, so a new type has no bucket. **Fixed** — `byType` iterates the registry. |
 | `schema` `id` pattern | a new file fails validation outright (this one is loud, which is fine) |
 | `verify_replay` | compares `board` and `difficulty`, never `generator_version` — a mislabelled version passes CI |
 | `hints.ts:358` | already returns `null` — correct by default, listed so it is not "fixed" by accident |
@@ -391,7 +391,8 @@ Real work:
 3. The suffix/type registry extended to `puzzleIdsForDay`, so a third game is
    enumerated on the home page and the archive at all. This is the item that
    makes a published third game visible, and it has to land with step 2 rather
-   than after it.
+   than after it. **Landed** — `PUZZLE_TYPE_SUFFIX` in the app, with
+   `conformance/id-cases/` pinning the app's id naming to the engine's.
 4. Archive migration: 32 files re-nested, `generatorVersion` left at 1 and 2,
    verify green.
 5. `verify_replay` compares `generator_version` as well, closing the gap that
@@ -401,7 +402,9 @@ Real work:
    dispatch through it.
 7. `GameState` as a union in the app, plus the registry, plus a cell renderer and
    input handler per game.
-8. Fix the remaining silent-failure sites in §7.
+8. Fix the remaining silent-failure sites in §7. **Done** for the app-side id
+   and type-list sites; the `schema` `id` pattern still rejects a new suffix
+   loudly, which is correct until step 2.
 
 Steps 1–6 are the *precondition* for a third game, and none of them produce a
 playable puzzle. They are worth doing as their own PR, on their own merits, before

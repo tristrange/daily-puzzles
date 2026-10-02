@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { Board } from '../domain/board'
+import { Board, type PuzzleType } from '../domain/board'
 import { appBase, boardGrid, buildShareText, buildSolutionShareText, puzzleShareLink } from './share'
 
 /**
@@ -32,7 +32,7 @@ afterEach(() => {
  * the shape of the share text, not about region geometry, and one-per-row is
  * always a legal partition.
  */
-function board(size = 4, puzzleType: 'queens' | 'star-battle' = 'queens'): Board {
+function board(size = 4, puzzleType: PuzzleType = 'queens'): Board {
   const regions = Array.from({ length: size * size }, (_, cell) => Math.floor(cell / size))
   return new Board(size, regions, new Array(size).fill(1), puzzleType)
 }

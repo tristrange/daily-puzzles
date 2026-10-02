@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { STAR_SUFFIX, puzzleOfToday } from '../domain/dates'
+import { puzzleIdFor, puzzleOfToday } from '../domain/dates'
 import { PuzzleView } from '../components/PuzzleView'
 
 /**
@@ -9,7 +9,7 @@ import { PuzzleView } from '../components/PuzzleView'
  */
 export function StarBattlePage() {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
-  const [id] = useState(() => `${puzzleOfToday(new Date(), timeZone)}${STAR_SUFFIX}`)
+  const [id] = useState(() => puzzleIdFor(puzzleOfToday(new Date(), timeZone), 'star-battle'))
   return (
     <section>
       <h2 className="page-title">Today&rsquo;s Star Battle</h2>

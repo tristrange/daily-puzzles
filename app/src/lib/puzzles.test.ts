@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PUZZLE_TYPES } from '../domain/board'
+import { PUZZLE_TYPES, type PuzzleType } from '../domain/board'
 import { PUZZLE_TYPE_LABEL } from '../domain/games'
 import type { DifficultyBand } from '../domain/puzzle'
 import {
@@ -272,7 +272,7 @@ describe('groupPublishedPuzzles', () => {
   /** A published entry with the given family and day. */
   const entry = (
     id: string,
-    type: 'queens' | 'star-battle',
+    type: PuzzleType,
     difficulty: DifficultyBand | null = null,
   ): PublishedPuzzle => ({ id, type, difficulty })
 

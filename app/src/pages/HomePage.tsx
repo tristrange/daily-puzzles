@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { formatPuzzleLabel, isStarPuzzleId, puzzleIdsForDay, puzzleOfToday } from '../domain/dates'
-import { DIFFICULTY_LABEL, PUZZLE_TYPE_LABEL } from '../domain/games'
+import type { PuzzleType } from '../domain/board'
+import { formatPuzzleLabel, puzzleIdsForDay, puzzleOfToday, puzzleTypeOf } from '../domain/dates'
+import { DEFAULT_PUZZLE_TYPE, DIFFICULTY_LABEL, PUZZLE_TYPE_LABEL } from '../domain/games'
 import { probePuzzles, type ProbedPuzzle } from '../lib/puzzles'
 import { readStoredStats } from '../lib/stats'
 
@@ -90,10 +91,11 @@ export function HomePage() {
 }
 
 /**
- * The family to show before a puzzle has loaded. Derived from the id's suffix
- * rather than guessed: the publisher only ever writes a companion into the
- * `-star` slot, so this holds even when the file is missing.
+ * The family to show before a puzzle has loaded. Read from the id's registered
+ * suffix rather than guessed: the publisher only ever writes a family into its own
+ * slot, so this holds even when the file is missing. Falling back to the default
+ * family is the only thing left to guess, and only for an id no family claims.
  */
-function familyOf(id: string): 'queens' | 'star-battle' {
-  return isStarPuzzleId(id) ? 'star-battle' : 'queens'
+function familyOf(id: string): PuzzleType {
+  return puzzleTypeOf(id) ?? DEFAULT_PUZZLE_TYPE
 }
