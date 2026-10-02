@@ -83,9 +83,9 @@ model completely, and it is wrong for now:
 
 - It requires rewriting `deduce.py` and `solver.py` from a group-and-need model
   into a CSP, and would very likely change the Queens traces.
-- The value it buys is speculative. We have one confirmed candidate (Tango) and
-  one unverified (Train Tracks). Building a framework to serve a hypothesis is
-  how frameworks rot.
+- The value it buys is speculative. One of the two candidates is verified
+  (Train Tracks) and one is still a hypothesis (Tango). Building a framework to
+  serve a hypothesis is how frameworks rot.
 - The per-game *rules* are where the difficulty lives, and they are not
   uniform. Star Battle needed a different rule set from Queens; Tango's will
   differ again. A shared engine would have to be parameterised to the point of
@@ -101,32 +101,44 @@ pipeline.
 ### L1 — geometry: a `Grid` contract
 
 The only geometry concept both families genuinely share is "a rectangular array
-of addressable cells".
+of addressable cells". The two sides already spell that differently and this
+proposal does not unify them, because the repo does not do that anywhere else:
+`board.py` and `board.ts` are hand-mirrored and pinned to each other by the
+`conformance/` suites, not by a shared interface. So the contract is conceptual
+and gets written twice, in each language's own vocabulary:
 
-```
-width, height, cellCount
-index(row, col) -> int
-coords(i) -> (row, col)
-neighbours(i) -> tuple[int, ...]        # orthogonal
-```
+| Concept | Python, `engine/src/queens_engine/board.py` | TypeScript, `app/src/domain/board.ts` |
+| --- | --- | --- |
+| width, height | **new**, derived from `size` | **new**, derived from `size` |
+| cell count | `cell_count` | `cellCount` |
+| address | `index(row, col)` | `index(row, col)` |
+| coordinates | `coords(i) -> (row, col)` | `coords(i) -> { row, col }` |
+| orthogonal neighbours | `orthogonal_neighbours(i) -> tuple[int, ...]` | `orthogonalNeighbours(i) -> number[]` |
 
-`Board` already satisfies this as a square grid; it gains two derived properties
-and changes nothing else:
+So `Board` gains two derived properties on each side and is otherwise unchanged:
 
-```
+```python
 @property
-def width(self) -> int: return self.size
+def width(self) -> int:
+    return self.size
 
 @property
-def height(self) -> int: return self.size
+def height(self) -> int:
+    return self.size
 ```
 
-Train Tracks gets its own `TrackGrid` implementing the same four members, with
-`width != height` permitted. The app's shared grid chrome (layout, cell
-addressing, focus order, theme) is written against `Grid`, so it is reused
-unchanged. `Board` itself is **not** widened: it keeps square-only, keeps its
-regions, and keeps failing a Train Tracks board, because pretending otherwise is
-what produced the `region_count` bug in #29.
+It was worth being precise here, because a first draft of this section implied
+that two properties were the whole of it. They are the whole of the *Python*
+change, but the app's `Board` has no `width`/`height` either, and the shared grid
+chrome the app reuses is TypeScript. A neutral single-signature contract would
+have needed `cell_count` renamed as well.
+
+Train Tracks gets its own `TrackGrid` in both languages implementing the same
+concept, with `width != height` permitted — that is the one place it genuinely
+diverges, and it is why the contract names width and height at all. `Board`
+itself is **not** widened: it keeps square-only, keeps its regions, and keeps
+rejecting a Train Tracks board, because pretending otherwise is what produced
+the `region_count` bug in #29.
 
 ### L2 — engine: a per-type rulebook registry
 
@@ -179,13 +191,27 @@ correct default: a new game ships with no hints rather than with wrong ones.
 ## 5. The file format
 
 The envelope stays uniform and small; everything game-specific moves under one
-`board` key whose shape is selected by the sibling `type`.
+`board` key whose shape is selected by the sibling `type`. These are JSONC, and
+`/* … */` marks an elided run — the arrays abbreviated below are abbreviated in
+this document, not in a real file. Required lengths are named per array, because
+a per-cell array whose length is neither `width * height` nor its own dimension
+is the kind of thing that should fail loudly in the schema rather than be
+discovered by a player:
+
+| Field | Length |
+| --- | --- |
+| Queens `regions` | `size * size` |
+| Queens / Tango `regionCapacity` | region count |
+| Tango `givens`, `shaded` | `size * size` |
+| Train Tracks `givens` | `width * height` |
+| Train Tracks `rowClues` | `height` |
+| Train Tracks `colClues` | `width` |
 
 ```jsonc
 {
   "id": "2026-11-02", "type": "queens",
-  "seed": 1710439114, "generatorVersion": 3, "difficulty": 2,
-  "board": { "size": 8, "regions": [ ... ], "regionCapacity": [ ... ] }
+  "seed": 1710439114, "generatorVersion": 1, "difficulty": 2,
+  "board": { "size": 8, "regions": [ /* 64 */ ], "regionCapacity": [ /* 8 */ ] }
 }
 ```
 
@@ -195,8 +221,8 @@ The envelope stays uniform and small; everything game-specific moves under one
   "seed": 2748193021, "generatorVersion": 1, "difficulty": 3,
   "board": {
     "size": 6,
-    "givens": [1, 0, 0, 3, 6, 0],
-    "shaded": [1, 1, 0, 0, 1, 0],
+    "givens": [ /* 36 */ ],
+    "shaded": [ /* 36 */ ],
     "links": [[0, 1, 7], [2, 8, 5]]
   }
 }
@@ -209,14 +235,15 @@ The envelope stays uniform and small; everything game-specific moves under one
   "board": {
     "width": 9, "height": 7,
     "rowClues": [5, 5, 5, 7, 5, 5, 2],
-    "colClues": [2, 4, 2, 6, 3, 4, 6],
-    "givens": [0, 0, 5, 0, 0, 0, 0, 0, 0]
+    "colClues": [2, 4, 2, 6, 3, 4, 6, 8, 2],
+    "givens": [ /* 63 */ ]
   }
 }
 ```
 
 The schema becomes `allOf` over `if type == X then board has shape X`, with
-`additionalProperties: false` inside each shape. The alternative — a distinct
+`additionalProperties: false` inside each shape, plus the length constraints
+above expressed as `minItems`/`maxItems` per type. The alternative — a distinct
 top-level key per type, `queensBoard` / `tangoBoard` / `tracksBoard` — is
 rejected because it makes the top level unbounded and the app's union noisier for
 no benefit; the sibling `type` already discriminates.
@@ -225,20 +252,46 @@ no benefit; the sibling `type` already discriminates.
 
 Moving `size` out of the envelope and into `board` is the right call and it is
 **not free**. It rewrites all 32 committed archive files, because `size` is
-currently top level, and it needs `generatorVersion` 2 → 3.
+currently top level.
 
 What is preserved: generation stays reproducible from a seed, and `tools.verify`
 still replays every puzzle. The re-nesting is mechanical and has no semantic
 content, so the byte-stability guarantee that matters — same seed, same puzzle —
 is untouched. What changes is that "the archive regenerates byte-for-byte" is
-true from version 3 onward and false across the version 2 → 3 boundary. That is
-what `generatorVersion` is for, but it is a visible event and belongs in its own
-commit, reviewable on its own.
+true *from* the migration onward and false across the boundary. That should be
+its own commit, reviewable on its own.
 
 Keeping `size` in the envelope instead would avoid the migration, at the cost of
 a top-level field that means "grid is size x size" for one game and "grid is
 size wide" for another. That is precisely the ambiguity that produced the
 `region_count` bug. I would rather pay the migration.
+
+### `generatorVersion` must *not* be bumped for this
+
+An earlier draft of this document proposed bumping `generatorVersion` 2 -> 3
+along with the migration. That is wrong, and wrong in a way that would have gone
+unnoticed.
+
+`generator_version` records **which generation algorithm produced the puzzle**,
+not how the file is serialised. `generator.py` sets it per code path: 1 on the
+Queens path, 2 on the Star Battle path, and the docstring at `generator.py:18`
+says exactly that. Re-nesting JSON fields changes no algorithm, so a migrated
+Queens file is still version 1 and a migrated Star Battle file is still version
+2. Relabelling them 3 would assert a third generation path that does not exist,
+and would leave Queens at 1 and Star Battle at 3 — an archive that claims two
+different things about two files produced by unchanged code.
+
+It would also have passed CI, silently, because `verify_replay` compares the
+regenerated `board` and, when present, the `difficulty` — and **never** compares
+`generator_version` (`generator.py:186-194`). Nothing in the pipeline would notice
+a wrong label.
+
+So the migration needs no version bump. If the *format* ever needs one — a
+migration is exactly the moment that becomes arguable — it gets its own
+`formatVersion` field, separate from the algorithm that produced the puzzle. And
+closing the `verify_replay` gap is worth doing on its own, independent of any
+migration: a field that is supposed to identify a generator and is checked by
+nothing is not a fact anyone can rely on.
 
 ### The `id` suffix
 
@@ -271,15 +324,26 @@ it, which is the failure mode worth hunting for by hand in review:
 
 | Site | What happens with a new type |
 | --- | --- |
+| `dates.ts:52` `puzzleIdsForDay` | **the chokepoint.** Returns a hardcoded `[day, day + "-star"]`, and it is the *only* source of candidate ids for both the home page (`HomePage.tsx:36`) and the archive (`puzzles.ts:120`). A third puzzle published correctly is invisible on both pages, because nothing ever asks for it. |
+| `dates.ts:35` `isStarPuzzleId` | the `-star` test behind the id helpers; a new suffix is not recognised |
+| `HomePage.tsx:97` `familyOf` | infers the type from the id when a file 404s, so a new suffix falls back to Queens and renders under the wrong heading |
 | `stats.ts:22`, `share.ts:40` | literal `'queens' \| 'star-battle'` unions — new type rejected by the guard as malformed |
 | `stats.ts:208-209` | per-type tallies written out by hand, so a new type has no bucket |
-| `HomePage.tsx:97` | `familyOf` infers the type from the id; a new suffix is read as Queens |
 | `schema` `id` pattern | a new file fails validation outright (this one is loud, which is fine) |
+| `verify_replay` | compares `board` and `difficulty`, never `generator_version` — a mislabelled version passes CI |
 | `hints.ts:358` | already returns `null` — correct by default, listed so it is not "fixed" by accident |
 
-The rule that follows: any new `PuzzleType` must be a compile error somewhere.
-`PUZZLE_TYPE_LABEL` and `PUZZLE_PIECE` are `Record<PuzzleType, …>`, so they will
-be — that pattern is the one to copy, not the literal unions to fix afterwards.
+The first row is the one to fix first, and it changes the order of the work.
+Repairing `familyOf` alone is necessary and nowhere near sufficient: `familyOf`
+is only reached for a day whose probe 404'd, so it decides how a *missing* file
+is labelled, while `puzzleIdsForDay` decides whether a *present* file is ever
+fetched at all. Daily id generation moves into the suffix/type registry first,
+and `familyOf` becomes a consequence of it rather than an independent fix.
+
+The rule that follows from the rest: any new `PuzzleType` must be a compile
+error somewhere. `PUZZLE_TYPE_LABEL` and `PUZZLE_PIECE` are
+`Record<PuzzleType, …>`, so they will be — that pattern is the one to copy, not
+the literal unions to fix afterwards.
 
 ## 8. What this costs, roughly
 
@@ -289,16 +353,26 @@ the per-type stats buckets in spirit, the exact-solver discipline.
 
 Real work:
 
-1. `Grid` contract + the two properties on `Board`. Small, and it should be its
-   own commit so the 48/48 trace baseline is re-verified in isolation.
+1. `Grid` contract in both languages, plus `width`/`height` on each `Board`.
+   Small, and it should be its own commit so the 48/48 trace baseline is
+   re-verified in isolation.
 2. `Puzzle` as a union, `parse_puzzle` dispatching, schema per-type `board`
-   shapes, and the `id` suffix table. Mirrored in `app/src/domain/`.
-3. Archive migration: 32 files re-nested, `generatorVersion` 2 → 3, verify green.
-4. Per-type rulebook registry in the engine; `ramp.py` and the three tools
+   shapes and their length constraints, and the id suffix table. Mirrored in
+   `app/src/domain/`.
+3. The suffix/type registry extended to `puzzleIdsForDay`, so a third game is
+   enumerated on the home page and the archive at all. This is the item that
+   makes a published third game visible, and it has to land with step 2 rather
+   than after it.
+4. Archive migration: 32 files re-nested, `generatorVersion` left at 1 and 2,
+   verify green.
+5. `verify_replay` compares `generator_version` as well, closing the gap that
+   would otherwise let a mislabelled archive pass CI forever. Independent of the
+   migration and worth doing first.
+6. Per-type rulebook registry in the engine; `ramp.py` and the three tools
    dispatch through it.
-5. `GameState` as a union in the app, plus the registry, plus a cell renderer and
+7. `GameState` as a union in the app, plus the registry, plus a cell renderer and
    input handler per game.
-6. Fix the silent-failure sites in §7.
+8. Fix the remaining silent-failure sites in §7.
 
 Steps 1–6 are the *precondition* for a third game, and none of them produce a
 playable puzzle. They are worth doing as their own PR, on their own merits, before
