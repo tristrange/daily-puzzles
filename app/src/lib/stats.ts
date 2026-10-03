@@ -14,12 +14,13 @@
  * the theme's: anything unrecognised is treated as no history at all.
  */
 
+import { PUZZLE_TYPES, type PuzzleType } from '../domain/board'
 import { isPuzzleId, parsePuzzleDate, previousPuzzleIds, puzzleDay } from '../domain/dates'
 
 /** One finished puzzle. `hints` is how many hints were actually shown, not asked for. */
 export type SolveRecord = {
   readonly id: string
-  readonly puzzleType: 'queens' | 'star-battle'
+  readonly puzzleType: PuzzleType
   readonly size: number
   readonly elapsedMs: number
   readonly hints: number
@@ -33,7 +34,7 @@ export type Stats = {
   readonly fastestMs: number | null
   readonly averageMs: number | null
   readonly hints: number
-  readonly byType: Readonly<Record<'queens' | 'star-battle', number>>
+  readonly byType: Readonly<Record<PuzzleType, number>>
 }
 
 /**
@@ -42,7 +43,10 @@ export type Stats = {
  */
 export const STATS_STORAGE_KEY = 'daily-puzzles:stats'
 
-const PUZZLE_TYPES = ['queens', 'star-battle'] as const
+/** True for a family the app knows about, so a stored record from a retired one is ignored. */
+function isPuzzleType(value: string): value is PuzzleType {
+  return (PUZZLE_TYPES as readonly string[]).includes(value)
+}
 
 function isWholeNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
@@ -63,7 +67,7 @@ function toRecord(value: unknown): SolveRecord | null {
   const entry = value as Record<string, unknown>
   const { id, puzzleType, size, elapsedMs, hints, solvedAt } = entry
   if (typeof id !== 'string' || !isPuzzleId(id)) return null
-  if (typeof puzzleType !== 'string' || !PUZZLE_TYPES.some((type) => type === puzzleType)) return null
+  if (typeof puzzleType !== 'string' || !isPuzzleType(puzzleType)) return null
   if (!isWholeNumber(size) || size === 0) return null
   if (!isWholeNumber(elapsedMs)) return null
   if (!isWholeNumber(hints)) return null
@@ -192,7 +196,7 @@ export function summarise(records: readonly SolveRecord[], todayId: string): Sta
       fastestMs: null,
       averageMs: null,
       hints: 0,
-      byType: { queens: 0, 'star-battle': 0 },
+      byType: emptyByType(),
     }
   }
   const elapsed = records.map((record) => record.elapsedMs)
@@ -204,10 +208,12 @@ export function summarise(records: readonly SolveRecord[], todayId: string): Sta
     fastestMs: Math.min(...elapsed),
     averageMs: Math.round(total / solved),
     hints: records.reduce((sum, record) => sum + record.hints, 0),
-    byType: {
-      queens: records.filter((record) => record.puzzleType === 'queens').length,
-      'star-battle': records.filter((record) => record.puzzleType === 'star-battle').length,
-    },
+    byType: Object.fromEntries(
+      PUZZLE_TYPES.map((type) => [
+        type,
+        records.filter((record) => record.puzzleType === type).length,
+      ]),
+    ) as Record<PuzzleType, number>,
   }
 }
 
@@ -226,6 +232,11 @@ export function summarise(records: readonly SolveRecord[], todayId: string): Sta
  * that arrives later with the same id and the other family is left alone.
  */
 const REPURPOSED_IDS: readonly (readonly [string, string])[] = [['2026-09-26', '2026-09-26-star']]
+
+/** One zero tally per registered family, so an empty history names them all. */
+function emptyByType(): Record<PuzzleType, number> {
+  return Object.fromEntries(PUZZLE_TYPES.map((type) => [type, 0])) as Record<PuzzleType, number>
+}
 
 function migrateRecords(records: readonly SolveRecord[]): readonly SolveRecord[] {
   return records.flatMap((record) => {

@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { PUZZLE_TYPES } from '../domain/board'
+import { puzzleIdFor } from '../domain/dates'
 import {
   STATS_STORAGE_KEY,
   addSolve,
@@ -267,6 +269,11 @@ describe('summarise', () => {
     })
   })
 
+  it('has a bucket for every registered family, so none is folded into a total', () => {
+    const byType = summarise([], '2026-09-30').byType
+    expect(Object.keys(byType).sort()).toEqual([...PUZZLE_TYPES].sort())
+  })
+
   it('adds up times, hints and puzzle types', () => {
     const stats = summarise(
       [
@@ -285,6 +292,16 @@ describe('summarise', () => {
       hints: 3,
       byType: { queens: 2, 'star-battle': 1 },
     })
+  })
+
+  it('tallies each family without naming any of them', () => {
+    const stats = summarise(
+      PUZZLE_TYPES.map((type, index) =>
+        record({ id: puzzleIdFor('2026-09-30', type), puzzleType: type, elapsedMs: (index + 1) * 1000 }),
+      ),
+      '2026-09-30',
+    )
+    for (const type of PUZZLE_TYPES) expect(stats.byType[type]).toBe(1)
   })
 
   it('rounds the average to whole seconds rather than showing milliseconds', () => {

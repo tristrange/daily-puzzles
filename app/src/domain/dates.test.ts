@@ -1,14 +1,19 @@
 import { describe, expect, it } from 'vitest'
+import { PUZZLE_TYPES } from './board'
+import { PUZZLE_TYPE_SUFFIX } from './games'
 import {
   companionPuzzleId,
   formatPuzzleLabel,
+  isCompanionPuzzleId,
   isPuzzleId,
-  isStarPuzzleId,
   parsePuzzleDate,
   previousPuzzleIds,
   puzzleDay,
+  puzzleIdFor,
+  puzzleIdParts,
   puzzleIdsForDay,
   puzzleOfToday,
+  puzzleTypeOf,
 } from './dates'
 
 describe('isPuzzleId', () => {
@@ -35,10 +40,37 @@ describe('isPuzzleId', () => {
   })
 })
 
-describe('isStarPuzzleId', () => {
-  it('is true only for the companion id', () => {
-    expect(isStarPuzzleId('2026-09-30-star')).toBe(true)
-    expect(isStarPuzzleId('2026-09-30')).toBe(false)
+describe('isCompanionPuzzleId', () => {
+  it('is true only for an id carrying a registered suffix', () => {
+    expect(isCompanionPuzzleId('2026-09-30-star')).toBe(true)
+    expect(isCompanionPuzzleId('2026-09-30')).toBe(false)
+  })
+
+  it('is decided by the registry rather than by a test for one suffix', () => {
+    for (const type of PUZZLE_TYPES) {
+      const id = puzzleIdFor('2026-09-30', type)
+      expect(isCompanionPuzzleId(id)).toBe(PUZZLE_TYPE_SUFFIX[type] !== '')
+    }
+  })
+})
+
+describe('puzzleTypeOf', () => {
+  it('names the family whose slot the id fills', () => {
+    expect(puzzleTypeOf('2026-09-30')).toBe('queens')
+    expect(puzzleTypeOf('2026-09-30-star')).toBe('star-battle')
+  })
+
+  it('is null for an id no family claims', () => {
+    expect(puzzleTypeOf('2026-09-30-trains')).toBeNull()
+    expect(puzzleTypeOf('nope')).toBeNull()
+  })
+})
+
+describe('puzzleIdParts', () => {
+  it('splits every registered family id into day and type', () => {
+    for (const type of PUZZLE_TYPES) {
+      expect(puzzleIdParts(puzzleIdFor('2026-09-30', type))).toEqual({ day: '2026-09-30', type })
+    }
   })
 })
 
@@ -61,8 +93,28 @@ describe('companionPuzzleId', () => {
 })
 
 describe('puzzleIdsForDay', () => {
-  it('lists both ids, Queens first', () => {
+  it('lists one id per registered family, in registry order', () => {
     expect(puzzleIdsForDay('2026-09-30')).toEqual(['2026-09-30', '2026-09-30-star'])
+    expect(puzzleIdsForDay('2026-09-30')).toEqual(
+      PUZZLE_TYPES.map((type) => puzzleIdFor('2026-09-30', type)),
+    )
+  })
+})
+
+describe('puzzleIdFor', () => {
+  it('builds the id from the day and the family suffix', () => {
+    expect(puzzleIdFor('2026-09-30', 'queens')).toBe('2026-09-30')
+    expect(puzzleIdFor('2026-09-30', 'star-battle')).toBe('2026-09-30-star')
+  })
+
+  it('round-trips through the parser for every registered family', () => {
+    for (const type of PUZZLE_TYPES) {
+      expect(puzzleTypeOf(puzzleIdFor('2026-09-30', type))).toBe(type)
+    }
+  })
+
+  it('refuses a day that is not a calendar date', () => {
+    expect(() => puzzleIdFor('2026-02-30', 'queens')).toThrow(RangeError)
   })
 })
 

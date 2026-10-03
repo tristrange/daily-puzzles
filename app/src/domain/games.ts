@@ -1,14 +1,44 @@
 /**
- * How the app names the two puzzle families.
+ * How the app names and identifies the puzzle families.
  *
- * One table, because the names appear in the share text, the archive, the
- * stats page and the chooser, and four copies of the same two strings is four
- * places to forget a rename. The key is the `type` in a puzzle file, so nothing
- * here has to guess what a puzzle is.
+ * One table per fact, all keyed by `PuzzleType`, so the names appear in the share
+ * text, the archive, the stats page and the chooser without four copies of the same
+ * strings being four places to forget a rename. The key is the `type` in a puzzle
+ * file, so nothing here has to guess what a puzzle is.
+ *
+ * Every table is a `Record<PuzzleType, …>` on purpose: adding a family to
+ * `PUZZLE_TYPES` makes each of them a compile error, which is the whole point. A
+ * third game that reaches `board.ts` and no further would simply be missing from
+ * the archive and the share text, with nothing to say so.
  */
 
 import type { PuzzleType } from './board'
 import type { DifficultyBand } from './puzzle'
+
+/**
+ * The variant suffix on a puzzle id, keyed by family.
+ *
+ * The empty suffix is what makes the unsuffixed date the daily puzzle's id, and it
+ * is why the type has to be a field rather than inferred from whether a suffix is
+ * there: "has a suffix" is only the same question as "is the companion" for as
+ * long as exactly one family has one.
+ *
+ * Mirrors `id_suffix` on the engine's `Rulebook`. The two are pinned together by
+ * `conformance/id-cases/`, because the publisher writes these names and the app
+ * routes them, and a spelling they disagree on is a puzzle nothing can find.
+ */
+export const PUZZLE_TYPE_SUFFIX: Record<PuzzleType, string> = {
+  queens: '',
+  'star-battle': '-star',
+}
+
+/** The family whose id carries no suffix: the day's default puzzle. */
+export const DEFAULT_PUZZLE_TYPE: PuzzleType = 'queens'
+
+/** True for the family whose id is a bare date, with nothing appended. */
+export function isDefaultPuzzleType(puzzleType: PuzzleType): boolean {
+  return PUZZLE_TYPE_SUFFIX[puzzleType] === PUZZLE_TYPE_SUFFIX[DEFAULT_PUZZLE_TYPE]
+}
 
 export const PUZZLE_TYPE_LABEL: Record<PuzzleType, string> = {
   queens: 'Queens',

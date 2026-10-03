@@ -1,0 +1,24 @@
+{
+  "comment": "Puzzle id naming, asserted from both sides. The publisher writes ids with the engine's `puzzle_id` and the app routes them with its own id helpers, so a spelling the two disagree on is a puzzle that is published, correct, and unfindable. Adding a family means adding its cases here in the same commit as the registry entry.",
+  "types": [
+    { "type": "queens", "suffix": "" },
+    { "type": "star-battle", "suffix": "-star" }
+  ],
+  "cases": [
+    { "id": "2026-10-04", "day": "2026-10-04", "type": "queens" },
+    { "id": "2026-10-04-star", "day": "2026-10-04", "type": "star-battle" },
+    { "id": "2026-01-01", "day": "2026-01-01", "type": "queens" },
+    { "id": "2026-12-31-star", "day": "2026-12-31", "type": "star-battle" }
+  ],
+  "unparsed": [
+    "",
+    "nope",
+    "2026-9-30",
+    "2026-13-01",
+    "2026-02-30",
+    "2026-10-04-star-star",
+    "2026-10-04-queens",
+    "2026-10-04-train",
+    " 2026-10-04"
+  ]
+}

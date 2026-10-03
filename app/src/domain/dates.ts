@@ -5,20 +5,32 @@
  * owed is *their* calendar day, so "today" is a function of the instant and an
  * IANA time zone, never a guess about where the server sits.
  *
- * Each day can carry two puzzles, so an id may name which: the Queens puzzle is
- * the bare date and the Star Battle companion appends `-star`. The suffix is part
- * of the identity rather than a detail of the file, because a solve is recorded
- * against an id and first-solve-wins would otherwise let one of the two block the
- * other for the whole day.
+ * Each day can carry a puzzle per family, so an id may name which: the daily
+ * puzzle is the bare date and every other family appends its registered suffix.
+ * The suffix is part of the identity rather than a detail of the file, because a
+ * solve is recorded against an id and first-solve-wins would otherwise let one of
+ * a day's puzzles block the others for the whole day.
+ *
+ * Every id question here is answered from `PUZZLE_TYPE_SUFFIX` rather than from a
+ * test for `-star`, because the ids of a day are also what the app asks the network
+ * for: a family with no suffix recognised here is a puzzle that is published,
+ * correct, and never fetched.
  */
 
-/** The variant suffix on a puzzle id, and the id of that puzzle's companion. */
-export const STAR_SUFFIX = '-star' as const
+import { PUZZLE_TYPES, type PuzzleType } from './board'
+import { DEFAULT_PUZZLE_TYPE, PUZZLE_TYPE_SUFFIX, isDefaultPuzzleType } from './games'
 
-const PUZZLE_ID_PATTERN = /^(\d{4})-(\d{2})-(\d{2})(-star)?$/
+/** The day and family a puzzle id names. */
+export type PuzzleIdParts = {
+  /** The bare `YYYY-MM-DD` day both ids of that day share. */
+  readonly day: string
+  /** Which family's puzzle the id names. */
+  readonly type: PuzzleType
+}
 
-export function isPuzzleId(value: string): boolean {
-  const match = PUZZLE_ID_PATTERN.exec(value)
+/** True when `text` is a canonical `YYYY-MM-DD` date that exists as a calendar day. */
+function isCalendarDay(text: string): boolean {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text)
   if (match === null) return false
   const year = Number(match[1])
   const month = Number(match[2])
@@ -31,26 +43,84 @@ export function isPuzzleId(value: string): boolean {
   )
 }
 
-/** True for the Star Battle companion's id, false for the day's Queens puzzle. */
-export function isStarPuzzleId(value: string): boolean {
-  return PUZZLE_ID_PATTERN.exec(value)?.[4] !== undefined
+/**
+ * The day and family an id names, or `null` when it names neither.
+ *
+ * Built by asking each registered family whether it claims the id rather than by
+ * matching one hand-written pattern, so a new family's suffix is recognised the
+ * moment it is registered. A family is only credited if what is left over is a real
+ * calendar day, which is what stops a bare date being read as some other family's.
+ */
+export function puzzleIdParts(value: string): PuzzleIdParts | null {
+  for (const type of PUZZLE_TYPES) {
+    const suffix = PUZZLE_TYPE_SUFFIX[type]
+    if (suffix !== '' && !value.endsWith(suffix)) continue
+    const day = value.slice(0, value.length - suffix.length)
+    if (isCalendarDay(day)) return { day, type }
+  }
+  return null
 }
 
-/** The bare date shared by both of a day's puzzles. */
+export function isPuzzleId(value: string): boolean {
+  return puzzleIdParts(value) !== null
+}
+
+/** Which family's puzzle an id names, or `null` when it names none. */
+export function puzzleTypeOf(value: string): PuzzleType | null {
+  return puzzleIdParts(value)?.type ?? null
+}
+
+/**
+ * True for a companion id — one carrying a registered suffix — and false for the
+ * day's default puzzle.
+ *
+ * Named for the slot rather than for Star Battle, because a second family with a
+ * suffix is a companion too and a test for `-star` would quietly exclude it.
+ */
+export function isCompanionPuzzleId(value: string): boolean {
+  const parts = puzzleIdParts(value)
+  return parts !== null && !isDefaultPuzzleType(parts.type)
+}
+
+/** The bare date shared by every puzzle of that day. */
 export function puzzleDay(id: string): string {
-  const match = PUZZLE_ID_PATTERN.exec(id)
-  if (match === null) throw new RangeError(`${id} is not a YYYY-MM-DD puzzle id`)
-  return `${match[1]}-${match[2]}-${match[3]}`
+  const parts = puzzleIdParts(id)
+  if (parts === null) throw new RangeError(`${id} is not a YYYY-MM-DD puzzle id`)
+  return parts.day
 }
 
-/** The day's other puzzle: the Star Battle companion of a Queens id, and back. */
+/**
+ * The day's other puzzle: the companion of a default id, and back.
+ *
+ * Written as "the default slot, or the one before it" so it holds for exactly two
+ * families, which is what there are. With a third family the question "the day's
+ * other puzzle" stops having one answer, and this should be replaced by a
+ * `puzzleIdsForDay` lookup rather than guessed at.
+ */
 export function companionPuzzleId(id: string): string {
-  return isStarPuzzleId(id) ? puzzleDay(id) : `${puzzleDay(id)}${STAR_SUFFIX}`
+  const parts = puzzleIdParts(id)
+  if (parts === null) throw new RangeError(`${id} is not a YYYY-MM-DD puzzle id`)
+  const companion = isDefaultPuzzleType(parts.type) ? PUZZLE_TYPES[1] : DEFAULT_PUZZLE_TYPE
+  return puzzleIdFor(parts.day, companion)
 }
 
-/** Both puzzle ids for a calendar day, Queens first. */
+/** The id `type`'s puzzle carries for `day`, e.g. `2026-10-01-star`. */
+export function puzzleIdFor(day: string, type: PuzzleType): string {
+  if (!isCalendarDay(day)) throw new RangeError(`${day} is not a YYYY-MM-DD date`)
+  return `${day}${PUZZLE_TYPE_SUFFIX[type]}`
+}
+
+/**
+ * Every puzzle id a calendar day carries, one per registered family.
+ *
+ * This is the app's chokepoint for what exists: the chooser probes these for today
+ * and the archive probes them for every day in its window, so nothing else ever
+ * asks for a puzzle by id. A family missing from here is a puzzle that is published
+ * correctly and never requested — invisible rather than broken, which is why the
+ * list is derived from the registry instead of written out.
+ */
 export function puzzleIdsForDay(day: string): string[] {
-  return [day, `${day}${STAR_SUFFIX}`]
+  return PUZZLE_TYPES.map((type) => puzzleIdFor(day, type))
 }
 
 /** The puzzle id owed to a player in `timeZone` at the instant `date`. */
@@ -71,12 +141,9 @@ export function puzzleOfToday(date: Date, timeZone: string): string {
  * display off the intended day.
  */
 export function parsePuzzleDate(id: string): Date {
-  if (!isPuzzleId(id)) throw new RangeError(`${id} is not a YYYY-MM-DD puzzle id`)
-  const match = PUZZLE_ID_PATTERN.exec(id)
-  if (match === null) throw new RangeError(`${id} is not a YYYY-MM-DD puzzle id`)
-  const year = Number(match[1] ?? '')
-  const month = Number(match[2] ?? '')
-  const day = Number(match[3] ?? '')
+  const parts = puzzleIdParts(id)
+  if (parts === null) throw new RangeError(`${id} is not a YYYY-MM-DD puzzle id`)
+  const [year, month, day] = parts.day.split('-').map(Number) as [number, number, number]
   return new Date(Date.UTC(year, month - 1, day, 12))
 }
 
