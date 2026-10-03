@@ -36,13 +36,19 @@ const manifest = JSON.parse(readFileSync(join(CASES_DIR, 'manifest.json'), 'utf8
 describe('conformance: id-cases', () => {
   it('agrees with the engine on every declared suffix', () => {
     for (const entry of manifest.types) {
-      expect(puzzleIdFor('2026-10-04', entry.type).endsWith(entry.suffix)).toBe(true)
+      // The whole id, not just its tail: `endsWith` would pass for a suffix that is
+      // merely a suffix of the real one, which is the drift this suite exists to catch.
+      expect(puzzleIdFor('2026-10-04', entry.type)).toBe(`2026-10-04${entry.suffix}`)
       expect(PUZZLE_TYPE_SUFFIX[entry.type]).toBe(entry.suffix)
     }
   })
 
   it('declares a case for every family the app registers', () => {
     expect(new Set(manifest.types.map((entry) => entry.type))).toEqual(new Set(PUZZLE_TYPES))
+  })
+
+  it('pins every declared family to a case, not just to its own registry', () => {
+    expect(new Set(manifest.cases.map((entry) => entry.type))).toEqual(new Set(PUZZLE_TYPES))
   })
 
   it('round-trips each generated id through the parser', () => {

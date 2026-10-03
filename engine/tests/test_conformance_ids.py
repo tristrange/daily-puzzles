@@ -29,10 +29,27 @@ CASE_IDS = [case["id"] for case in MANIFEST["cases"]]
 UNPARSED_IDS = list(MANIFEST["unparsed"])
 
 
-def test_every_declared_suffix_is_a_known_family() -> None:
+def test_every_declared_suffix_is_the_whole_id_after_the_day() -> None:
+    """The whole generated id, not just its tail.
+
+    Checking `endswith` would pass for a suffix that is merely a suffix of the real
+    one: an engine emitting `-foo-train` still ends with `-train`, so the publisher
+    would be writing ids the app cannot route with both suites green. The id is
+    `day + suffix` by definition, so assert that and nothing weaker.
+    """
     for entry in MANIFEST["types"]:
-        generated = puzzle_id(date(2026, 10, 4), entry["type"])
-        assert generated.endswith(entry["suffix"])
+        assert puzzle_id(date(2026, 10, 4), entry["type"]) == f"2026-10-04{entry['suffix']}"
+
+
+def test_every_declared_family_has_a_case() -> None:
+    """A family in the registry with no case is asserted only against itself.
+
+    The round-trip and split cases below are what pin the app to the engine; a
+    family missing from `cases` is checked by each side's own registry and no
+    shared expectation, which is precisely the drift the suite exists to catch.
+    """
+    declared = {entry["type"] for entry in MANIFEST["types"]}
+    assert {case["type"] for case in MANIFEST["cases"]} == declared
 
 
 TYPE_ENTRIES = MANIFEST["types"]
