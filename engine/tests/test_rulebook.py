@@ -14,6 +14,7 @@ import pytest
 
 from queens_engine import (
     RAMP_TYPE,
+    STAR_BATTLE_STARS,
     GenerationConfig,
     PuzzleType,
     generate_puzzle,
@@ -22,6 +23,7 @@ from queens_engine import (
     rulebooks,
     score_difficulty,
     split_puzzle_id,
+    verify_replay,
 )
 from queens_engine.rulebook import RulebookError
 
@@ -142,6 +144,24 @@ class TestGeneration:
         book = rulebook_for(PuzzleType.QUEENS)
         with pytest.raises(ValueError):
             book.generate(seed=7, puzzle_id="2026-10-12", size=SMALL, stars_per_row=2)
+
+    def test_every_type_can_replay_the_puzzles_it_generates(self) -> None:
+        # The point of `replay_config` is that CI replays a file without the replay
+        # code naming the type. Every registered type has to survive its own
+        # round-trip, or a new family would publish files that fail verification.
+        for book in rulebooks():
+            puzzle = book.generate(seed=7, puzzle_id="2026-10-12")
+            assert verify_replay(puzzle) == puzzle
+
+    def test_replay_recovers_the_stars_per_row_from_the_board(self) -> None:
+        # A Star Battle file records its stars-per-row only in the first region's
+        # capacity, so replay has to read it back from there. Asserting the rebuilt
+        # config directly is what catches a rulebook that replays every type at one
+        # star per row — which generates fine and verifies against nothing.
+        book = rulebook_for(PuzzleType.STAR_BATTLE)
+        puzzle = book.generate(seed=7, puzzle_id="2026-10-12")
+        assert book.replay_config(puzzle).stars_per_row == STAR_BATTLE_STARS
+        assert rulebook_for(PuzzleType.QUEENS).replay_config(puzzle).stars_per_row is None
 
     def test_counting_and_deducing_go_through_the_rulebook(self) -> None:
         book = rulebook_for(PuzzleType.QUEENS)

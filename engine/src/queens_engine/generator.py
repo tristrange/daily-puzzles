@@ -27,7 +27,6 @@ from dataclasses import dataclass
 from typing import Final
 
 from .board import Board, BoardError, PuzzleType
-from .difficulty import score_difficulty
 from .prng import Prng
 from .puzzle import Puzzle
 from .solver import has_unique_solution
@@ -161,53 +160,6 @@ def _resolve_stars_per_row(cfg: GenerationConfig) -> int:
             f"stars_per_row {cfg.stars_per_row} outside [{MIN_STARS_PER_ROW}, {cfg.size}]"
         )
     return cfg.stars_per_row
-
-
-def verify_replay(puzzle: Puzzle) -> Puzzle:
-    """Regenerate `puzzle` from its seed and confirm the file describes it exactly.
-
-    This is the CI check in the daily pipeline: a puzzle file is trustworthy
-    only if the committed regions are exactly what the seed produces, under the
-    algorithm the file claims. The config is rebuilt from the file's own type and
-    capacity, so a Star Battle file replays through the Star Battle path.
-
-    All three recorded facts are compared, not just the board. The version check
-    is the one that was missing: `generator_version` exists to say which
-    algorithm produced the puzzle, and nothing compared it, so a file could carry
-    another algorithm's number and still verify — which is precisely the
-    corruption a future schema migration would introduce by relabelling files it
-    did not regenerate.
-    """
-    stars_per_row = (
-        puzzle.board.region_capacity[0] if puzzle.puzzle_type is PuzzleType.STAR_BATTLE else None
-    )
-    regenerated = generate_puzzle(
-        seed=puzzle.seed,
-        puzzle_id=puzzle.id,
-        config=GenerationConfig(
-            size=puzzle.size,
-            puzzle_type=puzzle.puzzle_type,
-            stars_per_row=stars_per_row,
-        ),
-    )
-    if regenerated.board != puzzle.board:
-        raise GenerationError(
-            f"replay mismatch for {puzzle.id}: seed {puzzle.seed} produced a different board"
-        )
-    if regenerated.generator_version != puzzle.generator_version:
-        raise GenerationError(
-            f"version mismatch for {puzzle.id}: file records generator version "
-            f"{puzzle.generator_version}, but a {puzzle.puzzle_type.value} board replays "
-            f"through version {regenerated.generator_version}"
-        )
-    if puzzle.difficulty is not None:
-        achieved = score_difficulty(regenerated.board).level
-        if achieved != puzzle.difficulty:
-            raise GenerationError(
-                f"difficulty mismatch for {puzzle.id}: recorded level {puzzle.difficulty}, "
-                f"the board scores {achieved}"
-            )
-    return regenerated
 
 
 def _place_queens(size: int, rng: Prng) -> list[int] | None:
@@ -390,5 +342,4 @@ __all__ = [
     "GenerationConfig",
     "GenerationError",
     "generate_puzzle",
-    "verify_replay",
 ]

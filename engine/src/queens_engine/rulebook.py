@@ -30,9 +30,11 @@ from typing import Final
 from .board import Board, PuzzleType
 from .deduce import DeductionTrace
 from .deduce import deduce as deduce_board
+from .difficulty import score_difficulty
 from .generator import (
     DEFAULT_SIZE,
     GenerationConfig,
+    GenerationError,
     generate_puzzle,
 )
 from .puzzle import Puzzle
@@ -111,6 +113,17 @@ class Rulebook(ABC):
     def deduce(self, board: Board, *, allow_guesses: bool = True) -> DeductionTrace | None:
         """Deduce what `board` forces, or `None` if this type has no such engine."""
 
+    @abstractmethod
+    def replay_config(self, puzzle: Puzzle) -> GenerationConfig:
+        """The config that regenerates `puzzle` from its own seed.
+
+        How a file's type and capacity map back onto the generator's knobs is a
+        per-type fact: a Star Battle file carries its stars-per-row in the first
+        region's capacity, a Queens file carries none. Reading that here is why
+        `verify_replay` can replay any registered family without a branch on the
+        enum.
+        """
+
 
 class MarkRulebook(Rulebook):
     """The shared rulebook for a game played by placing marks in regions.
@@ -167,6 +180,18 @@ class MarkRulebook(Rulebook):
     def deduce(self, board: Board, *, allow_guesses: bool = True) -> DeductionTrace | None:
         return deduce_board(board, allow_guesses=allow_guesses)
 
+    def replay_config(self, puzzle: Puzzle) -> GenerationConfig:
+        # A mark family either plays one mark per line or k per line, and the rulebook
+        # already says which it is. So the board's own capacity is the answer for the
+        # second case and nothing is the answer for the first — no branch on the enum.
+        return GenerationConfig(
+            size=puzzle.size,
+            puzzle_type=self.puzzle_type,
+            stars_per_row=(
+                puzzle.board.region_capacity[0] if self.default_stars_per_row is not None else None
+            ),
+        )
+
 
 _RULEBOOKS: Final[dict[PuzzleType, Rulebook]] = {
     PuzzleType.QUEENS: MarkRulebook(puzzle_type=PuzzleType.QUEENS),
@@ -197,6 +222,48 @@ def rulebook_for(puzzle_type: PuzzleType) -> Rulebook:
 def rulebooks() -> tuple[Rulebook, ...]:
     """Every registered rulebook, in publication order."""
     return tuple(_RULEBOOKS.values())
+
+
+def verify_replay(puzzle: Puzzle) -> Puzzle:
+    """Regenerate `puzzle` from its seed and confirm the file describes it exactly.
+
+    This is the CI check in the daily pipeline: a puzzle file is trustworthy
+    only if the committed regions are exactly what the seed produces, under the
+    algorithm the file claims. The config comes from the type's own rulebook, so a
+    Star Battle file replays through the Star Battle path without this function
+    knowing that Star Battle exists.
+
+    All three recorded facts are compared, not just the board. The version check
+    is the one that was missing: `generator_version` exists to say which
+    algorithm produced the puzzle, and nothing compared it, so a file could carry
+    another algorithm's number and still verify — which is precisely the
+    corruption a future schema migration would introduce by relabelling files it
+    did not regenerate.
+    """
+    book = rulebook_for(puzzle.puzzle_type)
+    regenerated = generate_puzzle(
+        seed=puzzle.seed,
+        puzzle_id=puzzle.id,
+        config=book.replay_config(puzzle),
+    )
+    if regenerated.board != puzzle.board:
+        raise GenerationError(
+            f"replay mismatch for {puzzle.id}: seed {puzzle.seed} produced a different board"
+        )
+    if regenerated.generator_version != puzzle.generator_version:
+        raise GenerationError(
+            f"version mismatch for {puzzle.id}: file records generator version "
+            f"{puzzle.generator_version}, but a {puzzle.puzzle_type.value} board replays "
+            f"through version {regenerated.generator_version}"
+        )
+    if puzzle.difficulty is not None:
+        achieved = score_difficulty(regenerated.board).level
+        if achieved != puzzle.difficulty:
+            raise GenerationError(
+                f"difficulty mismatch for {puzzle.id}: recorded level {puzzle.difficulty}, "
+                f"the board scores {achieved}"
+            )
+    return regenerated
 
 
 def puzzle_id(day: date, puzzle_type: PuzzleType) -> str:
