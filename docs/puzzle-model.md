@@ -363,7 +363,7 @@ it, which is the failure mode worth hunting for by hand in review:
 | `InteractiveBoard.tsx:94` | the board's accessible name branches on `'queens'`, so a new family is announced as "star battle". Not in the original list. **Fixed** — the label, lowercased. |
 | `stats.ts:208-209` | per-type tallies written out by hand, so a new type has no bucket. **Fixed** — `byType` iterates the registry. |
 | `schema` `id` pattern | a new file fails validation outright (this one is loud, which is fine). **Loud by construction** — the suffix list is generated from `conformance/id-cases/` by `tools/schema_ids`, so it rejects a family the parsers do not know rather than accepting anything suffixed. CI runs `--check`. |
-| `verify_replay` | compares `board` and `difficulty`, never `generator_version` — a mislabelled version passes CI |
+| `verify_replay` | compares `board` and `difficulty`, never `generator_version` — a mislabelled version passes CI. **Fixed** in two parts: the version is compared, and the config is rebuilt by the type's own rulebook (`replay_config`) rather than by `is PuzzleType.STAR_BATTLE` inside the replay path. The second part is what stops a third family's file from replaying at the wrong shape. |
 | `hints.ts:358` | already returns `null` — correct by default, listed so it is not "fixed" by accident |
 
 The first row is the one to fix first, and it changes the order of the work.
@@ -404,7 +404,12 @@ Real work:
    would otherwise let a mislabelled archive pass CI forever. Independent of the
    migration and worth doing first.
 6. Per-type rulebook registry in the engine; `ramp.py` and the three tools
-   dispatch through it.
+   dispatch through it. The last two per-type branches outside it are now
+   resolved: `verify_replay` asks the rulebook for the config that rebuilds a
+   file. The branches left in `generator.py` are the placement algorithms
+   themselves, which is where per-type generation genuinely belongs, and
+   `puzzle.py`'s `regionCapacity` key is a statement about the file format, so
+   it moves with step 4 rather than ahead of it.
 7. `GameState` as a union in the app, plus the registry, plus a cell renderer and
    input handler per game.
 8. Fix the remaining silent-failure sites in §7. **Done** for the app-side id

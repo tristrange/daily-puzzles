@@ -26,7 +26,6 @@ from .generator import (
     GenerationConfig,
     GenerationError,
     generate_puzzle,
-    verify_replay,
 )
 from .prng import Prng
 from .puzzle import (
@@ -62,6 +61,7 @@ from .rulebook import (
     rulebook_for,
     rulebooks,
     split_puzzle_id,
+    verify_replay,
 )
 from .solver import (
     DEFAULT_LIMIT,
