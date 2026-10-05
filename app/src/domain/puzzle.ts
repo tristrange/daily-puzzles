@@ -44,9 +44,35 @@ function validateStructure(): ValidateFunction {
   return compiled
 }
 
+/**
+ * Where a rejection happened, what rule fired, and which property it named.
+ *
+ * A path alone does not identify a rule: `required`, `additionalProperties` and a
+ * failing `if` all report the document root, so three different rules would share one
+ * expectation. Naming the keyword and the property it objected to is what makes
+ * "rejected for the right reason" assertable. `puzzle.py` builds the same key from
+ * jsonschema, so the two messages can be compared directly.
+ *
+ * ajv wraps a failed `if` in its own error naming `then`, where jsonschema reports only
+ * what is wrong inside it. The `if` wrapper adds nothing the inner error does not, so
+ * the TypeScript parser drops it too.
+ */
 function describe(errors: readonly ErrorObject[] | null | undefined): string {
   if (errors === null || errors === undefined || errors.length === 0) return '<root>'
-  return errors.map((error) => error.instancePath || '<root>').join('; ')
+  const keys = errors
+    .filter((error) => error.keyword !== 'if')
+    .map((error) => {
+      const path = error.instancePath.replace(/^\//, '') || '<root>'
+      const params = error.params as {
+        missingProperty?: string
+        additionalProperty?: string
+      }
+      const named = params.missingProperty ?? params.additionalProperty
+      return named === undefined
+        ? `${error.keyword}:${path}`
+        : `${error.keyword}:${path}:${named}`
+    })
+  return keys.length === 0 ? '<root>' : [...new Set(keys)].sort().join('; ')
 }
 
 function isPuzzleType(value: string): value is PuzzleType {

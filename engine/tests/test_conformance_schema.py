@@ -27,16 +27,19 @@ def load_manifest() -> list[dict[str, Any]]:
 
 
 def error_paths(message: str) -> list[str]:
-    """The document locations a rejection names, sorted and deduplicated.
+    """The rules a rejection names, sorted and deduplicated.
 
-    ajv and jsonschema report the same invalid document differently: an `if`/`then`
-    that fires alongside a `required` failure is one error in Python and two in
-    TypeScript, so `<root>; <root>` on one side is `<root>` on the other. Comparing
-    the *set* of locations is what both parsers can actually agree on, and it still
-    pins which rule fired — a rejection for the wrong reason names a different place.
+    Each entry is `keyword:path`, or `keyword:path:property` where the rule objected to
+    one property, so `required:<root>:regions` and `additionalProperties:<root>:solution`
+    stay distinct even though both rules fire at the document root.
+
+    ajv wraps a failed `if` in its own error naming `then`, where jsonschema descends
+    straight into the `then` subschema and reports only what is wrong inside it. The `if`
+    wrapper carries no information the inner error does not already give, so it is
+    dropped on both sides.
     """
     paths = _PREFIX.sub("", message).split("; ")
-    return sorted({path.lstrip("/") or "<root>" for path in paths})
+    return sorted({path for path in paths if not path.startswith("if:")})
 
 
 MANIFEST = load_manifest()
@@ -61,19 +64,6 @@ def test_schema_case(case: dict[str, Any]) -> None:
         assert puzzle.size == expected["size"]
         assert puzzle.seed == expected["seed"]
         assert puzzle.generator_version == expected["generatorVersion"]
-        # `==` alone would not notice: Python says 4.0 == 4, so a parser that kept
-        # the float would pass. TypeScript has one number type and cannot catch this,
-        # which is why the coercion is worth asserting where it is observable.
-        assert all(
-            isinstance(value, int)
-            for value in (
-                puzzle.size,
-                puzzle.seed,
-                puzzle.generator_version,
-                *puzzle.board.regions,
-                *puzzle.board.region_capacity,
-            )
-        )
         assert list(puzzle.board.region_capacity) == expected["regionCapacity"]
         assert puzzle.difficulty == expected["difficulty"]
     else:

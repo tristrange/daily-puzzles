@@ -86,6 +86,23 @@
       }
     },
     {
+      "file": "star-battle-two-stars.accept.json",
+      "valid": true,
+      "expect": {
+        "size": 4,
+        "seed": 11,
+        "generatorVersion": 1,
+        "type": "star-battle",
+        "regionCapacity": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "difficulty": null
+      }
+    },
+    {
       "file": "queens-with-band.accept.json",
       "valid": true,
       "expect": {
@@ -106,84 +123,84 @@
       "file": "band-out-of-range.reject.json",
       "valid": false,
       "errorPaths": [
-        "difficulty"
+        "maximum:difficulty"
       ]
     },
     {
       "file": "bad-id.reject.json",
       "valid": false,
       "errorPaths": [
-        "id"
+        "pattern:id"
       ]
     },
     {
       "file": "unknown-type.reject.json",
       "valid": false,
       "errorPaths": [
-        "type"
+        "enum:type"
       ]
     },
     {
       "file": "size-out-of-range.reject.json",
       "valid": false,
       "errorPaths": [
-        "size"
+        "maximum:size"
       ]
     },
     {
       "file": "seed-out-of-range.reject.json",
       "valid": false,
       "errorPaths": [
-        "seed"
+        "minimum:seed"
       ]
     },
     {
       "file": "generator-version-zero.reject.json",
       "valid": false,
       "errorPaths": [
-        "generatorVersion"
+        "minimum:generatorVersion"
       ]
     },
     {
       "file": "generator-version-unsafe.reject.json",
       "valid": false,
       "errorPaths": [
-        "generatorVersion"
+        "maximum:generatorVersion"
       ]
     },
     {
       "file": "region-id-out-of-range.reject.json",
       "valid": false,
       "errorPaths": [
-        "regions/12"
+        "maximum:regions/12"
       ]
     },
     {
       "file": "extra-property.reject.json",
       "valid": false,
       "errorPaths": [
-        "<root>"
+        "additionalProperties:<root>:solution"
       ]
     },
     {
       "file": "missing-regions.reject.json",
       "valid": false,
       "errorPaths": [
-        "<root>"
+        "required:<root>:regions"
       ]
     },
     {
       "file": "capacity-below-one.reject.json",
       "valid": false,
       "errorPaths": [
-        "regionCapacity/0"
+        "minimum:regionCapacity/0"
       ]
     },
     {
       "file": "star-battle-missing-capacity.reject.json",
       "valid": false,
       "errorPaths": [
-        "<root>"
+        "required:<root>:regionCapacity"
       ]
     }
   ]

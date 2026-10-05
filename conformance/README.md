@@ -24,10 +24,11 @@ languages are pinned to the same *rule* rather than merely both refusing the boa
 On a board where several rules apply, "it threw" would pass against the wrong one.
 `schema-cases/` needed the same treatment for a different reason: JSON Schema lets one
 document break several rules, and the two validators enumerate them differently, so the
-cases carry the *set of document locations* the rejection names (`errorPaths`) rather
-than a message. Its accept cases carry `expect`, since a parser that accepts a file for
-the wrong reason — reading `size` as a string, defaulting a stated capacity to 1 — has
-still got it wrong.
+cases carry the *set of rules* the rejection names (`errorPaths`, as
+`keyword:path:property`) rather than a message, because three schema rules fire at the
+document root and a path cannot tell them apart. Its accept cases carry `expect`, since a
+parser that accepts a file for the wrong reason — reading `size` as a string, discarding
+a declared capacity — has still got it wrong.
 
 `id-cases/` exists because three places name ids for different reasons. The engine's
 `puzzle_id` writes the name the publisher will use; the app's `puzzleTypeOf` routes it;
