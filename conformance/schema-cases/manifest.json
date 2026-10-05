@@ -2,87 +2,206 @@
   "cases": [
     {
       "file": "queens-minimal.accept.json",
-      "valid": true
+      "valid": true,
+      "expect": {
+        "size": 4,
+        "seed": 1234567890,
+        "generatorVersion": 1,
+        "type": "queens",
+        "regionCapacity": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "difficulty": null
+      }
     },
     {
       "file": "queens-explicit-capacity.accept.json",
-      "valid": true
+      "valid": true,
+      "expect": {
+        "size": 4,
+        "seed": 42,
+        "generatorVersion": 2,
+        "type": "queens",
+        "regionCapacity": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "difficulty": null
+      }
     },
     {
       "file": "integral-float.accept.json",
-      "valid": true
+      "valid": true,
+      "expect": {
+        "size": 4,
+        "seed": 42,
+        "generatorVersion": 1,
+        "type": "queens",
+        "regionCapacity": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "difficulty": null
+      }
     },
     {
       "file": "star-battle.accept.json",
-      "valid": true
+      "valid": true,
+      "expect": {
+        "size": 4,
+        "seed": 7,
+        "generatorVersion": 1,
+        "type": "star-battle",
+        "regionCapacity": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "difficulty": null
+      }
     },
     {
       "file": "star-id.accept.json",
-      "valid": true
+      "valid": true,
+      "expect": {
+        "size": 4,
+        "seed": 7,
+        "generatorVersion": 1,
+        "type": "star-battle",
+        "regionCapacity": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "difficulty": null
+      }
+    },
+    {
+      "file": "star-battle-two-stars.accept.json",
+      "valid": true,
+      "expect": {
+        "size": 4,
+        "seed": 11,
+        "generatorVersion": 1,
+        "type": "star-battle",
+        "regionCapacity": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "difficulty": null
+      }
     },
     {
       "file": "queens-with-band.accept.json",
-      "valid": true
+      "valid": true,
+      "expect": {
+        "size": 4,
+        "seed": 1234567890,
+        "generatorVersion": 1,
+        "type": "queens",
+        "regionCapacity": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "difficulty": 3
+      }
     },
     {
       "file": "band-out-of-range.reject.json",
       "valid": false,
-      "reason": "difficulty must be a band from 1 to 5, so 6 is not a level this engine scores"
+      "errorPaths": [
+        "maximum:difficulty"
+      ]
     },
     {
       "file": "bad-id.reject.json",
       "valid": false,
-      "reason": "id must match YYYY-MM-DD with an optional -star suffix"
+      "errorPaths": [
+        "pattern:id"
+      ]
     },
     {
       "file": "unknown-type.reject.json",
       "valid": false,
-      "reason": "type must be a known puzzle family"
+      "errorPaths": [
+        "enum:type"
+      ]
     },
     {
       "file": "size-out-of-range.reject.json",
       "valid": false,
-      "reason": "size must be between 2 and 16"
+      "errorPaths": [
+        "maximum:size"
+      ]
     },
     {
       "file": "seed-out-of-range.reject.json",
       "valid": false,
-      "reason": "seed must fit in an unsigned 32-bit integer"
+      "errorPaths": [
+        "minimum:seed"
+      ]
     },
     {
       "file": "generator-version-zero.reject.json",
       "valid": false,
-      "reason": "generatorVersion starts at 1"
+      "errorPaths": [
+        "minimum:generatorVersion"
+      ]
     },
     {
       "file": "generator-version-unsafe.reject.json",
       "valid": false,
-      "reason": "generatorVersion must stay within the JavaScript safe-integer range, or JSON.parse rounds it and the client reads a different algorithm version"
+      "errorPaths": [
+        "maximum:generatorVersion"
+      ]
     },
     {
       "file": "region-id-out-of-range.reject.json",
       "valid": false,
-      "reason": "region ids are 0..15 for a grid of at most 16 regions"
+      "errorPaths": [
+        "maximum:regions/12"
+      ]
     },
     {
       "file": "extra-property.reject.json",
       "valid": false,
-      "reason": "additionalProperties is false"
+      "errorPaths": [
+        "additionalProperties:<root>:solution"
+      ]
     },
     {
       "file": "missing-regions.reject.json",
       "valid": false,
-      "reason": "regions is required"
+      "errorPaths": [
+        "required:<root>:regions"
+      ]
     },
     {
       "file": "capacity-below-one.reject.json",
       "valid": false,
-      "reason": "a region must hold at least one queen"
+      "errorPaths": [
+        "minimum:regionCapacity/0"
+      ]
     },
     {
       "file": "star-battle-missing-capacity.reject.json",
       "valid": false,
-      "reason": "star-battle requires an explicit regionCapacity"
+      "errorPaths": [
+        "required:<root>:regionCapacity"
+      ]
     }
   ]
 }

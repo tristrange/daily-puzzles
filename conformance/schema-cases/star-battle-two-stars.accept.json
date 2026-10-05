@@ -1,0 +1,26 @@
+{
+  "id": "2026-10-06-star",
+  "type": "star-battle",
+  "size": 4,
+  "seed": 11,
+  "generatorVersion": 1,
+  "regionCapacity": [2, 2, 2, 2],
+  "regions": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3
+  ]
+}

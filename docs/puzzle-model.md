@@ -416,6 +416,22 @@ Real work:
    and type-list sites; the `schema` `id` pattern still rejects a new suffix
    loudly, which is correct until step 2.
 
+Step 2's "relational checks in both parsers" is now covered from both sides.
+`board-cases/` pins the rules the schema cannot express, and `schema-cases/` pins
+which rule a rejection names and what an accepted file parses to. The second
+half was missing: the suite asserted only *that* a file was refused, so a parser
+rejecting it for an unrelated reason still passed, and an accept case checked
+only that `id` round-tripped. Both halves now carry the expectation that makes a
+wrong-but-passing implementation fail.
+
+Making that assertable meant changing what the parsers report. A path alone does
+not identify a rule — `required`, `additionalProperties` and a failing `if` all
+fire at the document root — so both parsers now name the schema keyword and the
+property it objected to. That put a real divergence on the table: ajv reports a
+failed `if` as a wrapper error naming `then`, and jsonschema reports only the
+inner failure. The wrapper is dropped on both sides, which is a deliberate
+normalisation rather than an oversight; the two errors agree on everything else.
+
 Steps 1–6 are the *precondition* for a third game, and none of them produce a
 playable puzzle. They are worth doing as their own PR, on their own merits, before
 anyone writes a Tango rule.

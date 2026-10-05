@@ -9,12 +9,14 @@ mirrored in `app/src/domain/`.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
 from typing import Any, Final, cast
 
 from jsonschema import Draft202012Validator
+from jsonschema.exceptions import ValidationError
 
 from .board import Board, BoardError, PuzzleType
 
@@ -44,6 +46,63 @@ class Puzzle:
     difficulty: int | None = None
 
 
+def _schema_error_key(error: ValidationError) -> str:
+    """Where a rejection happened, what rule fired, and which property it named.
+
+    A path alone does not identify a rule: `required`, `additionalProperties` and a
+    failing `if` all report the document root, so three different rules would share
+    one expectation. Naming the keyword and the property it objected to is what makes
+    "rejected for the right reason" assertable, and the app builds the same key from
+    ajv so the two messages can be compared directly.
+    """
+    path = "/".join(str(part) for part in error.absolute_path) or "<root>"
+    if error.validator == "required":
+        missing = _missing_property(error)
+        return f"required:{path}:{missing}" if missing else f"required:{path}"
+    if error.validator == "additionalProperties":
+        unexpected = _unexpected_property(error)
+        if unexpected:
+            return f"additionalProperties:{path}:{unexpected}"
+    return f"{error.validator}:{path}"
+
+
+def _subschema_keys(error: ValidationError) -> tuple[frozenset[str], frozenset[str]]:
+    """The property names a subschema allows, as (explicit, pattern-derived)."""
+    schema = cast("dict[str, Any]", error.schema)
+    declared = schema.get("properties", {})
+    patterns = schema.get("patternProperties", {})
+    return (
+        frozenset(declared),
+        frozenset(
+            name
+            for name, pattern in patterns.items()
+            if re.search(cast("str", pattern), cast("str", name))
+        ),
+    )
+
+
+def _missing_property(error: ValidationError) -> str | None:
+    """The one required property absent from the document.
+
+    jsonschema reports the whole `required` list, so the missing name is whichever
+    entry the document does not have. When several are absent at once the first in
+    schema order is named, since the document is already invalid either way.
+    """
+    present = cast("dict[str, Any]", error.instance)
+    required = cast("list[str]", error.validator_value)
+    return next((name for name in required if name not in present), None)
+
+
+def _unexpected_property(error: ValidationError) -> str | None:
+    """The property the document has that the subschema does not declare."""
+    declared, patterns = _subschema_keys(error)
+    instance = cast("dict[str, Any]", error.instance)
+    return next(
+        (name for name in sorted(instance) if name not in declared and name not in patterns),
+        None,
+    )
+
+
 @cache
 def _validator() -> Draft202012Validator:
     schema = cast("dict[str, Any]", json.loads(SCHEMA_PATH.read_text(encoding="utf-8")))
@@ -60,9 +119,7 @@ def parse_puzzle(data: object) -> Puzzle:
         key=lambda error: [str(part) for part in error.absolute_path],
     )
     if errors:
-        paths = "; ".join(
-            "/".join(str(part) for part in error.absolute_path) or "<root>" for error in errors
-        )
+        paths = "; ".join(sorted(_schema_error_key(error) for error in errors))
         raise PuzzleParseError(f"puzzle does not match schema at: {paths}")
 
     if not isinstance(data, dict):
