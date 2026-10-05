@@ -96,6 +96,14 @@ class Board:
         return divmod(index, self.width)
 
     def region_at(self, index: int) -> int:
+        """The region holding `index`.
+
+        Out of range raises `BoardError` rather than the `IndexError` a bare tuple
+        index would give: it is the same failure the TypeScript `Board` reports, and a
+        raw `IndexError` names neither the board nor the offending cell.
+        """
+        if not 0 <= index < self.cell_count:
+            raise BoardError(f"cell index {index} out of range")
         return self.regions[index]
 
     def cells_of_region(self, region_id: int) -> tuple[int, ...]:

@@ -22,7 +22,7 @@ against that shape:
 | --- | --- |
 | `Board` | square `size`; cells partitioned into regions; a region has a *count* capacity |
 | `Puzzle` | one flat record that always carries `board: Board` and `size: int` |
-| `validate_board` | branches on `PuzzleType.QUEENS` to demand `region_count == size` and all capacities 1 |
+| `validate_board` | branches on `PuzzleType.QUEENS` to demand `region_count == size` and all capacities 1. Pinned cross-language by `board-cases/` since M7, including which rule rejects a given board. |
 | `solver.py`, `generator.py`, `deduce.py` | take a `Board`; a solution is `frozenset[int]` of cell indices |
 | `deduce.py` | "groups" are rows, columns and regions, addressed by index into three parallel `need` lists |
 | `difficulty.py` | scores a `Board` by simulating forced moves |
