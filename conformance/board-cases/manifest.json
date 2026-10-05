@@ -1,0 +1,87 @@
+{
+  "comment": "Board semantics, asserted from both languages. `schema-cases/` proves the two parsers read the same bytes; this proves they *reason* about the result identically. A board can be structurally valid and logically broken, so the suites stay separate. A reject case also carries `error`, a substring of the message, so the suite asserts *which* rule fired: on a queens board several rules apply at once and the wrong one firing would otherwise pass.",
+  "cases": [
+    {
+      "file": "queens-2x2.accept.json",
+      "valid": true,
+      "note": "the smallest legal board: one region per row"
+    },
+    {
+      "file": "queens-4x4.accept.json",
+      "valid": true,
+      "note": "one region per row, the shape every published puzzle has"
+    },
+    {
+      "file": "queens-row-regions-3x3.accept.json",
+      "valid": true,
+      "note": "odd size is legal; region count tracks size, not parity"
+    },
+    {
+      "file": "star-battle-4x4.accept.json",
+      "valid": true,
+      "note": "k=2 per row, so region capacity may exceed 1"
+    },
+    {
+      "file": "queens-region-count-mismatch.reject.json",
+      "valid": false,
+      "note": "queens needs exactly size regions",
+      "error": "queens needs exactly"
+    },
+    {
+      "file": "queens-capacity-above-one.reject.json",
+      "valid": false,
+      "note": "a queens region holds exactly one queen",
+      "error": "queens requires a capacity of exactly 1"
+    },
+    {
+      "file": "capacity-below-one.reject.json",
+      "valid": false,
+      "note": "a region must hold at least one piece",
+      "error": "capacity 0 outside"
+    },
+    {
+      "file": "capacity-above-cell-count.reject.json",
+      "valid": false,
+      "note": "capacity cannot exceed the region's cell count",
+      "error": "capacity 5 outside"
+    },
+    {
+      "file": "disconnected-region.reject.json",
+      "valid": false,
+      "note": "regions must be 4-connected",
+      "error": "not orthogonally connected"
+    },
+    {
+      "file": "region-ids-with-gap.reject.json",
+      "valid": false,
+      "note": "region ids must be exactly 0..regionCount-1",
+      "error": "region ids must be exactly"
+    },
+    {
+      "file": "size-below-minimum.reject.json",
+      "valid": false,
+      "note": "size 1 is outside the supported range",
+      "error": "size 1 outside"
+    },
+    {
+      "file": "size-above-maximum.reject.json",
+      "valid": false,
+      "note": "size 17 is outside the supported range",
+      "error": "size 17 outside"
+    },
+    {
+      "file": "regions-length-mismatch.reject.json",
+      "valid": false,
+      "note": "regions has one entry per cell",
+      "error": "regions has 8 entries"
+    }
+  ],
+  "access": [
+    {
+      "name": "region_at rejects a cell index off the board",
+      "cell": 99,
+      "error": "cell index 99 out of range",
+      "note": "Python indexed the tuple and raised IndexError, which is not the Board's error type and does not name the cell. Raised here as a BoardError so both languages fail the same way."
+    }
+  ]
+}

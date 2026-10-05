@@ -9,7 +9,7 @@ rule, so every shared claim is pinned here and asserted from both sides.
 | Directory | Asserts | Introduced in |
 | --- | --- | --- |
 | `schema-cases/` | The JSON file format is accepted or rejected as expected. Structure only. | M1 |
-| `board-cases/` | Full board semantics: region validity, and (from M2) solution count. | M2+ |
+| `board-cases/` | Board semantics: whether a board is constructible at all, which rule rejects it, and how out-of-range access fails. | M7 |
 | `hint-cases/` | The *first forced move* the deduction rules produce, from an empty board or an explicit player state. | M6 |
 | `id-cases/` | Puzzle id naming: each family's suffix, which day and family an id names, and that `schema/puzzle.schema.json` accepts the same set. | M3 |
 
@@ -18,6 +18,10 @@ identically; `board-cases/` proves they *reason* about a board identically; `hin
 proves the app's live hint engine and the engine's own solver deduce the same first move.
 A board can be structurally valid and logically broken, so the suites must not be
 conflated.
+
+`board-cases/` also carries an `error` substring on every reject case, so the two
+languages are pinned to the same *rule* rather than merely both refusing the board.
+On a board where several rules apply, "it threw" would pass against the wrong one.
 
 `id-cases/` exists because three places name ids for different reasons. The engine's
 `puzzle_id` writes the name the publisher will use; the app's `puzzleTypeOf` routes it;

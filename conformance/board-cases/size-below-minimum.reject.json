@@ -1,0 +1,10 @@
+{
+  "size": 1,
+  "type": "queens",
+  "regions": [
+    0
+  ],
+  "regionCapacity": [
+    1
+  ]
+}
