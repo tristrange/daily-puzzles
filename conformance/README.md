@@ -8,7 +8,7 @@ rule, so every shared claim is pinned here and asserted from both sides.
 
 | Directory | Asserts | Introduced in |
 | --- | --- | --- |
-| `schema-cases/` | The JSON file format is accepted or rejected as expected. Structure only. | M1 |
+| `schema-cases/` | The JSON file format is accepted or rejected as expected, that a rejection names the field that caused it, and that an accepted file parses to stated values. Structure only. | M1 |
 | `board-cases/` | Board semantics: whether a board is constructible at all, which rule rejects it, and how out-of-range access fails. | M7 |
 | `hint-cases/` | The *first forced move* the deduction rules produce, from an empty board or an explicit player state. | M6 |
 | `id-cases/` | Puzzle id naming: each family's suffix, which day and family an id names, and that `schema/puzzle.schema.json` accepts the same set. | M3 |
@@ -22,6 +22,12 @@ conflated.
 `board-cases/` also carries an `error` substring on every reject case, so the two
 languages are pinned to the same *rule* rather than merely both refusing the board.
 On a board where several rules apply, "it threw" would pass against the wrong one.
+`schema-cases/` needed the same treatment for a different reason: JSON Schema lets one
+document break several rules, and the two validators enumerate them differently, so the
+cases carry the *set of document locations* the rejection names (`errorPaths`) rather
+than a message. Its accept cases carry `expect`, since a parser that accepts a file for
+the wrong reason — reading `size` as a string, defaulting a stated capacity to 1 — has
+still got it wrong.
 
 `id-cases/` exists because three places name ids for different reasons. The engine's
 `puzzle_id` writes the name the publisher will use; the app's `puzzleTypeOf` routes it;

@@ -2,12 +2,22 @@
 
 `manifest.json` lists every case:
 
-- `valid: true` — the file **must** validate against `schema/puzzle.schema.json`.
-- `valid: false` — the file **must fail** validation; `reason` states which rule rejects it.
+- `valid: true` — the file **must** validate against `schema/puzzle.schema.json`, and
+  parse to the values in `expect`.
+- `valid: false` — the file **must fail** validation, and the rejection must name the
+  document locations in `errorPaths`.
 
 Each case is stored as a bare puzzle file, with no metadata fields mixed in, so the
 fixtures are exactly the shape a real committed puzzle has. The manifest keeps the
 expectation out of the data.
+
+`errorPaths` is a *set*, and both languages normalize to the same one. ajv reports a
+missing required property as two errors when an `if`/`then` also fails, where jsonschema
+reports one, so `star-battle-missing-capacity.reject.json` is `<root>; <root>` in
+TypeScript and `<root>` in Python. Comparing the deduplicated set is what the two
+validators can agree on, and it still pins the rule: a rejection for the wrong reason
+names a different location. Locations are written without their leading slash, and a
+failure at the document root is `<root>`.
 
 Only *structural* rules belong here. JSON Schema cannot express "the `regions` array has
 length `size * size`", so a short array validates cleanly — that kind of invariant is
