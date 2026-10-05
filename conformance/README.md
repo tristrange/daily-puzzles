@@ -11,7 +11,7 @@ rule, so every shared claim is pinned here and asserted from both sides.
 | `schema-cases/` | The JSON file format is accepted or rejected as expected. Structure only. | M1 |
 | `board-cases/` | Full board semantics: region validity, and (from M2) solution count. | M2+ |
 | `hint-cases/` | The *first forced move* the deduction rules produce, from an empty board or an explicit player state. | M6 |
-| `id-cases/` | Puzzle id naming: each family's suffix, and which day and family an id names. | M3 |
+| `id-cases/` | Puzzle id naming: each family's suffix, which day and family an id names, and that `schema/puzzle.schema.json` accepts the same set. | M3 |
 
 These are deliberately separate. `schema-cases/` proves the two languages parse a file
 identically; `board-cases/` proves they *reason* about a board identically; `hint-cases/`
@@ -19,10 +19,17 @@ proves the app's live hint engine and the engine's own solver deduce the same fi
 A board can be structurally valid and logically broken, so the suites must not be
 conflated.
 
-`id-cases/` exists because the two sides name ids for opposite reasons. The engine's
-`puzzle_id` writes the name the publisher will use; the app's `puzzleTypeOf` routes it.
-A spelling they disagree on is not a crash — it is a puzzle that is published,
-correct, and unfindable, so the agreement is asserted rather than reviewed.
+`id-cases/` exists because three places name ids for different reasons. The engine's
+`puzzle_id` writes the name the publisher will use; the app's `puzzleTypeOf` routes it;
+the schema's `id` pattern decides whether a file is a puzzle at all. A spelling they
+disagree on is not a crash — it is a puzzle that is published, correct, and unfindable,
+so the agreement is asserted rather than reviewed.
+
+The schema's pattern is generated from the `types` block here, which makes it a fourth
+consumer of the manifest rather than a fourth hand-written list. Its pattern is *shape*
+only: it accepts `2026-02-30`, because JSON Schema cannot express "the day exists", and
+`split_puzzle_id` rejects that in both languages. The two halves are asserted separately
+so widening one does not quietly widen the other.
 
 `hint-cases/` is worth one precise caveat. A "subset" firing can only ever occur *after*
 some cells are already dead (on an untouched board every region, row and column has a full

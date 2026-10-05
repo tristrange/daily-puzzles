@@ -8,15 +8,17 @@ is a puzzle that is published, correct, and unfindable.
 from __future__ import annotations
 
 import json
+import re
 from datetime import date
 from typing import Any
 
 import pytest
 
-from queens_engine.puzzle import CONFORMANCE_DIR
+from queens_engine.puzzle import CONFORMANCE_DIR, SCHEMA_PATH
 from queens_engine.rulebook import puzzle_id, split_puzzle_id
 
 CASES_DIR = CONFORMANCE_DIR / "id-cases"
+SCHEMA: dict[str, Any] = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
 
 
 def load_manifest() -> dict[str, Any]:
@@ -39,6 +41,31 @@ def test_every_declared_suffix_is_the_whole_id_after_the_day() -> None:
     """
     for entry in MANIFEST["types"]:
         assert puzzle_id(date(2026, 10, 4), entry["type"]) == f"2026-10-04{entry['suffix']}"
+
+
+def test_schema_accepts_every_declared_family_id() -> None:
+    """The schema's `id` pattern must accept each family's id, from the same manifest.
+
+    The schema is a third copy of the suffix naming, read by both parsers. Its
+    pattern is shape only — it also accepts impossible dates like `2026-02-30`,
+    which the parsers reject — so this asserts the suffixes agree and leaves
+    calendar validity to `split_puzzle_id`.
+    """
+    pattern = SCHEMA["properties"]["id"]["pattern"]
+    compiled = re.compile(pattern)
+    for entry in MANIFEST["types"]:
+        identifier = f"2026-10-04{entry['suffix']}"
+        assert compiled.match(identifier), f"schema rejects {identifier} ({pattern})"
+
+
+def test_schema_rejects_an_undeclared_suffix() -> None:
+    """The loud failure: a family the manifest does not know cannot pass validation.
+
+    Better than a puzzle that validates and then cannot be routed, and the reason
+    the schema's suffix list is derived rather than widened to any suffix.
+    """
+    pattern = SCHEMA["properties"]["id"]["pattern"]
+    assert not re.compile(pattern).match("2026-10-04-train")
 
 
 def test_every_declared_family_has_a_case() -> None:
