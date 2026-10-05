@@ -25,6 +25,7 @@
  */
 
 import type { Board } from './board'
+import { PUZZLE_TYPE_HAS_HINTS } from './games'
 
 export const HINT_RULES = [
   'single-region',
@@ -345,17 +346,18 @@ function huntSubsets(state: CandidateState): Hint | null {
  * board is complete or the rules have stalled). Player-conflict validation is
  * the caller's job.
  *
- * Queens only: the port's rules are single-star (a group with one candidate
- * left, regions consumed whole), so a Star Battle board would get hints that
- * are simply wrong. A wrong hint is worse than none — `null` is returned and
- * the UI hides the button, until the rules are ported for k stars.
+ * Mark games with the ported rules only: `PUZZLE_TYPE_HAS_HINTS` says which. The
+ * port's rules are single-star (a group with one candidate left, regions consumed
+ * whole), so a k-star board would get hints that are simply wrong, and a wrong hint
+ * is worse than none. Reading the same table the UI hides its button from means the
+ * two cannot disagree about which families these are.
  */
 export function firstHint(
   board: Board,
   queens: ReadonlySet<number> = new Set(),
   marks: ReadonlySet<number> = new Set(),
 ): Hint | null {
-  if (board.puzzleType !== 'queens') return null
+  if (!PUZZLE_TYPE_HAS_HINTS[board.puzzleType]) return null
   const state = initialState(board, queens, marks)
   const singles = huntSingles(state)
   if (singles) return singles

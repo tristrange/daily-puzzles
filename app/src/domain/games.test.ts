@@ -1,13 +1,25 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { PUZZLE_TYPES } from './board'
+import { Board, PUZZLE_TYPES, type PuzzleType } from './board'
 import { puzzleIdFor, puzzleTypeOf } from './dates'
+import { firstHint } from './hints'
+import { parsePuzzle } from './puzzle'
 import {
   DEFAULT_PUZZLE_TYPE,
   PUZZLE_PIECE,
+  PUZZLE_TYPE_HAS_HINTS,
   PUZZLE_TYPE_LABEL,
   PUZZLE_TYPE_SUFFIX,
   isDefaultPuzzleType,
 } from './games'
+
+/** A legal board of any family: one region per row, one piece per row. */
+function makeBoard(puzzleType: PuzzleType, size = 4): Board {
+  const regions = Array.from({ length: size * size }, (_, cell) => Math.floor(cell / size))
+  const capacity = puzzleType === 'queens' ? 1 : 2
+  return new Board(size, regions, new Array(size).fill(capacity), puzzleType)
+}
 
 /**
  * The registry is the only place a puzzle family has to be declared, so these are
@@ -66,5 +78,43 @@ describe('puzzle type registry', () => {
     expect(new Set(PUZZLE_TYPES.map((type) => puzzleIdFor('2026-09-30', type))).size).toBe(
       PUZZLE_TYPES.length,
     )
+  })
+
+  /**
+   * The board's accessible name is the label lowercased, read straight from
+   * `PUZZLE_TYPE_LABEL`. Worth pinning, because a rename that reads correctly in the
+   * UI can still change what a screen reader announces and nothing else would say so.
+   */
+  it('names each puzzle in the board accessible name without a branch', () => {
+    expect(PUZZLE_TYPE_LABEL.queens.toLowerCase()).toBe('queens')
+    expect(PUZZLE_TYPE_LABEL['star-battle'].toLowerCase()).toBe('star battle')
+  })
+
+  /**
+   * The table decides both the button's visibility and whether `firstHint` returns
+   * null, so the two must not be answered separately — otherwise a family gets a
+   * visible button that does nothing, or silently wrong hints.
+   *
+   * Asserted on a position with a real forced move rather than an empty board, since
+   * `null` from `firstHint` means "no forced move right now" for a family that does
+   * have an engine, and would make the two cases indistinguishable.
+   */
+  it('records which families have a hint engine, and the engine agrees with it', () => {
+    const hintCase = parsePuzzle(
+      JSON.parse(
+        readFileSync(
+          join(new URL('../../..', import.meta.url).pathname, 'conformance', 'hint-cases', '2026-05-11.puzzle.json'),
+          'utf8',
+        ),
+      ),
+    )
+    expect(firstHint(hintCase.board)).not.toBeNull()
+    expect(PUZZLE_TYPE_HAS_HINTS[hintCase.puzzleType]).toBe(true)
+
+    for (const type of PUZZLE_TYPES) {
+      expect(typeof PUZZLE_TYPE_HAS_HINTS[type]).toBe('boolean')
+      // A family without hints must never produce one, whatever the position.
+      if (!PUZZLE_TYPE_HAS_HINTS[type]) expect(firstHint(makeBoard(type))).toBeNull()
+    }
   })
 })

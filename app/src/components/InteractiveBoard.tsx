@@ -41,7 +41,7 @@ import {
 import type { Board } from '../domain/board'
 import type { GameState } from '../domain/game'
 import { cellState } from '../domain/game'
-import { PUZZLE_PIECE } from '../domain/games'
+import { PUZZLE_PIECE, PUZZLE_TYPE_LABEL } from '../domain/games'
 import type { Hint } from '../domain/hints'
 import { markInk, regionColours } from '../lib/colours'
 
@@ -91,7 +91,10 @@ export function InteractiveBoard({
   const [painting, setPainting] = useState(false)
   const stroke = useRef<Stroke | null>(null)
   const piece = PUZZLE_PIECE[board.puzzleType]
-  const puzzleName = board.puzzleType === 'queens' ? 'queens' : 'star battle'
+  // Lowercased because the label names the puzzle mid-sentence in the board's
+  // accessible name, and read from the registry so a new family is announced by its
+  // own name rather than as a star battle.
+  const puzzleName = PUZZLE_TYPE_LABEL[board.puzzleType].toLowerCase()
   const colours = useMemo(() => regionColours(board), [board])
   // One style object per region rather than per cell: 64 cells re-deriving the
   // same eight colours on every pointer move during a stroke is waste.

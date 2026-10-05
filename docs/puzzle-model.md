@@ -185,8 +185,11 @@ type -> {
 }
 ```
 
-`hints.ts:358` already returns `null` for anything but Queens, which is the
-correct default: a new game ships with no hints rather than with wrong ones.
+`hints.ts` already returns `null` for anything but Queens, which is the correct
+default: a new game ships with no hints rather than with wrong ones. That decision
+is now the registry's `PUZZLE_TYPE_HAS_HINTS` table, read by both the engine's guard
+and the UI's button — they were two independent branches on `'queens'`, which is
+exactly how a family ends up with a visible hint button that returns nothing.
 
 ## 5. The file format
 
@@ -356,6 +359,8 @@ it, which is the failure mode worth hunting for by hand in review:
 | `dates.ts:35` `isStarPuzzleId` | the `-star` test behind the id helpers; a new suffix is not recognised. **Fixed** — renamed `isCompanionPuzzleId`, decided by suffix rather than by spelling. |
 | `HomePage.tsx:97` `familyOf` | infers the type from the id when a file 404s, so a new suffix falls back to Queens and renders under the wrong heading. **Fixed** — reads `puzzleTypeOf`. |
 | `stats.ts:22`, `share.ts:40` | literal `'queens' \| 'star-battle'` unions — new type rejected by the guard as malformed. **Fixed** — both use `PuzzleType`. |
+| `PuzzleView.tsx:92-93` | `hintsAvailable` and the piece noun both branch on `'queens'`, so a new family is announced as a star and offered a hint button that returns nothing. Not in the original list. **Fixed** — read `PUZZLE_TYPE_HAS_HINTS` and `PUZZLE_PIECE`. |
+| `InteractiveBoard.tsx:94` | the board's accessible name branches on `'queens'`, so a new family is announced as "star battle". Not in the original list. **Fixed** — the label, lowercased. |
 | `stats.ts:208-209` | per-type tallies written out by hand, so a new type has no bucket. **Fixed** — `byType` iterates the registry. |
 | `schema` `id` pattern | a new file fails validation outright (this one is loud, which is fine) |
 | `verify_replay` | compares `board` and `difficulty`, never `generator_version` — a mislabelled version passes CI |
