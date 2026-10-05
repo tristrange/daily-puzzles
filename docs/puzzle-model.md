@@ -362,7 +362,7 @@ it, which is the failure mode worth hunting for by hand in review:
 | `PuzzleView.tsx:92-93` | `hintsAvailable` and the piece noun both branch on `'queens'`, so a new family is announced as a star and offered a hint button that returns nothing. Not in the original list. **Fixed** — read `PUZZLE_TYPE_HAS_HINTS` and `PUZZLE_PIECE`. |
 | `InteractiveBoard.tsx:94` | the board's accessible name branches on `'queens'`, so a new family is announced as "star battle". Not in the original list. **Fixed** — the label, lowercased. |
 | `stats.ts:208-209` | per-type tallies written out by hand, so a new type has no bucket. **Fixed** — `byType` iterates the registry. |
-| `schema` `id` pattern | a new file fails validation outright (this one is loud, which is fine). **Loud by construction** — the suffix list is generated from `conformance/id-cases/`, so it rejects a family the parsers do not know rather than accepting anything suffixed. |
+| `schema` `id` pattern | a new file fails validation outright (this one is loud, which is fine). **Loud by construction** — the suffix list is generated from `conformance/id-cases/` by `tools/schema_ids`, so it rejects a family the parsers do not know rather than accepting anything suffixed. CI runs `--check`. |
 | `verify_replay` | compares `board` and `difficulty`, never `generator_version` — a mislabelled version passes CI |
 | `hints.ts:358` | already returns `null` — correct by default, listed so it is not "fixed" by accident |
 

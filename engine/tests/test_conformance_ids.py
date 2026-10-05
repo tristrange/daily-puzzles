@@ -13,12 +13,16 @@ from datetime import date
 from typing import Any
 
 import pytest
+from tools.schema_ids import current_pattern, expected_pattern
 
-from queens_engine.puzzle import CONFORMANCE_DIR, SCHEMA_PATH
+from queens_engine.puzzle import CONFORMANCE_DIR
 from queens_engine.rulebook import puzzle_id, split_puzzle_id
 
 CASES_DIR = CONFORMANCE_DIR / "id-cases"
-SCHEMA: dict[str, Any] = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+
+# Tried in order until one the manifest does not declare, so the negative test stays
+# valid when a family ships with any of the suffixes a real game might pick.
+_SENTINEL_SUFFIXES = ("-train", "-tracks", "-tango", "-logic", "-ladder", "-mines")
 
 
 def load_manifest() -> dict[str, Any]:
@@ -46,26 +50,39 @@ def test_every_declared_suffix_is_the_whole_id_after_the_day() -> None:
 def test_schema_accepts_every_declared_family_id() -> None:
     """The schema's `id` pattern must accept each family's id, from the same manifest.
 
-    The schema is a third copy of the suffix naming, read by both parsers. Its
-    pattern is shape only — it also accepts impossible dates like `2026-02-30`,
-    which the parsers reject — so this asserts the suffixes agree and leaves
-    calendar validity to `split_puzzle_id`.
+    The pattern is shape only — it also accepts impossible dates like `2026-02-30`,
+    which the parsers reject — so this asserts the suffixes agree and leaves calendar
+    validity to `split_puzzle_id`.
     """
-    pattern = SCHEMA["properties"]["id"]["pattern"]
-    compiled = re.compile(pattern)
+    compiled = re.compile(current_pattern())
     for entry in MANIFEST["types"]:
         identifier = f"2026-10-04{entry['suffix']}"
-        assert compiled.match(identifier), f"schema rejects {identifier} ({pattern})"
+        assert compiled.match(identifier), f"schema rejects {identifier}"
 
 
-def test_schema_rejects_an_undeclared_suffix() -> None:
+def test_checked_in_schema_pattern_is_not_stale() -> None:
+    """The pattern must be what the manifest implies, not a hand-written copy.
+
+    `tools/schema_ids` is the only thing that writes it, so this is the assertion
+    that a family added to the manifest without regenerating fails on rather than
+    quietly rejecting its own published puzzles.
+    """
+    assert current_pattern() == expected_pattern(MANIFEST)
+
+
+def test_schema_rejects_a_suffix_nobody_declared() -> None:
     """The loud failure: a family the manifest does not know cannot pass validation.
 
-    Better than a puzzle that validates and then cannot be routed, and the reason
-    the schema's suffix list is derived rather than widened to any suffix.
+    Better than a puzzle that validates and then cannot be routed, and the reason the
+    schema's suffix list is derived rather than widened to any suffix.
+
+    The sentinel is chosen as one the manifest does not declare, rather than a fixed
+    string. A hardcoded `-train` would start failing the day Train Tracks ships with
+    that suffix — correctly wired registries, and a test failing for the wrong reason.
     """
-    pattern = SCHEMA["properties"]["id"]["pattern"]
-    assert not re.compile(pattern).match("2026-10-04-train")
+    declared = {entry["suffix"] for entry in MANIFEST["types"]}
+    sentinel = next(s for s in _SENTINEL_SUFFIXES if s not in declared)
+    assert not re.compile(current_pattern()).match(f"2026-10-04{sentinel}")
 
 
 def test_every_declared_family_has_a_case() -> None:

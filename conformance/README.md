@@ -25,8 +25,11 @@ the schema's `id` pattern decides whether a file is a puzzle at all. A spelling 
 disagree on is not a crash — it is a puzzle that is published, correct, and unfindable,
 so the agreement is asserted rather than reviewed.
 
-The schema's pattern is generated from the `types` block here, which makes it a fourth
-consumer of the manifest rather than a fourth hand-written list. Its pattern is *shape*
+The schema's pattern is generated from the `types` block here by
+`python -m tools.schema_ids`, which makes it a fourth consumer of the manifest rather
+than a fourth hand-written list. `--check` is what CI and the publish job run: adding a
+family to `types` without regenerating fails on the next run rather than rejecting its
+own published puzzles. Its pattern is *shape*
 only: it accepts `2026-02-30`, because JSON Schema cannot express "the day exists", and
 `split_puzzle_id` rejects that in both languages. The two halves are asserted separately
 so widening one does not quietly widen the other.

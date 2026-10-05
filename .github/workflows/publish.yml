@@ -31,6 +31,7 @@ jobs:
         run: |
           uv run python -m tools.publish --out ../app/public/puzzles
           uv run python -m tools.verify --dir ../app/public/puzzles
+          uv run python -m tools.schema_ids --check
       - name: Commit and push
         id: commit
         run: |

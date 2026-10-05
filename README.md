@@ -96,6 +96,8 @@ uv run ruff format . # format
 uv run pyright       # strict type check
 uv run python -m tools.publish --out ../app/public/puzzles  # publish daily puzzles
 uv run python -m tools.verify --dir ../app/public/puzzles   # replay-verify them
+uv run python -m tools.schema_ids                          # regenerate the schema id pattern
+uv run python -m tools.schema_ids --check                  # fail if it is stale (CI does this)
 ```
 
 App:

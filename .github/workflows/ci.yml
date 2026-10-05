@@ -38,6 +38,8 @@ jobs:
         run: uv run ruff format --check .
       - name: Verify published puzzles
         run: uv run python -m tools.verify --dir ../app/public/puzzles
+      - name: Schema id pattern matches the manifest
+        run: uv run python -m tools.schema_ids --check
 
   app:
     runs-on: ubuntu-latest
