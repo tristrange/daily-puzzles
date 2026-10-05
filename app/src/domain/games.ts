@@ -40,6 +40,21 @@ export function isDefaultPuzzleType(puzzleType: PuzzleType): boolean {
   return PUZZLE_TYPE_SUFFIX[puzzleType] === PUZZLE_TYPE_SUFFIX[DEFAULT_PUZZLE_TYPE]
 }
 
+/**
+ * Whether a family has a hint engine.
+ *
+ * Recorded here rather than tested for in two places, because the two callers have
+ * to agree: the engine returns `null` for a family without one, and the UI hides
+ * the button. Asked separately, a new family gets a visible button that does
+ * nothing, or silently wrong hints — and a wrong hint is worse than none, since it
+ * is a claim about a board the player is looking at. One table means registering
+ * the family is also deciding this.
+ */
+export const PUZZLE_TYPE_HAS_HINTS: Record<PuzzleType, boolean> = {
+  queens: true,
+  'star-battle': false,
+}
+
 export const PUZZLE_TYPE_LABEL: Record<PuzzleType, string> = {
   queens: 'Queens',
   'star-battle': 'Star Battle',

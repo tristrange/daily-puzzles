@@ -16,6 +16,7 @@ import {
   toggleQueen,
   type GameState,
 } from '../domain/game'
+import { PUZZLE_PIECE, PUZZLE_TYPE_HAS_HINTS } from '../domain/games'
 import { firstHint, type Hint } from '../domain/hints'
 import type { Puzzle } from '../domain/puzzle'
 import { PuzzleNotFoundError, loadPuzzle } from '../lib/puzzles'
@@ -87,10 +88,11 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
     return cellSet
   }, [conflictList])
 
-  // The hint engine is a Queens port; a Star Battle board plays without hints
-  // rather than with wrong ones (see `firstHint`).
-  const hintsAvailable = puzzle.board.puzzleType === 'queens'
-  const piece = puzzle.board.puzzleType === 'queens' ? 'queen' : 'star'
+  // Whether this family has a hint engine, and what its pieces are called, both read
+  // from the registry rather than branched on: the hint engine is a Queens port, and a
+  // family without one plays without hints rather than with wrong ones (see `firstHint`).
+  const hintsAvailable = PUZZLE_TYPE_HAS_HINTS[puzzle.puzzleType]
+  const piece = PUZZLE_PIECE[puzzle.puzzleType].noun
 
   const solved = isSolved(game)
   const shownTime = solvedAt === null ? elapsed : solvedAt - startedAt
