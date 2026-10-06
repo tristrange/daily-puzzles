@@ -21,6 +21,11 @@ the wrong rule and quietly stop testing what it claims to, so each reject case
 names the message it expects. Two fixtures are star-battle boards for exactly this
 reason — on a queens board the capacity rule they exist to test is masked.
 
+The divisibility fixture is a star-battle board too, but because it has to be.
+Queens puts exactly one queen in each of `size` regions, so its capacities always
+total `size` and the rule can never fail there; only a board whose regions hold
+other numbers can describe a game with no whole stars-per-row.
+
 ## Relationship to the other suites
 
 `schema-cases/` proves the two languages *read the same bytes*. This proves they

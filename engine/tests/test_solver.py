@@ -475,18 +475,6 @@ class TestCapacityParameterisation:
         assert count_solutions(board, limit=BIG) == 2
         assert count_solutions(board, limit=BIG) == oracle_count(board)
 
-    def test_inconsistent_capacities_are_reported(self) -> None:
-        # Structurally fine, but the capacities total 5, which no whole number
-        # of 4-cell rows can hold.
-        board = Board(
-            size=4,
-            regions=(2, 3, 3, 3, 2, 2, 0, 0, 2, 2, 1, 0, 2, 2, 1, 0),
-            region_capacity=(1, 1, 1, 2),
-            puzzle_type=PuzzleType.STAR_BATTLE,
-        )
-        with pytest.raises(SolverError, match="not divisible"):
-            count_solutions(board)
-
     def test_a_board_with_no_arrangement_has_no_solutions(self) -> None:
         # Region 0 needs two stars but every cell of it that could take one
         # forces a pair to touch, so the search finds nothing.

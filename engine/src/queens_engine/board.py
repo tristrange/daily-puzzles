@@ -70,24 +70,11 @@ class Board:
     def stars_per_row(self) -> int:
         """How many stars every row and every column must hold.
 
-        Neither type stores this number. Queens gets one per line because every
-        region holds one star; Star Battle gets k because its regions hold k
-        between them. Both fall out of the same arithmetic the solver already
-        does: the regions partition the grid, so their capacities total
-        `k * size`, and k is that total divided by the size.
-
-        Deriving it from the capacities rather than reading a stored value means
-        there is no second copy of k to fall out of step with the regions.
+        Neither type stores this number, and neither needs to: see
+        `derive_stars_per_row`, which both this property and `validate_board`
+        go through so the two can never disagree about what k is.
         """
-        total = sum(self.region_capacity)
-        if total % self.size != 0:
-            raise BoardError(
-                f"capacities total {total}, which is not divisible by the grid size {self.size}"
-            )
-        stars = total // self.size
-        if not 1 <= stars <= self.size:
-            raise BoardError(f"capacities imply {stars} stars per row, outside 1..{self.size}")
-        return stars
+        return derive_stars_per_row(self.region_capacity, self.size)
 
     def index(self, row: int, col: int) -> int:
         return row * self.width + col
@@ -128,6 +115,35 @@ class Board:
         return tuple(found)
 
 
+def derive_stars_per_row(region_capacity: tuple[int, ...], size: int) -> int:
+    """How many marks every row and every column of a board must hold.
+
+    Neither puzzle type stores this number. Queens gets one per line because
+    every region holds one star; Star Battle gets k because its regions hold k
+    between them. Both fall out of the same arithmetic the solver already does:
+    the regions partition the grid, so their capacities total `k * size`, and k
+    is that total divided by the size.
+
+    Deriving it from the capacities rather than reading a stored value means
+    there is no second copy of k to fall out of step with the regions. It also
+    makes the derivation a *rule*: capacities that do not divide evenly describe
+    no playable game. So both callers come here — `validate_board` to refuse a
+    board that has no k, `Board.stars_per_row` to report the k that refusal
+    already guaranteed — and they cannot disagree about it.
+
+    Raises `BoardError` when the capacities imply no whole number in range.
+    """
+    total = sum(region_capacity)
+    if total % size != 0:
+        raise BoardError(
+            f"capacities total {total}, which is not divisible by the grid size {size}"
+        )
+    stars = total // size
+    if not 1 <= stars <= size:
+        raise BoardError(f"capacities imply {stars} stars per row, outside 1..{size}")
+    return stars
+
+
 def validate_board(board: Board) -> None:
     """Raise `BoardError` unless `board` satisfies every structural guarantee."""
     if not MIN_SIZE <= board.size <= MAX_SIZE:
@@ -166,6 +182,20 @@ def validate_board(board: Board) -> None:
             raise BoardError(f"region {region_id} capacity {capacity} outside [1, {len(cells)}]")
         if not _is_orthogonally_connected(board, cells):
             raise BoardError(f"region {region_id} is not orthogonally connected")
+
+    # Last, because it is the only rule that reads every capacity at once rather
+    # than each against its own region. The regions partition the grid, so a set
+    # of capacities is only playable if it totals a whole multiple of the size;
+    # otherwise there is no whole number of marks per line and the game cannot
+    # end. That failure is silent in a way the checks above are not: the app
+    # divides anyway, gets a fractional stars-per-row, and asks the player for a
+    # piece count the row limits make unreachable — a puzzle that can never be
+    # won and never says why.
+    #
+    # Given the capacity check in the loop above, divisibility is the whole
+    # rule: the capacities sum to at least one and at most `size * size`, so a
+    # total that divides by the size lands the quotient in `1..size` on its own.
+    derive_stars_per_row(board.region_capacity, board.size)
 
 
 def _is_orthogonally_connected(board: Board, cells: tuple[int, ...]) -> bool:

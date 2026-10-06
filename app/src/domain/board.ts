@@ -164,6 +164,25 @@ export function validateBoard(board: Board): void {
       throw new BoardError(`region ${regionId} is not orthogonally connected`)
     }
   }
+
+  // Last, because it is the only rule that reads every capacity at once rather
+  // than each against its own region. The regions partition the grid, so a set
+  // of capacities is only playable if it totals a whole multiple of the size;
+  // otherwise there is no whole number of marks per line and the game cannot
+  // end. That failure is silent in a way the checks above are not: `starsPerRow`
+  // divides anyway, gets a fraction, and `isSolved` asks the player for a piece
+  // count the row limits make unreachable — a puzzle that can never be won and
+  // never says why.
+  //
+  // Given the capacity check in the loop above, divisibility is the whole rule:
+  // the capacities sum to at least one and at most `size * size`, so a total
+  // that divides by the size lands the quotient in `1..size` on its own.
+  const total = board.regionCapacity.reduce((sum, capacity) => sum + capacity, 0)
+  if (total % board.size !== 0) {
+    throw new BoardError(
+      `capacities total ${total}, which is not divisible by the grid size ${board.size}`,
+    )
+  }
 }
 
 // Regions are only required to be 4-connected. An earlier version also rejected
