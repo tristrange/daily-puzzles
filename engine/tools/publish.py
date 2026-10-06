@@ -89,10 +89,12 @@ def _recent_star_layouts(
 ) -> set[tuple[tuple[int, ...], ...]]:
     """The layouts already published in the `window` days before `before`.
 
-    This is what the repeat check measures against. Only committed files count,
-    so a day's fate is decided by what is already on disk, never by a transient:
-    rerunning the tool yields the same boards. Layouts are compared as shapes, so
-    a past day of another size can never accidentally match — different sizes
+    This is what the repeat check measures against on a given day. Only files on
+    disk count, so a day's fate is decided by what is already committed, never by
+    a transient: rerunning the tool yields the same boards. The window includes
+    the day exactly `window` days back and excludes `before` itself, so "the
+    previous two weeks" is a full fourteen days. Layouts are compared as shapes,
+    so a past day of another size can never accidentally match — different sizes
     have different row counts.
     """
     recent: set[tuple[tuple[int, ...], ...]] = set()
@@ -101,7 +103,7 @@ def _recent_star_layouts(
         if split is None:
             continue
         day, puzzle_type = split
-        if not (before - timedelta(days=window) < day < before):
+        if not (before - timedelta(days=window) <= day < before):
             continue
         if puzzle_type is PuzzleType.STAR_BATTLE:
             recent.add(_star_layout(load_puzzle(day_id)))
@@ -232,8 +234,6 @@ def main(argv: list[str] | None = None) -> int:
     else:
         start = today
 
-    recent_layouts = _recent_star_layouts(args.out, start)
-
     window = start
     while window <= end:
         for book in rulebooks():
@@ -246,15 +246,19 @@ def main(argv: list[str] | None = None) -> int:
                 continue
             seed = seed_from_date(day_id)
             try:
-                puzzle, score = _generate(book.puzzle_type, day_id, seed, recent_layouts)
+                puzzle, score = _generate(
+                    book.puzzle_type,
+                    day_id,
+                    seed,
+                    _recent_star_layouts(args.out, window),
+                )
             except RuntimeError as error:
                 print(f"error: {error}", file=sys.stderr)
                 return 1
             (args.out / f"{day_id}.json").write_text(dumps_puzzle(puzzle), encoding="utf-8")
-            if book.puzzle_type is PuzzleType.STAR_BATTLE:
-                # A layout published this run must hold back later days in the
-                # window as firmly as one published before the run.
-                recent_layouts.add(_star_layout(puzzle))
+            # A layout written this run is on disk and therefore in the window
+            # for every later day, so the next iteration's scan picks it up; no
+            # bookkeeping of what this run itself produced is needed.
             # An unrated board says so rather than printing a number that means
             # something weaker than the same number on a ramped board.
             band = (

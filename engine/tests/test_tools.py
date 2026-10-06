@@ -526,7 +526,8 @@ class TestStarLayoutRepeat:
     def test_repeat_window_reads_only_recent_star_files(self, tmp_path: Path) -> None:
         before = date(2026, 10, 10)
         recent_day = date(2026, 9, 27)  # before - 13
-        boundary_day = date(2026, 9, 26)  # before - 14: outside the window
+        boundary_day = date(2026, 9, 26)  # before - 14: inclusive edge
+        far_day = date(2026, 9, 25)  # before - 15: outside the window
         last_day = date(2026, 10, 9)  # before - 1
         after_day = date(2026, 10, 11)  # after `before`
 
@@ -534,6 +535,7 @@ class TestStarLayoutRepeat:
             (recent_day, self.COL_BOARD),
             (last_day, self.ROW_BOARD),
             (boundary_day, self.BLOCK_BOARD),
+            (far_day, self.COL_BOARD),
             (after_day, self.ROW_BOARD),
         ):
             day_id = f"{day.isoformat()}-star"
@@ -567,6 +569,9 @@ class TestStarLayoutRepeat:
             ),
             publish._star_layout(  # pyright: ignore[reportPrivateUsage]
                 self._star_puzzle(f"{last_day.isoformat()}-star", 7, self.ROW_BOARD)
+            ),
+            publish._star_layout(  # pyright: ignore[reportPrivateUsage]
+                self._star_puzzle(f"{boundary_day.isoformat()}-star", 7, self.BLOCK_BOARD)
             ),
         }
         assert recent == expected
