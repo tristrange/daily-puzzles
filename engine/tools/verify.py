@@ -29,6 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from queens_engine import (
     LEVEL_NAMES,
     RAMP_START,
+    STAR_BATTLE_SIZE,
     STAR_LAYOUT_WINDOW_DAYS,
     Puzzle,
     PuzzleParseError,
@@ -61,13 +62,17 @@ def _star_repeat_problem(
 ) -> str | None:
     """Why a star puzzle breaks the repeat window, or None if it does not.
 
-    Non-star puzzles are not in the repeat rule, and star boards only matter
+    Non-star puzzles are not in the repeat rule. So is any star board of a size
+    other than the current published one: layouts are row-counted, so an 8x8
+    arrangement can never equal a 9x9 one, and the pre-9x9 era board repeated
+    its two mirror images by design — that is the degeneracy the size change
+    retired, not a defect this check should reopen. Star boards only matter
     against layouts published on a day within `STAR_LAYOUT_WINDOW_DAYS` before
     them. `seen` holds those layouts in ascending day order, so once a file is
     more than the window behind, nothing earlier can be closer and the scan can
     stop. A board that passes is appended, holding later files to the same rule.
     """
-    if puzzle.puzzle_type is not PuzzleType.STAR_BATTLE:
+    if puzzle.puzzle_type is not PuzzleType.STAR_BATTLE or puzzle.board.size != STAR_BATTLE_SIZE:
         return None
     layout = star_layout(puzzle)
     for other_day, other_layout in seen:

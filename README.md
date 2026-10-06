@@ -703,7 +703,8 @@ on either side of it — the generator is stars-first, so an unrelated seed can
 land on the same arrangement, and boards close together that shared one would be
 playable from memory, recreating the degeneracy the 9x9 size just removed. The
 same window is enforced on committed files by `tools.verify`, so a duplicate
-cannot slip into the archive through any path.
+cannot slip into the archive through any path (again, among boards of the
+current published size — the pre-9x9 archive predates the rule).
 
 Two facts the star path depends on. First, **not every size admits a star
 count**: two non-touching stars per row need a row span of three columns and

@@ -82,7 +82,9 @@ layout repeats another published within two weeks on either side — the
 generator is stars-first, so two unrelated seeds can land on the same
 arrangement, and boards close together that shared one would be playable from
 memory. `tools.verify` enforces the same window over committed files, so a star
-board that reached the archive some other way is rejected at merge time too.
+board that reached the archive some other way is rejected at merge time too
+(only boards of the current published size are compared; the pre-9x9 archive
+predates the rule and can never match it by shape anyway).
 
 ```sh
 python -m tools.generate --date 2026-10-04 --type star-battle            # 9x9, 2 stars

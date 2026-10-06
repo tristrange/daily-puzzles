@@ -264,6 +264,25 @@ class TestVerify:
 
         assert result == 0
 
+    def test_ignores_repeats_between_retired_size_star_boards(self, tmp_path: Path) -> None:
+        """Historical 8x8 star boards repeated their two mirror layouts by
+        design — the degeneracy the 9x9 size change retired. Layouts are
+        row-counted, so they can never match a current board, and verification
+        must not reopen the archive that predates the fix."""
+        for day_id in ("2026-09-27-star", "2026-09-28-star"):
+            puzzle = generate_puzzle(
+                seed=7,
+                puzzle_id=day_id,
+                config=GenerationConfig(
+                    size=8, stars_per_row=2, puzzle_type=PuzzleType.STAR_BATTLE
+                ),
+            )
+            (tmp_path / f"{day_id}.json").write_text(dumps_puzzle(puzzle), encoding="utf-8")
+
+        result = verify.main(["--dir", str(tmp_path)])
+
+        assert result == 0
+
     def _write_star(self, out_dir: Path, day_id: str, seed: int) -> Puzzle:
         puzzle = rulebook_for(PuzzleType.STAR_BATTLE).generate(seed=seed, puzzle_id=day_id)
         (out_dir / f"{day_id}.json").write_text(dumps_puzzle(puzzle), encoding="utf-8")
