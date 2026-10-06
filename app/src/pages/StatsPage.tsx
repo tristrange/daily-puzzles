@@ -2,7 +2,13 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatPuzzleLabel, puzzleOfToday } from '../domain/dates'
 import { formatTime } from '../domain/game'
-import { clearStats, mostRecentSolves, readStoredStats, summarise } from '../lib/stats'
+import {
+  clearStats,
+  formatSolveCounts,
+  mostRecentSolves,
+  readStoredStats,
+  summarise,
+} from '../lib/stats'
 
 /** How many solves the page lists under "Recent solves". */
 const RECENT_LIMIT = 10
@@ -25,6 +31,9 @@ export function StatsPage() {
   const [todayId] = useState(() => puzzleOfToday(new Date(), timeZone))
   const stats = summarise(records, todayId)
   const recent = mostRecentSolves(records, RECENT_LIMIT)
+  // Which families the history actually spans: never padded out with one the
+  // player has not played, and never missing one they have.
+  const solveCounts = formatSolveCounts(stats.byType)
 
   const forget = () => {
     setRecords([...clearStats()])
@@ -70,11 +79,7 @@ export function StatsPage() {
               </div>
             ))}
           </dl>
-          {stats.byType['star-battle'] > 0 && (
-            <p className="status">
-              {stats.byType.queens} Queens and {stats.byType['star-battle']} Star Battle.
-            </p>
-          )}
+          {solveCounts !== null && <p className="status">{solveCounts}.</p>}
           <h3 className="page-title">Recent solves</h3>
           <ul className="archive">
             {recent.map((record) => (

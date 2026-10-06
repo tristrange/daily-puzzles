@@ -16,6 +16,7 @@
 
 import { PUZZLE_TYPES, type PuzzleType } from '../domain/board'
 import { isPuzzleId, parsePuzzleDate, previousPuzzleIds, puzzleDay } from '../domain/dates'
+import { PUZZLE_TYPE_LABEL } from '../domain/games'
 
 /** One finished puzzle. `hints` is how many hints were actually shown, not asked for. */
 export type SolveRecord = {
@@ -215,6 +216,33 @@ export function summarise(records: readonly SolveRecord[], todayId: string): Sta
       ]),
     ) as Record<PuzzleType, number>,
   }
+}
+
+/**
+ * The per-family solve counts as one sentence, or `null` when there is no split
+ * to report.
+ *
+ * Built by walking `PUZZLE_TYPES` rather than naming families in the copy: the
+ * stats page used to print "N Queens and M Star Battle" literally, so a third
+ * family's solves would have been left out of the sentence with nothing saying
+ * so, and a family with no solves was printed as a zero. The wording comes from
+ * `PUZZLE_TYPE_LABEL`, so a rename has one home and lands here too.
+ *
+ * `null` below two families because a split of one is just the total again —
+ * the same instinct as the old gate, which hid the line until a second family
+ * had a solve, without its habit of reporting `0 Queens` to get there.
+ *
+ * The list is joined by `Intl.ListFormat` rather than by hand so that a third
+ * family is punctuation and not a branch: `"A and B"`, `"A, B, and C"`, with
+ * the locale pinned because this is copy, not a localisation.
+ */
+export function formatSolveCounts(byType: Readonly<Record<PuzzleType, number>>): string | null {
+  const parts = PUZZLE_TYPES.flatMap((type) => {
+    const count = byType[type] ?? 0
+    return count > 0 ? [`${count} ${PUZZLE_TYPE_LABEL[type]}`] : []
+  })
+  if (parts.length < 2) return null
+  return new Intl.ListFormat('en', { style: 'long', type: 'conjunction' }).format(parts)
 }
 
 /**

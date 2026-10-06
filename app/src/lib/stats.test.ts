@@ -1,12 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { PUZZLE_TYPES } from '../domain/board'
+import { PUZZLE_TYPES, type PuzzleType } from '../domain/board'
 import { puzzleIdFor } from '../domain/dates'
+import { PUZZLE_TYPE_LABEL } from '../domain/games'
 import {
   STATS_STORAGE_KEY,
   addSolve,
   clearStats,
   bestStreak,
   currentStreak,
+  formatSolveCounts,
   mostRecentSolves,
   parseStats,
   readStoredStats,
@@ -311,6 +313,34 @@ describe('summarise', () => {
     )
     expect(stats.averageMs).toBe(100_001)
     expect(Number.isInteger(stats.averageMs)).toBe(true)
+  })
+})
+
+describe('formatSolveCounts', () => {
+  it('spells out both families with their counts', () => {
+    expect(formatSolveCounts({ queens: 3, 'star-battle': 5 })).toBe('3 Queens and 5 Star Battle')
+  })
+
+  it('says nothing rather than reporting a family the player has not played', () => {
+    // The line used to gate on Star Battle alone, so a Queens-only history saw
+    // no split at all while a Star Battle-only one read "0 Queens and 5 Star
+    // Battle." A split of one is the total again, whichever family it is.
+    expect(formatSolveCounts({ queens: 12, 'star-battle': 0 })).toBeNull()
+    expect(formatSolveCounts({ queens: 0, 'star-battle': 5 })).toBeNull()
+    expect(formatSolveCounts({ queens: 0, 'star-battle': 0 })).toBeNull()
+  })
+
+  it('names every registered family with a count, from the registry rather than the copy', () => {
+    const byType = Object.fromEntries(PUZZLE_TYPES.map((type, index) => [type, index + 1])) as Record<
+      PuzzleType,
+      number
+    >
+    // `?? ''` so that a formatter returning null fails here on the first family
+    // rather than on a separate assertion about being non-empty.
+    const sentence = formatSolveCounts(byType) ?? ''
+    for (const type of PUZZLE_TYPES) {
+      expect(sentence).toContain(`${byType[type]} ${PUZZLE_TYPE_LABEL[type]}`)
+    }
   })
 })
 
