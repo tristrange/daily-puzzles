@@ -131,10 +131,11 @@ class TestGeneration:
             assert through == direct
 
     def test_a_type_publishes_at_its_own_size(self) -> None:
-        # Star Battle is pinned to 8x8 and Queens defaults to the generator's; the
-        # point is that neither is hardcoded in a tool.
+        # Star Battle is pinned to 9x9 (8x8 would degenerate to two mirror-image
+        # row patterns) and Queens defaults to the generator's; the point is that
+        # neither is hardcoded in a tool.
         assert rulebook_for(PuzzleType.QUEENS).default_size == 8
-        assert rulebook_for(PuzzleType.STAR_BATTLE).default_size == 8
+        assert rulebook_for(PuzzleType.STAR_BATTLE).default_size == 9
         assert rulebook_for(PuzzleType.QUEENS).default_stars_per_row is None
         assert rulebook_for(PuzzleType.STAR_BATTLE).default_stars_per_row == 2
 

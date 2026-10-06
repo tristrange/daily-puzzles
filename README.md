@@ -694,6 +694,11 @@ here rather than left as "not implemented yet". Making Star Battle logic-gated
 would mean changing the boards — the genre's difficulty lives in the shapes a
 generator can rarely be talked into — which is a design decision, not a bug fix.
 
+The daily star board is 9x9 rather than 8x8 for a related reason: at 8x8 with
+two stars per row the row patterns collapse to two mirror images, so the board
+gave itself away after a star or two, while 9x9 leaves 664 arrangements to
+solve. The size is pinned in the rulebook rather than ramped.
+
 Two facts the star path depends on. First, **not every size admits a star
 count**: two non-touching stars per row need a row span of three columns and
 each row shadows its neighbour, so within the generator's 5–9 range only 8x8 and

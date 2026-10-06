@@ -34,7 +34,7 @@ from queens_engine import (
 
 #: The board size windowing tests publish at. 5x5 is the fastest thing the
 #: generator makes and none of these tests care about the size. The companion
-#: keeps its real 8x8: Star Battle is only feasible at 8x8 and 9x9, so there is
+#: keeps its real 9x9: Star Battle is only feasible at 8x8 and 9x9, so there is
 #: nothing smaller to pin it to.
 SMALL_SIZE = 5
 
@@ -324,7 +324,7 @@ class TestVerifyRamp:
         assert verify.main(["--dir", str(tmp_path)]) == 0
 
     def test_never_checks_a_star_companion(self, tmp_path: Path) -> None:
-        # Star Battle is off the ramp, so its 8x8 size is not a violation even on
+        # Star Battle is off the ramp, so its 9x9 size is not a violation even on
         # a day whose Queens target is 7x7, and it records no band. The board has
         # to be a real Star Battle board for this to be testing the exemption: a
         # queens board under a -star name is a mislabelled file, which is the next
