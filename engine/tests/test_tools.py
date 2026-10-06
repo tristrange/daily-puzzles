@@ -9,6 +9,7 @@ from contextlib import contextmanager, redirect_stdout
 from dataclasses import replace
 from datetime import date, timedelta
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
@@ -20,8 +21,11 @@ from queens_engine import (
     MIN_LEVEL,
     RAMP_ATTEMPTS,
     RAMP_START,
+    STAR_LAYOUT_WINDOW_DAYS,
+    Board,
     DifficultyTarget,
     GenerationConfig,
+    Puzzle,
     PuzzleType,
     dumps_puzzle,
     generate_puzzle,
@@ -29,12 +33,13 @@ from queens_engine import (
     parse_puzzle,
     rulebook_for,
     score_difficulty,
+    star_layout,
     target_for,
 )
 
 #: The board size windowing tests publish at. 5x5 is the fastest thing the
 #: generator makes and none of these tests care about the size. The companion
-#: keeps its real 8x8: Star Battle is only feasible at 8x8 and 9x9, so there is
+#: keeps its real 9x9: Star Battle is only feasible at 8x8 and 9x9, so there is
 #: nothing smaller to pin it to.
 SMALL_SIZE = 5
 
@@ -226,6 +231,83 @@ class TestVerify:
         assert result == 1
         assert "not in canonical form" in _capture_verify(tmp_path)
 
+    def test_rejects_a_star_board_that_repeats_a_recent_layout(self, tmp_path: Path) -> None:
+        """A duplicate can reach the archive with a replay-valid seed and no
+        trip through publish; verification of the committed files must catch it."""
+        self._write_star(tmp_path, "2026-10-05-star", 7)
+        self._write_star(tmp_path, "2026-10-06-star", 7)
+
+        result = verify.main(["--dir", str(tmp_path)])
+        captured = _capture_verify(tmp_path)
+
+        assert result == 1
+        assert "2026-10-06-star.json: FAILED" in captured
+        assert "repeats the solution layout published on 2026-10-05" in captured
+
+    def test_accepts_a_star_board_with_a_distinct_recent_layout(self, tmp_path: Path) -> None:
+        """The counterpart to the rejection above, so the check is not always-fail."""
+        first = self._write_star(tmp_path, "2026-10-05-star", 7)
+        second = self._write_star(tmp_path, "2026-10-06-star", 8)
+        assert star_layout(first) != star_layout(second)
+
+        result = verify.main(["--dir", str(tmp_path)])
+
+        assert result == 0
+
+    def test_accepts_a_star_layout_repeated_fifteen_days_apart(self, tmp_path: Path) -> None:
+        """Same seed, same arrangement, but the boards sit `WINDOW_DAYS + 1`
+        apart, which is outside the fourteen-day window and therefore legal."""
+        self._write_star(tmp_path, "2026-09-15-star", 7)
+        self._write_star(tmp_path, "2026-09-30-star", 7)
+
+        result = verify.main(["--dir", str(tmp_path)])
+
+        assert result == 0
+
+    def test_rejects_a_repeat_hidden_behind_an_out_of_window_board(self, tmp_path: Path) -> None:
+        """The in-window comparison must not stop at the oldest entry.
+
+        Once any board more than fourteen days old is in the archive, an
+        ascending scan meets that old entry first and would give up before ever
+        comparing against layouts published yesterday, silently accepting a
+        duplicate. The scan runs newest-first, so the recent board here is still
+        caught.
+        """
+        self._write_star(tmp_path, "2026-09-15-star", 7)  # outside Oct window
+        self._write_star(tmp_path, "2026-09-30-star", 8)
+        self._write_star(tmp_path, "2026-10-01-star", 8)  # repeats 09-30
+
+        result = verify.main(["--dir", str(tmp_path)])
+        captured = _capture_verify(tmp_path)
+
+        assert result == 1
+        assert "2026-10-01-star.json: FAILED" in captured
+        assert "repeats the solution layout published on 2026-09-30" in captured
+
+    def test_ignores_repeats_between_retired_size_star_boards(self, tmp_path: Path) -> None:
+        """Historical 8x8 star boards repeated their two mirror layouts by
+        design — the degeneracy the 9x9 size change retired. Layouts are
+        row-counted, so they can never match a current board, and verification
+        must not reopen the archive that predates the fix."""
+        for day_id in ("2026-09-27-star", "2026-09-28-star"):
+            puzzle = generate_puzzle(
+                seed=7,
+                puzzle_id=day_id,
+                config=GenerationConfig(
+                    size=8, stars_per_row=2, puzzle_type=PuzzleType.STAR_BATTLE
+                ),
+            )
+            (tmp_path / f"{day_id}.json").write_text(dumps_puzzle(puzzle), encoding="utf-8")
+
+        result = verify.main(["--dir", str(tmp_path)])
+
+        assert result == 0
+
+    def _write_star(self, out_dir: Path, day_id: str, seed: int) -> Puzzle:
+        puzzle = rulebook_for(PuzzleType.STAR_BATTLE).generate(seed=seed, puzzle_id=day_id)
+        (out_dir / f"{day_id}.json").write_text(dumps_puzzle(puzzle), encoding="utf-8")
+        return puzzle
+
 
 class TestVerifyRamp:
     """The ramp check has to fail verification, not merely note a problem.
@@ -324,7 +406,7 @@ class TestVerifyRamp:
         assert verify.main(["--dir", str(tmp_path)]) == 0
 
     def test_never_checks_a_star_companion(self, tmp_path: Path) -> None:
-        # Star Battle is off the ramp, so its 8x8 size is not a violation even on
+        # Star Battle is off the ramp, so its 9x9 size is not a violation even on
         # a day whose Queens target is 7x7, and it records no band. The board has
         # to be a real Star Battle board for this to be testing the exemption: a
         # queens board under a -star name is a mislabelled file, which is the next
@@ -425,3 +507,151 @@ def _capture_verify(out_dir: Path) -> str:
     with redirect_stdout(buffer):
         verify.main(["--dir", str(out_dir)])
     return buffer.getvalue()
+
+
+class TestStarLayoutRepeat:
+    """A new star board must not replay a solution layout from the recent past.
+
+    The generator is stars-first, so two unrelated seeds can land on the same
+    arrangement; back-to-back published days that share one would be playable
+    from memory, which is the 8x8 degeneracy `STAR_BATTLE_SIZE` was moved to
+    9x9 to avoid. The repeat window is publish policy, so these tests drive
+    `publish._generate` and `publish._nearby_star_layouts` directly.
+    """
+
+    ROW_BOARD = Board(
+        size=8,
+        regions=tuple(i // 8 for i in range(64)),
+        region_capacity=(2,) * 8,
+        puzzle_type=PuzzleType.STAR_BATTLE,
+    )
+    #: Typed stand-ins for "some layout" so the mocked `star_layout` matches
+    #: the real signature; the actual values never reach a board.
+    REPEAT_LAYOUT: tuple[tuple[int, ...], ...] = ((0, 0),)
+    FRESH_LAYOUT: tuple[tuple[int, ...], ...] = ((1, 1),)
+    COL_BOARD = Board(
+        size=8,
+        regions=tuple(i % 8 for i in range(64)),
+        region_capacity=(2,) * 8,
+        puzzle_type=PuzzleType.STAR_BATTLE,
+    )
+    BLOCK_BOARD = Board(
+        size=8,
+        regions=tuple((i // 16) * 2 + (i % 8) // 4 for i in range(64)),
+        region_capacity=(2,) * 8,
+        puzzle_type=PuzzleType.STAR_BATTLE,
+    )
+
+    def _star_puzzle(self, day_id: str, seed: int, board: Board = ROW_BOARD) -> Puzzle:
+        return Puzzle(
+            id=day_id,
+            puzzle_type=PuzzleType.STAR_BATTLE,
+            size=8,
+            seed=seed,
+            generator_version=2,
+            board=board,
+        )
+
+    def _book(self, seeds: list[int]) -> SimpleNamespace:
+        def fake_generate(*, seed: int, puzzle_id: str) -> Puzzle:
+            seeds.append(seed)
+            return self._star_puzzle(puzzle_id, seed)
+
+        return SimpleNamespace(
+            on_ramp=False, puzzle_type=PuzzleType.STAR_BATTLE, generate=fake_generate
+        )
+
+    def test_publish_bumps_a_seed_until_the_layout_stops_repeating(self) -> None:
+        seeds: list[int] = []
+        with (
+            patch.object(publish, "rulebook_for", return_value=self._book(seeds)),
+            patch.object(
+                publish,
+                "star_layout",
+                side_effect=[self.REPEAT_LAYOUT, self.REPEAT_LAYOUT, self.FRESH_LAYOUT],
+            ),
+        ):
+            puzzle, score = publish._generate(  # pyright: ignore[reportPrivateUsage]
+                PuzzleType.STAR_BATTLE, "2026-10-07-star", 7, {self.REPEAT_LAYOUT}
+            )
+        assert score is None
+        assert puzzle.seed == 9
+        assert seeds == [7, 8, 9]
+
+    def test_publish_keeps_the_seed_when_the_layout_is_new(self) -> None:
+        seeds: list[int] = []
+        with (
+            patch.object(publish, "rulebook_for", return_value=self._book(seeds)),
+            patch.object(publish, "star_layout", return_value=self.FRESH_LAYOUT),
+        ):
+            puzzle, _score = publish._generate(  # pyright: ignore[reportPrivateUsage]
+                PuzzleType.STAR_BATTLE, "2026-10-07-star", 7
+            )
+        assert puzzle.seed == 7
+        assert seeds == [7]
+
+    def test_publish_gives_up_when_every_layout_repeats(self) -> None:
+        seeds: list[int] = []
+        with (
+            patch.object(publish, "rulebook_for", return_value=self._book(seeds)),
+            patch.object(publish, "star_layout", return_value=self.REPEAT_LAYOUT),
+            pytest.raises(RuntimeError, match="no star-battle board"),
+        ):
+            publish._generate(  # pyright: ignore[reportPrivateUsage]
+                PuzzleType.STAR_BATTLE, "2026-10-07-star", 7, {self.REPEAT_LAYOUT}
+            )
+        assert len(seeds) == publish.LOGIC_ONLY_TRIES
+
+    def test_repeat_window_reads_star_files_on_either_side(self, tmp_path: Path) -> None:
+        day = date(2026, 10, 10)
+        past = day - timedelta(days=STAR_LAYOUT_WINDOW_DAYS)  # inclusive edge
+        past_out = past - timedelta(days=1)  # outside the window
+        last = day - timedelta(days=1)
+        future = day + timedelta(days=1)  # a backfill must hold back
+        future_edge = day + timedelta(days=STAR_LAYOUT_WINDOW_DAYS)  # inclusive edge
+        future_out = future_edge + timedelta(days=1)  # outside the window
+
+        for dated, board in (
+            (past, self.COL_BOARD),
+            (last, self.ROW_BOARD),
+            (future, self.BLOCK_BOARD),
+            (future_edge, self.COL_BOARD),
+            (past_out, self.COL_BOARD),
+            (future_out, self.ROW_BOARD),
+        ):
+            day_id = f"{dated.isoformat()}-star"
+            (tmp_path / f"{day_id}.json").write_text(
+                dumps_puzzle(self._star_puzzle(day_id, seed=7, board=board)), encoding="utf-8"
+            )
+        (tmp_path / "2026-10-08.json").write_text(
+            dumps_puzzle(
+                Puzzle(
+                    id="2026-10-08",
+                    puzzle_type=PuzzleType.QUEENS,
+                    size=8,
+                    seed=7,
+                    generator_version=1,
+                    board=Board(
+                        size=8,
+                        regions=tuple(i // 8 for i in range(64)),
+                        region_capacity=(1,) * 8,
+                        puzzle_type=PuzzleType.QUEENS,
+                    ),
+                )
+            ),
+            encoding="utf-8",
+        )
+
+        recent = publish._nearby_star_layouts(  # pyright: ignore[reportPrivateUsage]
+            tmp_path, day
+        )
+
+        # The queens file, the day twice-removed from the window on either side,
+        # and the day itself (not yet on disk) all stay out; the fourteen-day
+        # edges and everything between are in, from both directions.
+        expected = {
+            star_layout(self._star_puzzle(f"{past.isoformat()}-star", 7, self.COL_BOARD)),
+            star_layout(self._star_puzzle(f"{last.isoformat()}-star", 7, self.ROW_BOARD)),
+            star_layout(self._star_puzzle(f"{future.isoformat()}-star", 7, self.BLOCK_BOARD)),
+        }
+        assert recent == expected

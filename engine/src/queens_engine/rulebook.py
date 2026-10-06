@@ -43,7 +43,10 @@ from .solver import count_solutions as count_board_solutions
 
 #: Star Battle stays at one size until the deduction engine can rate a star board,
 #: so there is nothing to ramp towards and the size is pinned rather than tuned.
-STAR_BATTLE_SIZE: Final[int] = 8
+#: It pins at 9x9, not 8x8: two-star 8x8 boards admit only two mirror-image row
+#: patterns, so the board gives itself away after a star or two, while 9x9 keeps
+#: 664 distinct arrangements to solve.
+STAR_BATTLE_SIZE: Final[int] = 9
 
 #: A Star Battle board is played with two stars per row and column.
 STAR_BATTLE_STARS: Final[int] = 2

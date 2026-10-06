@@ -74,13 +74,21 @@ Two facts the star path depends on, both worth knowing before extending it:
   `firstHint` returns `null` rather than reasoning in one star about a board
   that holds two.
 
-`tools.publish.py` is still Queens-only, and no star file is committed, so
-deciding which day is a star day is a content decision that has not been made
-yet. The app can play one as soon as it exists.
+Every day carries a star companion: `tools.publish.py` fills it beside the
+queens board through the same windowing, and each star file replays from its
+seed at the type's pinned 9x9, so there is no content decision to make about
+which day is a star day. Publish also refuses a star board whose solution
+layout repeats another published within two weeks on either side — the
+generator is stars-first, so two unrelated seeds can land on the same
+arrangement, and boards close together that shared one would be playable from
+memory. `tools.verify` enforces the same window over committed files, so a star
+board that reached the archive some other way is rejected at merge time too
+(only boards of the current published size are compared; the pre-9x9 archive
+predates the rule and can never match it by shape anyway).
 
 ```sh
-python -m tools.generate --date 2026-10-04 --type star-battle            # 8x8, 2 stars
-python -m tools.generate --date 2026-10-05 --type star-battle --size 9
+python -m tools.generate --date 2026-10-04 --type star-battle            # 9x9, 2 stars
+python -m tools.generate --date 2026-10-05 --type star-battle --size 8   # override a size
 ```
 
 ## The rules are a public interface

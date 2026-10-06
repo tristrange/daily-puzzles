@@ -37,14 +37,15 @@ export function RulesPage() {
 
       <h3>The board</h3>
       <p>
-        The daily board is 8&times;8. Cells that share a background colour form a{' '}
+        The daily board varies in size from 7&times;7 to 9&times;9, depending on the day and
+        the game. Cells that share a background colour form a{' '}
         <strong>region</strong>. You fill cells with pieces; the pieces you place have to
         satisfy every rule below at once, and the board lights up when they do.
       </p>
       <p>
         A region holding more than one piece prints that number in its top-left cell. In
         Queens every region holds exactly one, so nothing is printed &mdash; the number is
-        always one and drawing it 64 times would only be noise.
+        always one and drawing it in every top-left cell would only be noise.
       </p>
 
       <h3>Rules both games share</h3>
@@ -75,7 +76,7 @@ export function RulesPage() {
         Place stars so that each region holds exactly the number printed in it, so that every
         row and every column holds the same number of stars, and so that no two stars touch,
         not even at a corner. On the daily board each region holds two, which puts two stars
-        in each of the eight rows and columns.
+        in every row and column.
       </p>
       <p>
         Star Battle ships without hints. The hint engine is a Queens port, and a board played
