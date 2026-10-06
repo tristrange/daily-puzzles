@@ -22,7 +22,7 @@ against that shape:
 | --- | --- |
 | `Board` | square `size`; cells partitioned into regions; a region has a *count* capacity |
 | `Puzzle` | one flat record that always carries `board: Board` and `size: int` |
-| `validate_board` | branches on `PuzzleType.QUEENS` to demand `region_count == size` and all capacities 1. Pinned cross-language by `board-cases/` since M7, including which rule rejects a given board. |
+| `validate_board` | branches on `PuzzleType.QUEENS` to demand `region_count == size` and all capacities 1, then applies one rule no type escapes: the capacities must total a whole multiple of `size`, because otherwise no whole stars-per-row exists and the game cannot be won. Every path to the derivation goes through `derive_stars_per_row`, so construction and use cannot disagree about k. Pinned cross-language by `board-cases/` since M7, including which rule rejects a given board. |
 | `solver.py`, `generator.py`, `deduce.py` | take a `Board`; a solution is `frozenset[int]` of cell indices |
 | `deduce.py` | "groups" are rows, columns and regions, addressed by index into three parallel `need` lists |
 | `difficulty.py` | scores a `Board` by simulating forced moves |
@@ -431,6 +431,20 @@ property it objected to. That put a real divergence on the table: ajv reports a
 failed `if` as a wrapper error naming `then`, and jsonschema reports only the
 inner failure. The wrapper is dropped on both sides, which is a deliberate
 normalisation rather than an oversight; the two errors agree on everything else.
+
+Pinning *which* rule fired then exposed a rule that was never checked at all. A
+board whose `regionCapacity` does not divide evenly by `size` has no whole
+stars-per-row: the app divides anyway, gets a fraction, and `isSolved` asks for a
+piece count the row limits make unreachable, so the puzzle can never be won and
+nothing on screen says so. Python noticed only when something read
+`stars_per_row`, long after the file had parsed. No published file does this and
+the schema cannot express it, so the fix is one rule applied to every type, run
+through `derive_stars_per_row` — which both `validate_board` and the
+`stars_per_row` property call — so the two cannot drift apart, with a
+`board-cases/` fixture pinning the message in each language. The solver kept its
+own copy of the check as a second line of defence, so its test moved to
+`test_board.py` rather than asserting through a constructor it can no longer
+reach.
 
 Steps 1–6 are the *precondition* for a third game, and none of them produce a
 playable puzzle. They are worth doing as their own PR, on their own merits, before

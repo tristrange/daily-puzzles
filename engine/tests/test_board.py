@@ -118,6 +118,21 @@ class TestRejectedBoards:
         with pytest.raises(BoardError, match="outside"):
             make_board(4, regions, (2, 1), PuzzleType.STAR_BATTLE)
 
+    def test_capacities_must_divide_evenly(self) -> None:
+        """No whole number of stars per row means no game to play.
+
+        Every other rule here looks at one capacity against its own region;
+        this is the one that reads them all together. The capacities total 5 on
+        a size-4 board, so `starsPerRow` in the app is 1.25 and `isSolved` asks
+        for five pieces where the row limit makes four the most anyone can place
+        — a puzzle that can never be won. The solver used to be the first thing
+        to notice, which meant the board had already been accepted, parsed and
+        served.
+        """
+        regions = (2, 3, 3, 3, 2, 2, 0, 0, 2, 2, 1, 0, 2, 2, 1, 0)
+        with pytest.raises(BoardError, match="not divisible"):
+            make_board(4, regions, (1, 1, 1, 2), PuzzleType.STAR_BATTLE)
+
 
 @given(size=st.integers(min_value=2, max_value=16))
 def test_row_partition_always_valid(size: int) -> None:
