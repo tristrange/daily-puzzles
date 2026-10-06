@@ -68,14 +68,19 @@ def _star_repeat_problem(
     its two mirror images by design — that is the degeneracy the size change
     retired, not a defect this check should reopen. Star boards only matter
     against layouts published on a day within `STAR_LAYOUT_WINDOW_DAYS` before
-    them. `seen` holds those layouts in ascending day order, so once a file is
-    more than the window behind, nothing earlier can be closer and the scan can
-    stop. A board that passes is appended, holding later files to the same rule.
+    them. `seen` holds those layouts in ascending day order, so it is scanned
+    newest-first: the older a layout is, the further outside the window it sits,
+    and the first out-of-window one means nothing earlier can be closer. A board
+    that passes is appended, holding later files to the same rule.
     """
     if puzzle.puzzle_type is not PuzzleType.STAR_BATTLE or puzzle.board.size != STAR_BATTLE_SIZE:
         return None
     layout = star_layout(puzzle)
-    for other_day, other_layout in seen:
+    # Reversing matters: an entry more than the window behind would stop an
+    # ascending scan on its very first item and skip the in-window layouts
+    # published just before this file, so duplicates from yesterday would be
+    # accepted once the archive holds any sufficiently old 9x9 board.
+    for other_day, other_layout in reversed(seen):
         if day - other_day > timedelta(days=STAR_LAYOUT_WINDOW_DAYS):
             break
         if layout == other_layout:

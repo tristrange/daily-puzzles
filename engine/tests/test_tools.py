@@ -264,6 +264,26 @@ class TestVerify:
 
         assert result == 0
 
+    def test_rejects_a_repeat_hidden_behind_an_out_of_window_board(self, tmp_path: Path) -> None:
+        """The in-window comparison must not stop at the oldest entry.
+
+        Once any board more than fourteen days old is in the archive, an
+        ascending scan meets that old entry first and would give up before ever
+        comparing against layouts published yesterday, silently accepting a
+        duplicate. The scan runs newest-first, so the recent board here is still
+        caught.
+        """
+        self._write_star(tmp_path, "2026-09-15-star", 7)  # outside Oct window
+        self._write_star(tmp_path, "2026-09-30-star", 8)
+        self._write_star(tmp_path, "2026-10-01-star", 8)  # repeats 09-30
+
+        result = verify.main(["--dir", str(tmp_path)])
+        captured = _capture_verify(tmp_path)
+
+        assert result == 1
+        assert "2026-10-01-star.json: FAILED" in captured
+        assert "repeats the solution layout published on 2026-09-30" in captured
+
     def test_ignores_repeats_between_retired_size_star_boards(self, tmp_path: Path) -> None:
         """Historical 8x8 star boards repeated their two mirror layouts by
         design — the degeneracy the 9x9 size change retired. Layouts are
