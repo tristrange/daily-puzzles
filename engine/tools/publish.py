@@ -40,73 +40,57 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from dataclasses import replace
-from typing import Final
 
 from tools.generate import LOGIC_ONLY_TRIES, seed_from_date
 
 from queens_engine import (
     LEVEL_NAMES,
+    STAR_LAYOUT_WINDOW_DAYS,
     GenerationError,
     Puzzle,
     PuzzleType,
     dumps_puzzle,
     generate_ramped,
-    iter_solutions,
     load_puzzle,
     puzzle_id,
     rulebook_for,
     rulebooks,
     score_difficulty,
     split_puzzle_id,
+    star_layout,
     target_for,
 )
 
 #: How many days ahead of "today" the archive should stay published.
 DEFAULT_LEAD_DAYS = 3
 
-#: A new Star Battle board must not share its solution layout with one published
-#: within this many days before it. The generator is stars-first, so an unrelated
-#: seed can land on the same arrangement; back-to-back repeats would be playable
-#: from memory and recreate the guessability `STAR_BATTLE_SIZE` already avoids.
-STAR_LAYOUT_WINDOW_DAYS: Final[int] = 14
 
-
-def _star_layout(puzzle: Puzzle) -> tuple[tuple[int, ...], ...]:
-    """The board's star arrangement: each row's sorted star columns.
-
-    Star Battle boards are unique-solution, so the first solution is the
-    arrangement a player has to produce; two boards with the same sequence of
-    row-pairs are the same board to play, whatever their regions look like.
-    """
-    pairs: list[list[int]] = [[] for _ in range(puzzle.size)]
-    for cell in next(iter(iter_solutions(puzzle.board))):
-        pairs[cell // puzzle.size].append(cell % puzzle.size)
-    return tuple(tuple(sorted(row)) for row in pairs)
-
-
-def _recent_star_layouts(
-    out_dir: Path, before: date, *, window: int = STAR_LAYOUT_WINDOW_DAYS
+def _nearby_star_layouts(
+    out_dir: Path, day: date, *, window: int = STAR_LAYOUT_WINDOW_DAYS
 ) -> set[tuple[tuple[int, ...], ...]]:
-    """The layouts already published in the `window` days before `before`.
+    """The layouts already on disk within `window` days of `day`.
 
-    This is what the repeat check measures against on a given day. Only files on
+    This is what the repeat check measures against for one day. Only files on
     disk count, so a day's fate is decided by what is already committed, never by
-    a transient: rerunning the tool yields the same boards. The window includes
-    the day exactly `window` days back and excludes `before` itself, so "the
-    previous two weeks" is a full fourteen days. Layouts are compared as shapes,
-    so a past day of another size can never accidentally match — different sizes
-    have different row counts.
+    a transient: rerunning the tool yields the same boards. The window is both
+    directions and inclusive on both edges: the layout of a board published
+    exactly `window` days earlier or later counts, so "two weeks" is a full
+    fourteen days either way. Filling an earlier gap must also avoid layouts of
+    already-published later days, because those days have their own backward
+    windows and would themselves be playable-from-memory once this day lands.
+    Layouts are compared as shapes, so a past day of another size can never
+    accidentally match — different sizes have different row counts.
     """
     recent: set[tuple[tuple[int, ...], ...]] = set()
     for day_id in out_dir.glob("*.json"):
         split = split_puzzle_id(day_id.stem)
         if split is None:
             continue
-        day, puzzle_type = split
-        if not (before - timedelta(days=window) <= day < before):
+        other, puzzle_type = split
+        if other == day or abs(other - day).days > window:
             continue
         if puzzle_type is PuzzleType.STAR_BATTLE:
-            recent.add(_star_layout(load_puzzle(day_id)))
+            recent.add(star_layout(load_puzzle(day_id)))
     return recent
 
 
@@ -172,7 +156,7 @@ def _generate(
     it — a unique solution, but not a promise that no guessing is needed — and
     records no band, so nothing in the archive claims a difficulty nothing checks.
     Its failure path is a seed bump instead, since there is no band to search for.
-    A Star Battle board also bumps while its solution layout repeats one in
+    A Star Battle board also bumps while its solution layout is in
     `avoid_layouts`, the same memory-play caveat as `STAR_BATTLE_SIZE`.
     """
     book = rulebook_for(puzzle_type)
@@ -199,7 +183,7 @@ def _generate(
         if (
             avoid_layouts is not None
             and book.puzzle_type is PuzzleType.STAR_BATTLE
-            and _star_layout(puzzle) in avoid_layouts
+            and star_layout(puzzle) in avoid_layouts
         ):
             seed = (seed + 1) % (2**32)
             continue
@@ -250,7 +234,7 @@ def main(argv: list[str] | None = None) -> int:
                     book.puzzle_type,
                     day_id,
                     seed,
-                    _recent_star_layouts(args.out, window),
+                    _nearby_star_layouts(args.out, window),
                 )
             except RuntimeError as error:
                 print(f"error: {error}", file=sys.stderr)

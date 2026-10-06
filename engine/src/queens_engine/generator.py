@@ -29,13 +29,20 @@ from typing import Final
 from .board import Board, BoardError, PuzzleType
 from .prng import Prng
 from .puzzle import Puzzle
-from .solver import has_unique_solution
+from .solver import has_unique_solution, iter_solutions
 
 DEFAULT_SIZE: Final[int] = 8
 MIN_GENERATABLE_SIZE: Final[int] = 5
 MAX_GENERATABLE_SIZE: Final[int] = 9
 MAX_SEED: Final[int] = 0xFFFFFFFF
 MIN_STARS_PER_ROW: Final[int] = 2
+
+#: Days of "two weeks" a published star board must stay clear of a layout that
+#: is already on disk. Back-to-back days sharing a star arrangement would be
+#: playable from memory, which is the guessability `STAR_BATTLE_SIZE` removed.
+#: The window is inclusive on both edges, so the farthest repeat allowed is a
+#: pair fifteen days apart.
+STAR_LAYOUT_WINDOW_DAYS: Final[int] = 14
 
 #: (size, stars_per_row) pairs that admit any legal no-touching layout. Two
 #: stars separated by one gap need a row span of 2*stars - 1 columns, and the
@@ -334,12 +341,29 @@ def _neighbours(row: int, col: int, size: int) -> tuple[tuple[int, int], ...]:
     return tuple(found)
 
 
+def star_layout(puzzle: Puzzle) -> tuple[tuple[int, ...], ...]:
+    """The star board's arrangement: each row's sorted star columns.
+
+    Star boards are unique-solution, so the first solution is the arrangement a
+    player has to produce; two boards with the same sequence of row-pairs are
+    the same board to play, whatever their regions look like. This is what a
+    repeat check compares: a board published inside `STAR_LAYOUT_WINDOW_DAYS` of
+    one with the same arrangement would be playable from memory.
+    """
+    pairs: list[list[int]] = [[] for _ in range(puzzle.size)]
+    for cell in next(iter(iter_solutions(puzzle.board))):
+        pairs[cell // puzzle.size].append(cell % puzzle.size)
+    return tuple(tuple(sorted(row)) for row in pairs)
+
+
 __all__ = [
     "DEFAULT_ATTEMPTS",
     "DEFAULT_SIZE",
     "MAX_GENERATABLE_SIZE",
     "MIN_GENERATABLE_SIZE",
+    "STAR_LAYOUT_WINDOW_DAYS",
     "GenerationConfig",
     "GenerationError",
     "generate_puzzle",
+    "star_layout",
 ]

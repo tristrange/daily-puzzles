@@ -23,9 +23,11 @@ from .generator import (
     DEFAULT_SIZE,
     MAX_GENERATABLE_SIZE,
     MIN_GENERATABLE_SIZE,
+    STAR_LAYOUT_WINDOW_DAYS,
     GenerationConfig,
     GenerationError,
     generate_puzzle,
+    star_layout,
 )
 from .prng import Prng
 from .puzzle import (
@@ -92,6 +94,7 @@ __all__ = [
     "SCORE_BANDS",
     "STAR_BATTLE_SIZE",
     "STAR_BATTLE_STARS",
+    "STAR_LAYOUT_WINDOW_DAYS",
     "WEEKLY_RAMP",
     "Board",
     "BoardError",
@@ -133,6 +136,7 @@ __all__ = [
     "rulebooks",
     "score_difficulty",
     "split_puzzle_id",
+    "star_layout",
     "target_for",
     "verify_replay",
 ]

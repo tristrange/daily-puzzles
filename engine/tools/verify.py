@@ -8,13 +8,19 @@ regenerate byte-for-byte from its own seed (`verify_replay`). This is the daily
 pipeline's guard: CI runs it over the committed archive, and the cron job runs
 it again on the files it is about to commit, so a generator change cannot drift
 the archive silently.
+
+A Star Battle file must also keep its distance from its neighbours: a board
+published within `STAR_LAYOUT_WINDOW_DAYS` of another with the same solution
+layout would be playable from memory, how ever the file got into the archive, so
+the replay checks are not enough on their own. Verifying here closes the gap
+left by publish, which enforces the rule only when it generates a file.
 """
 
 from __future__ import annotations
 
 import argparse
 import sys
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from typing import NamedTuple
 
@@ -23,6 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from queens_engine import (
     LEVEL_NAMES,
     RAMP_START,
+    STAR_LAYOUT_WINDOW_DAYS,
     Puzzle,
     PuzzleParseError,
     PuzzleType,
@@ -30,6 +37,7 @@ from queens_engine import (
     load_puzzle,
     rulebook_for,
     split_puzzle_id,
+    star_layout,
     target_for,
     verify_replay,
 )
@@ -44,6 +52,34 @@ class RampCheck(NamedTuple):
 
     note: str
     problem: str | None = None
+
+
+def _star_repeat_problem(
+    day: date,
+    puzzle: Puzzle,
+    seen: list[tuple[date, tuple[tuple[int, ...], ...]]],
+) -> str | None:
+    """Why a star puzzle breaks the repeat window, or None if it does not.
+
+    Non-star puzzles are not in the repeat rule, and star boards only matter
+    against layouts published on a day within `STAR_LAYOUT_WINDOW_DAYS` before
+    them. `seen` holds those layouts in ascending day order, so once a file is
+    more than the window behind, nothing earlier can be closer and the scan can
+    stop. A board that passes is appended, holding later files to the same rule.
+    """
+    if puzzle.puzzle_type is not PuzzleType.STAR_BATTLE:
+        return None
+    layout = star_layout(puzzle)
+    for other_day, other_layout in seen:
+        if day - other_day > timedelta(days=STAR_LAYOUT_WINDOW_DAYS):
+            break
+        if layout == other_layout:
+            return (
+                f"repeats the solution layout published on {other_day.isoformat()} "
+                f"(within {STAR_LAYOUT_WINDOW_DAYS} days)"
+            )
+    seen.append((day, layout))
+    return None
 
 
 def _ramp_check(day_text: str, puzzle_type: PuzzleType, puzzle: Puzzle) -> RampCheck:
@@ -91,6 +127,7 @@ def main(argv: list[str] | None = None) -> int:
 
     total = 0
     failed: list[str] = []
+    star_layouts_seen: list[tuple[date, tuple[tuple[int, ...], ...]]] = []
     for path in sorted(args.dir.glob("*.json")):
         split = split_puzzle_id(path.stem)
         if split is None:
@@ -119,6 +156,13 @@ def main(argv: list[str] | None = None) -> int:
             # A board that breaks the ramp is a failed verification, not a note:
             # this is the check that stops the pipeline shipping it.
             problem = f"RAMP MISMATCH ({ramp.problem})"
+            failed.append(f"{path}: {problem}")
+            print(f"{path.name}: FAILED ({problem})")
+            continue
+        # A board added with a replay-valid seed bypasses publish and its
+        # repeat rule; failing here keeps the archive invariant whatever the
+        # file's origin.
+        if problem := _star_repeat_problem(day, puzzle, star_layouts_seen):
             failed.append(f"{path}: {problem}")
             print(f"{path.name}: FAILED ({problem})")
             continue
