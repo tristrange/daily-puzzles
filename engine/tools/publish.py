@@ -11,6 +11,14 @@ puzzles block the other. Which types exist, what they are called and how each is
 generated all come from the registry in `queens_engine.rulebook`, so this script
 holds no per-type knowledge of its own.
 
+A Star Battle board also refuses to repeat a solution layout published within
+`STAR_LAYOUT_WINDOW_DAYS` days: because the generator is stars-first, two
+different seeds can land on the same star arrangement, and back-to-back days
+that share one would be playable by memory exactly like the 8x8 boards this
+size change replaced. The repeat check bumps the seed like any other failed
+draw, so a published file still replays deterministically from the seed it
+records.
+
 Scans DIR for committed puzzle files and fills the gaps from the first missing
 day through (today + `--lead` days), using the same deterministic recipe as
 `tools.generate`: a seed hashed from the id and the type's published size. How
@@ -32,6 +40,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from dataclasses import replace
+from typing import Final
 
 from tools.generate import LOGIC_ONLY_TRIES, seed_from_date
 
@@ -42,6 +51,8 @@ from queens_engine import (
     PuzzleType,
     dumps_puzzle,
     generate_ramped,
+    iter_solutions,
+    load_puzzle,
     puzzle_id,
     rulebook_for,
     rulebooks,
@@ -52,6 +63,49 @@ from queens_engine import (
 
 #: How many days ahead of "today" the archive should stay published.
 DEFAULT_LEAD_DAYS = 3
+
+#: A new Star Battle board must not share its solution layout with one published
+#: within this many days before it. The generator is stars-first, so an unrelated
+#: seed can land on the same arrangement; back-to-back repeats would be playable
+#: from memory and recreate the guessability `STAR_BATTLE_SIZE` already avoids.
+STAR_LAYOUT_WINDOW_DAYS: Final[int] = 14
+
+
+def _star_layout(puzzle: Puzzle) -> tuple[tuple[int, ...], ...]:
+    """The board's star arrangement: each row's sorted star columns.
+
+    Star Battle boards are unique-solution, so the first solution is the
+    arrangement a player has to produce; two boards with the same sequence of
+    row-pairs are the same board to play, whatever their regions look like.
+    """
+    pairs: list[list[int]] = [[] for _ in range(puzzle.size)]
+    for cell in next(iter(iter_solutions(puzzle.board))):
+        pairs[cell // puzzle.size].append(cell % puzzle.size)
+    return tuple(tuple(sorted(row)) for row in pairs)
+
+
+def _recent_star_layouts(
+    out_dir: Path, before: date, *, window: int = STAR_LAYOUT_WINDOW_DAYS
+) -> set[tuple[tuple[int, ...], ...]]:
+    """The layouts already published in the `window` days before `before`.
+
+    This is what the repeat check measures against. Only committed files count,
+    so a day's fate is decided by what is already on disk, never by a transient:
+    rerunning the tool yields the same boards. Layouts are compared as shapes, so
+    a past day of another size can never accidentally match — different sizes
+    have different row counts.
+    """
+    recent: set[tuple[tuple[int, ...], ...]] = set()
+    for day_id in out_dir.glob("*.json"):
+        split = split_puzzle_id(day_id.stem)
+        if split is None:
+            continue
+        day, puzzle_type = split
+        if not (before - timedelta(days=window) < day < before):
+            continue
+        if puzzle_type is PuzzleType.STAR_BATTLE:
+            recent.add(_star_layout(load_puzzle(day_id)))
+    return recent
 
 
 def _existing(out_dir: Path) -> tuple[set[str], set[date]]:
@@ -95,7 +149,12 @@ def _first_incomplete_day(existing: set[str], first: date, end: date) -> date | 
     return None
 
 
-def _generate(puzzle_type: PuzzleType, day_id: str, seed: int) -> tuple[Puzzle, float | None]:
+def _generate(
+    puzzle_type: PuzzleType,
+    day_id: str,
+    seed: int,
+    avoid_layouts: set[tuple[tuple[int, ...], ...]] | None = None,
+) -> tuple[Puzzle, float | None]:
     """Generate one day of one type, and its difficulty score if it has one.
 
     Which recipe a type gets is its rulebook's `on_ramp` fact, not a branch
@@ -111,6 +170,8 @@ def _generate(puzzle_type: PuzzleType, day_id: str, seed: int) -> tuple[Puzzle, 
     it — a unique solution, but not a promise that no guessing is needed — and
     records no band, so nothing in the archive claims a difficulty nothing checks.
     Its failure path is a seed bump instead, since there is no band to search for.
+    A Star Battle board also bumps while its solution layout repeats one in
+    `avoid_layouts`, the same memory-play caveat as `STAR_BATTLE_SIZE`.
     """
     book = rulebook_for(puzzle_type)
     if book.on_ramp:
@@ -129,9 +190,18 @@ def _generate(puzzle_type: PuzzleType, day_id: str, seed: int) -> tuple[Puzzle, 
         ).score
     for _bump in range(LOGIC_ONLY_TRIES):
         try:
-            return book.generate(seed=seed, puzzle_id=day_id), None
+            puzzle = book.generate(seed=seed, puzzle_id=day_id)
         except GenerationError:
             seed = (seed + 1) % (2**32)
+            continue
+        if (
+            avoid_layouts is not None
+            and book.puzzle_type is PuzzleType.STAR_BATTLE
+            and _star_layout(puzzle) in avoid_layouts
+        ):
+            seed = (seed + 1) % (2**32)
+            continue
+        return puzzle, None
     raise RuntimeError(f"{day_id}: no {puzzle_type.value} board in {LOGIC_ONLY_TRIES} seed bumps")
 
 
@@ -162,6 +232,8 @@ def main(argv: list[str] | None = None) -> int:
     else:
         start = today
 
+    recent_layouts = _recent_star_layouts(args.out, start)
+
     window = start
     while window <= end:
         for book in rulebooks():
@@ -174,11 +246,15 @@ def main(argv: list[str] | None = None) -> int:
                 continue
             seed = seed_from_date(day_id)
             try:
-                puzzle, score = _generate(book.puzzle_type, day_id, seed)
+                puzzle, score = _generate(book.puzzle_type, day_id, seed, recent_layouts)
             except RuntimeError as error:
                 print(f"error: {error}", file=sys.stderr)
                 return 1
             (args.out / f"{day_id}.json").write_text(dumps_puzzle(puzzle), encoding="utf-8")
+            if book.puzzle_type is PuzzleType.STAR_BATTLE:
+                # A layout published this run must hold back later days in the
+                # window as firmly as one published before the run.
+                recent_layouts.add(_star_layout(puzzle))
             # An unrated board says so rather than printing a number that means
             # something weaker than the same number on a ramped board.
             band = (

@@ -77,7 +77,10 @@ Two facts the star path depends on, both worth knowing before extending it:
 Every day carries a star companion: `tools.publish.py` fills it beside the
 queens board through the same windowing, and each star file replays from its
 seed at the type's pinned 9x9, so there is no content decision to make about
-which day is a star day.
+which day is a star day. Publish also refuses a star board whose solution
+layout repeats one from the previous two weeks — the generator is stars-first,
+so two unrelated seeds can land on the same arrangement, and back-to-back days
+that shared one would be playable from memory.
 
 ```sh
 python -m tools.generate --date 2026-10-04 --type star-battle            # 9x9, 2 stars

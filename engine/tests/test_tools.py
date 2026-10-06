@@ -9,6 +9,7 @@ from contextlib import contextmanager, redirect_stdout
 from dataclasses import replace
 from datetime import date, timedelta
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
@@ -20,8 +21,10 @@ from queens_engine import (
     MIN_LEVEL,
     RAMP_ATTEMPTS,
     RAMP_START,
+    Board,
     DifficultyTarget,
     GenerationConfig,
+    Puzzle,
     PuzzleType,
     dumps_puzzle,
     generate_puzzle,
@@ -425,3 +428,145 @@ def _capture_verify(out_dir: Path) -> str:
     with redirect_stdout(buffer):
         verify.main(["--dir", str(out_dir)])
     return buffer.getvalue()
+
+
+class TestStarLayoutRepeat:
+    """A new star board must not replay a solution layout from the recent past.
+
+    The generator is stars-first, so two unrelated seeds can land on the same
+    arrangement; back-to-back published days that share one would be playable
+    from memory, which is the 8x8 degeneracy `STAR_BATTLE_SIZE` was moved to
+    9x9 to avoid. The repeat window is publish policy, so these tests drive
+    `publish._generate` and `publish._recent_star_layouts` directly.
+    """
+
+    ROW_BOARD = Board(
+        size=8,
+        regions=tuple(i // 8 for i in range(64)),
+        region_capacity=(2,) * 8,
+        puzzle_type=PuzzleType.STAR_BATTLE,
+    )
+    #: Typed stand-ins for "some layout" so the mocked `_star_layout` matches
+    #: the real signature; the actual values never reach a board.
+    REPEAT_LAYOUT: tuple[tuple[int, ...], ...] = ((0, 0),)
+    FRESH_LAYOUT: tuple[tuple[int, ...], ...] = ((1, 1),)
+    COL_BOARD = Board(
+        size=8,
+        regions=tuple(i % 8 for i in range(64)),
+        region_capacity=(2,) * 8,
+        puzzle_type=PuzzleType.STAR_BATTLE,
+    )
+    BLOCK_BOARD = Board(
+        size=8,
+        regions=tuple((i // 16) * 2 + (i % 8) // 4 for i in range(64)),
+        region_capacity=(2,) * 8,
+        puzzle_type=PuzzleType.STAR_BATTLE,
+    )
+
+    def _star_puzzle(self, day_id: str, seed: int, board: Board = ROW_BOARD) -> Puzzle:
+        return Puzzle(
+            id=day_id,
+            puzzle_type=PuzzleType.STAR_BATTLE,
+            size=8,
+            seed=seed,
+            generator_version=2,
+            board=board,
+        )
+
+    def _book(self, seeds: list[int]) -> SimpleNamespace:
+        def fake_generate(*, seed: int, puzzle_id: str) -> Puzzle:
+            seeds.append(seed)
+            return self._star_puzzle(puzzle_id, seed)
+
+        return SimpleNamespace(
+            on_ramp=False, puzzle_type=PuzzleType.STAR_BATTLE, generate=fake_generate
+        )
+
+    def test_publish_bumps_a_seed_until_the_layout_stops_repeating(self) -> None:
+        seeds: list[int] = []
+        with (
+            patch.object(publish, "rulebook_for", return_value=self._book(seeds)),
+            patch.object(
+                publish,
+                "_star_layout",
+                side_effect=[self.REPEAT_LAYOUT, self.REPEAT_LAYOUT, self.FRESH_LAYOUT],
+            ),
+        ):
+            puzzle, score = publish._generate(  # pyright: ignore[reportPrivateUsage]
+                PuzzleType.STAR_BATTLE, "2026-10-07-star", 7, {self.REPEAT_LAYOUT}
+            )
+        assert score is None
+        assert puzzle.seed == 9
+        assert seeds == [7, 8, 9]
+
+    def test_publish_keeps_the_seed_when_the_layout_is_new(self) -> None:
+        seeds: list[int] = []
+        with (
+            patch.object(publish, "rulebook_for", return_value=self._book(seeds)),
+            patch.object(publish, "_star_layout", return_value=self.FRESH_LAYOUT),
+        ):
+            puzzle, _score = publish._generate(  # pyright: ignore[reportPrivateUsage]
+                PuzzleType.STAR_BATTLE, "2026-10-07-star", 7
+            )
+        assert puzzle.seed == 7
+        assert seeds == [7]
+
+    def test_publish_gives_up_when_every_layout_repeats(self) -> None:
+        seeds: list[int] = []
+        with (
+            patch.object(publish, "rulebook_for", return_value=self._book(seeds)),
+            patch.object(publish, "_star_layout", return_value=self.REPEAT_LAYOUT),
+            pytest.raises(RuntimeError, match="no star-battle board"),
+        ):
+            publish._generate(  # pyright: ignore[reportPrivateUsage]
+                PuzzleType.STAR_BATTLE, "2026-10-07-star", 7, {self.REPEAT_LAYOUT}
+            )
+        assert len(seeds) == publish.LOGIC_ONLY_TRIES
+
+    def test_repeat_window_reads_only_recent_star_files(self, tmp_path: Path) -> None:
+        before = date(2026, 10, 10)
+        recent_day = date(2026, 9, 27)  # before - 13
+        boundary_day = date(2026, 9, 26)  # before - 14: outside the window
+        last_day = date(2026, 10, 9)  # before - 1
+        after_day = date(2026, 10, 11)  # after `before`
+
+        for day, board in (
+            (recent_day, self.COL_BOARD),
+            (last_day, self.ROW_BOARD),
+            (boundary_day, self.BLOCK_BOARD),
+            (after_day, self.ROW_BOARD),
+        ):
+            day_id = f"{day.isoformat()}-star"
+            (tmp_path / f"{day_id}.json").write_text(
+                dumps_puzzle(self._star_puzzle(day_id, seed=7, board=board)), encoding="utf-8"
+            )
+        (tmp_path / "2026-10-08.json").write_text(
+            dumps_puzzle(
+                Puzzle(
+                    id="2026-10-08",
+                    puzzle_type=PuzzleType.QUEENS,
+                    size=8,
+                    seed=7,
+                    generator_version=1,
+                    board=Board(
+                        size=8,
+                        regions=tuple(i // 8 for i in range(64)),
+                        region_capacity=(1,) * 8,
+                        puzzle_type=PuzzleType.QUEENS,
+                    ),
+                )
+            ),
+            encoding="utf-8",
+        )
+
+        recent = publish._recent_star_layouts(tmp_path, before)  # pyright: ignore[reportPrivateUsage]
+
+        expected = {
+            publish._star_layout(  # pyright: ignore[reportPrivateUsage]
+                self._star_puzzle(f"{recent_day.isoformat()}-star", 7, self.COL_BOARD)
+            ),
+            publish._star_layout(  # pyright: ignore[reportPrivateUsage]
+                self._star_puzzle(f"{last_day.isoformat()}-star", 7, self.ROW_BOARD)
+            ),
+        }
+        assert recent == expected

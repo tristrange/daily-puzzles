@@ -697,7 +697,11 @@ generator can rarely be talked into — which is a design decision, not a bug fi
 The daily star board is 9x9 rather than 8x8 for a related reason: at 8x8 with
 two stars per row the row patterns collapse to two mirror images, so the board
 gave itself away after a star or two, while 9x9 leaves 664 arrangements to
-solve. The size is pinned in the rulebook rather than ramped.
+solve. The size is pinned in the rulebook rather than ramped, and a published
+star board also refuses to repeat a solution layout from the previous two
+weeks — the generator is stars-first, so an unrelated seed can land on the same
+arrangement, and back-to-back days that shared one would be playable from
+memory, recreating the degeneracy the 9x9 size just removed.
 
 Two facts the star path depends on. First, **not every size admits a star
 count**: two non-touching stars per row need a row span of three columns and
