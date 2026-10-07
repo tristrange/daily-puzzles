@@ -26,14 +26,22 @@ long diagonal as long as they are not adjacent.
 **Star Battle** — the same board with two stars per row, column and region. Same
 no-touching rule, same solver.
 
-Neither game will hand you a puzzle you cannot win fairly. The generator guarantees three
-things the player is never told: regions partition the grid and each is 4-connected,
-**exactly one solution exists**, and it is **solvable by pure logic rather than guessing**.
+Neither game will hand you a puzzle you cannot solve, and both guarantee two things the
+player is never told: regions partition the grid and each is 4-connected, and **exactly one
+solution exists**.
 
-Uniqueness is a hard gate, enforced by an exact solver with no heuristics and no time
-cutoff. "Solvable without guessing" is a soft signal — we measure how deeply a deduction
-engine has to reason and rate the board from that. It is not formally decidable, and the
-project does not pretend otherwise.
+That uniqueness is a hard gate, enforced by an exact solver with no heuristics and no time
+cutoff. It is the same guarantee for both games.
+
+**Queens carries a third guarantee: it is solvable by pure logic rather than guessing.**
+Star Battle does not, and claiming it would be false — of 1000 sampled two-star boards only
+0.1% finished on rules alone, so the publisher gates Star Battle on uniqueness and says
+exactly that rather than claiming a property it does not check. ("Solvable without
+guessing" is a soft signal in any case: we measure how deeply a deduction engine has to
+reason and rate the board from that. It is not formally decidable, and the project does not
+pretend otherwise.)
+
+[Why Star Battle is not logic-gated →](docs/journal.md#the-second-puzzle-type)
 
 ---
 
@@ -141,8 +149,8 @@ motivated it belong together.
   "type": "queens",
   "seed": 1912550966,
   "generatorVersion": 1,
-  "difficulty": 4,
-  "board": {"size": 9, "regions": [0, 0, 0, 0, 0, 0, 1, 1]}
+  "board": {"size": 3, "regions": [0, 0, 0, 1, 1, 2, 2, 2, 2]},
+  "difficulty": 4
 }
 ```
 
