@@ -5,7 +5,7 @@
   "description": "Single source of truth for the file format shared by the Python engine and the TypeScript app. Structural validation only; size- and region-dependent invariants are enforced in code by both languages.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["id", "type", "size", "seed", "generatorVersion", "regions"],
+  "required": ["id", "type", "seed", "generatorVersion", "board"],
   "properties": {
     "id": {
       "description": "Puzzle date in UTC, YYYY-MM-DD, with an optional family suffix for a companion puzzle of that day. Also the filename stem. The suffix list is generated from `conformance/id-cases/manifest.json`, which also pins the engine's `Rulebook.id_suffix` and the app's `PUZZLE_TYPE_SUFFIX` to it. Escapes are kept to what both regex flavours accept: ajv compiles patterns with the `u` flag, which rejects a hyphen escaped the Python way.",
@@ -15,12 +15,6 @@
     "type": {
       "description": "Puzzle family. Selects the adapter in the app.",
       "enum": ["queens", "star-battle"]
-    },
-    "size": {
-      "description": "Grid is size x size, and the number of regions equals size.",
-      "type": "integer",
-      "minimum": 2,
-      "maximum": 16
     },
     "seed": {
       "description": "Seed for the deterministic PRNG, so any puzzle can be replayed exactly.",
@@ -40,23 +34,42 @@
       "minimum": 1,
       "maximum": 5
     },
-    "regions": {
-      "description": "Region id per cell, row-major, length exactly size * size.",
-      "type": "array",
-      "items": { "type": "integer", "minimum": 0, "maximum": 15 }
-    },
-    "regionCapacity": {
-      "description": "Queens per region, per region id. Defaults to 1 for every region (the Queens case). Required for star-battle.",
-      "type": "array",
-      "items": { "type": "integer", "minimum": 1, "maximum": 16 }
+    "board": {
+      "description": "The grid and everything that describes it, nested so the shape belongs to the game rather than the envelope. `size` sat at the top level until this migration, where it meant 'size x size' for one genre and would mean 'size wide' for another; nesting it is what stops a third game inheriting that ambiguity. The star-battle capacity requirement is enforced by the top-level `allOf` below, since `type` is a sibling of `board`, not a member of it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["size", "regions"],
+      "properties": {
+        "size": {
+          "description": "Grid is size x size, and the number of regions equals size.",
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 16
+        },
+        "regions": {
+          "description": "Region id per cell, row-major, length exactly size * size.",
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0, "maximum": 15 }
+        },
+        "regionCapacity": {
+          "description": "Queens per region, per region id. Defaults to 1 for every region (the Queens case). Required for star-battle.",
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1, "maximum": 16 }
+        }
+      }
     }
   },
   "allOf": [
     {
       "if": { "properties": { "type": { "const": "star-battle" } }, "required": ["type"] },
       "then": {
-        "required": ["regionCapacity"],
-        "properties": { "regionCapacity": { "type": "array", "minItems": 1 } }
+        "properties": {
+          "board": {
+            "type": "object",
+            "required": ["regionCapacity"],
+            "properties": { "regionCapacity": { "type": "array", "minItems": 1 } }
+          }
+        }
       }
     }
   ]

@@ -21,8 +21,8 @@ against that shape:
 | Site | Assumption baked in |
 | --- | --- |
 | `Board` | square `size`; cells partitioned into regions; a region has a *count* capacity |
-| `Puzzle` | one flat record that always carries `board: Board` and `size: int` |
-| `validate_board` | branches on `PuzzleType.QUEENS` to demand `region_count == size` and all capacities 1, then applies one rule no type escapes: the capacities must total a whole multiple of `size`, because otherwise no whole stars-per-row exists and the game cannot be won. Every path to the derivation goes through `derive_stars_per_row`, so construction and use cannot disagree about k. Pinned cross-language by `board-cases/` since M7, including which rule rejects a given board. |
+| `Puzzle` | one flat record that always carries `board: Board` and `size: int` (in memory), mirroring the file's `board` object |
+| `validate_board` | branches on the genre to demand exactly `size` regions sharing one capacity, with Queens fixing that capacity at 1. `derive_stars_per_row` still refuses a capacity total that is not a whole multiple of `size`, which neither genre can now reach — it remains as the guard for direct callers and a future genre that does not pin capacities. Every path to the derivation goes through it, so construction and use cannot disagree about k. Pinned cross-language by `board-cases/` since M7, including which rule rejects a given board. |
 | `solver.py`, `generator.py`, `deduce.py` | take a `Board`; a solution is `frozenset[int]` of cell indices |
 | `deduce.py` | "groups" are rows, columns and regions, addressed by index into three parallel `need` lists |
 | `difficulty.py` | scores a `Board` by simulating forced moves |
@@ -279,23 +279,34 @@ The alternative to a namespaced `board` — a distinct top-level key per type,
 level unbounded and the app's union noisier for no benefit; the sibling `type`
 already discriminates.
 
-### The `size` question, and what it costs
+### The `size` question, and what it cost
 
-Moving `size` out of the envelope and into `board` is the right call and it is
-**not free**. It rewrites all 32 committed archive files, because `size` is
-currently top level.
+Moving `size` out of the envelope and into `board` is the right call and it was
+**not free**. It rewrote all 32 committed archive files, because `size` was at
+the top level.
 
 What is preserved: generation stays reproducible from a seed, and `tools.verify`
 still replays every puzzle. The re-nesting is mechanical and has no semantic
 content, so the byte-stability guarantee that matters — same seed, same puzzle —
-is untouched. What changes is that "the archive regenerates byte-for-byte" is
-true *from* the migration onward and false across the boundary. That should be
-its own commit, reviewable on its own.
+is untouched. What changed is that "the archive regenerates byte-for-byte" is
+true *from* the migration onward and false across the boundary. It landed as its
+own commit, reviewable on its own.
 
-Keeping `size` in the envelope instead would avoid the migration, at the cost of
-a top-level field that means "grid is size x size" for one game and "grid is
-size wide" for another. That is precisely the ambiguity that produced the
-`region_count` bug. I would rather pay the migration.
+Keeping `size` in the envelope instead would have avoided the migration, at the
+cost of a top-level field that means "grid is size x size" for one game and
+"grid is size wide" for another. That is precisely the ambiguity that produced
+the `region_count` bug. It was worth paying.
+
+Two things the migration needed that were not obvious in advance. The canonical
+writer renders a nested object **inline** on its key's line, since
+`canonical_dumps` exists to keep a changed number readable in a diff and a
+two-line region array in every file would defeat that. And the star-battle
+capacity requirement has to live in a top-level `allOf` with `type: "object"` on
+the `board` subschema, because `type` is a sibling of `board` rather than a
+member of it, and ajv's strict mode rejects `required` or `minItems` without a
+sibling `type`. The first attempt put the conditional *inside* `board`, where it
+silently never fired — Python accepted a star file with no capacity, and only
+the TypeScript side noticed.
 
 ### `generatorVersion` must *not* be bumped for this
 

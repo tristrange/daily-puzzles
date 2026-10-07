@@ -93,14 +93,22 @@ export function parsePuzzle(data: unknown): Puzzle {
   }
 
   const record = data as Record<string, unknown>
-  const size = record['size']
-  const regionsRaw = record['regions']
+  const boardRaw = record['board']
+  if (typeof boardRaw !== 'object' || boardRaw === null || Array.isArray(boardRaw)) {
+    throw new PuzzleParseError('puzzle is missing a board object')
+  }
+  const boardRecord = boardRaw as Record<string, unknown>
+
+  const size = boardRecord['size']
+  const regionsRaw = boardRecord['regions']
   if (typeof size !== 'number' || !Array.isArray(regionsRaw)) {
-    throw new PuzzleParseError('puzzle is missing a numeric size or a regions array')
+    throw new PuzzleParseError('board is missing a numeric size or a regions array')
   }
 
   const regions = regionsRaw.map((value) => {
-    if (typeof value !== 'number') throw new PuzzleParseError('regions[] must contain numbers')
+    if (typeof value !== 'number') {
+      throw new PuzzleParseError('board.regions[] must contain numbers')
+    }
     return value
   })
 
@@ -109,11 +117,11 @@ export function parsePuzzle(data: unknown): Puzzle {
   }
 
   const regionCount = Math.max(...regions) + 1
-  const declared = record['regionCapacity']
+  const declared = boardRecord['regionCapacity']
   const capacity = Array.isArray(declared)
     ? declared.map((value) => {
         if (typeof value !== 'number') {
-          throw new PuzzleParseError('regionCapacity[] must contain numbers')
+          throw new PuzzleParseError('board.regionCapacity[] must contain numbers')
         }
         return value
       })

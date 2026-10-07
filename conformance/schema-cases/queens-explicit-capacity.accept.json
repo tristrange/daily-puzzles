@@ -1,9 +1,7 @@
 {
   "id": "2026-10-01",
   "type": "queens",
-  "size": 4,
   "seed": 42,
   "generatorVersion": 2,
-  "regions": [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3],
-  "regionCapacity": [1, 1, 1, 1]
+  "board": {"size": 4, "regions": [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3], "regionCapacity": [1, 1, 1, 1]}
 }

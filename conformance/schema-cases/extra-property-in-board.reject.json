@@ -1,0 +1,7 @@
+{
+  "id": "2026-09-30",
+  "type": "queens",
+  "seed": 1234567890,
+  "generatorVersion": 1,
+  "board": {"size": 4, "regions": [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3], "solution": [[0, 1]]}
+}

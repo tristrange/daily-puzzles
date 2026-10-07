@@ -172,13 +172,15 @@ The contract lives in [`schema/puzzle.schema.json`](schema/puzzle.schema.json).
 {
   "id": "2026-09-30",
   "type": "queens",
-  "size": 5,
   "seed": 1234567890,
   "generatorVersion": 1,
-  "regions": [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3]
+  "board": {"size": 5, "regions": [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3]}
 }
 ```
 
+- `board` holds everything describing the grid, so the shape belongs to the game rather than
+  the envelope. `size` sat at the top level until this migration, where it meant "size x size"
+  for one genre and would mean "size wide" for another.
 - `regions` is row-major, one region id per cell, length exactly `size * size`.
 - `seed` drives a deterministic PRNG, so any puzzle replays byte-for-byte.
 - `regionCapacity` is omitted for Queens (every region holds one queen) and required for

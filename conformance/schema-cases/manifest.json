@@ -144,7 +144,7 @@
       "file": "size-out-of-range.reject.json",
       "valid": false,
       "errorPaths": [
-        "maximum:size"
+        "maximum:board/size"
       ]
     },
     {
@@ -172,7 +172,7 @@
       "file": "region-id-out-of-range.reject.json",
       "valid": false,
       "errorPaths": [
-        "maximum:regions/12"
+        "maximum:board/regions/12"
       ]
     },
     {
@@ -183,24 +183,31 @@
       ]
     },
     {
+      "file": "extra-property-in-board.reject.json",
+      "valid": false,
+      "errorPaths": [
+        "additionalProperties:board:solution"
+      ]
+    },
+    {
       "file": "missing-regions.reject.json",
       "valid": false,
       "errorPaths": [
-        "required:<root>:regions"
+        "required:board:regions"
       ]
     },
     {
       "file": "capacity-below-one.reject.json",
       "valid": false,
       "errorPaths": [
-        "minimum:regionCapacity/0"
+        "minimum:board/regionCapacity/0"
       ]
     },
     {
       "file": "star-battle-missing-capacity.reject.json",
       "valid": false,
       "errorPaths": [
-        "required:<root>:regionCapacity"
+        "required:board:regionCapacity"
       ]
     }
   ]

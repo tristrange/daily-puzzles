@@ -13,14 +13,23 @@ from queens_engine.puzzle import load_puzzle
 
 
 def minimal(size: int = 4) -> dict[str, Any]:
+    board: dict[str, Any] = {
+        "size": size,
+        "regions": [row for row in range(size) for _ in range(size)],
+    }
     return {
         "id": "2026-09-30",
         "type": "queens",
-        "size": size,
         "seed": 1,
         "generatorVersion": 1,
-        "regions": [row for row in range(size) for _ in range(size)],
+        "board": board,
     }
+
+
+def board_of(data: dict[str, Any]) -> dict[str, Any]:
+    """The nested board object, for tests that mutate one field of it."""
+    board: dict[str, Any] = data["board"]
+    return board
 
 
 class TestDefaults:
@@ -29,12 +38,14 @@ class TestDefaults:
         assert puzzle.board.region_capacity == (1, 1, 1, 1, 1)
 
     def test_explicit_capacity_is_used_verbatim(self) -> None:
-        data = minimal(4) | {"regionCapacity": [1, 1, 1, 1]}
+        data = minimal(4)
+        board_of(data)["regionCapacity"] = [1, 1, 1, 1]
         puzzle = parse_puzzle(data)
         assert puzzle.board.region_capacity == (1, 1, 1, 1)
 
     def test_puzzle_type_is_parsed(self) -> None:
-        data = minimal(4) | {"type": "star-battle", "regionCapacity": [1, 1, 1, 1]}
+        data = minimal(4) | {"type": "star-battle"}
+        board_of(data)["regionCapacity"] = [1, 1, 1, 1]
         assert parse_puzzle(data).puzzle_type is PuzzleType.STAR_BATTLE
 
     def test_metadata_is_preserved(self) -> None:
@@ -48,7 +59,7 @@ class TestDefaults:
 class TestSemanticChecks:
     def test_region_array_length_must_match_size_squared(self) -> None:
         data = minimal(4)
-        data["regions"] = [0, 0, 0, 0, 1, 1]
+        board_of(data)["regions"] = [0, 0, 0, 0, 1, 1]
         with pytest.raises(PuzzleParseError, match="expected 16"):
             parse_puzzle(data)
 
@@ -58,9 +69,21 @@ class TestSemanticChecks:
             parse_puzzle(data)
 
     def test_board_rule_violation_is_reported(self) -> None:
-        data = minimal(4) | {"type": "star-battle", "regionCapacity": [1, 1, 1, 1]}
-        data["regions"] = [0, 1, 1, 1, 2, 2, 2, 2, 0, 3, 3, 3, 3, 3, 3, 3]
+        data = minimal(4) | {"type": "star-battle"}
+        board_of(data)["regions"] = [0, 1, 1, 1, 2, 2, 2, 2, 0, 3, 3, 3, 3, 3, 3, 3]
+        board_of(data)["regionCapacity"] = [1, 1, 1, 1]
         with pytest.raises(PuzzleParseError, match="not orthogonally connected"):
+            parse_puzzle(data)
+
+    def test_missing_board_object_is_reported(self) -> None:
+        data = minimal(4)
+        del data["board"]
+        with pytest.raises(PuzzleParseError, match="does not match schema"):
+            parse_puzzle(data)
+
+    def test_a_board_that_is_not_an_object_is_reported(self) -> None:
+        data = minimal(4) | {"board": [4, 4]}
+        with pytest.raises(PuzzleParseError, match="does not match schema"):
             parse_puzzle(data)
 
     def test_non_object_input_is_rejected(self) -> None:
@@ -78,10 +101,10 @@ class TestNumberRepresentation:
 
     def test_integral_floats_are_accepted_and_normalised(self) -> None:
         data = minimal()
-        data["size"] = 4.0
         data["seed"] = 1.0
         data["generatorVersion"] = 1.0
-        data["regions"] = [float(region) for region in data["regions"]]
+        board_of(data)["size"] = 4.0
+        board_of(data)["regions"] = [float(r) for r in board_of(data)["regions"]]
         puzzle = parse_puzzle(data)
         assert puzzle.board.size == 4
         assert isinstance(puzzle.board.size, int)
@@ -93,7 +116,7 @@ class TestNumberRepresentation:
     @pytest.mark.parametrize("value", [4.5, "4", True, None, [4]])
     def test_values_that_are_not_numbers_are_rejected(self, value: object) -> None:
         data = minimal()
-        data["size"] = value
+        board_of(data)["size"] = value
         with pytest.raises(PuzzleParseError, match="does not match schema"):
             parse_puzzle(data)
 
