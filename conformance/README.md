@@ -12,6 +12,7 @@ rule, so every shared claim is pinned here and asserted from both sides.
 | `board-cases/` | Board semantics: whether a board is constructible at all, which rule rejects it, and how out-of-range access fails. | M7 |
 | `hint-cases/` | The *first forced move* the deduction rules produce, from an empty board or an explicit player state. | M6 |
 | `id-cases/` | Puzzle id naming: each family's suffix, which day and family an id names, and that `schema/puzzle.schema.json` accepts the same set. | M3 |
+| `band-cases/` | Difficulty band naming: every band's name, and that the range is a contiguous 1-based sequence both sides index as `level - 1`. | M15 |
 
 These are deliberately separate. `schema-cases/` proves the two languages parse a file
 identically; `board-cases/` proves they *reason* about a board identically; `hint-cases/`
@@ -44,6 +45,17 @@ own published puzzles. Its pattern is *shape*
 only: it accepts `2026-02-30`, because JSON Schema cannot express "the day exists", and
 `split_puzzle_id` rejects that in both languages. The two halves are asserted separately
 so widening one does not quietly widen the other.
+
+`band-cases/` is the same problem in a place where drift is silent by construction. The
+engine's `LEVEL_NAMES` is what its CLI prints and what `tools/verify` reports a ramp
+against; the app's `DIFFICULTY_LABEL` is what a player reads on the chooser card and the
+archive. Both key off the same 1-based integer in the puzzle file, so renaming a band on
+one side changes nothing that fails: the file still parses, the board still replays, and
+`verify_replay` compares boards rather than labels. The symptom is that the engine calls a
+board *Expert* while the archive card calls it *Hard*. Unlike `id-cases/` this manifest is
+not the source for anything — the schema's `difficulty` range is a hand-written `1..5` —
+so adding a band means editing the manifest, `LEVEL_NAMES`, `DIFFICULTY_LABEL` and the
+schema's range together, and the suites are what notice if you forget one.
 
 `hint-cases/` is worth one precise caveat. A "subset" firing can only ever occur *after*
 some cells are already dead (on an untouched board every region, row and column has a full
