@@ -126,21 +126,22 @@ def parse_puzzle(data: object) -> Puzzle:
         raise PuzzleParseError("puzzle must be a JSON object")
 
     record = cast("dict[str, JsonValue]", data)
-    size = _require_int(record.get("size"), "size")
+    board_record = _require_object(record.get("board"), "board")
+    size = _require_int(board_record.get("size"), "board.size")
     regions = tuple(
-        _require_int(value, "regions[]")
-        for value in _require_list(record.get("regions"), "regions")
+        _require_int(value, "board.regions[]")
+        for value in _require_list(board_record.get("regions"), "board.regions")
     )
 
     if len(regions) != size * size:
         raise PuzzleParseError(f"regions has {len(regions)} entries, expected {size * size}")
 
     region_count = max(regions) + 1
-    declared = record.get("regionCapacity")
+    declared = board_record.get("regionCapacity")
     capacity = (
         tuple(
-            _require_int(value, "regionCapacity[]")
-            for value in _require_list(declared, "regionCapacity")
+            _require_int(value, "board.regionCapacity[]")
+            for value in _require_list(declared, "board.regionCapacity")
         )
         if declared is not None
         else (1,) * region_count
@@ -181,16 +182,20 @@ def load_puzzle(path: Path) -> Puzzle:
 
 def puzzle_to_dict(puzzle: Puzzle) -> dict[str, JsonValue]:
     """The schema-shaped dict for `puzzle`, in the order the CLI writes it."""
-    data: dict[str, JsonValue] = {
-        "id": puzzle.id,
-        "type": puzzle.puzzle_type.value,
+    board: dict[str, JsonValue] = {
         "size": puzzle.size,
-        "seed": puzzle.seed,
-        "generatorVersion": puzzle.generator_version,
         "regions": list(puzzle.board.regions),
     }
     if puzzle.puzzle_type is PuzzleType.STAR_BATTLE:
-        data["regionCapacity"] = list(puzzle.board.region_capacity)
+        board["regionCapacity"] = list(puzzle.board.region_capacity)
+
+    data: dict[str, JsonValue] = {
+        "id": puzzle.id,
+        "type": puzzle.puzzle_type.value,
+        "seed": puzzle.seed,
+        "generatorVersion": puzzle.generator_version,
+        "board": board,
+    }
     if puzzle.difficulty is not None:
         data["difficulty"] = puzzle.difficulty
     return data
@@ -215,6 +220,12 @@ def canonical_dumps(data: dict[str, JsonValue]) -> str:
     than a reflowed document, and so a golden file can be regenerated and
     compared byte-for-byte. Key order is the caller's insertion order, not sorted:
     the order is chosen to read well and is part of what is being pinned.
+
+    A nested object is written inline, on the one line its key is on. It is a
+    leaf group of values (`board` holds `size` and two arrays, not a tree), so
+    splitting it across lines would put a two-line region array in every file
+    and make the diff of a changed number unreadable — which is the whole reason
+    this renderer exists.
     """
     lines: list[str] = ["{"]
     for i, (key, value) in enumerate(data.items()):
@@ -228,7 +239,23 @@ def canonical_dumps(data: dict[str, JsonValue]) -> str:
 def _render(value: JsonValue) -> str:
     if isinstance(value, list):
         return "[" + ", ".join(_render(item) for item in value) + "]"
+    if isinstance(value, dict):
+        inner = ", ".join(f"{json.dumps(k)}: {_render(v)}" for k, v in value.items())
+        return "{" + inner + "}"
     return json.dumps(value)
+
+
+def _require_object(value: JsonValue | None, field: str) -> dict[str, JsonValue]:
+    """The nested `board` object, or a parse error naming the field path.
+
+    The schema has already refused a `board` that is not an object, so this is
+    the guard for the direct `parse_puzzle` callers that skip straight to the
+    per-field checks, and it keeps the field path in one convention with
+    `_require_list` so a message points at `board.size` rather than `size`.
+    """
+    if not isinstance(value, dict):
+        raise PuzzleParseError(f"{field} must be an object")
+    return cast("dict[str, JsonValue]", value)
 
 
 def _require_str(value: JsonValue | None, field: str) -> str:

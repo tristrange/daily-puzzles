@@ -24,11 +24,13 @@ function puzzleBody(id: string, difficulty?: number) {
   return {
     id,
     type: star ? 'star-battle' : 'queens',
-    size: 3,
     seed: 1,
     generatorVersion: 1,
-    regions: [0, 0, 1, 0, 1, 1, 0, 0, 2],
-    ...(star ? { regionCapacity: [1, 1, 1] } : {}),
+    board: {
+      size: 3,
+      regions: [0, 0, 1, 0, 1, 1, 0, 0, 2],
+      ...(star ? { regionCapacity: [1, 1, 1] } : {}),
+    },
     ...(difficulty === undefined ? {} : { difficulty }),
   }
 }
@@ -71,20 +73,22 @@ describe('loadPuzzle', () => {
   const starBattle = {
     id: '2026-10-04',
     type: 'star-battle',
-    size: 8,
     seed: 894026858,
     generatorVersion: 2,
-    regions: [
-      0, 0, 0, 0, 0, 0, 0, 1,
-      0, 0, 0, 2, 1, 1, 1, 1,
-      2, 2, 2, 2, 2, 3, 3, 1,
-      4, 4, 4, 2, 3, 3, 3, 3,
-      4, 4, 4, 4, 4, 4, 5, 3,
-      4, 4, 4, 5, 5, 5, 5, 5,
-      6, 6, 6, 5, 5, 5, 5, 5,
-      6, 6, 6, 7, 7, 7, 7, 5,
-    ],
-    regionCapacity: [2, 2, 2, 2, 2, 2, 2, 2],
+    board: {
+      size: 8,
+      regions: [
+        0, 0, 0, 0, 0, 0, 0, 1,
+        0, 0, 0, 2, 1, 1, 1, 1,
+        2, 2, 2, 2, 2, 3, 3, 1,
+        4, 4, 4, 2, 3, 3, 3, 3,
+        4, 4, 4, 4, 4, 4, 5, 3,
+        4, 4, 4, 5, 5, 5, 5, 5,
+        6, 6, 6, 5, 5, 5, 5, 5,
+        6, 6, 6, 7, 7, 7, 7, 5,
+      ],
+      regionCapacity: [2, 2, 2, 2, 2, 2, 2, 2],
+    },
   }
 
   it('fetches, parses and validates a puzzle file', async () => {

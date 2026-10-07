@@ -529,20 +529,22 @@ describe('star battle parity with the engine', () => {
   const ENGINE_PUZZLE = {
     id: '2026-10-04',
     type: 'star-battle',
-    size: 8,
     seed: 894026858,
     generatorVersion: 2,
-    regions: [
-      0, 0, 0, 0, 0, 0, 0, 1,
-      0, 0, 0, 2, 1, 1, 1, 1,
-      2, 2, 2, 2, 2, 3, 3, 1,
-      4, 4, 4, 2, 3, 3, 3, 3,
-      4, 4, 4, 4, 4, 4, 5, 3,
-      4, 4, 4, 5, 5, 5, 5, 5,
-      6, 6, 6, 5, 5, 5, 5, 5,
-      6, 6, 6, 7, 7, 7, 7, 5,
-    ],
-    regionCapacity: [2, 2, 2, 2, 2, 2, 2, 2],
+    board: {
+      size: 8,
+      regions: [
+        0, 0, 0, 0, 0, 0, 0, 1,
+        0, 0, 0, 2, 1, 1, 1, 1,
+        2, 2, 2, 2, 2, 3, 3, 1,
+        4, 4, 4, 2, 3, 3, 3, 3,
+        4, 4, 4, 4, 4, 4, 5, 3,
+        4, 4, 4, 5, 5, 5, 5, 5,
+        6, 6, 6, 5, 5, 5, 5, 5,
+        6, 6, 6, 7, 7, 7, 7, 5,
+      ],
+      regionCapacity: [2, 2, 2, 2, 2, 2, 2, 2],
+    },
   }
   const ENGINE_SOLUTION = [1, 3, 13, 15, 17, 19, 29, 31, 32, 34, 44, 46, 48, 50, 60, 62]
 
@@ -613,10 +615,9 @@ describe('parsePuzzle difficulty band', () => {
   const RAMPED = {
     id: '2026-10-07',
     type: 'queens',
-    size: 3,
     seed: 1,
     generatorVersion: 1,
-    regions: [0, 0, 1, 0, 1, 1, 0, 0, 2],
+    board: { size: 3, regions: [0, 0, 1, 0, 1, 1, 0, 0, 2] },
     difficulty: 3,
   }
 

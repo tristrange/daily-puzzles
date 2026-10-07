@@ -174,11 +174,12 @@ def test_dumps_is_stable_and_round_trips() -> None:
     assert text == dumps_puzzle(puzzle)
     parsed = json.loads(text)
     assert parsed["id"] == puzzle.id
-    assert parsed["size"] == puzzle.size
     assert parsed["seed"] == puzzle.seed
-    assert list(parsed["regions"]) == list(puzzle.board.regions)
-    if "regionCapacity" in parsed:
-        assert list(parsed["regionCapacity"]) == list(puzzle.board.region_capacity)
+    board = parsed["board"]
+    assert board["size"] == puzzle.size
+    assert list(board["regions"]) == list(puzzle.board.regions)
+    if "regionCapacity" in board:
+        assert list(board["regionCapacity"]) == list(puzzle.board.region_capacity)
 
 
 def test_render_shows_a_queen_per_row_and_column() -> None:
@@ -321,7 +322,7 @@ def test_star_battle_dumps_round_trips_with_capacity() -> None:
     assert text == dumps_puzzle(puzzle)
     parsed = json.loads(text)
     assert parsed["type"] == "star-battle"
-    assert list(parsed["regionCapacity"]) == list(puzzle.board.region_capacity)
+    assert list(parsed["board"]["regionCapacity"]) == list(puzzle.board.region_capacity)
     assert dumps_puzzle(parse_puzzle(parsed)) == text
 
 
