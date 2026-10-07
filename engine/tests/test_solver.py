@@ -243,33 +243,6 @@ def _grow_contiguous_regions(size: int, region_count: int, rng: random.Random) -
     return [r for r in regions if r is not None]
 
 
-def _balanced_capacity(
-    member_count: dict[int, int], size: int, stars_per_row: int
-) -> tuple[int, ...] | None:
-    """Capacities in proportion to area, adjusted to sum to `size * stars_per_row`."""
-    total_stars = size * stars_per_row
-    ideal = {r: count * stars_per_row / size for r, count in member_count.items()}
-    capacity = [max(1, int(ideal[r])) for r in sorted(ideal)]
-
-    deficit = total_stars - sum(capacity)
-    step = 1 if deficit > 0 else -1
-    order = sorted(range(size), key=lambda r: -ideal[r])
-    while deficit != 0:
-        moved = False
-        for region in order:
-            if deficit == 0:
-                break
-            target = capacity[region] + step
-            if 1 <= target <= member_count[region]:
-                capacity[region] = target
-                deficit -= step
-                moved = True
-        if not moved:
-            return None
-
-    return tuple(capacity) if sum(capacity) == total_stars else None
-
-
 def random_star_battle_board(
     size: int, stars_per_row: int, rng: random.Random, *, attempts: int = 400
 ) -> Board | None:
@@ -279,19 +252,11 @@ def random_star_battle_board(
         if regions is None:
             continue
 
-        member_count: dict[int, int] = {}
-        for region in regions:
-            member_count[region] = member_count.get(region, 0) + 1
-
-        capacity = _balanced_capacity(member_count, size, stars_per_row)
-        if capacity is None:
-            continue
-
         try:
             return Board(
                 size=size,
                 regions=tuple(regions),
-                region_capacity=capacity,
+                region_capacity=(stars_per_row,) * size,
                 puzzle_type=PuzzleType.STAR_BATTLE,
             )
         except BoardError:
@@ -384,16 +349,19 @@ class TestLimit:
             count_solutions(striped(4), limit=0)
 
 
-def one_region_board(size: int, stars_per_row: int) -> Board:
-    """Every cell in one region, sized so each row needs `stars_per_row` stars.
+def striped_star(size: int, stars_per_row: int) -> Board:
+    """One region per row, `stars_per_row` stars in each.
 
-    Isolates the row/column rules from the region rules, which makes it the
-    sharpest available probe for a bug in column accounting.
+    The region rule is exactly the row rule, so the region machinery never
+    binds — the sharpest available probe for a bug in column accounting. It
+    stays a board the genre could publish: `one_region_board`'s single giant
+    region could not, once Star Battle requires exactly `size` regions that
+    share one capacity.
     """
     return Board(
         size=size,
-        regions=(0,) * (size * size),
-        region_capacity=(size * stars_per_row,),
+        regions=tuple(row for row in range(size) for _ in range(size)),
+        region_capacity=(stars_per_row,) * size,
         puzzle_type=PuzzleType.STAR_BATTLE,
     )
 
@@ -411,12 +379,12 @@ class TestMultiStarPerRow:
     def test_a_column_is_reused_when_it_has_room(self) -> None:
         # The smallest grid where two stars per row can satisfy the touching
         # rule at all. The old code answered 0.
-        board = one_region_board(8, 2)
+        board = striped_star(8, 2)
         assert count_solutions(board, limit=BIG) == 2
         assert len(list(iter_solutions(board))) == 2
 
     def test_every_solution_uses_each_column_the_right_number_of_times(self) -> None:
-        board = one_region_board(8, 2)
+        board = striped_star(8, 2)
         for solution in iter_solutions(board):
             columns = [cell % board.size for cell in solution]
             assert all(columns.count(col) == 2 for col in range(board.size))
@@ -432,11 +400,11 @@ class TestMultiStarPerRow:
         # exercised at larger sizes by the tests above.
         for stars_per_row, sizes in ((2, range(2, 10)), (3, range(3, 12))):
             for size in sizes:
-                board = one_region_board(size, stars_per_row)
+                board = striped_star(size, stars_per_row)
                 assert count_solutions(board, limit=BIG) == oracle_count(board)
 
     def test_three_stars_per_row_is_handled(self) -> None:
-        board = one_region_board(12, 3)
+        board = striped_star(12, 3)
         assert count_solutions(board, limit=BIG) > 0
         for solution in iter_solutions(board):
             columns = [cell % board.size for cell in solution]
@@ -447,7 +415,7 @@ class TestMultiStarPerRow:
         # Where the exhaustive oracle gets expensive the solver still has to
         # hold up: every solution it reports must satisfy the rules restated
         # from scratch, which needs no second implementation to be trusted.
-        board = one_region_board(16, 4)
+        board = striped_star(16, 4)
         assert count_solutions(board, limit=2) == 2
         for solution in iter_solutions(board):
             columns = [cell % board.size for cell in solution]
@@ -457,31 +425,31 @@ class TestMultiStarPerRow:
     def test_queens_is_unaffected(self) -> None:
         # One star per row is the degenerate case where the packed column count
         # is a plain bitmask, so the Queens path must be untouched.
-        board = one_region_board(8, 1)
+        board = striped_star(8, 1)
         assert count_solutions(board, limit=BIG) == oracle_count(board)
 
 
 class TestCapacityParameterisation:
     def test_star_battle_capacity_of_two_per_region(self) -> None:
-        # Two regions of eight cells, two stars each, so two per row and
+        # Eight regions of eight cells, two stars each, so two per row and
         # column. The same code path serves this and Queens; only the capacity
         # differs, so the count must match the general oracle.
         board = Board(
-            size=4,
-            regions=(1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0),
-            region_capacity=(2, 2),
+            size=8,
+            regions=tuple(4 * (row // 4) + col // 2 for row in range(8) for col in range(8)),
+            region_capacity=(2, 2, 2, 2, 2, 2, 2, 2),
             puzzle_type=PuzzleType.STAR_BATTLE,
         )
         assert count_solutions(board, limit=BIG) == 2
         assert count_solutions(board, limit=BIG) == oracle_count(board)
 
     def test_a_board_with_no_arrangement_has_no_solutions(self) -> None:
-        # Region 0 needs two stars but every cell of it that could take one
-        # forces a pair to touch, so the search finds nothing.
+        # Region 0 is a two-cell vertical domino that must hold both its stars,
+        # so the pair would have to touch; the search finds nothing.
         board = Board(
             size=4,
-            regions=(2, 1, 1, 1, 2, 2, 2, 0, 2, 2, 2, 0, 2, 2, 2, 2),
-            region_capacity=(2, 1, 1),
+            regions=(0, 1, 1, 1, 0, 2, 2, 2, 3, 2, 2, 2, 3, 3, 3, 3),
+            region_capacity=(2, 2, 2, 2),
             puzzle_type=PuzzleType.STAR_BATTLE,
         )
         assert count_solutions(board, limit=BIG) == 0
@@ -577,7 +545,7 @@ def test_agrees_with_brute_force_general(size: int, seed: int) -> None:
     seed=st.integers(min_value=0, max_value=2**32),
 )
 def test_agrees_with_oracle_when_several_stars_per_row(size: int, seed: int) -> None:
-    board = one_region_board(size, 2)
+    board = striped_star(size, 2)
     assert count_solutions(board, limit=BIG) == oracle_count(board)
 
 

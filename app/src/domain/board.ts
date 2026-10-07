@@ -152,6 +152,17 @@ export function validateBoard(board: Board): void {
     }
   }
 
+  if (board.puzzleType === 'star-battle') {
+    if (board.regionCount !== board.size) {
+      throw new BoardError(
+        `star battle needs exactly ${board.size} regions, found ${board.regionCount}`,
+      )
+    }
+    if (board.regionCapacity.some((capacity) => capacity !== board.regionCapacity[0])) {
+      throw new BoardError('star battle requires one capacity shared by every region')
+    }
+  }
+
   for (let regionId = 0; regionId < board.regionCount; regionId += 1) {
     const cells = board.cellsOfRegion(regionId)
     const capacity = board.regionCapacity[regionId] ?? 0
@@ -177,6 +188,9 @@ export function validateBoard(board: Board): void {
   // Given the capacity check in the loop above, divisibility is the whole rule:
   // the capacities sum to at least one and at most `size * size`, so a total
   // that divides by the size lands the quotient in `1..size` on its own.
+  //
+  // Both genres already force a uniform capacity across exactly `size` regions,
+  // so the total always divides and this can never fire for a `Board`.
   const total = board.regionCapacity.reduce((sum, capacity) => sum + capacity, 0)
   if (total % board.size !== 0) {
     throw new BoardError(

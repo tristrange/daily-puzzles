@@ -147,96 +147,42 @@ def test_pure_rules_are_sound_on_star_battle() -> None:
             assert step.queen in solution, f"{step.rule} placed a non-star"
 
 
-def test_a_region_count_that_is_not_the_size_still_works() -> None:
-    """Regions are whatever the board declares, which need not be `size`.
+def test_deduce_solves_a_unique_star_battle_board() -> None:
+    """The deduction engine stays honest on real star region geometry.
 
-    Star Battle states two stars per row, column and region, so a board whose
-    capacities are uniform has exactly `size` regions — but the capacities need
-    not be uniform, and nothing in `Board` requires them to be. This board has
-    six regions on an 8x8 grid, so the two counts differ, k = 2 comes from
-    capacities that total 16, and region 3 is a one-star region among
-    three-star ones.
+    A Star Battle board must now have exactly `size` regions sharing one
+    capacity, so `region_count != size` is impossible for a `Board`. This probe
+    pins the engine to a uniquely-solvable 8x8 board whose regions are not one
+    per row, so region iteration is exercised across the shapes a published
+    puzzle is actually made of. The board comes from a search, is checked to
+    have exactly one solution, and the engine is compared against the exact
+    solver rather than against itself.
 
-    Iterating regions over `size` instead of `region_count` was a real crash:
-    `IndexError` on a board with fewer regions, and silently skipped regions on a
-    board with more. The board below comes from a search, and is checked to have
-    exactly one solution, so the engine is compared against the exact solver
-    rather than against itself.
+    Iterating regions over `size` instead of `region_count` was a real crash
+    once: `IndexError` on a board with fewer regions than `size`, silently
+    skipped regions on a board with more. The two counts coincide for every
+    board `Board` accepts today, but the machinery still reads the region count
+    it was handed, and this board would turn a regression into a wrong answer
+    the moment a third genre made the counts differ again.
     """
+    rows = (
+        (1, 1, 1, 0, 0, 0, 0, 4),
+        (1, 1, 1, 1, 0, 0, 0, 4),
+        (1, 1, 3, 3, 2, 2, 2, 4),
+        (3, 3, 3, 3, 2, 2, 2, 4),
+        (3, 5, 3, 3, 4, 4, 4, 4),
+        (5, 5, 5, 5, 6, 4, 4, 4),
+        (5, 5, 7, 7, 6, 6, 6, 6),
+        (7, 7, 7, 7, 6, 6, 6, 6),
+    )
     board = Board(
         size=8,
-        regions=(
-            5,
-            5,
-            5,
-            4,
-            4,
-            2,
-            2,
-            2,
-            5,
-            5,
-            5,
-            4,
-            4,
-            2,
-            2,
-            2,
-            5,
-            5,
-            4,
-            4,
-            4,
-            2,
-            2,
-            2,
-            5,
-            5,
-            4,
-            4,
-            4,
-            3,
-            2,
-            2,
-            0,
-            0,
-            0,
-            0,
-            3,
-            3,
-            2,
-            2,
-            0,
-            0,
-            0,
-            0,
-            3,
-            3,
-            3,
-            2,
-            0,
-            0,
-            0,
-            1,
-            1,
-            1,
-            3,
-            1,
-            0,
-            0,
-            0,
-            1,
-            1,
-            1,
-            1,
-            1,
-        ),
-        region_capacity=(3, 3, 3, 1, 3, 3),
+        regions=sum(rows, ()),
+        region_capacity=(2, 2, 2, 2, 2, 2, 2, 2),
         puzzle_type=PuzzleType.STAR_BATTLE,
     )
-    assert board.region_count == 6 != board.size
+    assert board.region_count == board.size == 8
     assert board.stars_per_row == 2
-    assert board.region_capacity[3] == 1, "the one-star region is the interesting case"
 
     trace = deduce(board)
     assert set(trace.solution or ()) == _unique_solution(board)

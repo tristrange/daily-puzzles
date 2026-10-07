@@ -58,8 +58,8 @@ class TestSemanticChecks:
             parse_puzzle(data)
 
     def test_board_rule_violation_is_reported(self) -> None:
-        data = minimal(4) | {"type": "star-battle", "regionCapacity": [1, 1]}
-        data["regions"] = [0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1]
+        data = minimal(4) | {"type": "star-battle", "regionCapacity": [1, 1, 1, 1]}
+        data["regions"] = [0, 1, 1, 1, 2, 2, 2, 2, 0, 3, 3, 3, 3, 3, 3, 3]
         with pytest.raises(PuzzleParseError, match="not orthogonally connected"):
             parse_puzzle(data)
 

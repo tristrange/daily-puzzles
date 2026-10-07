@@ -21,10 +21,10 @@ the wrong rule and quietly stop testing what it claims to, so each reject case
 names the message it expects. Two fixtures are star-battle boards for exactly this
 reason — on a queens board the capacity rule they exist to test is masked.
 
-The divisibility fixture is a star-battle board too, but because it has to be.
-Queens puts exactly one queen in each of `size` regions, so its capacities always
-total `size` and the rule can never fail there; only a board whose regions hold
-other numbers can describe a game with no whole stars-per-row.
+Two of those fixtures are star battle for the same reason. The non-uniform capacity
+one only describes a board where regions hold different numbers of stars, and the
+region-count one only describes a board whose regions are not one per row; Queens
+puts exactly one queen in each of `size` regions, so neither rule can fail there.
 
 ## Relationship to the other suites
 

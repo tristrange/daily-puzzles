@@ -158,27 +158,28 @@ describe('regionColours', () => {
   })
 
   it('colours the densest board the app can build, in bounded time', () => {
-    // 8x8 tiled with 2x2 blocks: 16 regions, the most the app can be handed, and
-    // a far denser adjacency graph than any shipped day. The search is only
-    // reached when the climb fails, but "rare" should not be what keeps this
-    // fast, so the worst realistic input is measured rather than assumed.
+    // 8x8 tiled with 2x4 blocks: 8 regions, the most a Board can legally hold at
+    // this size (a genre board has exactly `size` regions), and a far denser
+    // adjacency graph than any shipped day. The search is only reached when the
+    // climb fails, but "rare" should not be what keeps this fast, so the worst
+    // realistic input is measured rather than assumed.
     const size = 8
     const cells = Array.from({ length: size * size }, (_, cell) => {
       const row = Math.floor(cell / size)
       const col = cell % size
-      return Math.floor(row / 2) * 4 + Math.floor(col / 2)
+      return Math.floor(row / 2) * 2 + Math.floor(col / 4)
     })
-    const board = new Board(size, cells, new Array(16).fill(1), 'star-battle')
+    const board = new Board(size, cells, new Array(8).fill(1), 'star-battle')
 
     const started = Date.now()
     const colours = regionColours(board)
     const elapsed = Date.now() - started
 
-    for (let a = 0; a < 16; a += 1) {
-      for (let b = a + 1; b < 16; b += 1) {
+    for (let a = 0; a < 8; a += 1) {
+      for (let b = a + 1; b < 8; b += 1) {
         const touching =
-          Math.abs(Math.floor(a / 4) - Math.floor(b / 4)) <= 1 &&
-          Math.abs((a % 4) - (b % 4)) <= 1
+          Math.abs(Math.floor(a / 2) - Math.floor(b / 2)) <= 1 &&
+          Math.abs((a % 2) - (b % 2)) <= 1
         if (!touching) continue
         expect(
           colourDistance(colours[a] as string, colours[b] as string),
