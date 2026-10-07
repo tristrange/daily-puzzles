@@ -19,6 +19,7 @@ from hypothesis import strategies as st
 
 from queens_engine import Board, PuzzleType, SolverError
 from queens_engine.board import BoardError
+from queens_engine.generator import FEASIBLE_STAR_BATTLE
 from queens_engine.solver import (
     count_solutions,
     format_solution,
@@ -203,65 +204,101 @@ def random_legal_board(size: int, rng: random.Random, *, attempts: int = 400) ->
     return None
 
 
-def _grow_contiguous_regions(size: int, region_count: int, rng: random.Random) -> list[int] | None:
-    """Fill the grid with `region_count` blobs, each grown from one seed cell.
+def _star_layouts(size: int, stars_per_row: int, wanted: int) -> list[list[int]]:
+    """A few legal no-touching layouts: `stars_per_row` per row and column.
 
-    Growing cell by cell from an existing region is what guarantees
-    4-connectivity, so the only structural rule left to get wrong is having
-    enough room to start each new region.
+    One region per row makes the region rule the row rule, so a solution of that
+    board is exactly a Star Battle layout. Reading them off that board is what
+    keeps this probe honest without importing the generator's private placement
+    search or reimplementing it here.
     """
-    regions: list[int | None] = [None] * (size * size)
-    cells = list(range(size * size))
-    rng.shuffle(cells)
-    regions[cells[0]] = 0
-
-    for next_region in range(1, region_count):
-        frontier = [
-            cell
-            for cell in range(size * size)
-            if regions[cell] is None
-            and any(regions[o] is not None for o in _orthogonal(cell, size))
-        ]
-        if not frontier:
-            return None
-        regions[rng.choice(frontier)] = next_region
-
-    # Absorb whatever is left, always from a cell touching an existing region.
-    pending = [cell for cell in range(size * size) if regions[cell] is None]
-    while pending:
-        still: list[int] = []
-        for cell in pending:
-            adjacent = [regions[o] for o in _orthogonal(cell, size) if regions[o] is not None]
-            if adjacent:
-                regions[cell] = rng.choice(adjacent)
-            else:
-                still.append(cell)
-        if len(still) == len(pending):
-            return None
-        pending = still
-
-    return [r for r in regions if r is not None]
+    layouts = [list(solution) for solution in iter_solutions(striped_star(size, stars_per_row))]
+    return layouts[:wanted]
 
 
 def random_star_battle_board(
-    size: int, stars_per_row: int, rng: random.Random, *, attempts: int = 400
+    size: int,
+    stars_per_row: int,
+    rng: random.Random,
+    *,
+    attempts: int = 40,
+    layouts: Sequence[Sequence[int]] | None = None,
 ) -> Board | None:
-    """A legal Star Battle board with `stars_per_row` stars in every row."""
-    for _ in range(attempts):
-        regions = _grow_contiguous_regions(size, size, rng)
+    """A legal Star Battle board with real regions that *has a solution*.
+
+    Regions grown from random seeds almost never admit one. Two stars per row
+    and column already leaves a small grid little room, and an unrelated
+    partition adds a third constraint nothing was built to satisfy: measured
+    over hundreds of random boards, not one was solvable, so an oracle
+    comparison against them only ever checked that 0 equalled 0.
+
+    So build the board around a real layout instead. Each layout's stars are cut
+    into `size` groups of `stars_per_row` to seed the regions, and the region
+    grows to fill the grid from there, which leaves the layout a solution and
+    gives the regions genuine shapes. `rng` picks which layout to build from, so
+    one call with one seed still varies the board.
+    """
+    pool = list(layouts) if layouts is not None else _star_layouts(size, stars_per_row, attempts)
+    for offset in range(attempts):
+        layout = pool[(rng.randrange(len(pool)) + offset) % len(pool)] if pool else None
+        if layout is None:
+            return None
+
+        seeds: list[tuple[int, int]] = []
+        for region, base in enumerate(range(0, len(layout), stars_per_row)):
+            seeds.extend((cell, region) for cell in sorted(layout[base : base + stars_per_row]))
+        regions = _grow_regions_from_seeds(size, seeds, rng)
         if regions is None:
             continue
 
         try:
             return Board(
                 size=size,
-                regions=tuple(regions),
+                regions=regions,
                 region_capacity=(stars_per_row,) * size,
                 puzzle_type=PuzzleType.STAR_BATTLE,
             )
         except BoardError:
             continue
     return None
+
+
+def _grow_regions_from_seeds(
+    size: int, seeds: Sequence[tuple[int, int]], rng: random.Random
+) -> tuple[int, ...] | None:
+    """Flood-fill the grid outward from `(cell, region)` seeds.
+
+    Each round every region claims one cell from its own frontier, chosen at
+    random, so a region's shape depends on the order regions reach each cell. A
+    seed cut off from the rest of its region returns `None` for `Board` to
+    reject.
+    """
+    labels: list[int | None] = [None] * (size * size)
+    for cell, region in seeds:
+        if labels[cell] is not None:
+            return None
+        labels[cell] = region
+
+    remaining = size * size - len(seeds)
+    owners = [region for _, region in seeds]
+    while remaining:
+        claimed = False
+        for region in owners:
+            frontier = [
+                cell
+                for cell, label in enumerate(labels)
+                if label is None and any(labels[o] == region for o in _orthogonal(cell, size))
+            ]
+            if frontier:
+                labels[rng.choice(frontier)] = region
+                remaining -= 1
+                claimed = True
+        if not claimed:
+            return None
+
+    if any(label is None for label in labels):
+        return None
+    return tuple(label for label in labels if label is not None)
 
 
 def _orthogonal(cell: int, size: int) -> tuple[int, ...]:
@@ -551,19 +588,47 @@ def test_agrees_with_oracle_when_several_stars_per_row(size: int, seed: int) -> 
 
 @settings(max_examples=40, deadline=None, suppress_health_check=[HealthCheck.too_slow])
 @given(
-    size=st.integers(min_value=5, max_value=7),
-    stars_per_row=st.integers(min_value=2, max_value=2),
+    size=st.sampled_from(sorted(size for size, _ in FEASIBLE_STAR_BATTLE)),
+    stars_per_row=st.sampled_from([2]),
     seed=st.integers(min_value=0, max_value=2**32),
 )
 def test_agrees_with_oracle_on_real_multi_star_regions(
     size: int, stars_per_row: int, seed: int
 ) -> None:
-    """The gap that hid the column bug: several stars per row *and* real regions."""
+    """The gap that hid the column bug: several stars per row *and* real regions.
+
+    `FEASIBLE_STAR_BATTLE` and a layout-first board together make this bite;
+    `test_the_multi_star_oracle_check_is_not_vacuous` is what keeps it that way.
+    """
     rng = random.Random(seed)
     board = random_star_battle_board(size, stars_per_row, rng)
     if board is None:
         return
     assert count_solutions(board, limit=BIG) == oracle_count(board)
+
+
+def test_the_multi_star_oracle_check_is_not_vacuous() -> None:
+    """Every feasible size yields boards that have a solution to disagree about.
+
+    The property test above can only be as good as the boards it is handed. It
+    once drew sizes that admit no legal layout at all, and built regions that
+    admitted no solution, so all 40 of its examples compared 0 to 0 and it would
+    have passed against a solver that returned nothing but zeros. This is the
+    guard on the guard: it fails if the sizes stop being feasible, if the boards
+    stop being solvable, or if the solver starts reporting 0 for a board whose
+    oracle count is positive.
+    """
+    for size in sorted(size for size, _ in FEASIBLE_STAR_BATTLE):
+        solvable = 0
+        for seed in range(12):
+            board = random_star_battle_board(size, 2, random.Random(seed))
+            if board is None:
+                continue
+            count = count_solutions(board, limit=BIG)
+            assert count > 0, f"{size}x{size} seed {seed}: no solution, so nothing is checked"
+            assert count == oracle_count(board)
+            solvable += 1
+        assert solvable >= 6, f"{size}x{size}: only {solvable} solvable boards, too few"
 
 
 @settings(max_examples=40, deadline=None, suppress_health_check=[HealthCheck.too_slow])
