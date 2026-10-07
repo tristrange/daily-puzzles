@@ -7,6 +7,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from queens_engine import Board, BoardError, PuzzleType
+from queens_engine.board import derive_stars_per_row
 
 
 def row_partition(size: int) -> tuple[int, ...]:
@@ -83,9 +84,9 @@ class TestRejectedBoards:
             make_board(4, regions, (1, 1, 1, 1, 1))
 
     def test_disconnected_region(self) -> None:
-        regions = (0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1)
+        regions = (0, 1, 1, 1, 2, 2, 2, 2, 0, 3, 3, 3, 3, 3, 3, 3)
         with pytest.raises(BoardError, match="not orthogonally connected"):
-            make_board(4, regions, (1, 1), PuzzleType.STAR_BATTLE)
+            make_board(4, regions, (1, 1, 1, 1), PuzzleType.STAR_BATTLE)
 
     def test_region_may_touch_itself_diagonally(self) -> None:
         # Regions are only required to be 4-connected. Rejecting diagonal
@@ -114,24 +115,30 @@ class TestRejectedBoards:
             make_board(4, row_partition(4), (1, 1, 2, 1))
 
     def test_capacity_exceeds_region_size(self) -> None:
-        regions = (0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+        regions = (0, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3)
         with pytest.raises(BoardError, match="outside"):
-            make_board(4, regions, (2, 1), PuzzleType.STAR_BATTLE)
+            make_board(4, regions, (2, 2, 2, 2), PuzzleType.STAR_BATTLE)
 
-    def test_capacities_must_divide_evenly(self) -> None:
-        """No whole number of stars per row means no game to play.
+    def test_star_battle_requires_one_region_per_row(self) -> None:
+        regions = (0,) * 8 + (1,) * 8
+        with pytest.raises(BoardError, match="exactly 4 regions"):
+            make_board(4, regions, (2, 2), PuzzleType.STAR_BATTLE)
 
-        Every other rule here looks at one capacity against its own region;
-        this is the one that reads them all together. The capacities total 5 on
-        a size-4 board, so `starsPerRow` in the app is 1.25 and `isSolved` asks
-        for five pieces where the row limit makes four the most anyone can place
-        — a puzzle that can never be won. The solver used to be the first thing
-        to notice, which meant the board had already been accepted, parsed and
-        served.
-        """
+    def test_star_battle_rejects_non_uniform_capacity(self) -> None:
         regions = (2, 3, 3, 3, 2, 2, 0, 0, 2, 2, 1, 0, 2, 2, 1, 0)
-        with pytest.raises(BoardError, match="not divisible"):
+        with pytest.raises(BoardError, match="one capacity shared"):
             make_board(4, regions, (1, 1, 1, 2), PuzzleType.STAR_BATTLE)
+
+    def test_derive_stars_per_row_divides_an_even_total(self) -> None:
+        assert derive_stars_per_row((2,) * 4, 4) == 2
+
+    def test_derive_stars_per_row_refuses_a_fractional_total(self) -> None:
+        with pytest.raises(BoardError, match="not divisible by the grid size 4"):
+            derive_stars_per_row((1, 1, 1, 2), 4)
+
+    def test_derive_stars_per_row_refuses_too_many_stars_per_row(self) -> None:
+        with pytest.raises(BoardError, match=r"outside 1\.\.4"):
+            derive_stars_per_row((5, 5, 5, 5), 4)
 
 
 @given(size=st.integers(min_value=2, max_value=16))

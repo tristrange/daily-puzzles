@@ -446,6 +446,19 @@ own copy of the check as a second line of defence, so its test moved to
 `test_board.py` rather than asserting through a constructor it can no longer
 reach.
 
+That rule has since been narrowed to a per-genre contract, which makes it
+unreachable for any board `Board` accepts. Queens was already pinned to one region
+per row with a capacity of 1; Star Battle states two stars per row, column *and*
+region, so it is pinned the same way — exactly `size` regions, all sharing one
+capacity. Both genres therefore force the total to divide, and the check only
+remains as the guard inside `derive_stars_per_row` for direct callers and a future
+genre that does not pin capacities this way. Naming it per genre rather than as one
+rule for every type is also the better error: a two-region star board now says the
+region count is wrong, instead of failing on a shape detail further in. The
+engine's `_genre_violation` holds the contract in one place and runs ahead of the
+per-region loop so the genre rule is named first; `board-cases/` carries both new
+rules and drops the divisibility fixture it replaced.
+
 Steps 1–6 are the *precondition* for a third game, and none of them produce a
 playable puzzle. They are worth doing as their own PR, on their own merits, before
 anyone writes a Tango rule.

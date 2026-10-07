@@ -44,8 +44,8 @@ describe('board structure', () => {
   })
 
   it('rejects a disconnected region', () => {
-    const regions = [0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1]
-    expect(() => makeBoard(4, regions, [1, 1], 'star-battle')).toThrow(/not orthogonally connected/)
+    const regions = [0, 1, 1, 1, 2, 2, 2, 2, 0, 3, 3, 3, 3, 3, 3, 3]
+    expect(() => makeBoard(4, regions, [1, 1, 1, 1], 'star-battle')).toThrow(/not orthogonally connected/)
   })
 
   it('rejects queens without one region per row', () => {
@@ -54,13 +54,27 @@ describe('board structure', () => {
     )
   })
 
+  it('rejects star battle without one region per row', () => {
+    expect(() => makeBoard(4, [...Array<number>(8).fill(0), ...Array<number>(8).fill(1)], [2, 2], 'star-battle')).toThrow(
+      /exactly 4 regions/,
+    )
+  })
+
   it('rejects a queens capacity above one', () => {
     expect(() => makeBoard(4, rowPartition(4), [1, 1, 2, 1])).toThrow(/capacity of exactly 1/)
   })
 
+  it('rejects a non-uniform star battle capacity', () => {
+    expect(() => makeBoard(4, rowPartition(4), [1, 1, 1, 2], 'star-battle')).toThrow(
+      /one capacity shared/,
+    )
+  })
+
   it('rejects a capacity larger than the region', () => {
-    // Region 1 holds two cells, so a capacity of three cannot be met.
-    expect(() => makeBoard(2, [0, 0, 1, 1], [1, 3], 'star-battle')).toThrow(/capacity 3 outside/)
+    // Region 0 holds one cell, so a shared capacity of two cannot be met.
+    expect(() => makeBoard(4, [0, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3], [2, 2, 2, 2], 'star-battle')).toThrow(
+      /capacity 2 outside/,
+    )
   })
 })
 

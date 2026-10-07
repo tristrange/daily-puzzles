@@ -167,13 +167,9 @@ def validate_board(board: Board) -> None:
     if present != set(range(board.region_count)):
         raise BoardError("region ids must be exactly 0..regionCount-1, with no gaps")
 
-    if board.puzzle_type is PuzzleType.QUEENS:
-        if board.region_count != board.size:
-            raise BoardError(
-                f"queens needs exactly {board.size} regions, found {board.region_count}"
-            )
-        if any(capacity != 1 for capacity in board.region_capacity):
-            raise BoardError("queens requires a capacity of exactly 1 per region")
+    violation = _genre_violation(board)
+    if violation is not None:
+        raise BoardError(violation)
 
     for region_id in range(board.region_count):
         cells = board.cells_of_region(region_id)
@@ -195,7 +191,35 @@ def validate_board(board: Board) -> None:
     # Given the capacity check in the loop above, divisibility is the whole
     # rule: the capacities sum to at least one and at most `size * size`, so a
     # total that divides by the size lands the quotient in `1..size` on its own.
+    #
+    # Both genres already force a uniform capacity across exactly `size` regions,
+    # so the total always divides and this can never fire for a `Board`. It stays
+    # as the guard for direct `derive_stars_per_row` callers and any future genre
+    # that does not pin its capacities this way.
     derive_stars_per_row(board.region_capacity, board.size)
+
+
+def _genre_violation(board: Board) -> str | None:
+    """The genre contract `board` breaks, or `None` if it keeps every rule.
+
+    Queens and Star Battle both pin the region structure: exactly `size` regions
+    that all share one capacity, with Queens fixing that capacity at 1. Runs
+    before the per-region loop so a genre violation is named over a shape
+    detail: a two-region star board says so, rather than pointing at one of its
+    regions first.
+    """
+    if board.puzzle_type is PuzzleType.QUEENS:
+        if board.region_count != board.size:
+            return f"queens needs exactly {board.size} regions, found {board.region_count}"
+        if any(capacity != 1 for capacity in board.region_capacity):
+            return "queens requires a capacity of exactly 1 per region"
+        return None
+    if board.puzzle_type is PuzzleType.STAR_BATTLE:
+        if board.region_count != board.size:
+            return f"star battle needs exactly {board.size} regions, found {board.region_count}"
+        if any(capacity != board.region_capacity[0] for capacity in board.region_capacity):
+            return "star battle requires one capacity shared by every region"
+    return None
 
 
 def _is_orthogonally_connected(board: Board, cells: tuple[int, ...]) -> bool:

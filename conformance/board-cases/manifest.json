@@ -33,6 +33,12 @@
       "error": "queens needs exactly"
     },
     {
+      "file": "star-battle-region-count-mismatch.reject.json",
+      "valid": false,
+      "note": "star battle needs exactly size regions",
+      "error": "star battle needs exactly"
+    },
+    {
       "file": "queens-capacity-above-one.reject.json",
       "valid": false,
       "note": "a queens region holds exactly one queen",
@@ -51,10 +57,10 @@
       "error": "capacity 5 outside"
     },
     {
-      "file": "star-battle-capacities-not-divisible.reject.json",
+      "file": "star-battle-capacities-not-uniform.reject.json",
       "valid": false,
-      "note": "capacities total 5 on a size-4 board, so no whole number of stars per row exists and the game can never be won",
-      "error": "capacities total 5, which is not divisible by the grid size 4"
+      "note": "every region of a star battle board shares one capacity; this board's regions mostly hold one star but one holds two",
+      "error": "one capacity shared"
     },
     {
       "file": "disconnected-region.reject.json",

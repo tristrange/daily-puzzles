@@ -385,13 +385,13 @@ def _needs(state: _State, kind: int) -> list[int]:
 def _group_count(state: _State, kind: int) -> int:
     """How many groups of `kind` this board has.
 
-    Rows and columns are always `size`. Regions are whatever the board declares,
-    which is only equal to `size` when the capacities are uniform — and nothing
-    here requires them to be. Star Battle states two stars per row, column and
-    region, so a uniform board ties the counts together, but `Board` accepts a
-    board with fewer or more regions than rows, and the solver already counts
-    solutions for one. Iterating regions over `size` therefore crashes on a board
-    with fewer regions and quietly skips some on a board with more.
+    Rows and columns are always `size`. Regions are whatever the board declares.
+    Every board `Board` accepts ties the two counts together — Queens forces one
+    region per row, Star Battle forces `size` regions sharing one capacity — but
+    the machinery still reads the region count it was handed rather than trusting
+    `size`, so a future genre that decouples them is counted correctly on day one.
+    Iterating regions over `size` was a real crash on a board with fewer regions
+    and quietly skipped some on a board with more.
     """
     return state.board.region_count if kind == _REGION else state.board.size
 
