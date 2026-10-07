@@ -1,0 +1,10 @@
+{
+  "comment": "Difficulty band naming, asserted from both sides. The engine's LEVEL_NAMES is what its CLI prints and what tools/verify reports a ramp against ('ramp Expert (target Expert)'); the app's DIFFICULTY_LABEL is what the player reads on the chooser card and the archive. Both keys off the same 1-based integer in the puzzle file, so a rename on one side is invisible on the other and the two simply disagree about how hard a board is. Adding or removing a band means editing this manifest, the engine's LEVEL_NAMES, the app's DIFFICULTY_LABEL and the schema's range in the same commit.",
+  "bands": [
+    { "level": 1, "name": "Easy" },
+    { "level": 2, "name": "Medium" },
+    { "level": 3, "name": "Hard" },
+    { "level": 4, "name": "Expert" },
+    { "level": 5, "name": "Nightmare" }
+  ]
+}

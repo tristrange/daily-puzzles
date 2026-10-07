@@ -58,13 +58,15 @@ Python and `ajv` in TypeScript, so the two parsers cannot drift apart.
 
 Parsing agreement is necessary but not sufficient — a board can be structurally valid and
 logically broken. So [`conformance/`](conformance/) extends the same idea from parsing to
-*reasoning*, in three layers:
+*reasoning*, and to the small tables both sides would otherwise copy:
 
 | Suite | Pins |
 | --- | --- |
 | `schema-cases/` | what a file may say, and which rule rejects a bad one |
 | `board-cases/` | which board is legal, and **which rule** rejects an illegal one |
 | `hint-cases/` | what each side *deduces* from a player's live board |
+| `id-cases/` | puzzle id naming — a spelling the two disagree on is a puzzle that is published, correct, and unfindable |
+| `band-cases/` | difficulty band names, which the engine prints and the player reads |
 
 Every expectation is asserted from both languages. A board can parse and still be nonsense
 — and it has been.
