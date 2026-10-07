@@ -16,10 +16,22 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { DIFFICULTY_LABEL } from './games'
-import { DIFFICULTY_BANDS, type DifficultyBand } from './puzzle'
+import { DIFFICULTY_BANDS, parsePuzzle, PuzzleParseError, type DifficultyBand } from './puzzle'
 
 const REPO_ROOT = new URL('../../..', import.meta.url).pathname
 const CASES_DIR = join(REPO_ROOT, 'conformance', 'band-cases')
+
+/** A valid queens file carrying `difficulty`, for the schema-bound check. */
+function puzzleWithBand(level: number): unknown {
+  return {
+    id: '2026-10-11',
+    type: 'queens',
+    seed: 1,
+    generatorVersion: 1,
+    board: { size: 3, regions: [0, 0, 0, 1, 1, 2, 2, 2, 2] },
+    difficulty: level,
+  }
+}
 
 interface Band {
   level: number
@@ -53,5 +65,20 @@ describe('conformance: band-cases', () => {
   it('has no duplicate names, which would make the label meaningless', () => {
     const names = manifest.bands.map((band) => band.name)
     expect(new Set(names).size).toBe(names.length)
+  })
+
+  /**
+   * The fourth copy: the schema's own `difficulty` bounds, asserted here as behaviour.
+   *
+   * The schema is read by both parsers at runtime and its range is hand-written rather
+   * than generated from the manifest, so a band added to the manifest and both registries
+   * while the schema stayed at `maximum: 5` would pass every other case in this file and
+   * then reject every puzzle using the new band, for a reason unrelated to the puzzle.
+   */
+  it('parses every band the manifest declares, and refuses one past the end', () => {
+    for (const band of manifest.bands) {
+      expect(() => parsePuzzle(puzzleWithBand(band.level))).not.toThrow()
+    }
+    expect(() => parsePuzzle(puzzleWithBand(manifest.bands.length + 1))).toThrow(PuzzleParseError)
   })
 })

@@ -52,10 +52,19 @@ against; the app's `DIFFICULTY_LABEL` is what a player reads on the chooser card
 archive. Both key off the same 1-based integer in the puzzle file, so renaming a band on
 one side changes nothing that fails: the file still parses, the board still replays, and
 `verify_replay` compares boards rather than labels. The symptom is that the engine calls a
-board *Expert* while the archive card calls it *Hard*. Unlike `id-cases/` this manifest is
-not the source for anything — the schema's `difficulty` range is a hand-written `1..5` —
-so adding a band means editing the manifest, `LEVEL_NAMES`, `DIFFICULTY_LABEL` and the
-schema's range together, and the suites are what notice if you forget one.
+board *Expert* while the archive card calls it *Hard*.
+
+Unlike `id-cases/`, this manifest is not the source for anything. The schema's `difficulty`
+range is a hand-written `minimum: 1, maximum: 5`, so adding a band means editing four
+places — the manifest, `LEVEL_NAMES`, `DIFFICULTY_LABEL` and the schema's bound. The suite
+covers all four: both sides assert their registry against the manifest, and a fifth case
+asserts the schema *accepts every band the manifest declares and rejects one past the
+end*. That last one is why the bound cannot be quietly left behind — without it, a sixth
+band added everywhere except the schema would pass every other assertion here and then
+reject every puzzle using it, in both languages, at parse time, for a reason unrelated to
+the puzzle. Generating the bound from the manifest the way `tools/schema_ids` does for the
+id pattern would remove the fourth edit instead of catching its absence; that is a change
+to the schema tooling and worth making deliberately.
 
 `hint-cases/` is worth one precise caveat. A "subset" firing can only ever occur *after*
 some cells are already dead (on an untouched board every region, row and column has a full
