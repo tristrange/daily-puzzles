@@ -142,16 +142,18 @@ find one for a real date, and a flaky band is worse than a slightly smaller boar
 The budget counts *attempts*, not boards produced. A seed that cannot generate at all has
 to count against it, or a size the generator cannot satisfy would loop forever.
 
-## Star Battle facts the engine depends on
+## Which Star Battle sizes exist, and why version 2
 
-Two facts the star path depends on. First, **not every size admits a star
-count**: two non-touching stars per row need a row span of three columns and
-each row shadows its neighbour, so within the generator's 5–9 range only 8x8 and
-9x9 admit two stars per row (three stars need at least 12x12, beyond the range).
+**Not every size admits a star count**: two non-touching stars per row need a row span
+of three columns, and each row shadows its neighbour, so within the generator's 5–9 range
+only 8x8 and 9x9 admit two stars per row. Three stars need at least 12x12, beyond the
+range.
+
 A brute-force search over row combinations confirmed the table, and
 `generate_puzzle` fails fast on impossible combinations rather than burning
-20,000 attempts discovering that. Second, `generatorVersion` is part of the
-contract: Queens is version 1 (frozen — the committed files replay through the
-exact PRNG stream that made them) and Star Battle is version 2, a separate
-placement function that cannot perturb the version-1 draws. A new star layout
-bug would be caught by `verify_replay` in CI before it reached a player.
+20,000 attempts discovering that.
+
+`generatorVersion` is part of the contract too: Queens is version 1 (frozen — the
+committed files replay through the exact PRNG stream that made them) and Star Battle is
+version 2, a separate placement function that cannot perturb the version-1 draws. A new
+star layout bug would be caught by `verify_replay` in CI before it reached a player.

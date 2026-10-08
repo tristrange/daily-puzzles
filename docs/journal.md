@@ -1,6 +1,7 @@
 # Journal
 
-The build log, kept because the reasoning is worth more than the changelog: what was tried, what the measurements said, and the bugs that were found rather than avoided.
+What was tried, what the measurements said, and the bugs that were found rather than
+avoided. The reasoning is the point; the shipped code is in `git log`.
 
 ## Milestones
 
@@ -24,8 +25,8 @@ The build log, kept because the reasoning is worth more than the changelog: what
 | 16 | Port the deduction engine to per-group counts so Star Battle can be rated, then ramp it too | open |
 
 Milestones 2 to 4 were the critical path, and they are all Python. The engine alone — a
-CLI with an exact uniqueness prover and property tests — would be worth publishing even if
-the app half slipped. The milestones that shipped it are historical now.
+CLI with an exact uniqueness prover and property tests — would have been worth publishing
+even if the app half slipped.
 
 ## A rule that looked right and was degenerate
 
