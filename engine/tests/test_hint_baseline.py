@@ -56,6 +56,24 @@ def test_every_position_records_a_move_or_the_absence_of_one() -> None:
             assert len(row) == 3, f"{key}: malformed position {row}"
 
 
+def test_the_corpus_asks_for_a_cross_as_well_as_a_placement() -> None:
+    """Guards the mistake a cheaper generator makes.
+
+    Recording only the saturated position — every known cross already applied —
+    means the only hint left can be a placement or nothing, so all 428 expectations
+    came out `queen` or `null` and the sweep never asked the app for a cross. A
+    cross is the more common hint a player is given, so that corpus would have
+    passed a port that could not produce one at all.
+    """
+    actions: set[str] = set()
+    for positions in build_baseline().values():
+        for row in cast("list[list[Any]]", positions):
+            move = cast("list[Any] | None", row[2])
+            if move is not None:
+                actions.add(cast("str", move[1]))
+    assert actions == {"queen", "x"}, f"only saw {sorted(actions)}"
+
+
 def test_a_changed_move_is_reported_with_its_position() -> None:
     """A wrong hint must fail, and name the position that moved."""
     expected = build_baseline()

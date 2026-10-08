@@ -11,10 +11,16 @@ to mark solution cells dead. A fixture list only covers the states someone
 thought to write down.
 
 So this is the same sweep as a golden file, over a corpus generated rather than
-curated. For each committed puzzle and each prefix of its solution, the marks
-are the cells the engine itself can prove dead from that position — not an
-arbitrary set, but what a player who has worked the board out actually has. The
-engine records the move it expects and the app asserts it produces the same one.
+curated. For each committed puzzle and each prefix of its solution, it walks the
+position the way a player does — asking for a hint, applying it, asking again —
+and records every step: the marks so far, and the move the engine gives from that
+position. The app asserts it produces the same one at every step.
+
+Recording the walk rather than only its end matters. A saturated position, where
+every cross is already applied, can only yield a placement or nothing, so the
+first version of this recorded 428 positions and not one of them asked for a
+cross — a cross being the more common hint a player is given. Walking the whole
+path is 1299 positions and 871 of them are crosses.
 
 Positions where the engine has nothing forced are recorded as such, so "no hint"
 is pinned too rather than being the untested default.
@@ -40,31 +46,34 @@ BASELINE_PATH: Final[Path] = (
 )
 
 
-#: How many hints to follow when deriving a player's crosses. Bounded so a board
-#: whose rules oscillate costs time rather than hanging the tool.
+#: How many hints to follow when walking a position to its end. Bounded so a
+#: board whose rules oscillate costs time rather than hanging the tool.
 MARK_ROUNDS: Final[int] = 500
 
 
-def justified_marks(board: Puzzle, queens: list[int]) -> list[int]:
-    """Cells the engine can prove dead from a position, in index order.
+def walk(puzzle: Puzzle, queens: list[int]) -> list[tuple[list[int], list[Any] | None]]:
+    """Every position the engine walks through from `queens`, and the move at each.
 
-    This is a player's crosses, not an oracle's: it is what you get from following
-    the hints the engine itself offers, which is the only kind of mark set the
-    rules are expected to reason about. It stops at the first hint that places a
-    star rather than following it, because placing changes the position and
-    re-deriving from there is a different question.
+    Each step records the marks so far and the hint from that position, then
+    applies the hint to advance. Stopping at a *saturated* position instead would
+    be cheaper and much weaker: once every cross is known, the only hint left can
+    be a placement or nothing, so the corpus would never ask the app for a cross —
+    and a cross is the more common hint a player is given. Recording each step is
+    what makes the sweep test that too.
 
     Built from the public `first_forced_move` rather than the deduction internals,
-    so the marks come from the same function whose output the app is being checked
-    against — one rule, one implementation, nothing to keep in step.
+    so every expectation comes from the same function whose output the app is being
+    checked against: one rule, one implementation.
     """
-    dead: set[int] = set()
+    marks: list[int] = []
+    steps: list[tuple[list[int], list[Any] | None]] = []
     for _ in range(MARK_ROUNDS):
-        move = first_forced_move(board.board, queens=queens, marks=sorted(dead))
+        move = first_forced_move(puzzle.board, queens=queens, marks=marks)
+        steps.append((list(marks), None if move is None else [move.cell, move.action, move.rule]))
         if move is None or move.action != "x":
             break
-        dead.add(move.cell)
-    return sorted(dead)
+        marks.append(move.cell)
+    return steps
 
 
 def build_baseline() -> dict[str, JsonValue]:
@@ -77,15 +86,8 @@ def build_baseline() -> dict[str, JsonValue]:
         positions: list[JsonValue] = []
         for placed in range(len(solution) + 1):
             queens = solution[:placed]
-            marks = justified_marks(puzzle, queens)
-            move = first_forced_move(puzzle.board, queens=queens, marks=marks)
-            positions.append(
-                [
-                    list(queens),
-                    list(marks),
-                    None if move is None else [move.cell, move.action, move.rule],
-                ]
-            )
+            for marks, move in walk(puzzle, queens):
+                positions.append([list(queens), list(marks), move])
         baseline[path.stem] = positions
     return baseline
 
