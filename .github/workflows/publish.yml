@@ -37,7 +37,12 @@ jobs:
         run: |
           git config user.name 'daily-puzzles bot'
           git config user.email 'bot@users.noreply.github.com'
-          git add ../app/public/puzzles
+          # The hint baseline covers every committed puzzle, so publishing without
+          # regenerating it would leave the corpus short a puzzle and fail both
+          # the engine and the app sweep. Regenerated here rather than after,
+          # because the commit is what CI then verifies.
+          uv run python -m tools.hint_baseline --write
+          git add ../app/public/puzzles engine/tests/fixtures/hint-baseline.json
           if ! git diff --cached --quiet; then
             git commit -m "Publish daily puzzles"
             git push origin main

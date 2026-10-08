@@ -71,7 +71,26 @@ the puzzle. Generating the bound from the manifest the way `tools/schema_ids` do
 id pattern would remove the fourth edit instead of catching its absence; that is a change
 to the schema tooling and worth making deliberately.
 
-`hint-cases/` is worth one precise caveat. A "subset" firing can only ever occur *after*
+`hint-cases/` is a curated list, and that is its limit. On #52 the port's intersection
+rule was wrong for *every* multi-star board and all seven fixtures were single-star, so
+it passed all of them and shipped telling players to mark solution cells dead. A fixture
+only covers the states someone thought to write down.
+
+`engine/tools/hint_baseline.py` closes that by generating the corpus instead. For every
+prefix of every committed puzzle's solution it walks the position the way a player does —
+ask for a hint, apply it, ask again — recording every step. `test_hint_baseline.py` checks
+the baseline against a fresh run, and `app/src/domain/hintBaseline.test.ts` asserts the
+app produces the same move at every step: 1,299 positions where there were 12 curated
+cases, 871 of them asking for a cross. Reinstating the #52 bug fails it, which is how it
+was checked before being trusted. `--write` refreshes it, the diff is the review, and the
+publish workflow runs it so a newly published puzzle cannot leave the corpus short.
+
+Walking the whole path rather than recording only its end was not the first attempt. A
+saturated position, where every cross is already applied, can only yield a placement or
+nothing — so the first version recorded 428 positions and not one asked for a cross, and
+would have passed a port that could not produce one at all.
+
+Like `id-cases/`, `hint-cases/` is worth one precise caveat. A "subset" firing can only ever occur *after*
 some cells are already dead (on an untouched board every region, row and column has a full
 candidate set, so the pigeonhole never triggers), which is why a subset case ships an
 explicit player state — the marks the player has already made — rather than an empty
