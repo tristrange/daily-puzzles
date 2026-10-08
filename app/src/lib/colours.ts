@@ -351,7 +351,7 @@ export function regionColours(board: Board): readonly string[] {
 }
 
 /** Parses `#rgb`, `#rrggbb` or `#rrggbbaa`, ignoring any alpha. */
-export function parseHex(hex: string): [number, number, number] {
+function parseHex(hex: string): [number, number, number] {
   const full =
     hex.length === 4
       ? `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`
@@ -364,7 +364,7 @@ export function parseHex(hex: string): [number, number, number] {
 }
 
 /** WCAG 2.1 relative luminance, 0 for black and 1 for white. */
-export function relativeLuminance(hex: string): number {
+function relativeLuminance(hex: string): number {
   const channels = parseHex(hex).map((channel) => {
     const value = channel / 255
     return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
