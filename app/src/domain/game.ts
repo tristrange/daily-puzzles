@@ -215,14 +215,25 @@ export function placeQueenAutoMark(game: GameState, cell: number): GameState {
 }
 
 /**
- * The board is solved once it holds `starsPerRow * size` pieces that conflict
- * with nothing. With no conflicts that count fills every row, column and region
+ * Pieces this board needs before it is full: `size * starsPerRow`, which is 8
+ * for an 8x8 Queens board and 18 for a 9x9 two-star one.
+ *
+ * One definition, because "is the board full" and "is the board won" differ
+ * only by conflicts, and a caller that answers the first with `board.size`
+ * reports a half-finished Star Battle board as complete.
+ */
+export function piecesNeeded(board: Board): number {
+  return starsPerRow(board) * board.size
+}
+
+/**
+ * The board is solved once it holds `piecesNeeded` pieces that conflict with
+ * nothing. With no conflicts that count fills every row, column and region
  * exactly (the capacities sum to the same total), which is the win condition
  * for both puzzle types.
  */
 export function isSolved(game: GameState): boolean {
-  const needed = starsPerRow(game.board) * game.board.size
-  return game.queens.size === needed && conflicts(game).length === 0
+  return game.queens.size === piecesNeeded(game.board) && conflicts(game).length === 0
 }
 
 /** A duration in milliseconds, formatted `m:ss` (e.g. `9:07`, `45:00`). */

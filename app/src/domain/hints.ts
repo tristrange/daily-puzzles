@@ -10,12 +10,15 @@
  *
  * Rules, in firing order (matching Python):
  *
- * - `single-region` / `single-row` / `single-column`: a group with one
- *   candidate left must place its queen there.
+ * - `single-region` / `single-row` / `single-column`: a group owing one star
+ *   with one cell left must place it there.
+ * - `fill`: a group needing exactly as many stars as it has cells left — every
+ *   one of those cells is a star. Unreachable at k = 1, where it is already the
+ *   single above; this is the rule that makes a many-star board tractable.
  * - `intersection`: if a group's candidates all lie in one group of the other
- *   kind, the two share the queen and the other's spare candidates are dead.
- * - `subset`: exactly k groups fit within k homes, so nothing else may use
- *   those homes.
+ *   kind, the two share a star and the other's spare candidates are dead.
+ * - `subset`: k groups owing exactly as many stars as their homes have room
+ *   for, so nothing else may use those homes.
  *
  * A hint is either "place a queen here" or "this cell is dead" (mark it X).
  * `null` means the pure rules found nothing: either the board is complete or
@@ -25,12 +28,14 @@
  */
 
 import type { Board } from './board'
+import { starsPerRow } from './game'
 import { PUZZLE_TYPE_HAS_HINTS } from './games'
 
 export const HINT_RULES = [
   'single-region',
   'single-row',
   'single-column',
+  'fill',
   'intersection',
   'subset',
 ] as const
@@ -48,13 +53,20 @@ export interface Hint {
 
 type GroupKind = 'region' | 'row' | 'column'
 
-/** Live candidate state, mirroring `_State` in the Python engine. */
+/**
+ * Live candidate state, mirroring `_State` in the Python engine.
+ *
+ * `*Need` counts the stars a group still owes and `free*` the cells it has left
+ * to put them in. A group is finished when its need reaches zero, which is the
+ * only condition any rule tests — so a one-star group and a two-star group
+ * travel through exactly the same code.
+ */
 interface CandidateState {
   board: Board
   cand: Uint8Array
-  rowHasQueen: Uint8Array
-  colHasQueen: Uint8Array
-  regionHasQueen: Uint8Array
+  rowNeed: number[]
+  colNeed: number[]
+  regionNeed: number[]
   freeRows: number[]
   freeCols: number[]
   freeRegions: number[]
@@ -65,9 +77,9 @@ function initialState(board: Board, queens: ReadonlySet<number>, marks: Readonly
   const state: CandidateState = {
     board,
     cand: new Uint8Array(board.cellCount).fill(1),
-    rowHasQueen: new Uint8Array(board.size),
-    colHasQueen: new Uint8Array(board.size),
-    regionHasQueen: new Uint8Array(board.size),
+    rowNeed: new Array<number>(board.size).fill(starsPerRow(board)),
+    colNeed: new Array<number>(board.size).fill(starsPerRow(board)),
+    regionNeed: [...board.regionCapacity],
     freeRows: new Array<number>(board.size).fill(board.size),
     freeCols: new Array<number>(board.size).fill(board.size),
     freeRegions: Array.from({ length: board.size }, (_, region) =>
@@ -79,7 +91,7 @@ function initialState(board: Board, queens: ReadonlySet<number>, marks: Readonly
     if (cell >= 0 && cell < board.cellCount) eliminate(state, cell)
   }
   for (const queen of queens) {
-    if (queen >= 0 && queen < board.cellCount) placeQueen(state, queen)
+    if (queen >= 0 && queen < board.cellCount) placeStar(state, queen)
   }
   return state
 }
@@ -94,24 +106,51 @@ function eliminate(state: CandidateState, cell: number): boolean {
   return true
 }
 
-function placeQueen(state: CandidateState, cell: number): number[] {
+/**
+ * Place a star at `cell` and kill everything it rules out.
+ *
+ * A group only empties when its last star lands, so at k > 1 a row, column and
+ * region survive their earlier stars — which is the whole difference between a
+ * one-star and a many-star board. The cell itself is consumed last: at k = 1 the
+ * sweeps already do it, and at k > 1 a cell left as a candidate could be placed
+ * a second time.
+ */
+function placeStar(state: CandidateState, cell: number): number[] {
   const { row, col } = state.board.coords(cell)
   const region = state.board.regionAt(cell)
-  state.rowHasQueen[row] = 1
-  state.colHasQueen[col] = 1
-  state.regionHasQueen[region] = 1
+  state.rowNeed[row]! -= 1
+  state.colNeed[col]! -= 1
+  state.regionNeed[region]! -= 1
 
   const dead: number[] = []
-  for (let c = 0; c < state.board.size; c += 1) {
-    for (const victim of [state.board.index(row, c), state.board.index(c, col)]) {
+  const rowFull = state.rowNeed[row] === 0
+  const colFull = state.colNeed[col] === 0
+  if (rowFull || colFull) {
+    for (let c = 0; c < state.board.size; c += 1) {
+      if (rowFull) {
+        const inRow = state.board.index(row, c)
+        if (eliminate(state, inRow)) dead.push(inRow)
+      }
+      if (colFull) {
+        const inCol = state.board.index(c, col)
+        if (eliminate(state, inCol)) dead.push(inCol)
+      }
+    }
+  }
+  if (state.regionNeed[region] === 0) {
+    for (const victim of state.cellsOfRegion[region]!) {
       if (eliminate(state, victim)) dead.push(victim)
     }
   }
-  for (const victim of state.cellsOfRegion[region]!) {
-    if (eliminate(state, victim)) dead.push(victim)
-  }
   for (const victim of touching(state.board, cell)) {
     if (eliminate(state, victim)) dead.push(victim)
+  }
+
+  if (state.cand[cell]) {
+    state.cand[cell] = 0
+    state.freeRows[row]! -= 1
+    state.freeCols[col]! -= 1
+    state.freeRegions[region]! -= 1
   }
   return dead
 }
@@ -156,44 +195,81 @@ function deadHint(state: CandidateState, rule: HintRule, victims: readonly numbe
   return null
 }
 
-/** Single candidates: exactly one cell left in a region, row or column. */
+/**
+ * Groups with no slack left, and groups down to their last cell.
+ *
+ * Two shapes, and the first is a special case of the second at k = 1. The three
+ * kinds of group are identical in form, so one loop covers them rather than
+ * three copies that could drift apart.
+ */
 function huntSingles(state: CandidateState): Hint | null {
   const size = state.board.size
-  for (let region = 0; region < size; region += 1) {
-    if (state.regionHasQueen[region] || state.freeRegions[region] !== 1) continue
-    const cell = singleCandidate(state, state.cellsOfRegion[region]!)
-    if (cell !== null) {
-      placeQueen(state, cell)
-      return queenHint(cell, 'single-region')
-    }
-  }
-  for (let row = 0; row < size; row += 1) {
-    if (state.rowHasQueen[row] || state.freeRows[row] !== 1) continue
-    const cells = Array.from({ length: size }, (_, c) => state.board.index(row, c))
-    const cell = singleCandidate(state, cells)
-    if (cell !== null) {
-      placeQueen(state, cell)
-      return queenHint(cell, 'single-row')
-    }
-  }
-  for (let col = 0; col < size; col += 1) {
-    if (state.colHasQueen[col] || state.freeCols[col] !== 1) continue
-    const cells = Array.from({ length: size }, (_, r) => state.board.index(r, col))
-    const cell = singleCandidate(state, cells)
-    if (cell !== null) {
-      placeQueen(state, cell)
-      return queenHint(cell, 'single-column')
+  const kinds: Array<[GroupKind, number[], number[], HintRule]> = [
+    ['region', state.regionNeed, state.freeRegions, 'single-region'],
+    ['row', state.rowNeed, state.freeRows, 'single-row'],
+    ['column', state.colNeed, state.freeCols, 'single-column'],
+  ]
+  for (const [kind, needs, frees, rule] of kinds) {
+    for (let group = 0; group < size; group += 1) {
+      const need = needs[group]!
+      if (need === 0) continue
+      if (need === 1 && frees[group] === 1) {
+        const cell = singleCandidate(state, groupCells(state, kind, group))
+        if (cell !== null) {
+          placeStar(state, cell)
+          return queenHint(cell, rule)
+        }
+      } else if (need === frees[group]) {
+        for (const cell of groupCells(state, kind, group)) {
+          if (state.cand[cell]) {
+            placeStar(state, cell)
+            return queenHint(cell, 'fill')
+          }
+        }
+      }
     }
   }
   return null
 }
 
-/** One group's candidates all in one line, or one line's all in one group. */
+/** Every cell belonging to `group` of the given kind, row-major. */
+function groupCells(state: CandidateState, kind: GroupKind, group: number): readonly number[] {
+  if (kind === 'region') return state.cellsOfRegion[group]!
+  const size = state.board.size
+  const start = group * size
+  return Array.from({ length: size }, (_, i) => (kind === 'row' ? start + i : group + i * size))
+}
+
+/**
+ * A group that can only reach a set of homes of exactly the right size consumes
+ * them; every other cell in those homes is dead.
+ *
+ * The count has to *balance*: a region needing n stars whose candidates reach
+ * rows with room for fewer than n is a contradiction, and one reaching room for
+ * more than n has claimed nothing. At k = 1 that collapses to the familiar "the
+ * region's queen is in that row, so the rest of the row is dead". Spreading it
+ * the other way — "the region has candidates in exactly one row" — is unsound at
+ * k > 1, because a region may put both its stars in one row and none in another.
+ *
+ * Groups with no slack are skipped: `fill` has already dealt with them.
+ */
 function huntIntersections(state: CandidateState): Hint | null {
   const size = state.board.size
-  // Region -> one row / one column: claim the line's cells outside the region.
+  const needs = (kind: GroupKind): number[] =>
+    kind === 'region' ? state.regionNeed : kind === 'row' ? state.rowNeed : state.colNeed
+  const frees = (kind: GroupKind): number[] =>
+    kind === 'region' ? state.freeRegions : kind === 'row' ? state.freeRows : state.freeCols
+  /** How many stars the given homes can still take between them. */
+  const room = (kind: GroupKind, homes: Iterable<number>): number => {
+    let total = 0
+    for (const home of homes) total += needs(kind)[home]!
+    return total
+  }
+
+  // Region -> the rows and columns it can still reach.
   for (let region = 0; region < size; region += 1) {
-    if (state.regionHasQueen[region] || state.freeRegions[region]! < 2) continue
+    const need = state.regionNeed[region]!
+    if (need === 0 || state.freeRegions[region]! <= need) continue
     const rows = new Set<number>()
     const cols = new Set<number>()
     for (const cell of state.cellsOfRegion[region]!) {
@@ -203,58 +279,43 @@ function huntIntersections(state: CandidateState): Hint | null {
         cols.add(col)
       }
     }
-    if (rows.size === 1) {
-      const row = rows.values().next().value as number
-      if (!state.rowHasQueen[row]) {
-        const victims = Array.from({ length: size }, (_, c) => state.board.index(row, c)).filter(
+    for (const [kind, homes] of [
+      ['row', rows],
+      ['column', cols],
+    ] as const) {
+      const capacity = room(kind, homes)
+      if (capacity < need) return null
+      if (capacity !== need) continue
+      const dead = Array.from(homes).flatMap((line) =>
+        groupCells(state, kind, line).filter(
           (cell) => state.board.regionAt(cell) !== region,
-        )
-        const hint = deadHint(state, 'intersection', victims)
-        if (hint) return hint
-      }
-    }
-    if (cols.size === 1) {
-      const col = cols.values().next().value as number
-      if (!state.colHasQueen[col]) {
-        const victims = Array.from({ length: size }, (_, r) => state.board.index(r, col)).filter(
-          (cell) => state.board.regionAt(cell) !== region,
-        )
-        const hint = deadHint(state, 'intersection', victims)
-        if (hint) return hint
-      }
+        ),
+      )
+      const hint = deadHint(state, 'intersection', dead)
+      if (hint) return hint
     }
   }
-  // Row / column -> one region: kill the region's cells outside the line.
-  for (let row = 0; row < size; row += 1) {
-    if (state.rowHasQueen[row] || state.freeRows[row]! < 2) continue
-    const regions = new Set<number>()
-    for (let c = 0; c < size; c += 1) {
-      const cell = state.board.index(row, c)
-      if (state.cand[cell]) regions.add(state.board.regionAt(cell))
-    }
-    if (regions.size === 1) {
-      const region = regions.values().next().value as number
-      if (!state.regionHasQueen[region]) {
-        const victims = state.cellsOfRegion[region]!.filter((cell) => state.board.coords(cell).row !== row)
-        const hint = deadHint(state, 'intersection', victims)
-        if (hint) return hint
+
+  // Row / column -> the regions it can still reach.
+  for (const kind of ['row', 'column'] as const) {
+    const axis = kind === 'row' ? 'row' : 'col'
+    for (let line = 0; line < size; line += 1) {
+      const need = needs(kind)[line]!
+      if (need === 0 || frees(kind)[line]! <= need) continue
+      const regions = new Set<number>()
+      for (const cell of groupCells(state, kind, line)) {
+        if (state.cand[cell]) regions.add(state.board.regionAt(cell))
       }
-    }
-  }
-  for (let col = 0; col < size; col += 1) {
-    if (state.colHasQueen[col] || state.freeCols[col]! < 2) continue
-    const regions = new Set<number>()
-    for (let r = 0; r < size; r += 1) {
-      const cell = state.board.index(r, col)
-      if (state.cand[cell]) regions.add(state.board.regionAt(cell))
-    }
-    if (regions.size === 1) {
-      const region = regions.values().next().value as number
-      if (!state.regionHasQueen[region]) {
-        const victims = state.cellsOfRegion[region]!.filter((cell) => state.board.coords(cell).col !== col)
-        const hint = deadHint(state, 'intersection', victims)
-        if (hint) return hint
-      }
+      const capacity = room('region', regions)
+      if (capacity < need) return null
+      if (capacity !== need) continue
+      const dead = Array.from(regions).flatMap((region) =>
+        state.cellsOfRegion[region]!.filter(
+          (cell) => state.board.coords(cell)[axis] !== line,
+        ),
+      )
+      const hint = deadHint(state, 'intersection', dead)
+      if (hint) return hint
     }
   }
   return null
@@ -293,22 +354,14 @@ function huntSubsets(state: CandidateState): Hint | null {
     const { row, col } = state.board.coords(cell)
     return kind === 'row' ? row : col
   }
-  const groupHasQueen = (group: number, kind: GroupKind): boolean => {
-    if (kind === 'region') return state.regionHasQueen[group] === 1
-    return kind === 'row' ? state.rowHasQueen[group] === 1 : state.colHasQueen[group] === 1
-  }
-  const groupCells = (group: number, kind: GroupKind): readonly number[] => {
-    if (kind === 'region') return state.cellsOfRegion[group]!
-    const start = group * size
-    return Array.from({ length: size }, (_, i) =>
-      kind === 'row' ? start + i : group + i * size,
-    )
-  }
+  const needsOf = (kind: GroupKind): number[] =>
+    kind === 'region' ? state.regionNeed : kind === 'row' ? state.rowNeed : state.colNeed
 
   for (const [source, home] of pairs) {
+    const sourceNeed = needsOf(source)
     const unplaced: number[] = []
     for (let group = 0; group < size; group += 1) {
-      if (!groupHasQueen(group, source)) unplaced.push(group)
+      if (sourceNeed[group]! > 0) unplaced.push(group)
     }
     if (unplaced.length < 2) continue
 
@@ -316,13 +369,19 @@ function huntSubsets(state: CandidateState): Hint | null {
       for (const combo of combinations(unplaced, k)) {
         const comboSet = new Set(combo)
         const homes = new Set<number>()
+        let stars = 0
         for (const group of combo) {
-          for (const cell of groupCells(group, source)) {
+          stars += sourceNeed[group]!
+          for (const cell of groupCells(state, source, group)) {
             if (state.cand[cell]) homes.add(sourceIndex(cell, home))
           }
         }
-        if (homes.size < k) return null
-        if (homes.size !== k) continue
+        // Room is what the homes can still *take*, which is each one's remaining
+        // need rather than its existence: at k = 1 the two coincide, which is why
+        // the original rule could count homes instead.
+        let room = 0
+        for (const homeGroup of homes) room += needsOf(home)[homeGroup]!
+        if (room !== stars) continue
         const victims: number[] = []
         for (let cell = 0; cell < state.board.cellCount; cell += 1) {
           if (

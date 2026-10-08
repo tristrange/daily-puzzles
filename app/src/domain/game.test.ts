@@ -12,6 +12,7 @@
 import { describe, expect, it } from 'vitest'
 import { Board } from './board'
 import {
+  piecesNeeded,
   cellState,
   cellsEliminated,
   clearCell,
@@ -648,5 +649,20 @@ describe('parsePuzzle difficulty band', () => {
   it('rejects a band outside the scale', () => {
     expect(() => parsePuzzle({ ...RAMPED, difficulty: 0 })).toThrow(/difficulty/)
     expect(() => parsePuzzle({ ...RAMPED, difficulty: 6 })).toThrow(/difficulty/)
+  })
+})
+
+describe('piecesNeeded', () => {
+  // The bug this pins: `requestHint` once asked whether the board was full with
+  // `board.size`, so a 9x9 two-star board with 9 of its 18 stars placed claimed
+  // to be complete. `piecesNeeded` is now the only definition.
+  it('counts one piece per star per row, not one per row', () => {
+    expect(piecesNeeded(new Board(4, [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3], [1, 1, 1, 1], 'queens'))).toBe(4)
+    expect(piecesNeeded(new Board(4, [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3], [2, 2, 2, 2], 'star-battle'))).toBe(8)
+  })
+
+  it('is what isSolved counts against', () => {
+    const board = new Board(3, [0, 0, 0, 1, 1, 2, 2, 2, 2], [1, 1, 1], 'queens')
+    expect(piecesNeeded(board)).toBe(3)
   })
 })

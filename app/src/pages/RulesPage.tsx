@@ -79,9 +79,11 @@ export function RulesPage() {
         in every row and column.
       </p>
       <p>
-        Star Battle ships without hints. The hint engine is a Queens port, and a board played
-        with a hint that does not apply is worse than no hint at all, so the button is not
-        offered rather than offered and wrong.
+        Both games offer hints, and both are computed here on the board as it stands rather
+        than looked up: a hint can explain <em>why</em> a cell is forced instead of just
+        revealing it. Star Battle needs a rule the other game does not — a region with two
+        cells left and two stars still to place is full, so both are stars — and the hint
+        engine applies it.
       </p>
 
       <h3 id="crosses">Crosses and auto-mark</h3>

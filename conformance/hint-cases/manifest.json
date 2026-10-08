@@ -66,6 +66,72 @@
         "action": "x",
         "rule": "subset"
       }
+    },
+    {
+      "file": "2026-10-08-star.puzzle.json",
+      "hint": {
+        "cell": 0,
+        "action": "x",
+        "rule": "intersection"
+      }
+    },
+    {
+      "file": "2026-10-10-star.puzzle.json",
+      "hint": {
+        "cell": 72,
+        "action": "x",
+        "rule": "intersection"
+      }
+    },
+    {
+      "file": "2026-10-11-star.puzzle.json",
+      "hint": {
+        "cell": 18,
+        "action": "x",
+        "rule": "subset"
+      }
+    },
+    {
+      "file": "2026-10-08-star.puzzle.json",
+      "state": {
+        "queens": [
+          6,
+          8,
+          10,
+          12,
+          23,
+          26,
+          28,
+          30,
+          41
+        ],
+        "marks": []
+      },
+      "hint": {
+        "cell": 76,
+        "action": "queen",
+        "rule": "fill"
+      }
+    },
+    {
+      "file": "2026-09-26-star.puzzle.json",
+      "state": {
+        "queens": [
+          3,
+          13,
+          32,
+          46
+        ],
+        "marks": [
+          11,
+          33
+        ]
+      },
+      "hint": {
+        "cell": 26,
+        "action": "x",
+        "rule": "intersection"
+      }
     }
   ]
 }

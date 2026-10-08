@@ -62,3 +62,45 @@ describe('firstHint', () => {
     expect(firstHint(board)).toBeNull()
   })
 })
+describe('hints never contradict the solution', () => {
+  /**
+   * The property behind every rule: a hint must be a true statement about the
+   * board. Placing a star in a cell that is not in the solution, or marking a
+   * solution cell dead, is how a hint becomes wrong rather than merely unhelpful.
+   *
+   * Scoped honestly: this walks every prefix of the true solution with no marks.
+   * That is the reachable state space a player passes through solving in order,
+   * and it is a real invariant — but it does *not* reach every rule. The
+   * intersection bug review found on #52 needed marks the player drew from
+   * deduction, and no prefix supplies them, which is why that walk passed while
+   * the rule was still unsound.
+   *
+   * That specific state is pinned by `2026-09-26-star.puzzle.json` in the
+   * conformance suite, which asserts the app and the engine produce the same move
+   * for it. The two together: this says a hint is never *false*, the conformance
+   * case says it matches the engine on the states deduction reaches.
+   *
+   * A state that marks a solution cell dead is deliberately not covered: crosses
+   * are untrusted player notes, and the engine has no contradiction check for
+   * them, so no such state has to yield a sound hint.
+   */
+  const STAR_SOLUTION = [1, 3, 13, 15, 17, 19, 29, 31, 32, 34, 44, 46, 48, 50, 60, 62]
+
+  it('holds for every prefix of a star board solution', () => {
+    const board = puzzle('2026-09-26-star.puzzle.json').board
+    let hints = 0
+    for (let placed = 0; placed <= STAR_SOLUTION.length; placed += 1) {
+      const hint = firstHint(board, new Set(STAR_SOLUTION.slice(0, placed)), new Set())
+      if (hint === null) continue
+      hints += 1
+      if (hint.action === 'queen') {
+        expect(STAR_SOLUTION, `placing ${hint.cell} at ${placed} stars`).toContain(hint.cell)
+      } else {
+        expect(STAR_SOLUTION, `marking ${hint.cell} dead at ${placed} stars`).not.toContain(
+          hint.cell,
+        )
+      }
+    }
+    expect(hints).toBeGreaterThan(10)
+  })
+})

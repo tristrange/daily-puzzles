@@ -52,7 +52,7 @@ export function isDefaultPuzzleType(puzzleType: PuzzleType): boolean {
  */
 export const PUZZLE_TYPE_HAS_HINTS: Record<PuzzleType, boolean> = {
   queens: true,
-  'star-battle': false,
+  'star-battle': true,
 }
 
 export const PUZZLE_TYPE_LABEL: Record<PuzzleType, string> = {
