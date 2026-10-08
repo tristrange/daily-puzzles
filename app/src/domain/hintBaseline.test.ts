@@ -32,7 +32,11 @@ type Row = [number[], number[], [number, string, string] | null]
 const baseline = JSON.parse(readFileSync(BASELINE, 'utf8')) as Record<string, Row[]>
 
 describe('hint baseline', () => {
-  it('agrees with the engine on every recorded position', () => {
+  // The corpus grows with the archive, so this test's runtime grows too: 1,299
+  // positions take ~730ms now, and at a few hundred puzzles the default 5s
+  // timeout would fail it for a reason unrelated to any hint being wrong. Given a
+  // generous ceiling, so a slower machine or a loaded runner is not a red build.
+  it('agrees with the engine on every recorded position', { timeout: 60_000 }, () => {
     const disagreements: string[] = []
     let checked = 0
 
