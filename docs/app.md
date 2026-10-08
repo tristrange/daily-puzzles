@@ -83,7 +83,7 @@ no reason. It is stored like the theme choice, in one namespaced key that parses
 for anything unrecognised, so a value from a future version cannot quietly start drawing
 conclusions nobody consented to.
 
-## Fitting the window
+## Sizing the board to the viewport
 
 The board is `width: min(76vw, 480px, 54svh)`, and the third term is the one that earns
 its place. At 480px the board is most of the page, so on a laptop it pushed the footer

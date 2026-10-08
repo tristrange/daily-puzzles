@@ -47,8 +47,6 @@ pretend otherwise.)
 
 ## Why it is built this way
 
-Two decisions shape everything else.
-
 ### One file, two languages
 
 The engine writes `app/public/puzzles/<date>.json`; the app reads it. **Neither imports
@@ -68,8 +66,7 @@ logically broken. So [`conformance/`](conformance/) extends the same idea from p
 | `id-cases/` | puzzle id naming — a spelling the two disagree on is a puzzle that is published, correct, and unfindable |
 | `band-cases/` | difficulty band names, which the engine prints and the player reads |
 
-Every expectation is asserted from both languages. A board can parse and still be nonsense
-— and it has been.
+Every expectation is asserted from both languages.
 
 ### The puzzle is a pure function of its seed
 
@@ -175,8 +172,6 @@ which is what the board-level conformance suite is for.
 ---
 
 ## Deep dives
-
-The details worth reading, kept out of the front page:
 
 - **[docs/engine.md](docs/engine.md)** — the exact solution counter, the seeded generator,
   the deduction engine and its difficulty bands, the weekly ramp, and the measurements
