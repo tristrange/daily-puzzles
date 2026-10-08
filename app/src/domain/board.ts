@@ -5,8 +5,8 @@
  * the shared `conformance/` suites, so a divergence here fails CI rather than shipping.
  */
 
-export const MIN_SIZE = 2
-export const MAX_SIZE = 16
+const MIN_SIZE = 2
+const MAX_SIZE = 16
 
 export const PUZZLE_TYPES = ['queens', 'star-battle'] as const
 export type PuzzleType = (typeof PUZZLE_TYPES)[number]

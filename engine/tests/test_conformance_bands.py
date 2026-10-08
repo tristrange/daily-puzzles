@@ -13,13 +13,13 @@ while the archive card calls it Hard.
 from __future__ import annotations
 
 import json
-from functools import cache
 from typing import Any
 
-from jsonschema import Draft202012Validator
+import pytest
 
+from queens_engine import PuzzleParseError, parse_puzzle
 from queens_engine.difficulty import LEVEL_NAMES
-from queens_engine.puzzle import CONFORMANCE_DIR, SCHEMA_PATH
+from queens_engine.puzzle import CONFORMANCE_DIR
 from queens_engine.ramp import MAX_LEVEL, MIN_LEVEL, DifficultyTarget
 
 CASES_DIR = CONFORMANCE_DIR / "band-cases"
@@ -88,36 +88,22 @@ def test_the_schema_accepts_every_band_and_rejects_one_past_the_end() -> None:
     puzzle using the new band — in both languages, at parse time, for a reason that has
     nothing to do with the puzzle.
 
-    Asserting the behaviour rather than the numbers means this does not care how the
-    bound is written, only what it allows.
+    `parse_puzzle` checks the schema before it builds a `Board`, so it reports a bound
+    that is too low as a parse failure — which is exactly the failure to catch.
     """
     for band in BANDS:
-        assert not _schema_errors({"difficulty": band["level"]}), (
-            f"schema rejects band {band['level']}, which the manifest declares"
-        )
-    assert _schema_errors({"difficulty": MAX_LEVEL + 1}), "schema accepts a band nobody declared"
+        parse_puzzle(_queens_file(band["level"]))
+    with pytest.raises(PuzzleParseError):
+        parse_puzzle(_queens_file(MAX_LEVEL + 1))
 
 
-def _schema_errors(overrides: dict[str, Any]) -> list[str]:
-    """Schema failures for a valid queens puzzle carrying `overrides`."""
-    document = {
+def _queens_file(difficulty: int) -> dict[str, Any]:
+    """A valid queens puzzle carrying `difficulty`. The board itself is unremarkable."""
+    return {
         "id": "2026-10-11",
         "type": "queens",
         "seed": 1,
         "generatorVersion": 1,
         "board": {"size": 3, "regions": [0, 0, 0, 1, 1, 2, 2, 2, 2]},
-        **overrides,
+        "difficulty": difficulty,
     }
-    # jsonschema ships an untyped fallback in the iter_errors overload set, so the member
-    # type is genuinely unknown to a strict checker. Suppressed here, as `puzzle.py` does.
-    validator = _schema_validator()
-    errors = validator.iter_errors(document)  # pyright: ignore[reportUnknownMemberType]
-    return [error.message for error in errors]
-
-
-@cache
-def _schema_validator() -> Draft202012Validator:
-    """The schema as both languages read it, validated once."""
-    schema: Any = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
-    Draft202012Validator.check_schema(schema)
-    return Draft202012Validator(schema)
