@@ -63,6 +63,7 @@ logically broken. So [`conformance/`](conformance/) extends the same idea from p
 | `schema-cases/` | what a file may say, and which rule rejects a bad one |
 | `board-cases/` | which board is legal, and **which rule** rejects an illegal one |
 | `hint-cases/` | what each side *deduces* from a player's live board |
+| `hint-baseline` | the same, over 428 generated positions rather than a dozen curated ones |
 | `id-cases/` | puzzle id naming — a spelling the two disagree on is a puzzle that is published, correct, and unfindable |
 | `band-cases/` | difficulty band names, which the engine prints and the player reads |
 

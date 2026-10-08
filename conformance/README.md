@@ -71,7 +71,21 @@ the puzzle. Generating the bound from the manifest the way `tools/schema_ids` do
 id pattern would remove the fourth edit instead of catching its absence; that is a change
 to the schema tooling and worth making deliberately.
 
-`hint-cases/` is worth one precise caveat. A "subset" firing can only ever occur *after*
+`hint-cases/` is a curated list, and that is its limit. On #52 the port's intersection
+rule was wrong for *every* multi-star board and all seven fixtures were single-star, so
+it passed all of them and shipped telling players to mark solution cells dead. A fixture
+only covers the states someone thought to write down.
+
+`engine/tools/hint_baseline.py` closes that by generating the corpus instead: every
+prefix of every committed puzzle's solution, with the marks the engine itself can
+justify from that position, which is what a player who has worked the board out actually
+has. The engine records the move it expects, `test_hint_baseline.py` checks the
+baseline against a fresh run, and `app/src/domain/hintBaseline.test.ts` asserts the app
+produces the same move at every one — 428 positions where there were 12 curated cases.
+Reinstating the #52 bug fails it on three positions, which is how it was checked before
+being trusted. `--write` refreshes it, and the diff is the review.
+
+Like `id-cases/`, `hint-cases/` is worth one precise caveat. A "subset" firing can only ever occur *after*
 some cells are already dead (on an untouched board every region, row and column has a full
 candidate set, so the pigeonhole never triggers), which is why a subset case ships an
 explicit player state — the marks the player has already made — rather than an empty
