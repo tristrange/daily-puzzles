@@ -112,6 +112,26 @@
         "action": "queen",
         "rule": "fill"
       }
+    },
+    {
+      "file": "2026-09-26-star.puzzle.json",
+      "state": {
+        "queens": [
+          3,
+          13,
+          32,
+          46
+        ],
+        "marks": [
+          11,
+          33
+        ]
+      },
+      "hint": {
+        "cell": 26,
+        "action": "x",
+        "rule": "intersection"
+      }
     }
   ]
 }

@@ -12,6 +12,7 @@ import {
   paintStroke,
   placeQueenAutoMark,
   resetGame,
+  piecesNeeded,
   toggleMark,
   toggleQueen,
   type GameState,
@@ -93,6 +94,7 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
   // family without one plays without hints rather than with wrong ones (see `firstHint`).
   const hintsAvailable = PUZZLE_TYPE_HAS_HINTS[puzzle.puzzleType]
   const piece = PUZZLE_PIECE[puzzle.puzzleType].noun
+  const piecePlural = PUZZLE_PIECE[puzzle.puzzleType].plural
 
   const solved = isSolved(game)
   const shownTime = solvedAt === null ? elapsed : solvedAt - startedAt
@@ -212,8 +214,11 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
     }
     const next = firstHint(puzzle.board, game.queens, game.marks)
     if (next === null) {
-      if (game.queens.size === puzzle.board.size) {
-        announce('All queens are placed.')
+      // The same count the win check uses. A board is complete when it holds
+      // `size * starsPerRow` pieces, so anything less is a stalled position and
+      // saying otherwise would end the game from inside a hint button.
+      if (game.queens.size === piecesNeeded(puzzle.board)) {
+        announce(`All ${piecePlural} are placed.`)
       } else {
         announce(`No forced move right now — try placing a ${piece} somewhere.`)
       }

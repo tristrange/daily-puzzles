@@ -240,12 +240,36 @@ function groupCells(state: CandidateState, kind: GroupKind, group: number): read
   return Array.from({ length: size }, (_, i) => (kind === 'row' ? start + i : group + i * size))
 }
 
-/** One group's candidates all in one line, or one line's all in one group. */
+/**
+ * A group that can only reach a set of homes of exactly the right size consumes
+ * them; every other cell in those homes is dead.
+ *
+ * The count has to *balance*: a region needing n stars whose candidates reach
+ * rows with room for fewer than n is a contradiction, and one reaching room for
+ * more than n has claimed nothing. At k = 1 that collapses to the familiar "the
+ * region's queen is in that row, so the rest of the row is dead". Spreading it
+ * the other way — "the region has candidates in exactly one row" — is unsound at
+ * k > 1, because a region may put both its stars in one row and none in another.
+ *
+ * Groups with no slack are skipped: `fill` has already dealt with them.
+ */
 function huntIntersections(state: CandidateState): Hint | null {
   const size = state.board.size
-  // Region -> one row / one column: claim the line's cells outside the region.
+  const needs = (kind: GroupKind): number[] =>
+    kind === 'region' ? state.regionNeed : kind === 'row' ? state.rowNeed : state.colNeed
+  const frees = (kind: GroupKind): number[] =>
+    kind === 'region' ? state.freeRegions : kind === 'row' ? state.freeRows : state.freeCols
+  /** How many stars the given homes can still take between them. */
+  const room = (kind: GroupKind, homes: Iterable<number>): number => {
+    let total = 0
+    for (const home of homes) total += needs(kind)[home]!
+    return total
+  }
+
+  // Region -> the rows and columns it can still reach.
   for (let region = 0; region < size; region += 1) {
-    if (state.regionNeed[region] === 0 || state.freeRegions[region]! < 2) continue
+    const need = state.regionNeed[region]!
+    if (need === 0 || state.freeRegions[region]! <= need) continue
     const rows = new Set<number>()
     const cols = new Set<number>()
     for (const cell of state.cellsOfRegion[region]!) {
@@ -255,58 +279,43 @@ function huntIntersections(state: CandidateState): Hint | null {
         cols.add(col)
       }
     }
-    if (rows.size === 1) {
-      const row = rows.values().next().value as number
-      if (state.rowNeed[row]! > 0) {
-        const victims = Array.from({ length: size }, (_, c) => state.board.index(row, c)).filter(
+    for (const [kind, homes] of [
+      ['row', rows],
+      ['column', cols],
+    ] as const) {
+      const capacity = room(kind, homes)
+      if (capacity < need) return null
+      if (capacity !== need) continue
+      const dead = Array.from(homes).flatMap((line) =>
+        groupCells(state, kind, line).filter(
           (cell) => state.board.regionAt(cell) !== region,
-        )
-        const hint = deadHint(state, 'intersection', victims)
-        if (hint) return hint
-      }
-    }
-    if (cols.size === 1) {
-      const col = cols.values().next().value as number
-      if (state.colNeed[col]! > 0) {
-        const victims = Array.from({ length: size }, (_, r) => state.board.index(r, col)).filter(
-          (cell) => state.board.regionAt(cell) !== region,
-        )
-        const hint = deadHint(state, 'intersection', victims)
-        if (hint) return hint
-      }
+        ),
+      )
+      const hint = deadHint(state, 'intersection', dead)
+      if (hint) return hint
     }
   }
-  // Row / column -> one region: kill the region's cells outside the line.
-  for (let row = 0; row < size; row += 1) {
-    if (state.rowNeed[row] === 0 || state.freeRows[row]! < 2) continue
-    const regions = new Set<number>()
-    for (let c = 0; c < size; c += 1) {
-      const cell = state.board.index(row, c)
-      if (state.cand[cell]) regions.add(state.board.regionAt(cell))
-    }
-    if (regions.size === 1) {
-      const region = regions.values().next().value as number
-      if (state.regionNeed[region]! > 0) {
-        const victims = state.cellsOfRegion[region]!.filter((cell) => state.board.coords(cell).row !== row)
-        const hint = deadHint(state, 'intersection', victims)
-        if (hint) return hint
+
+  // Row / column -> the regions it can still reach.
+  for (const kind of ['row', 'column'] as const) {
+    const axis = kind === 'row' ? 'row' : 'col'
+    for (let line = 0; line < size; line += 1) {
+      const need = needs(kind)[line]!
+      if (need === 0 || frees(kind)[line]! <= need) continue
+      const regions = new Set<number>()
+      for (const cell of groupCells(state, kind, line)) {
+        if (state.cand[cell]) regions.add(state.board.regionAt(cell))
       }
-    }
-  }
-  for (let col = 0; col < size; col += 1) {
-    if (state.colNeed[col] === 0 || state.freeCols[col]! < 2) continue
-    const regions = new Set<number>()
-    for (let r = 0; r < size; r += 1) {
-      const cell = state.board.index(r, col)
-      if (state.cand[cell]) regions.add(state.board.regionAt(cell))
-    }
-    if (regions.size === 1) {
-      const region = regions.values().next().value as number
-      if (state.regionNeed[region]! > 0) {
-        const victims = state.cellsOfRegion[region]!.filter((cell) => state.board.coords(cell).col !== col)
-        const hint = deadHint(state, 'intersection', victims)
-        if (hint) return hint
-      }
+      const capacity = room('region', regions)
+      if (capacity < need) return null
+      if (capacity !== need) continue
+      const dead = Array.from(regions).flatMap((region) =>
+        state.cellsOfRegion[region]!.filter(
+          (cell) => state.board.coords(cell)[axis] !== line,
+        ),
+      )
+      const hint = deadHint(state, 'intersection', dead)
+      if (hint) return hint
     }
   }
   return null
