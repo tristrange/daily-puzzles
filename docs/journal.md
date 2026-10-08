@@ -22,7 +22,7 @@ avoided. The reasoning is the point; the shipped code is in `git log`.
 | 13 | A How to play page, and the region star counts it needs to be able to point at | done |
 | 14 | Remember the auto-mark choice between visits | done |
 | 15 | A weekly difficulty ramp for Queens, and the band in the puzzle file | done |
-| 16 | Port the deduction engine to per-group counts so Star Battle can be rated, then ramp it too | open |
+| 16 | Port the deduction engine to per-group counts so Star Battle can be rated, then ramp it too | done — rating deferred, below |
 
 Milestones 2 to 4 were the critical path, and they are all Python. The engine alone — a
 CLI with an exact uniqueness prover and property tests — would have been worth publishing
@@ -90,6 +90,66 @@ playable from memory, recreating the degeneracy the 9x9 size just removed. The
 same window is enforced on committed files by `tools.verify`, so a duplicate
 cannot slip into the archive through any path (again, among boards of the
 current published size — the pre-9x9 archive predates the rule).
+
+## Why Star Battle carries no difficulty band
+
+Milestone 16 asked for Star Battle to be rated and then ramped, and the port that
+made either possible is done: the engine carries a *count* per group rather than a
+flag, so one code path covers one star and k, and the app's hint engine was ported to
+match (#52). What is left is a product decision, and the measurement says not yet.
+
+Scoring 25 generated 9x9 two-star boards — seeds 0 to 24, a bare range rather than a
+sample, so the set is the first 25 and nothing is picked:
+
+| | result |
+| --- | --- |
+| bands awarded | 24 Nightmare, 1 Expert |
+| boards that needed a hypothesis | 25 of 25 |
+
+Reproduce it from `engine/`. The seeds are fixed, so the numbers should match exactly; if
+they do not, the scorer has moved and this section is stale.
+
+```sh
+PYTHONPATH=src .venv/bin/python - <<'EOF'
+from collections import Counter
+from queens_engine import GenerationConfig, PuzzleType, generate_puzzle, score_difficulty
+
+bands, guessing = Counter(), 0
+for seed in range(25):
+    puzzle = generate_puzzle(
+        seed=seed,
+        puzzle_id="measurement",
+        config=GenerationConfig(size=9, puzzle_type=PuzzleType.STAR_BATTLE, stars_per_row=2),
+    )
+    scored = score_difficulty(puzzle.board)
+    bands[scored.level_name] += 1
+    guessing += scored.needs_guessing
+
+print(f"bands: {dict(bands)}  needs_guessing: {guessing}/25")
+EOF
+```
+
+Deliberately not a test. A test would turn "the scorer changed" into a red build, and
+changing the scorer is precisely what fixing this needs; that check belongs to whoever
+makes the change, not to CI.
+
+The score is a weighted count of deduction firings, so a board holding 18 pieces does
+roughly twice the work of a 9x9 Queens board holding 9, and saturates the top band
+wherever it lands. It measures *work*, not hardness. Recalibrating the bands per genre
+would not rescue it: with almost no spread in the distribution, any table would call
+nearly every board the same thing, which is not a difficulty signal but a constant with
+a label.
+
+What the number mostly reports is whether the engine had to guess, and on a two-star
+board that is a property of the genre rather than of the puzzle — 0.1% of 8x8 two-star
+boards finish on rules alone, and none of these 9x9 boards did. So the honest position
+is the current one: Star Battle is unique-solution and unscored, a star file carries no
+`difficulty`, and the chooser card shows no band. Nothing unverified reaches the player.
+
+Rating it properly means making the score comparable across genres first — per star
+placed, or per deduction step — and then recalibrating once against both. That is a
+change to the difficulty model, not to Star Battle, and it would also change how the
+Queens ramp reads at 9x9. It is its own piece of work.
 
 ## Playing a star
 

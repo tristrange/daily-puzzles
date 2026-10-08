@@ -355,9 +355,13 @@ regardless:
   copy-pasted: `gated` (walk the seed until logic-only), `companion` (unique
   solution, no band, no gate — today's Star Battle), or `ramped` (aim at a
   target, record the achieved band).
-- Star Battle is already `companion`. Tango would most likely be `ramped` and
-  Train Tracks most likely `companion` on current evidence, since a basic rule
-  set for it is weak.
+- Star Battle is already `companion`, and measurement is why rather than
+  omission: it cannot be `ramped` until the score measures hardness rather than
+  work, since a two-star board does twice the deduction firings of a Queens one and
+  lands on Nightmare almost every time. The numbers are in the
+  [journal](journal.md#why-star-battle-carries-no-difficulty-band). Tango would most
+  likely be `ramped` and Train Tracks most likely `companion` on current evidence,
+  since a basic rule set for it is weak.
 
 ## 7. Silent-failure hazards
 

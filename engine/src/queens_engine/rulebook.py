@@ -71,12 +71,25 @@ class Rulebook(ABC):
     #: queens entry is empty, which is what makes the unsuffixed name the queens one.
     id_suffix: str = ""
 
-    #: Whether `WEEKLY_RAMP` applies. Star Battle is not on the ramp until the
-    #: deduction engine can rate a star board, so it has no band to record.
+    #: Whether `WEEKLY_RAMP` applies. The ramp aims at a band per weekday, so a
+    #: genre cannot join it until it can record one. Star Battle cannot, for the
+    #: reason given under `rated` below.
     on_ramp: bool = True
 
-    #: Whether difficulty is scored and written to the file. Star Battle boards are
-    #: unique but not logic-scored, so a band on one would be a claim nothing checks.
+    #: Whether difficulty is scored and written to the file.
+    #:
+    #: Star Battle is `False` because the score does not mean what a band claims.
+    #: Measured over 25 generated 9x9 two-star boards: 24 scored Nightmare and one
+    #: Expert, and every one needed a hypothesis. The score is a weighted count of
+    #: deduction firings, so a board with 18 pieces does roughly twice the work of a
+    #: 9x9 Queens board and saturates the top band regardless of how the puzzle was
+    #: made. Recalibrating the bands per genre would not help either: with almost no
+    #: spread in the distribution, any table would call nearly every board the same
+    #: thing, which is not a difficulty signal.
+    #:
+    #: So this stays off until the score measures hardness rather than work — see
+    #: the measurement in `docs/journal.md`. Nothing false reaches the player today:
+    #: a star file carries no `difficulty`, so the chooser card shows no band.
     rated: bool = True
 
     #: Whether a board can be required to finish without guessing. The rules do run
