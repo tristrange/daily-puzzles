@@ -98,12 +98,40 @@ made either possible is done: the engine carries a *count* per group rather than
 flag, so one code path covers one star and k, and the app's hint engine was ported to
 match (#52). What is left is a product decision, and the measurement says not yet.
 
-Scoring 25 generated 9x9 two-star boards:
+Scoring 25 generated 9x9 two-star boards — seeds 0 to 24, a bare range rather than a
+sample, so the set is the first 25 and nothing is picked:
 
 | | result |
 | --- | --- |
 | bands awarded | 24 Nightmare, 1 Expert |
 | boards that needed a hypothesis | 25 of 25 |
+
+Reproduce it from `engine/`. The seeds are fixed, so the numbers should match exactly; if
+they do not, the scorer has moved and this section is stale.
+
+```sh
+PYTHONPATH=src .venv/bin/python - <<'EOF'
+from collections import Counter
+from queens_engine import GenerationConfig, PuzzleType, generate_puzzle, score_difficulty
+
+bands, guessing = Counter(), 0
+for seed in range(25):
+    puzzle = generate_puzzle(
+        seed=seed,
+        puzzle_id="measurement",
+        config=GenerationConfig(size=9, puzzle_type=PuzzleType.STAR_BATTLE, stars_per_row=2),
+    )
+    scored = score_difficulty(puzzle.board)
+    bands[scored.level_name] += 1
+    guessing += scored.needs_guessing
+
+print(f"bands: {dict(bands)}  needs_guessing: {guessing}/25")
+EOF
+```
+
+Deliberately not a test. A test would turn "the scorer changed" into a red build, and
+changing the scorer is precisely what fixing this needs; that check belongs to whoever
+makes the change, not to CI.
 
 The score is a weighted count of deduction firings, so a board holding 18 pieces does
 roughly twice the work of a 9x9 Queens board holding 9, and saturates the top band
