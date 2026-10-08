@@ -73,7 +73,7 @@ from a familiar Queens loses to that second rule unless it is written down.
 
 Every claim on the page was verified against a running board rather than assumed: the click
 cycle, dragging, right-click, all eight keyboard bindings, auto-mark being off by default, a
-drag counting as one undo step, and hints being absent from Star Battle.
+drag counting as one undo step.
 
 Auto-mark is off by default, and stays off until someone asks for it: auto-mark draws
 conclusions, and a cross the player did not draw is an answer they were given rather than one

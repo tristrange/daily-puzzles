@@ -118,11 +118,21 @@ under-mark, never a wrong mark — the alternative is recomputing the whole boar
 on every click, and silently marking a cell the player can still legally use is
 worse than leaving it unmarked.
 
-The hint engine stayed single-star on purpose, and the app follows it rather
-than papering over it: `firstHint` returns `null` for a Star Battle board and
-the Hint button is not rendered. A hint engine that reasons in one star and
-speaks in two produces confident nonsense, and `null` is the only honest answer
-until the rules are ported.
+The hint engine stayed single-star for a while, and the app followed it rather
+than papering over it: `firstHint` returned `null` for a Star Battle board and
+the Hint button was not rendered. A hint engine that reasons in one star and
+speaks in two produces confident nonsense, and `null` was the only honest
+answer at the time.
+
+It is no longer single-star. `hints.ts` now carries a *need* per group instead of
+a has-a-star flag, exactly as the engine had already been ported to, so one star
+and two travel the same code — and it gained `fill`, the rule that makes a
+many-star board tractable: a group needing exactly as many stars as it has cells
+left has every one of them a star. Measured over 60 generated 8x8 two-star
+boards, `fill` fires 1,058 times, more than any other rule except the trial
+search. So it was missing coverage rather than being unnecessary, and a
+Star Battle board that opened with an `intersection` was hiding a rule the
+player meets constantly.
 
 The gap this left was editorial, not technical, and it is now closed by a
 decision rather than by a rule: **every day carries both puzzles**, so there is

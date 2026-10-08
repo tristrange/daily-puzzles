@@ -46,7 +46,6 @@ def test_every_fixture_file_is_listed_in_the_manifest() -> None:
 def test_first_moves_match_fixture(case: dict[str, Any]) -> None:
     raw: Any = json.loads((CASES_DIR / case["file"]).read_text(encoding="utf-8"))
     board = parse_puzzle(raw).board
-    assert board.puzzle_type == "queens"
     state = case.get("state")
     if state is None:
         move = first_forced_move(board)
