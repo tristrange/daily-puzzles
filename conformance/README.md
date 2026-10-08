@@ -54,6 +54,11 @@ one side changes nothing that fails: the file still parses, the board still repl
 `verify_replay` compares boards rather than labels. The symptom is that the engine calls a
 board *Expert* while the archive card calls it *Hard*.
 
+Like `id-cases/` it holds no fixture files, so both suites assert that the manifest is
+the whole thing — a stray `.json` dropped beside it would sit unread and look like a test.
+The other three suites instead carry a "every fixture file is listed in the manifest" check,
+because there a file the manifest forgets is coverage that silently never runs.
+
 Unlike `id-cases/`, this manifest is not the source for anything. The schema's `difficulty`
 range is a hand-written `minimum: 1, maximum: 5`, so adding a band means editing four
 places — the manifest, `LEVEL_NAMES`, `DIFFICULTY_LABEL` and the schema's bound. The suite

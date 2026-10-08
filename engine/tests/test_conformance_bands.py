@@ -34,6 +34,18 @@ MANIFEST = load_manifest()
 BANDS: list[dict[str, Any]] = MANIFEST["bands"]
 
 
+def test_the_suite_holds_no_fixture_files() -> None:
+    """The manifest is the whole suite, so nothing else may sit beside it.
+
+    The other conformance suites are a manifest plus files it points at, and a file
+    the manifest forgets is coverage that silently never runs. Here there are no
+    files to forget, so this asserts the stronger fact: a stray fixture dropped in
+    would sit unread and look like a test.
+    """
+    on_disk = sorted(path.name for path in CASES_DIR.glob("*.json"))
+    assert on_disk == ["manifest.json"], f"unexpected fixtures: {on_disk}"
+
+
 def test_manifest_is_a_contiguous_one_based_range() -> None:
     """A gap or a zero-based start would make `level - 1` index the wrong name.
 

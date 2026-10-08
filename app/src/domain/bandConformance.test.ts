@@ -12,7 +12,7 @@
  * archive card calls it Hard.
  */
 
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { DIFFICULTY_LABEL } from './games'
@@ -43,6 +43,17 @@ const manifest = JSON.parse(readFileSync(join(CASES_DIR, 'manifest.json'), 'utf8
 }
 
 describe('conformance: band-cases', () => {
+  /**
+   * Unlike the other suites, this one has no fixture files — the manifest *is* the
+   * suite. So this asserts the stronger fact: nothing else may sit in the directory.
+   * A `insane-band.accept.json` dropped alongside would otherwise sit unread and
+   * unremarked, looking like coverage that tests nothing.
+   */
+  it('holds no fixture files, so the manifest is the whole suite', () => {
+    const onDisk = readdirSync(CASES_DIR).sort()
+    expect(onDisk).toEqual(['manifest.json'])
+  })
+
   it('declares a contiguous 1-based range, since every lookup is `level - 1`', () => {
     expect(manifest.bands.map((band) => band.level)).toEqual(
       Array.from({ length: manifest.bands.length }, (_, index) => index + 1),
