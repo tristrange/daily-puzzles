@@ -165,10 +165,14 @@ It is read in five places, which is what makes this more than a field rename:
 `render.py` is the one that is easy to leave out, and it has to be counted rather than
 missed. `generate.py:152` prints `render_puzzle(puzzle)` unconditionally, and its header
 dereferences `puzzle.size` before reaching the mark-specific renderer — so a Train Tracks
-generation that succeeded would then fail while *printing* its result. Rendering therefore
-either joins the per-type contract (`render` on the rulebook, as `generate` and
-`replay_config` already do) or is folded into the migration; it cannot be left calling a
-`size` a non-square board does not have.
+generation that succeeded would then fail while *printing* its result, which is the worst
+shape for a failure: the expensive part already worked and the error points somewhere else.
+
+**Rendering joins the per-type contract.** A `render` method on `Rulebook`, alongside
+`generate` and `replay_config`, which already work this way. Not "fold it into the
+migration" as an afterthought and not left calling a `size` a non-square board does not
+have: `generate.py` calls it unconditionally on every type, so it is as much part of the
+contract as the two methods already on it.
 
 The wider point: this inventory is a list of places that *read* `size`, and the ones that
 bite are the callers further out. A grep of `puzzle.size` alone finds the field's readers
@@ -193,8 +197,8 @@ Two rejected alternatives, both worse:
 without the serialisation and the dimensions accessor breaks publication, because
 `rulebook_for` raising on an unregistered type is exactly what stops a type being
 published wrongly — the guardrail that #57's `test_every_type_has_a_rulebook` relies on.
-So the enum, the rulebook, `puzzle_to_dict`, `parse_puzzle`, the schema and the tools
-land together or not at all.
+So the enum, the rulebook, `puzzle_to_dict`, `parse_puzzle`, `render.py`, the schema and the
+tools land together or not at all.
 
 Also note `test_an_unregistered_type_raises_rather_than_defaulting` currently uses
 `"train-tracks"` as its example of a type with no rulebook, so it needs a different
