@@ -61,6 +61,11 @@ _FILL_HIGH: Final = 4
 #: decide — technically a puzzle, and not worth a day's slot.
 _MIN_FILL: Final = 2
 
+#: The floor is a share of the *grid*, not of what the walk happened to aim for. Held
+#: only against the target, a low draw slips under it: seed 54 came out with a six-cell
+#: line on a 7x7, which is what the tests here claim to reject.
+_FLOOR_SHARE: Final = 5
+
 #: Enough of a grid to hold one. The real limits are much larger; this only stops a
 #: nonsensical call before the walk starts.
 _MIN_SIDE: Final = 2
@@ -143,7 +148,10 @@ def _route_pieces(
     final = len(route) - 1
     for position, cell in enumerate(route):
         if position == 0:
-            pieces[cell] = _piece_index(WEST, EAST)
+            # Facing west into the void, and joining whatever the route does next —
+            # which is not always east, so it is read from the route rather than assumed.
+            facing = _facing(grid_width, grid_height, cell, route[1])
+            pieces[cell] = _piece_index(WEST, facing)
         elif position == final:
             pieces[cell] = _piece_index(
                 exit_dir, _facing(grid_width, grid_height, cell, route[position - 1])
@@ -192,15 +200,17 @@ def generate_grid(
     Raises `TrackGenerationError` if no route from this seed could be pinned down.
     """
     cells = width * height
+    floor = max(_MIN_ROUTE, cells // _FLOOR_SHARE)
     if width < _MIN_SIDE or height < _MIN_SIDE:
         raise TrackGenerationError(f"a track grid needs at least 2x2, got {width}x{height}")
     rng = Prng(seed)
 
     for _ in range(_ROUTES):
         for _ in range(_ROUTE_TRIES):
-            target = cells // _FILL_HIGH + rng.below(cells // _FILL_LOW)
+            span = max(1, cells // _FILL_LOW)
+            target = max(_MIN_ROUTE, cells // _FILL_HIGH + rng.below(span))
             route = _grow_route(width, height, rng, target)
-            if len(route) < _MIN_ROUTE or len(route) * _MIN_FILL < target:
+            if len(route) < floor or len(route) * _MIN_FILL < target:
                 continue
             pieces = _route_pieces(width, height, route, rng)
             if pieces is None:

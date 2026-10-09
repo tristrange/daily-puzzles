@@ -52,6 +52,28 @@ class TestWhatItProduces:
         grid = generate_grid(seed=seed, width=7, height=7)
         assert grid.total >= grid.cell_count // 5, "too sparse to be worth solving"
 
+    @pytest.mark.parametrize("seed", [54, 7, 19, 101])
+    def test_the_floor_holds_against_the_grid_not_just_the_target(self, seed: int) -> None:
+        """A floor measured against the sampled target is not a floor.
+
+        Seed 54 came out with a six-cell line on a 7x7 because its target was low; the
+        test here only covered the first few seeds, so it passed while the generator
+        did not do what it claimed.
+        """
+        grid = generate_grid(seed=seed, width=7, height=7)
+        assert grid.total >= grid.cell_count // 5
+
+    @pytest.mark.parametrize("size", [(2, 2), (2, 5), (5, 2)])
+    def test_a_small_grid_can_still_hold_a_short_line(self, size: tuple[int, int]) -> None:
+        """A 2x2 can only sample a target below the shortest legal route.
+
+        Held only against that target, every attempt was discarded and generation
+        failed for every seed — even though unique three-cell 2x2 grids exist.
+        """
+        width, height = size
+        grid = generate_grid(seed=1, width=width, height=height)
+        assert count_solutions(grid, limit=3) == 1
+
     @pytest.mark.parametrize("size", [(5, 6), (6, 5), (8, 8), (4, 9)])
     def test_non_square_grids_are_fine(self, size: tuple[int, int]) -> None:
         width, height = size
