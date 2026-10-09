@@ -140,6 +140,70 @@ itself is **not** widened: it keeps square-only, keeps its regions, and keeps
 rejecting a Train Tracks board, because pretending otherwise is what produced
 the `region_count` bug in #29.
 
+### Where a puzzle file's `size` goes when a game has no size
+
+Not yet built, and worth writing down before it is, because the obvious answer is
+wrong in a way that only shows up in the tools.
+
+`Puzzle.size` reads as a property of a puzzle and is really a property of the two
+square genres. A Train Tracks grid has `width` and `height` and **no `size` at all** —
+5x9 is not a size, and the board deliberately permits it. So `size` cannot be widened
+to `int | None` without every reader handling a hole, and it cannot be kept as the
+grid's largest dimension without the file asserting something untrue.
+
+It is read in five places, which is what makes this more than a field rename:
+
+| | reads of `size` |
+| --- | --- |
+| `puzzle.py` | 3 — `_require_int(board_record.get("size"))`, `puzzle_to_dict`, one message key |
+| `verify.py` | 4 |
+| `publish.py` | 2 |
+| `generate.py` | 1 — plus the unconditional `render_puzzle` call |
+| `rulebook.py` | 1 |
+| `render.py` | 3 — `render_puzzle`'s header builds `size={puzzle.size}x{puzzle.size}` |
+
+`render.py` is the one that is easy to leave out, and it has to be counted rather than
+missed. `generate.py:152` prints `render_puzzle(puzzle)` unconditionally, and its header
+dereferences `puzzle.size` before reaching the mark-specific renderer — so a Train Tracks
+generation that succeeded would then fail while *printing* its result, which is the worst
+shape for a failure: the expensive part already worked and the error points somewhere else.
+
+**Rendering joins the per-type contract.** A `render` method on `Rulebook`, alongside
+`generate` and `replay_config`, which already work this way. Not "fold it into the
+migration" as an afterthought and not left calling a `size` a non-square board does not
+have: `generate.py` calls it unconditionally on every type, so it is as much part of the
+contract as the two methods already on it.
+
+The wider point: this inventory is a list of places that *read* `size`, and the ones that
+bite are the callers further out. A grep of `puzzle.size` alone finds the field's readers
+and misses its callers' readers.
+
+The fix that costs least structure: **the rulebook answers it.** A `dimensions`
+accessor on `Rulebook` returns `(width, height)` for every genre — for the marks types
+that is `(size, size)` — and `size` survives only as the marks-specific shorthand where
+it means something. The tools ask the rulebook rather than reaching into a field, so a
+non-square genre is not an exception in any of the five files above.
+
+Two rejected alternatives, both worse:
+
+- **`size: int | None`.** Smaller diff and arguably more honest, but it puts a hole in
+  a field the tools read directly, and every one of those reads needs guarding. It also
+  leaves `puzzle_to_dict` deciding per type what to write, which is the branch this is
+  trying to remove.
+- **Keep `size` as `max(width, height)`.** Cheapest of all, and a lie in the file: a 5x9
+  board would claim to be 9x9.
+
+**There is no safe partial version of this.** Registering `PuzzleType.TRAIN_TRACKS`
+without the serialisation and the dimensions accessor breaks publication, because
+`rulebook_for` raising on an unregistered type is exactly what stops a type being
+published wrongly — the guardrail that #57's `test_every_type_has_a_rulebook` relies on.
+So the enum, the rulebook, `puzzle_to_dict`, `parse_puzzle`, `render.py`, the schema and the
+tools land together or not at all.
+
+Also note `test_an_unregistered_type_raises_rather_than_defaulting` currently uses
+`"train-tracks"` as its example of a type with no rulebook, so it needs a different
+example the moment this lands.
+
 ### L2 — engine: a per-type rulebook registry
 
 One interface, four operations, one implementation per game:
