@@ -197,8 +197,18 @@ def generate_grid(
     nearly determined costs one grid and a route that is wide open costs several —
     cheaper than redrawing the route, which throws away the part that was already right.
 
-    Raises `TrackGenerationError` if no route from this seed could be pinned down.
+    `max_givens` caps the givens in the grid that comes back, **including the two end
+    pieces**, which the format requires and which are therefore not optional. It is a
+    cap on the whole set rather than on the interior clues alone, because a caller
+    reading `grid.givens` cannot otherwise tell how much of the board was handed over.
+
+    Raises `TrackGenerationError` if no route from this seed could be pinned down, or if
+    `max_givens` is below the two ends no grid can do without.
     """
+    if max_givens is not None and max_givens < LINE_ENDS:
+        raise TrackGenerationError(
+            f"max_givens={max_givens} is below the {LINE_ENDS} ends every grid must give"
+        )
     cells = width * height
     floor = max(_MIN_ROUTE, cells // _FLOOR_SHARE)
     if width < _MIN_SIDE or height < _MIN_SIDE:
@@ -217,7 +227,9 @@ def generate_grid(
                 continue
             interior = len(route) - LINE_ENDS
             share = interior // _GIVEN_SHARE
-            limit = share if max_givens is None else min(share, max_givens)
+            # The cap is on the whole set, so the two mandatory ends come off it first.
+            budget = share if max_givens is None else max_givens - LINE_ENDS
+            limit = min(share, budget)
             for givens in range(0, limit + 1):
                 try:
                     grid = _build(width, height, pieces, route, givens)

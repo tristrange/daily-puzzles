@@ -109,12 +109,24 @@ class TestLimits:
         with pytest.raises(TrackGenerationError, match="at least 2x2"):
             generate_grid(seed=1, width=1, height=4)
 
-    def test_max_givens_caps_how_much_is_given_away(self) -> None:
-        loose = generate_grid(seed=2, width=7, height=7)
-        tight = generate_grid(seed=2, width=7, height=7, max_givens=len(loose.givens))
-        assert sum(1 for piece in tight.givens if piece) == sum(
-            1 for piece in loose.givens if piece
-        )
+    @pytest.mark.parametrize("cap", [2, 3, 4, 5, 8])
+    @pytest.mark.parametrize("seed", [47, 2, 9])
+    def test_max_givens_caps_the_whole_set(self, seed: int, cap: int) -> None:
+        """The cap is on `grid.givens`, which is what a caller actually reads.
+
+        The two end pieces are mandatory and were being added on top of the cap, so
+        `max_givens=0` still returned two givens. The earlier test passed the full cell
+        count, so it never reached the boundary at all.
+        """
+        grid = generate_grid(seed=seed, width=5, height=5, max_givens=cap)
+        given = sum(1 for piece in grid.givens if piece)
+        assert given <= cap, f"asked for at most {cap} givens, got {given}"
+        assert count_solutions(grid, limit=3) == 1
+
+    @pytest.mark.parametrize("cap", [0, 1])
+    def test_a_cap_below_the_mandatory_ends_is_refused(self, cap: int) -> None:
+        with pytest.raises(TrackGenerationError, match="below the 2 ends"):
+            generate_grid(seed=1, width=5, height=5, max_givens=cap)
 
 
 def _ends(piece: int) -> tuple[int, ...]:
