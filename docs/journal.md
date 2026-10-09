@@ -151,6 +151,52 @@ placed, or per deduction step — and then recalibrating once against both. That
 change to the difficulty model, not to Star Battle, and it would also change how the
 Queens ramp reads at 9x9. It is its own piece of work.
 
+## The third puzzle type, and a rule set I had wrong
+
+Milestone 16 closed with Star Battle deliberately unrated, which left the roadmap's
+third game as the next real work. `puzzle-model.md` had already audited what a third
+type costs and found every silent-failure hazard fixed, so the groundwork was done and
+only the game itself was missing. Train Tracks was the choice.
+
+**I described it wrongly when asking.** I said "place a track joining each numbered
+pair, no crossings or branches, one connected network", and built a solver for that.
+It cannot be a puzzle: a connected graph of maximum degree two is a path or a cycle,
+so it can hold at most two endpoints, and "all pairs in one network" is impossible
+past two pairs. A rule set that contradicts itself like that is a rule set that has
+not been checked. Train Tracks is really Krazydad's *Tracks* — one continuous line
+from an entrance on the left edge to an exit on the bottom edge, with a number on
+each row and column saying how many cells the line occupies in it.
+
+That version is a much better fit, and not only because it is the real game. The
+difference in cost is the whole story of why the first attempt was hopeless and this
+one is not:
+
+| | pair-joining (wrong) | row and column counts (real) |
+| --- | --- | --- |
+| 6x6, proving uniqueness | 104 s | 0.001 s |
+| what the search leans on | local degree rules | a hard ceiling on what each line can still reach |
+
+So the counts are not just the player's clues; they are what makes exhausting the
+search cheap, and exhausting the search is what proving uniqueness *is*. That is the
+same lesson as Star Battle's rating, arriving from the other direction: the two
+existing genres are fast because their constraints are tight, and any third genre
+has to earn that.
+
+A solution is the **set of cells** the line runs through, and nothing else. Two
+adjacent on-track cells are always joined — the piece in a cell is whichever way its
+neighbours lie — so there is one yes/no decision per cell and no edge to choose. The
+first version chose edges and was wrong in a way no unit test caught: it could emit a
+cell set whose implied degrees disagreed with the edges it had recorded. `brute_force`
+in the test file tries every subset of cells instead, shares no code with the search,
+and caught that plus two bugs in the search's own bookkeeping on the first run.
+
+One thing worth recording because it shaped the tests: on a square grid, two
+*connected* alternative routes almost never share a row and column count vector, so
+boards are nearly always unique and ambiguous ones are rare below 8x8. Growing tracks
+and checking them gave a unique board in one attempt and found no ambiguous board in
+twenty thousand tries at 6x6 and 7x7. That is good news for a generator that walks
+seeds, and it is why the one ambiguous fixture in the tests is an 8x8.
+
 ## Playing a star
 
 The app side turned out to be smaller than the engine side, because the puzzle
