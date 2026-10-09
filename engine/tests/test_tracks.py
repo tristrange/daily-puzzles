@@ -200,7 +200,7 @@ class TestEverySolutionObeysTheRules:
                 continue
             assert intended in list(iter_solutions(grid)), "the grown route must solve it"
             for assignment in iter_solutions(grid):
-                assert _obeys(grid, assignment), f"{grid} yielded {assignment}"
+                assert obeys(grid, assignment), f"{grid} yielded {assignment}"
             checked += 1
         assert checked, "no grid was grown, so nothing was checked"
 
@@ -326,7 +326,7 @@ def _grow(width: int, height: int, rng: random.Random, density: float = 0.3):
             grid = TrackGrid(width, height, tuple(rows), tuple(cols), tuple(givens))
         except TrackGridError:
             continue
-        if _obeys(grid, tuple(assignment)):
+        if obeys(grid, tuple(assignment)):
             return grid, tuple(assignment)
     return None, None
 
@@ -377,7 +377,7 @@ def _facing(width: int, height: int, cell: int, other: int) -> int:
     raise AssertionError(f"cell {cell} is not adjacent to {other}")
 
 
-def _obeys(grid: TrackGrid, assignment: tuple[int, ...]) -> bool:
+def obeys(grid: TrackGrid, assignment: tuple[int, ...]) -> bool:
     """Whether an assignment satisfies the rules, checked from scratch.
 
     Independent of the search's own bookkeeping, which is the point: an earlier
@@ -467,7 +467,7 @@ def _reference(grid: TrackGrid, cap: int | None = None) -> list[tuple[int, ...]]
         if cap is not None and len(found) >= cap:
             return
         if cell == n:
-            if _obeys(grid, tuple(piece)):
+            if obeys(grid, tuple(piece)):
                 found.append(tuple(piece))
             return
         given = grid.givens[cell]
