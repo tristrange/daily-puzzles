@@ -151,6 +151,61 @@ placed, or per deduction step — and then recalibrating once against both. That
 change to the difficulty model, not to Star Battle, and it would also change how the
 Queens ramp reads at 9x9. It is its own piece of work.
 
+## The third puzzle type, and a spec I did not read
+
+Milestone 16 closed with Star Battle deliberately unrated, which left the roadmap's third
+game as the next real work. `puzzle-model.md` had already audited what a third type costs
+and found every silent-failure hazard fixed, so the groundwork was done and only the game
+itself was missing. Train Tracks was the choice.
+
+**Then I got the rules wrong twice, and the second time the answer was in the repo.**
+
+The first error was mine and caught early: I described the game as joining numbered pairs
+into one network and built a solver for it. That cannot be a puzzle — a connected graph
+of maximum degree two is a path or a cycle, so it holds at most two endpoints, and "all
+pairs in one network" is impossible past two pairs. A rule set that contradicts itself
+that sharply is one nobody checked. The reviewer of the rating milestone had already
+flagged the same reasoning a few days earlier, so I should have expected the shape of the
+mistake rather than making it fresh.
+
+Having corrected that, I told myself I had checked Krazydad's rules, and I had not.
+`puzzle-model.md` §2 carries a three-column table whose Train Tracks column is marked
+**verified** — recovered from the site's help text and JavaScript, then confirmed by
+solving eight of its real puzzles. I read that file earlier in this effort, quoted
+section 6 of it, and skimmed straight past the specification in the same table:
+
+| | what I built | what the spec says |
+| --- | --- | --- |
+| cell state | empty, or the track is here | empty, or one of **six pieces** |
+| between cells | adjacency implies a join | **edge reciprocity**, so two adjacent track cells need not join |
+| the ends | a cell I chose | **both given**, and running off the grid |
+| pre-placed | ignored | `givens`, which the parser must honour |
+| class | `TrackBoard` | `TrackGrid` |
+
+Edge reciprocity is the whole game. Without it, a line running alongside itself is
+indistinguishable from one turning, and the piece is exactly what says which. The reviewer
+caught it with a concrete counterexample — a valid route on a board my solver called
+unsolvable — and closing that PR was right; it could not have been patched.
+
+The spec is the answer, and it was already written down. **When a design document exists
+in the repository, read it before designing anything it covers.** That is the part of this
+worth keeping, more than any of the three bugs underneath it: the solver and the
+independent reference agreed with each other on every board and were both wrong, because I
+had written the wrong rule into both before either was written.
+
+## What the clues are actually for
+
+The row and column counts are not only the player's clues. Proving uniqueness means
+exhausting the search, so the search's cost *is* the generator's, and because cells are
+walked in row-major order, every cell to the right in the current row and every row below
+are still undecided — a hard ceiling on what that row and column can still reach. A 7x7
+is decided in milliseconds.
+
+That is the Star Battle rating lesson arriving from the other side: the two existing
+genres are fast because their constraints are tight, and a third genre has to earn that.
+It is also why the counts had to be part of the model rather than something checked at
+the end.
+
 ## Playing a star
 
 The app side turned out to be smaller than the engine side, because the puzzle
