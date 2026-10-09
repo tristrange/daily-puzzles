@@ -158,8 +158,21 @@ It is read in five places, which is what makes this more than a field rename:
 | `puzzle.py` | 3 — `_require_int(board_record.get("size"))`, `puzzle_to_dict`, one message key |
 | `verify.py` | 4 |
 | `publish.py` | 2 |
-| `generate.py` | 1 |
+| `generate.py` | 1 — plus the unconditional `render_puzzle` call |
 | `rulebook.py` | 1 |
+| `render.py` | 3 — `render_puzzle`'s header builds `size={puzzle.size}x{puzzle.size}` |
+
+`render.py` is the one that is easy to leave out, and it has to be counted rather than
+missed. `generate.py:152` prints `render_puzzle(puzzle)` unconditionally, and its header
+dereferences `puzzle.size` before reaching the mark-specific renderer — so a Train Tracks
+generation that succeeded would then fail while *printing* its result. Rendering therefore
+either joins the per-type contract (`render` on the rulebook, as `generate` and
+`replay_config` already do) or is folded into the migration; it cannot be left calling a
+`size` a non-square board does not have.
+
+The wider point: this inventory is a list of places that *read* `size`, and the ones that
+bite are the callers further out. A grep of `puzzle.size` alone finds the field's readers
+and misses its callers' readers.
 
 The fix that costs least structure: **the rulebook answers it.** A `dimensions`
 accessor on `Rulebook` returns `(width, height)` for every genre — for the marks types
