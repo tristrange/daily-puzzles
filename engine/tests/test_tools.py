@@ -234,8 +234,8 @@ class TestVerify:
     def test_rejects_a_star_board_that_repeats_a_recent_layout(self, tmp_path: Path) -> None:
         """A duplicate can reach the archive with a replay-valid seed and no
         trip through publish; verification of the committed files must catch it."""
-        self._write_star(tmp_path, "2026-10-05-star", 7)
-        self._write_star(tmp_path, "2026-10-06-star", 7)
+        self._write_star(tmp_path, "2026-10-05-star", 2)
+        self._write_star(tmp_path, "2026-10-06-star", 2)
 
         result = verify.main(["--dir", str(tmp_path)])
         captured = _capture_verify(tmp_path)
@@ -246,8 +246,8 @@ class TestVerify:
 
     def test_accepts_a_star_board_with_a_distinct_recent_layout(self, tmp_path: Path) -> None:
         """The counterpart to the rejection above, so the check is not always-fail."""
-        first = self._write_star(tmp_path, "2026-10-05-star", 7)
-        second = self._write_star(tmp_path, "2026-10-06-star", 8)
+        first = self._write_star(tmp_path, "2026-10-05-star", 2)
+        second = self._write_star(tmp_path, "2026-10-06-star", 18)
         assert star_layout(first.board) != star_layout(second.board)
 
         result = verify.main(["--dir", str(tmp_path)])
@@ -257,8 +257,8 @@ class TestVerify:
     def test_accepts_a_star_layout_repeated_fifteen_days_apart(self, tmp_path: Path) -> None:
         """Same seed, same arrangement, but the boards sit `WINDOW_DAYS + 1`
         apart, which is outside the fourteen-day window and therefore legal."""
-        self._write_star(tmp_path, "2026-09-15-star", 7)
-        self._write_star(tmp_path, "2026-09-30-star", 7)
+        self._write_star(tmp_path, "2026-09-15-star", 2)
+        self._write_star(tmp_path, "2026-09-30-star", 2)
 
         result = verify.main(["--dir", str(tmp_path)])
 
@@ -273,9 +273,9 @@ class TestVerify:
         duplicate. The scan runs newest-first, so the recent board here is still
         caught.
         """
-        self._write_star(tmp_path, "2026-09-15-star", 7)  # outside Oct window
-        self._write_star(tmp_path, "2026-09-30-star", 8)
-        self._write_star(tmp_path, "2026-10-01-star", 8)  # repeats 09-30
+        self._write_star(tmp_path, "2026-09-15-star", 2)  # outside Oct window
+        self._write_star(tmp_path, "2026-09-30-star", 18)
+        self._write_star(tmp_path, "2026-10-01-star", 18)  # repeats 09-30
 
         result = verify.main(["--dir", str(tmp_path)])
         captured = _capture_verify(tmp_path)
@@ -304,6 +304,18 @@ class TestVerify:
         assert result == 0
 
     def _write_star(self, out_dir: Path, day_id: str, seed: int) -> Puzzle:
+        """A real Star Battle board on disk, so `verify_replay` passes.
+
+        The seeds are 2 and 18 rather than small round numbers, and that is a
+        measured choice rather than taste. The Star Battle generator is
+        rejection-heavy at 9x9 — it redraws until the board is unique — and the
+        cost varies by orders of magnitude across seeds: 2 and 18 take about
+        0.13s each, while 7 and 8 take 7.6s and 9.5s. Nothing here is testing
+        generation speed, only the repeat window, so it should not pay for a slow
+        draw. They are kept distinct because these tests need both cases: the same
+        seed twice is the repeat being detected, two seeds is the layout being
+        accepted as new.
+        """
         puzzle = rulebook_for(PuzzleType.STAR_BATTLE).generate(seed=seed, puzzle_id=day_id)
         (out_dir / f"{day_id}.json").write_text(dumps_puzzle(puzzle), encoding="utf-8")
         return puzzle
