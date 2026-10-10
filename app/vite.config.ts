@@ -19,6 +19,20 @@ const base = process.env['BASE_PATH'] ?? '/'
 export default defineConfig({
   plugins: [react()],
   base: base.endsWith('/') ? base : `${base}/`,
+  build: {
+    rollupOptions: {
+      // A second entry, so the unlinked difficulty-test page is a real document at
+      // `/nightmare-test/` rather than a route. The site routes on the hash, so a
+      // route could only ever be reached as `#/nightmare-test`; an entry emits
+      // `dist/nightmare-test/index.html`, which the host serves at the path.
+      input: {
+        main: fileURLToPath(new URL('index.html', import.meta.url)),
+        'nightmare-test/index': fileURLToPath(
+          new URL('nightmare-test/index.html', import.meta.url),
+        ),
+      },
+    },
+  },
   resolve: {
     // `schema/` and `conformance/` are shared with the Python engine and live above this
     // package, so the app reads them as source rather than duplicating them.

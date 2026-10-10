@@ -47,7 +47,22 @@ function sameState(a: GameState, b: GameState): boolean {
  * (board, timer, undo history) starts fresh whenever a different puzzle is
  * shown.
  */
-function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string }) {
+export function PuzzleStage({
+  puzzle,
+  timeZone,
+  recordSolve = true,
+}: {
+  puzzle: Puzzle
+  timeZone: string
+  /** Whether finishing writes to the player's stored history.
+   *
+   *  Off only for the unlinked difficulty-test page, which plays the real board
+   *  but must not drop eight dated solves into someone's streak and averages.
+   *  The playing experience is identical either way — this gates the bookkeeping,
+   *  not the board.
+   */
+  recordSolve?: boolean
+}) {
   const [game, setGame] = useState<GameState>(() => createGame(puzzle.board))
   const [history, setHistory] = useState<GameState[]>([])
   const [hint, setHint] = useState<Hint | null>(null)
@@ -115,28 +130,29 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
     if (solvedAt === null && isSolved(next)) {
       const when = Date.now()
       setSolvedAt(when)
-      // Read before storing, so a replay can be told why its time was not kept.
-      const earlier = readStoredStats().find((record) => record.id === puzzle.id)
-      // Recorded once, at the moment it happens, and never revised: a replay is
-      // played knowing the answer, so its time would flatter the record.
-      setStats(
-        summarise(
-          storeSolve({
-            id: puzzle.id,
-            puzzleType: puzzle.puzzleType,
-            size: puzzle.board.size,
-            elapsedMs: when - startedAt,
-            hints: hintsUsed,
-            solvedAt: when,
-          }),
-          puzzleOfToday(new Date(when), timeZone),
-        ),
-      )
-      setFirstSolve(earlier ?? null)
+      if (recordSolve) {
+        // Read before storing, so a replay can be told why its time was not kept.
+        const earlier = readStoredStats().find((record) => record.id === puzzle.id)
+        // Recorded once, at the moment it happens, and never revised: a replay is
+        // played knowing the answer, so its time would flatter the record.
+        setStats(
+          summarise(
+            storeSolve({
+              id: puzzle.id,
+              puzzleType: puzzle.puzzleType,
+              size: puzzle.board.size,
+              elapsedMs: when - startedAt,
+              hints: hintsUsed,
+              solvedAt: when,
+            }),
+            puzzleOfToday(new Date(when), timeZone),
+          ),
+        )
+        setFirstSolve(earlier ?? null)
+      }
       setAnnouncement(`Solved in ${formatTime(when - startedAt)}!`)
     }
   }
-
   const beginStroke = () => {
     strokeStart.current = game
   }
