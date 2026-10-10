@@ -1,28 +1,38 @@
 /**
  * The unlinked difficulty-test page.
  *
- * It plays the real board. `PuzzleStage` is the same component the site uses for
- * every published puzzle, so the click, the drag, the marks, the conflicts, the
- * hint button and the solved banner are the game's own and cannot drift from it.
- * The only thing this file adds is a different list of puzzles and a different
- * directory to fetch them from.
+ * It is the app. `Shell` gives it the header, the navigation and the theme
+ * picker; `PuzzleView` loads a puzzle and plays it with `PuzzleStage`, the
+ * component every published puzzle is played with. So the click, the drag, the
+ * marks, the conflicts, the auto-mark, the hints, undo, reset and the solved
+ * banner are the game's own code, and the theme follows the same stored choice
+ * the rest of the site uses.
  *
- * An earlier version hand-wrote a board in vanilla JavaScript. It looked close
- * enough to pass a glance and was not: no marks, no drag, no conflict feedback,
- * and a Check button instead of a win. Everything about that page was a second
- * implementation of code that already existed and was already right.
+ * The whole of what this page adds is the dropdown and the directory the boards
+ * come from. Everything else is a component that already existed.
  *
- * Not reachable from the site: nothing links here, and it is `noindex`. It has
- * its own build entry rather than a route because the site routes on the hash,
- * which would make the address `#/nightmare-test` instead of a path.
+ * This went wrong three times, all the same way: a hand-written board, then a
+ * page shell that rebuilt `Shell`, then a manifest loader that rebuilt
+ * `PuzzleView`. Each version looked close enough to pass a glance and was not —
+ * no drag, no marks, no hints, no theme. Assembling a page is never the answer
+ * when the site already has one.
+ *
+ * A separate build entry rather than a route, because the site routes on the
+ * hash and a route could only be reached as `#/nightmare-test`. An entry emits
+ * `dist/nightmare-test/index.html`, which the host serves at the path. Nothing
+ * links here and the document is `noindex`.
  */
 
 import { StrictMode, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
+import { HashRouter, Route, Routes } from 'react-router-dom'
 
-import '../App.css'
-import { PuzzleStage } from '../components/PuzzleView'
-import { parsePuzzle, type Puzzle } from '../domain/puzzle'
+import '../index.css'
+import { Shell } from '../components/Shell'
+import { PuzzleView } from '../components/PuzzleView'
+import { applyTheme, readStoredTheme } from '../lib/theme'
+
+const DIR = 'nightmare-test/'
 
 interface ManifestEntry {
   file: string
@@ -30,36 +40,25 @@ interface ManifestEntry {
   score: number
 }
 
-const DIR = 'nightmare-test/'
-
-function url(file: string): string {
-  return `${import.meta.env.BASE_URL}${DIR}${file}`
-}
-
 function TestSet() {
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
-  const [boards, setBoards] = useState<{ entry: ManifestEntry; puzzle: Puzzle }[]>([])
+  const [boards, setBoards] = useState<ManifestEntry[]>([])
   const [index, setIndex] = useState(0)
   const [failed, setFailed] = useState<string | null>(null)
 
   useEffect(() => {
-    // Sequential rather than parallel: eight files from a static host arrive in
-    // one go anyway, and this keeps the order the manifest declares.
-    const load = async () => {
-      const response = await fetch(url('manifest.json'))
-      if (!response.ok) throw new Error(`manifest: ${response.status}`)
-      const entries = (await response.json()) as ManifestEntry[]
-      const loaded: { entry: ManifestEntry; puzzle: Puzzle }[] = []
-      for (const entry of entries) {
-        const file = await fetch(url(entry.file))
-        if (!file.ok) throw new Error(`${entry.file}: ${file.status}`)
-        loaded.push({ entry, puzzle: parsePuzzle(await file.json()) })
-      }
-      setBoards(loaded)
-    }
-    load().catch((error: unknown) => {
-      setFailed(error instanceof Error ? error.message : String(error))
-    })
+    // The picker only writes the attribute when clicked, so a stored choice has
+    // to be applied here or the page ignores it until the first click.
+    applyTheme(readStoredTheme())
+
+    fetch(`${import.meta.env.BASE_URL}${DIR}manifest.json`)
+      .then((response) => {
+        if (!response.ok) throw new Error(`manifest: ${response.status}`)
+        return response.json() as Promise<ManifestEntry[]>
+      })
+      .then(setBoards)
+      .catch((error: unknown) => {
+        setFailed(error instanceof Error ? error.message : String(error))
+      })
   }, [])
 
   if (failed !== null) {
@@ -72,16 +71,17 @@ function TestSet() {
   }
 
   const current = boards[index]
-  if (current === undefined) {
-    return <p className="status">Loading the test set…</p>
-  }
+  if (current === undefined) return <p className="status">Loading the test set…</p>
+
+  // The file is named for the id the board carries, so the id is the file stem.
+  const id = current.file.replace(/\.json$/, '')
 
   return (
     <section>
       <h2 className="page-title">Queens test set</h2>
       <p className="status">
-        One queen per colour, no two touching. Times are what matter — the score is ours, not
-        yours.
+        Eight boards our engine rates Nightmare. Time them — the score is ours, and it measures
+        how hard the engine found a board, not how hard it is.
       </p>
       <p>
         <label htmlFor="board-picker">Board: </label>
@@ -90,19 +90,29 @@ function TestSet() {
           value={String(index)}
           onChange={(event) => setIndex(Number(event.target.value))}
         >
-          {boards.map(({ entry }, position) => (
+          {boards.map((entry, position) => (
             <option key={entry.file} value={String(position)}>
               {entry.label} — ours scores {entry.score}
             </option>
           ))}
         </select>
       </p>
-      {/* Keyed on the id so switching boards resets the game, the clock and the
-          history, exactly as opening a different puzzle does. */}
-      <div key={current.puzzle.id}>
-        <PuzzleStage puzzle={current.puzzle} timeZone={timeZone} recordSolve={false} />
-      </div>
+      {/* Keyed on the id by PuzzleView, so switching boards resets the game, the
+          clock and the history exactly as opening a different puzzle does. */}
+      <PuzzleView key={id} id={id} dir={DIR} recordSolve={false} />
     </section>
+  )
+}
+
+function TestApp() {
+  return (
+    <HashRouter>
+      <Routes>
+        <Route element={<Shell />}>
+          <Route index element={<TestSet />} />
+        </Route>
+      </Routes>
+    </HashRouter>
   )
 }
 
@@ -111,6 +121,6 @@ if (container === null) throw new Error('no #root to mount into')
 
 createRoot(container).render(
   <StrictMode>
-    <TestSet />
+    <TestApp />
   </StrictMode>,
 )

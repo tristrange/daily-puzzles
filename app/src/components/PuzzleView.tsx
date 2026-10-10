@@ -426,17 +426,23 @@ function describeCell(board: Puzzle['board'], cell: number): string {
 export function PuzzleView({
   id,
   notFoundMessage,
+  dir,
+  recordSolve = true,
 }: {
   id: string
   /** Shown instead of the raw miss when this puzzle may simply not be out yet. */
   notFoundMessage?: string
+  /** Directory the puzzle files live in. Only the difficulty-test page differs. */
+  dir?: string
+  /** Whether finishing writes to the player's stored history. See `PuzzleStage`. */
+  recordSolve?: boolean
 }) {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
   const [state, setState] = useState<LoadState>({ status: 'loading' })
 
   useEffect(() => {
     let cancelled = false
-    loadPuzzle(id).then(
+    loadPuzzle(id, fetch, dir).then(
       (puzzle) => {
         if (!cancelled) setState({ status: 'ready', puzzle })
       },
@@ -464,7 +470,7 @@ export function PuzzleView({
     <article className="puzzle">
       <h1>{formatPuzzleLabel(id, timeZone)}</h1>
       <div key={state.puzzle.id}>
-        <PuzzleStage puzzle={state.puzzle} timeZone={timeZone} />
+        <PuzzleStage puzzle={state.puzzle} timeZone={timeZone} recordSolve={recordSolve} />
       </div>
     </article>
   )
