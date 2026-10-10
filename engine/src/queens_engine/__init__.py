@@ -1,6 +1,6 @@
 """Engine for generating, validating and rating daily logic puzzles."""
 
-from .board import MAX_SIZE, MIN_SIZE, Board, BoardError, PuzzleType
+from .board import MAX_SIZE, MIN_SIZE, Board, BoardError, JsonValue, Puzzle, PuzzleType
 from .deduce import (
     DEFAULT_GUESS_CAP,
     DeductionError,
@@ -31,8 +31,6 @@ from .generator import (
 )
 from .prng import Prng
 from .puzzle import (
-    JsonValue,
-    Puzzle,
     PuzzleParseError,
     canonical_dumps,
     dumps_puzzle,
@@ -52,7 +50,7 @@ from .ramp import (
     generate_ramped,
     target_for,
 )
-from .render import render_board, render_puzzle
+from .render import render_board
 from .rulebook import (
     STAR_BATTLE_SIZE,
     STAR_BATTLE_STARS,
@@ -131,7 +129,6 @@ __all__ = [
     "puzzle_id",
     "puzzle_to_dict",
     "render_board",
-    "render_puzzle",
     "rulebook_for",
     "rulebooks",
     "score_difficulty",

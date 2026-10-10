@@ -99,7 +99,7 @@ def test_generated_board_is_logic_only() -> None:
 
 def test_generated_board_uses_the_targets_size() -> None:
     result = generate_ramped(seed=1, puzzle_id="2026-10-05", target=WEEKLY_RAMP[0], max_attempts=40)
-    assert result.puzzle.size == WEEKLY_RAMP[0].size
+    assert result.puzzle.board.size == WEEKLY_RAMP[0].size
 
 
 def test_result_reports_what_it_delivered() -> None:

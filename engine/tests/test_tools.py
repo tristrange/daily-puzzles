@@ -248,7 +248,7 @@ class TestVerify:
         """The counterpart to the rejection above, so the check is not always-fail."""
         first = self._write_star(tmp_path, "2026-10-05-star", 7)
         second = self._write_star(tmp_path, "2026-10-06-star", 8)
-        assert star_layout(first) != star_layout(second)
+        assert star_layout(first.board) != star_layout(second.board)
 
         result = verify.main(["--dir", str(tmp_path)])
 
@@ -546,7 +546,6 @@ class TestStarLayoutRepeat:
         return Puzzle(
             id=day_id,
             puzzle_type=PuzzleType.STAR_BATTLE,
-            size=8,
             seed=seed,
             generator_version=2,
             board=board,
@@ -628,7 +627,6 @@ class TestStarLayoutRepeat:
                 Puzzle(
                     id="2026-10-08",
                     puzzle_type=PuzzleType.QUEENS,
-                    size=8,
                     seed=7,
                     generator_version=1,
                     board=Board(
@@ -650,8 +648,8 @@ class TestStarLayoutRepeat:
         # and the day itself (not yet on disk) all stay out; the fourteen-day
         # edges and everything between are in, from both directions.
         expected = {
-            star_layout(self._star_puzzle(f"{past.isoformat()}-star", 7, self.COL_BOARD)),
-            star_layout(self._star_puzzle(f"{last.isoformat()}-star", 7, self.ROW_BOARD)),
-            star_layout(self._star_puzzle(f"{future.isoformat()}-star", 7, self.BLOCK_BOARD)),
+            star_layout(self._star_puzzle(f"{past.isoformat()}-star", 7, self.COL_BOARD).board),
+            star_layout(self._star_puzzle(f"{last.isoformat()}-star", 7, self.ROW_BOARD).board),
+            star_layout(self._star_puzzle(f"{future.isoformat()}-star", 7, self.BLOCK_BOARD).board),
         }
         assert recent == expected

@@ -25,9 +25,17 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from datetime import date
-from typing import Final
+from typing import Any, Final
 
-from .board import Board, PuzzleType
+from .board import (
+    Board,
+    BoardError,
+    JsonValue,
+    Puzzle,
+    PuzzleType,
+    require_int,
+    require_list,
+)
 from .deduce import DeductionTrace
 from .deduce import deduce as deduce_board
 from .difficulty import score_difficulty
@@ -37,8 +45,8 @@ from .generator import (
     GenerationError,
     generate_puzzle,
 )
-from .puzzle import Puzzle
-from .solver import DEFAULT_LIMIT
+from .render import render_board
+from .solver import DEFAULT_LIMIT, iter_solutions
 from .solver import count_solutions as count_board_solutions
 
 #: Star Battle stays at one size until the deduction engine can rate a star board,
@@ -130,14 +138,71 @@ class Rulebook(ABC):
         """Deduce what `board` forces, or `None` if this type has no such engine."""
 
     @abstractmethod
-    def replay_config(self, puzzle: Puzzle) -> GenerationConfig:
-        """The config that regenerates `puzzle` from its own seed.
+    def replay(self, puzzle: Puzzle) -> Puzzle:
+        """Regenerate `puzzle` from its own seed.
 
-        How a file's type and capacity map back onto the generator's knobs is a
-        per-type fact: a Star Battle file carries its stars-per-row in the first
-        region's capacity, a Queens file carries none. Reading that here is why
-        `verify_replay` can replay any registered family without a branch on the
-        enum.
+        This returns a `Puzzle` rather than the generator's config, and that is the
+        whole point of the change. `replay_config` used to return a `GenerationConfig`,
+        which is `size`-and-stars shaped: it cannot describe a grid that is not square,
+        because there is no single number to put in it. Asking each type to rebuild its
+        own board is what lets a non-square genre register at all, and it is why
+        `verify_replay` holds no branch on the enum.
+
+        How a file maps back onto its generator's knobs is itself a per-type fact: a
+        Star Battle file carries its stars-per-row in the first region's capacity, a
+        Queens file carries none, and a Train Tracks file carries its width and height.
+        """
+
+    @abstractmethod
+    def dimensions(self, puzzle: Puzzle) -> tuple[int, int]:
+        """The puzzle's grid as `(width, height)`.
+
+        `Puzzle` has no `size` field, because a size is not a property of a puzzle —
+        it is a property of the two square genres. A grid that is 5x9 has no size at
+        all, and widening the field to `int | None` would put a hole in something the
+        tools read directly, while keeping the largest dimension would have the file
+        claim to be 9x9. Every reader asks here instead, so a genre that is not square
+        is not an exception in any of them.
+
+        Takes the puzzle rather than the board because that is what the callers hold:
+        `verify` and `render` have a `Puzzle`, and threading a second argument through
+        them to reach a field on the board inside it would be noise.
+        """
+
+    @abstractmethod
+    def render(self, puzzle: Puzzle) -> str:
+        """The puzzle as ASCII, for the CLI, a test failure and the CI log.
+
+        Required rather than optional because `tools.generate` prints a rendering of
+        whatever it generated, for every type, without asking whether there is one: a
+        type that had none would not fail at generation, it would fail while
+        *printing* a result it had already produced, which points the reader at the
+        printer rather than at whatever made the puzzle unrenderable.
+
+        It used to be a free function in `render.py` that read `puzzle.size` for its
+        header, which is why this is on the contract at all: a caller further out that
+        a grep of `puzzle.size` readers would not find is exactly how it got missed.
+        """
+
+    @abstractmethod
+    def parse_board(self, record: dict[str, Any]) -> Board:
+        """The board a file's `board` object describes.
+
+        The schema has already refused the shapes it can express, so this reads the
+        fields that are left and applies the invariants it cannot state — array
+        lengths tied to a dimension, contiguous region ids, a clue within its line's
+        length. It lives here so `parse_puzzle` holds no branch on the enum: a genre
+        whose board is not made of regions cannot be parsed by a module that reads
+        `regions` itself.
+        """
+
+    @abstractmethod
+    def board_to_dict(self, board: Board) -> dict[str, JsonValue]:
+        """The schema-shaped `board` object for `board`.
+
+        The counterpart to `parse_board`, and the other half of removing that branch
+        from `puzzle_to_dict`, which used to decide per type which optional keys to
+        write.
         """
 
 
@@ -196,17 +261,74 @@ class MarkRulebook(Rulebook):
     def deduce(self, board: Board, *, allow_guesses: bool = True) -> DeductionTrace | None:
         return deduce_board(board, allow_guesses=allow_guesses)
 
-    def replay_config(self, puzzle: Puzzle) -> GenerationConfig:
+    def replay(self, puzzle: Puzzle) -> Puzzle:
         # A mark family either plays one mark per line or k per line, and the rulebook
         # already says which it is. So the board's own capacity is the answer for the
         # second case and nothing is the answer for the first — no branch on the enum.
-        return GenerationConfig(
-            size=puzzle.size,
-            puzzle_type=self.puzzle_type,
-            stars_per_row=(
-                puzzle.board.region_capacity[0] if self.default_stars_per_row is not None else None
+        return generate_puzzle(
+            seed=puzzle.seed,
+            puzzle_id=puzzle.id,
+            config=GenerationConfig(
+                size=puzzle.board.size,
+                puzzle_type=self.puzzle_type,
+                stars_per_row=(
+                    puzzle.board.region_capacity[0]
+                    if self.default_stars_per_row is not None
+                    else None
+                ),
             ),
         )
+
+    def dimensions(self, puzzle: Puzzle) -> tuple[int, int]:
+        return (puzzle.board.size, puzzle.board.size)
+
+    def render(self, puzzle: Puzzle) -> str:
+        best = next(iter_solutions(puzzle.board), None)
+        header = f"{puzzle.id} seed={puzzle.seed} size={puzzle.board.size}x{puzzle.board.size}"
+        if best is not None:
+            return f"{header}\n{render_board(puzzle.board, best)}"
+        return f"{header}\n{render_board(puzzle.board)}"
+
+    def parse_board(self, record: dict[str, Any]) -> Board:
+        size = require_int(record.get("size"), "board.size")
+        regions = tuple(
+            require_int(value, "board.regions[]")
+            for value in require_list(record.get("regions"), "board.regions")
+        )
+
+        # `validate_board` states the same rule with the same wording, so this looks
+        # redundant. It is not: the schema allows an empty `regions` array, and the
+        # `max()` below would raise "max() arg is an empty sequence" on one before a
+        # `Board` was ever constructed to reject it. The check is here to give that
+        # case the message a player can act on.
+        if len(regions) != size * size:
+            raise BoardError(f"regions has {len(regions)} entries, expected {size * size}")
+
+        region_count = max(regions) + 1
+        declared = record.get("regionCapacity")
+        capacity = (
+            tuple(
+                require_int(value, "board.regionCapacity[]")
+                for value in require_list(declared, "board.regionCapacity")
+            )
+            if declared is not None
+            else (1,) * region_count
+        )
+        return Board(
+            size=size,
+            regions=regions,
+            region_capacity=capacity,
+            puzzle_type=self.puzzle_type,
+        )
+
+    def board_to_dict(self, board: Board) -> dict[str, JsonValue]:
+        data: dict[str, JsonValue] = {
+            "size": board.size,
+            "regions": list(board.regions),
+        }
+        if self.default_stars_per_row is not None:
+            data["regionCapacity"] = list(board.region_capacity)
+        return data
 
 
 _RULEBOOKS: Final[dict[PuzzleType, Rulebook]] = {
@@ -257,11 +379,7 @@ def verify_replay(puzzle: Puzzle) -> Puzzle:
     did not regenerate.
     """
     book = rulebook_for(puzzle.puzzle_type)
-    regenerated = generate_puzzle(
-        seed=puzzle.seed,
-        puzzle_id=puzzle.id,
-        config=book.replay_config(puzzle),
-    )
+    regenerated = book.replay(puzzle)
     if regenerated.board != puzzle.board:
         raise GenerationError(
             f"replay mismatch for {puzzle.id}: seed {puzzle.seed} produced a different board"

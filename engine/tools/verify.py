@@ -75,7 +75,7 @@ def _star_repeat_problem(
     """
     if puzzle.puzzle_type is not PuzzleType.STAR_BATTLE or puzzle.board.size != STAR_BATTLE_SIZE:
         return None
-    layout = star_layout(puzzle)
+    layout = star_layout(puzzle.board)
     # Reversing matters: an entry more than the window behind would stop an
     # ascending scan on its very first item and skip the in-window layouts
     # published just before this file, so duplicates from yesterday would be
@@ -112,7 +112,8 @@ def _ramp_check(day_text: str, puzzle_type: PuzzleType, puzzle: Puzzle) -> RampC
     meant a 7x7 Queens board named `2026-10-12-star.json` skipped the check
     entirely and was accepted on a Monday that targets Medium.
     """
-    if not rulebook_for(puzzle_type).on_ramp:
+    book = rulebook_for(puzzle_type)
+    if not book.on_ramp:
         return RampCheck("")
     day = date.fromisoformat(day_text)
     target = target_for(day)
@@ -122,8 +123,12 @@ def _ramp_check(day_text: str, puzzle_type: PuzzleType, puzzle: Puzzle) -> RampC
         problem = f"no difficulty recorded; {day} is on or after {RAMP_START}"
         return RampCheck("", problem)
     band = LEVEL_NAMES[puzzle.difficulty - 1]
-    if puzzle.size != target.size:
-        problem = f"{puzzle.size}x{puzzle.size}, expected {target.size}x{target.size}"
+    # Dimensions come from the type rather than a `size` field, so this reads the
+    # same for a genre that is not square. Only a ramped type reaches it, and the
+    # ramp is square-only, so a mismatch here is a wrong size and nothing subtler.
+    width, height = book.dimensions(puzzle)
+    if (width, height) != (target.size, target.size):
+        problem = f"{width}x{height}, expected {target.size}x{target.size}"
         return RampCheck("", problem)
     if puzzle.difficulty > target.level:
         return RampCheck("", f"{band} is above {target.level_name}")
@@ -186,7 +191,8 @@ def main(argv: list[str] | None = None) -> int:
             failed.append(f"{path}: {problem}")
             print(f"{path.name}: FAILED ({problem})")
             continue
-        label = f"{path.name}: ok ({puzzle.board.size}x{puzzle.board.size}"
+        width, height = rulebook_for(puzzle.puzzle_type).dimensions(puzzle)
+        label = f"{path.name}: ok ({width}x{height}"
         label += f", seed {puzzle.seed}, v{puzzle.generator_version}, replay match"
         if ramp.note:
             label += f", {ramp.note}"

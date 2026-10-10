@@ -17,6 +17,7 @@ from queens_engine import (
     STAR_BATTLE_STARS,
     GenerationConfig,
     PuzzleType,
+    Rulebook,
     generate_puzzle,
     puzzle_id,
     rulebook_for,
@@ -156,13 +157,21 @@ class TestGeneration:
 
     def test_replay_recovers_the_stars_per_row_from_the_board(self) -> None:
         # A Star Battle file records its stars-per-row only in the first region's
-        # capacity, so replay has to read it back from there. Asserting the rebuilt
-        # config directly is what catches a rulebook that replays every type at one
-        # star per row — which generates fine and verifies against nothing.
+        # capacity, so replay has to read it back from there. Asserting the replayed
+        # board is what catches a rulebook that replays every type at one star per
+        # row — which generates fine and verifies against nothing. The second half
+        # is the same claim from the other side: a queens board replayed as a star
+        # board would produce a different region capacity and be caught by it.
         book = rulebook_for(PuzzleType.STAR_BATTLE)
         puzzle = book.generate(seed=7, puzzle_id="2026-10-12")
-        assert book.replay_config(puzzle).stars_per_row == STAR_BATTLE_STARS
-        assert rulebook_for(PuzzleType.QUEENS).replay_config(puzzle).stars_per_row is None
+        replayed = book.replay(puzzle)
+        assert replayed.board.region_capacity[0] == STAR_BATTLE_STARS
+        assert replayed.board.region_capacity == puzzle.board.region_capacity
+        # Replaying the star board through the queens rulebook must not work: the
+        # capacities it would rebuild are one per region, not two.
+        queens_replay = rulebook_for(PuzzleType.QUEENS).replay(puzzle)
+        assert queens_replay.board.region_capacity[0] == 1
+        assert queens_replay.board.region_capacity != puzzle.board.region_capacity
 
     def test_counting_and_deducing_go_through_the_rulebook(self) -> None:
         book = rulebook_for(PuzzleType.QUEENS)
@@ -182,3 +191,40 @@ class TestGeneration:
                 continue
             puzzle = book.generate(seed=7, puzzle_id="2026-10-12", size=SMALL)
             assert 1 <= score_difficulty(puzzle.board).level <= 3
+
+
+class TestTheShapeOfAPuzzle:
+    """What every type promises about a puzzle, independent of its rules.
+
+    These are the two answers the tools read instead of a `size` field. Both were
+    added because a reader that was left out would fail at a distance: the render
+    inventory was once built from a grep that found the *readers* of `puzzle.size`
+    and missed the callers further out, so `render.py` was skipped and a generation
+    that had already succeeded would then fail while printing its result.
+
+    So each case here is driven by the registry rather than by a list of types
+    someone remembered, and each asserts against the board the puzzle actually
+    holds rather than against a restatement of the implementation.
+    """
+
+    @pytest.mark.parametrize("book", rulebooks(), ids=lambda b: b.puzzle_type.value)
+    def test_dimensions_agree_with_the_board(self, book: Rulebook) -> None:
+        puzzle = book.generate(seed=7, puzzle_id="2026-10-12")
+        width, height = book.dimensions(puzzle)
+        # Read off the board, not off the size the generator was asked for: the claim
+        # is that the rulebook describes the board it was handed.
+        assert (width, height) == (puzzle.board.width, puzzle.board.height)
+
+    @pytest.mark.parametrize("book", rulebooks(), ids=lambda b: b.puzzle_type.value)
+    def test_every_type_can_render_a_puzzle(self, book: Rulebook) -> None:
+        # `tools.generate` calls this on every type without asking, so a type that
+        # could not render would not fail at generation — it would fail afterwards,
+        # pointing at the printer rather than at whatever made it unrenderable.
+        puzzle = book.generate(seed=7, puzzle_id="2026-10-12")
+        lines = book.render(puzzle).splitlines()
+        width, height = book.dimensions(puzzle)
+        assert f"seed={puzzle.seed}" in lines[0]
+        assert f"{width}x{height}" in lines[0]
+        grid = lines[1:]
+        assert len(grid) == height
+        assert all(len(line.split()) == width for line in grid)

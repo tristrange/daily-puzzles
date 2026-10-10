@@ -31,7 +31,6 @@ from queens_engine import (
     PuzzleType,
     dumps_puzzle,
     puzzle_id,
-    render_puzzle,
     rulebook_for,
     rulebooks,
     score_difficulty,
@@ -149,7 +148,7 @@ def main(argv: list[str] | None = None) -> int:
         target = args.out / f"{puzzle_id}.json"
         target.write_text(dumps_puzzle(puzzle), encoding="utf-8")
         print(f"wrote {target}")
-    print(render_puzzle(puzzle))
+    print(book.render(puzzle))
     return 0
 
 
