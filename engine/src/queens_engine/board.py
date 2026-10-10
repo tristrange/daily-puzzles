@@ -1,8 +1,14 @@
-"""Board geometry, plus the structural guarantees every puzzle board must satisfy.
+"""What a puzzle file's contents are: its type, its board, and the envelope around them.
 
 These are the constraints *we* are responsible for, not the rules the player follows.
 A board that breaks any of them is unfair or illegible even if it happens to be
 logically solvable, so they are enforced at construction time.
+
+`Puzzle` lives here rather than in `puzzle.py` because of what it depends on.
+`puzzle.py` reads a board through the type's rulebook, and the rulebook generates
+through `generator.py`, which builds a `Puzzle` — so a `Puzzle` defined in `puzzle.py`
+and imported from the top of that module makes the three a cycle. This module imports
+nothing of ours, so anything defined here can be depended on from all three.
 """
 
 from __future__ import annotations
@@ -10,10 +16,16 @@ from __future__ import annotations
 from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Final
+from typing import Final, cast
 
 MIN_SIZE: Final[int] = 2
 MAX_SIZE: Final[int] = 16
+
+#: Any value a puzzle file may hold. Defined here, beside the board a file's `board`
+#: object describes, because `rulebook.py` needs it to type the dicts it writes and
+#: importing it from `puzzle.py` would close a loop: `puzzle.py` reads a board
+#: through the rulebook.
+type JsonValue = str | int | float | bool | list[JsonValue] | dict[str, JsonValue] | None
 
 
 class PuzzleType(StrEnum):
@@ -113,6 +125,61 @@ class Board:
             if 0 <= next_row < self.height and 0 <= next_col < self.width:
                 found.append(next_row * self.width + next_col)
         return tuple(found)
+
+
+def require_int(value: object, field: str) -> int:
+    """Return value as an int, using the schema's definition of "integer".
+
+    JSON Schema 2020-12 counts a number with a zero fractional part as an integer,
+    so `4.0` is as valid as `4`. json.loads hands us a float where ajv hands
+    TypeScript a plain number, so rejecting floats here would make the two parsers
+    disagree on files the schema accepts.
+
+    These coercions live here rather than in `puzzle.py` because the rulebook reads a
+    board record too, and `rulebook.py` already imports this module. Leaving them in
+    `puzzle.py` would mean the rulebook importing the module that imports the
+    rulebook.
+    """
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        raise BoardError(f"{field} must be an integer")
+    if isinstance(value, float):
+        # is_integer() is False for nan and inf, so those are rejected too.
+        if not value.is_integer():
+            raise BoardError(f"{field} must be an integer")
+        return int(value)
+    return value
+
+
+def require_list(value: object, field: str) -> list[object]:
+    if not isinstance(value, list):
+        raise BoardError(f"{field} must be an array")
+    # isinstance narrows `object` to `list[Unknown]`, which a strict checker will not
+    # let a caller iterate as though it held values. The element type is decided by
+    # whoever reads the list, through `require_int` on each entry.
+    return cast("list[object]", value)
+
+
+@dataclass(frozen=True, slots=True)
+class Puzzle:
+    """A puzzle file after structural and semantic validation.
+
+    There is no `size` field, because a size is not a property of a puzzle: it is a
+    property of the two square genres. A Train Tracks grid is `width` x `height` and
+    has no `size` at all — 5x9 is not a size, and the board deliberately permits it.
+    Widening the field to `int | None` would put a hole in something the tools read
+    directly, and keeping it as the largest dimension would have a 5x9 file claiming
+    to be 9x9. So callers ask the type's rulebook for `dimensions(puzzle)` instead,
+    which is `(size, size)` here and `(width, height)` for a grid that is not square.
+    """
+
+    id: str
+    puzzle_type: PuzzleType
+    seed: int
+    generator_version: int
+    board: Board
+    #: Band index, 1-based into `LEVEL_NAMES`. `None` for boards published
+    #: before the weekly ramp, and for anything generated outside a target.
+    difficulty: int | None = None
 
 
 def derive_stars_per_row(region_capacity: tuple[int, ...], size: int) -> int:

@@ -26,7 +26,7 @@ from queens_engine import (
     dumps_puzzle,
     generate_puzzle,
     parse_puzzle,
-    render_puzzle,
+    rulebook_for,
     verify_replay,
 )
 from queens_engine.solver import iter_solutions
@@ -102,11 +102,10 @@ def test_verify_replay_detects_tampering() -> None:
     forged = Puzzle(
         id=puzzle.id,
         puzzle_type=puzzle.puzzle_type,
-        size=puzzle.size,
         seed=puzzle.seed,
         generator_version=puzzle.generator_version,
         board=Board(
-            size=puzzle.size,
+            size=puzzle.board.size,
             regions=tuple(swapped),
             region_capacity=puzzle.board.region_capacity,
             puzzle_type=puzzle.board.puzzle_type,
@@ -176,7 +175,7 @@ def test_dumps_is_stable_and_round_trips() -> None:
     assert parsed["id"] == puzzle.id
     assert parsed["seed"] == puzzle.seed
     board = parsed["board"]
-    assert board["size"] == puzzle.size
+    assert board["size"] == puzzle.board.size
     assert list(board["regions"]) == list(puzzle.board.regions)
     if "regionCapacity" in board:
         assert list(board["regionCapacity"]) == list(puzzle.board.region_capacity)
@@ -184,7 +183,7 @@ def test_dumps_is_stable_and_round_trips() -> None:
 
 def test_render_shows_a_queen_per_row_and_column() -> None:
     puzzle = generate_puzzle(seed=11, puzzle_id="2026-04-05")
-    lines = render_puzzle(puzzle).splitlines()
+    lines = rulebook_for(puzzle.puzzle_type).render(puzzle).splitlines()
     assert "2026-04-05" in lines[0] and "seed=11" in lines[0]
     board_lines = lines[1:]
     assert len(board_lines) == puzzle.board.size
@@ -271,11 +270,10 @@ def test_star_battle_verify_replay_detects_tampering() -> None:
     forged = Puzzle(
         id=puzzle.id,
         puzzle_type=puzzle.puzzle_type,
-        size=puzzle.size,
         seed=puzzle.seed,
         generator_version=puzzle.generator_version,
         board=Board(
-            size=puzzle.size,
+            size=puzzle.board.size,
             regions=tuple(swapped),
             region_capacity=puzzle.board.region_capacity,
             puzzle_type=puzzle.board.puzzle_type,
@@ -328,7 +326,7 @@ def test_star_battle_dumps_round_trips_with_capacity() -> None:
 
 def test_star_battle_render_shows_two_stars_per_row_and_column() -> None:
     puzzle = _generate_star(0, 8, 2, puzzle_id="2026-04-05")
-    lines = render_puzzle(puzzle).splitlines()
+    lines = rulebook_for(puzzle.puzzle_type).render(puzzle).splitlines()
     assert "2026-04-05" in lines[0] and "seed=0" in lines[0]
     board_lines = lines[1:]
     assert len(board_lines) == puzzle.board.size

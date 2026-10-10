@@ -2,9 +2,20 @@
 
 from __future__ import annotations
 
-from queens_engine import Board, PuzzleType, render_board, render_puzzle
-from queens_engine.generator import generate_puzzle
+from queens_engine import (
+    Board,
+    Puzzle,
+    PuzzleType,
+    generate_puzzle,
+    render_board,
+    rulebook_for,
+)
 from queens_engine.solver import iter_solutions
+
+
+def _render(puzzle: Puzzle) -> str:
+    """The puzzle as ASCII, through the rulebook that owns the rendering."""
+    return rulebook_for(puzzle.puzzle_type).render(puzzle)
 
 
 def _board() -> Board:
@@ -36,7 +47,7 @@ def test_render_board_marks_solution_with_queen() -> None:
 
 def test_render_puzzle_header_and_grid() -> None:
     puzzle = generate_puzzle(seed=4, puzzle_id="2026-01-01", config=None)
-    rendered = render_puzzle(puzzle)
+    rendered = _render(puzzle)
     lines = rendered.splitlines()
     assert lines[0].startswith("2026-01-01")
     assert f"seed={puzzle.seed}" in lines[0]
@@ -46,7 +57,7 @@ def test_render_puzzle_header_and_grid() -> None:
 
 def test_render_puzzle_uses_real_solution() -> None:
     puzzle = generate_puzzle(seed=4, puzzle_id="2026-01-01")
-    rendered = render_puzzle(puzzle)
+    rendered = _render(puzzle)
     lines = rendered.splitlines()[1:]
     expected = {
         (row, col)
@@ -60,7 +71,7 @@ def test_render_puzzle_uses_real_solution() -> None:
 
 def test_render_puzzle_uniqueness_visible() -> None:
     puzzle = generate_puzzle(seed=4, puzzle_id="2026-01-01")
-    rendered = render_puzzle(puzzle)
+    rendered = _render(puzzle)
     rows = rendered.splitlines()[1:]
     assert all(row.count("Q") == 1 for row in rows)
     assert all(

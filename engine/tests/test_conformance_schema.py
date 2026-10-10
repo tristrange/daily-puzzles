@@ -12,7 +12,7 @@ from typing import Any
 
 import pytest
 
-from queens_engine import PuzzleParseError, parse_puzzle
+from queens_engine import PuzzleParseError, parse_puzzle, rulebook_for
 from queens_engine.puzzle import CONFORMANCE_DIR
 
 CASES_DIR = CONFORMANCE_DIR / "schema-cases"
@@ -61,7 +61,11 @@ def test_schema_case(case: dict[str, Any]) -> None:
         assert puzzle.puzzle_type.value == expected["type"]
         # A file writing `4.0` must parse as the integer 4, not as 4.0: every
         # downstream index and loop bound assumes ints.
-        assert puzzle.size == expected["size"]
+        # Asked of the rulebook rather than read off the puzzle: a `Puzzle` has no
+        # `size`, and a case that were not square would assert one number where the
+        # contract answers with two.
+        width, height = rulebook_for(puzzle.puzzle_type).dimensions(puzzle)
+        assert (width, height) == (expected["size"], expected["size"])
         assert puzzle.seed == expected["seed"]
         assert puzzle.generator_version == expected["generatorVersion"]
         assert list(puzzle.board.region_capacity) == expected["regionCapacity"]

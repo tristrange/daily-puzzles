@@ -1,15 +1,17 @@
-"""ASCII rendering of boards and puzzles for CLI output.
+"""ASCII rendering of boards for CLI output.
 
 Deliberately separate from the browser UI: the app draws its own board. This is
 for `python -m tools.generate`, test failures and the CI log, where a fixed
 font makes the puzzle legible in a terminal or patch.
+
+Rendering a whole *puzzle* is not here — it is `Rulebook.render`, because the header
+it prints is the puzzle's dimensions and only the type knows what those are. This
+module draws the marks board, which is what the marks rulebook asks it for.
 """
 
 from __future__ import annotations
 
 from .board import Board
-from .puzzle import Puzzle
-from .solver import iter_solutions
 
 _REGION_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -33,23 +35,4 @@ def render_board(board: Board, solution: set[int] | tuple[int, ...] = ()) -> str
     return "\n".join(rows)
 
 
-def render_puzzle(puzzle: Puzzle) -> str:
-    """A puzzle with a header line (id, size, seed) above its board.
-
-    `seed` lets a human reproduce the exact grid by re-running the generator;
-    the header is part of the ASCII contract so pasted boards stay attributable.
-    """
-    best = _best_solution(puzzle)
-    header = f"{puzzle.id} seed={puzzle.seed} size={puzzle.size}x{puzzle.size}"
-    if best is not None:
-        return f"{header}\n{render_board(puzzle.board, best)}"
-    return f"{header}\n{render_board(puzzle.board)}"
-
-
-def _best_solution(puzzle: Puzzle) -> tuple[int, ...] | None:
-    for solution in iter_solutions(puzzle.board):
-        return solution
-    return None
-
-
-__all__ = ["render_board", "render_puzzle"]
+__all__ = ["render_board"]

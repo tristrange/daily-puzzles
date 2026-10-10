@@ -26,9 +26,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Final
 
-from .board import Board, BoardError, PuzzleType
+from .board import Board, BoardError, Puzzle, PuzzleType
 from .prng import Prng
-from .puzzle import Puzzle
 from .solver import has_unique_solution, iter_solutions
 
 DEFAULT_SIZE: Final[int] = 8
@@ -146,7 +145,6 @@ def generate_puzzle(*, seed: int, puzzle_id: str, config: GenerationConfig | Non
             return Puzzle(
                 id=puzzle_id,
                 puzzle_type=board.puzzle_type,
-                size=cfg.size,
                 seed=seed,
                 generator_version=generator_version,
                 board=board,
@@ -341,7 +339,7 @@ def _neighbours(row: int, col: int, size: int) -> tuple[tuple[int, int], ...]:
     return tuple(found)
 
 
-def star_layout(puzzle: Puzzle) -> tuple[tuple[int, ...], ...]:
+def star_layout(board: Board) -> tuple[tuple[int, ...], ...]:
     """The star board's arrangement: each row's sorted star columns.
 
     Star boards are unique-solution, so the first solution is the arrangement a
@@ -349,10 +347,14 @@ def star_layout(puzzle: Puzzle) -> tuple[tuple[int, ...], ...]:
     the same board to play, whatever their regions look like. This is what a
     repeat check compares: a board published inside `STAR_LAYOUT_WINDOW_DAYS` of
     one with the same arrangement would be playable from memory.
+
+    Takes the `Board` rather than the `Puzzle`, so it reads the size off something
+    that has one. A `Puzzle` no longer carries `size` — that is a property of the
+    marks genres, and this function only ever has a marks board.
     """
-    pairs: list[list[int]] = [[] for _ in range(puzzle.size)]
-    for cell in next(iter(iter_solutions(puzzle.board))):
-        pairs[cell // puzzle.size].append(cell % puzzle.size)
+    pairs: list[list[int]] = [[] for _ in range(board.size)]
+    for cell in next(iter(iter_solutions(board))):
+        pairs[cell // board.size].append(cell % board.size)
     return tuple(tuple(sorted(row)) for row in pairs)
 
 

@@ -90,7 +90,7 @@ def _nearby_star_layouts(
         if other == day or abs(other - day).days > window:
             continue
         if puzzle_type is PuzzleType.STAR_BATTLE:
-            recent.add(star_layout(load_puzzle(day_id)))
+            recent.add(star_layout(load_puzzle(day_id).board))
     return recent
 
 
@@ -183,7 +183,7 @@ def _generate(
         if (
             avoid_layouts is not None
             and book.puzzle_type is PuzzleType.STAR_BATTLE
-            and star_layout(puzzle) in avoid_layouts
+            and star_layout(puzzle.board) in avoid_layouts
         ):
             seed = (seed + 1) % (2**32)
             continue
@@ -250,8 +250,9 @@ def main(argv: list[str] | None = None) -> int:
                 if puzzle.difficulty is not None
                 else " (not rated)"
             )
+            width, height = book.dimensions(puzzle)
             print(
-                f"  seed {puzzle.seed} size {puzzle.size}{band}"
+                f"  seed {puzzle.seed} size {width}x{height}{band}"
                 + (f" score {score:g}" if score is not None else " (unique, not logic-gated)")
             )
         window += timedelta(days=1)

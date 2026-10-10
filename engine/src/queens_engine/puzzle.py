@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
 from typing import Any, Final, cast
@@ -18,32 +17,16 @@ from typing import Any, Final, cast
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 
-from .board import Board, BoardError, PuzzleType
+from .board import BoardError, JsonValue, Puzzle, PuzzleType, require_int
+from .rulebook import rulebook_for
 
 REPO_ROOT: Final[Path] = Path(__file__).resolve().parents[3]
 SCHEMA_PATH: Final[Path] = REPO_ROOT / "schema" / "puzzle.schema.json"
 CONFORMANCE_DIR: Final[Path] = REPO_ROOT / "conformance"
 
-type JsonValue = str | int | float | bool | list[JsonValue] | dict[str, JsonValue] | None
-
 
 class PuzzleParseError(ValueError):
     """A puzzle file is malformed."""
-
-
-@dataclass(frozen=True, slots=True)
-class Puzzle:
-    """A puzzle file after structural and semantic validation."""
-
-    id: str
-    puzzle_type: PuzzleType
-    size: int
-    seed: int
-    generator_version: int
-    board: Board
-    #: Band index, 1-based into `LEVEL_NAMES`. `None` for boards published
-    #: before the weekly ramp, and for anything generated outside a target.
-    difficulty: int | None = None
 
 
 def _schema_error_key(error: ValidationError) -> str:
@@ -126,44 +109,24 @@ def parse_puzzle(data: object) -> Puzzle:
         raise PuzzleParseError("puzzle must be a JSON object")
 
     record = cast("dict[str, JsonValue]", data)
+    puzzle_type = PuzzleType(_require_str(record.get("type"), "type"))
+
+    # Which board a file holds is the rulebook's answer, not this module's. `puzzle.py`
+    # used to read `size`, `regions` and `regionCapacity` itself and hand them to a
+    # `Board`, which meant a genre whose board is not made of regions could not be
+    # parsed here at all without a branch on the enum appearing in this file.
     board_record = _require_object(record.get("board"), "board")
-    size = _require_int(board_record.get("size"), "board.size")
-    regions = tuple(
-        _require_int(value, "board.regions[]")
-        for value in _require_list(board_record.get("regions"), "board.regions")
-    )
-
-    if len(regions) != size * size:
-        raise PuzzleParseError(f"regions has {len(regions)} entries, expected {size * size}")
-
-    region_count = max(regions) + 1
-    declared = board_record.get("regionCapacity")
-    capacity = (
-        tuple(
-            _require_int(value, "board.regionCapacity[]")
-            for value in _require_list(declared, "board.regionCapacity")
-        )
-        if declared is not None
-        else (1,) * region_count
-    )
+    try:
+        board = rulebook_for(puzzle_type).parse_board(board_record)
+    except (BoardError, ValueError) as error:
+        raise PuzzleParseError(str(error)) from error
 
     declared_level = record.get("difficulty")
     difficulty = None if declared_level is None else _require_int(declared_level, "difficulty")
 
-    try:
-        board = Board(
-            size=size,
-            regions=regions,
-            region_capacity=capacity,
-            puzzle_type=PuzzleType(_require_str(record.get("type"), "type")),
-        )
-    except (BoardError, ValueError) as error:
-        raise PuzzleParseError(str(error)) from error
-
     return Puzzle(
         id=_require_str(record.get("id"), "id"),
         puzzle_type=board.puzzle_type,
-        size=size,
         seed=_require_int(record.get("seed"), "seed"),
         generator_version=_require_int(record.get("generatorVersion"), "generatorVersion"),
         board=board,
@@ -182,19 +145,12 @@ def load_puzzle(path: Path) -> Puzzle:
 
 def puzzle_to_dict(puzzle: Puzzle) -> dict[str, JsonValue]:
     """The schema-shaped dict for `puzzle`, in the order the CLI writes it."""
-    board: dict[str, JsonValue] = {
-        "size": puzzle.size,
-        "regions": list(puzzle.board.regions),
-    }
-    if puzzle.puzzle_type is PuzzleType.STAR_BATTLE:
-        board["regionCapacity"] = list(puzzle.board.region_capacity)
-
     data: dict[str, JsonValue] = {
         "id": puzzle.id,
         "type": puzzle.puzzle_type.value,
         "seed": puzzle.seed,
         "generatorVersion": puzzle.generator_version,
-        "board": board,
+        "board": rulebook_for(puzzle.puzzle_type).board_to_dict(puzzle.board),
     }
     if puzzle.difficulty is not None:
         data["difficulty"] = puzzle.difficulty
@@ -265,27 +221,16 @@ def _require_str(value: JsonValue | None, field: str) -> str:
 
 
 def _require_int(value: JsonValue | None, field: str) -> int:
-    """Return value as an int, using the schema's definition of "integer".
+    """The envelope's integer fields, reusing the board's coercion.
 
-    JSON Schema 2020-12 counts a number with a zero fractional part as an
-    integer, so `4.0` is as valid as `4`. json.loads hands us a float where
-    ajv hands TypeScript a plain number, so rejecting floats here would make
-    the two parsers disagree on files the schema accepts.
+    One definition of what the schema's "integer" means, for both halves of a file:
+    a copy here is a second answer to the same question, and the two parsers'
+    agreement on `4.0` is exactly what depends on there being only one.
     """
-    if isinstance(value, bool) or not isinstance(value, int | float):
-        raise PuzzleParseError(f"{field} must be an integer")
-    if isinstance(value, float):
-        # is_integer() is False for nan and inf, so those are rejected too.
-        if not value.is_integer():
-            raise PuzzleParseError(f"{field} must be an integer")
-        return int(value)
-    return value
-
-
-def _require_list(value: JsonValue | None, field: str) -> list[JsonValue]:
-    if not isinstance(value, list):
-        raise PuzzleParseError(f"{field} must be an array")
-    return value
+    try:
+        return require_int(value, field)
+    except BoardError as error:
+        raise PuzzleParseError(str(error)) from error
 
 
 __all__ = [
