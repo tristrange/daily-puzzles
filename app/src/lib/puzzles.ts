@@ -25,8 +25,8 @@ export class PuzzleNotFoundError extends Error {
   }
 }
 
-export function puzzleUrl(id: string, dir = 'puzzles/'): string {
-  return `${import.meta.env.BASE_URL}${dir}${id}.json`
+export function puzzleUrl(id: string): string {
+  return `${import.meta.env.BASE_URL}puzzles/${id}.json`
 }
 
 /**
@@ -37,8 +37,8 @@ export function puzzleUrl(id: string, dir = 'puzzles/'): string {
  * and `text/html`. Both of the caller's failure modes hinge on telling a real
  * puzzle from that shell, so the body itself has to be the evidence.
  */
-async function fetchPuzzle(id: string, fetcher: Fetcher, dir: string): Promise<Puzzle | null> {
-  const response = await fetcher(puzzleUrl(id, dir))
+async function fetchPuzzle(id: string, fetcher: Fetcher): Promise<Puzzle | null> {
+  const response = await fetcher(puzzleUrl(id))
   if (!response.ok) return null
   try {
     return parsePuzzle(await response.json())
@@ -77,7 +77,7 @@ export async function probePuzzles(
   return Promise.all(
     ids.map(async (id): Promise<ProbedPuzzle> => {
       try {
-        return { id, puzzle: await fetchPuzzle(id, fetcher, 'puzzles/') }
+        return { id, puzzle: await fetchPuzzle(id, fetcher) }
       } catch {
         return { id, puzzle: null }
       }
@@ -85,20 +85,10 @@ export async function probePuzzles(
   )
 }
 
-/** Fetch and fully validate one puzzle file; throws `PuzzleNotFoundError`.
- *
- *  `dir` names the directory the files live in. It is a parameter rather than a
- *  constant so the unlinked difficulty-test page can read its own boards through
- *  this same path, instead of reimplementing the fetch and the shell-vs-puzzle
- *  check that `fetchPuzzle` exists to make.
- */
-export async function loadPuzzle(
-  id: string,
-  fetcher: Fetcher = fetch,
-  dir = 'puzzles/',
-): Promise<Puzzle> {
+/** Fetch and fully validate one puzzle file; throws `PuzzleNotFoundError`. */
+export async function loadPuzzle(id: string, fetcher: Fetcher = fetch): Promise<Puzzle> {
   if (!isPuzzleId(id)) throw new PuzzleNotFoundError(id)
-  const puzzle = await fetchPuzzle(id, fetcher, dir)
+  const puzzle = await fetchPuzzle(id, fetcher)
   if (puzzle === null) throw new PuzzleNotFoundError(id)
   return puzzle
 }
@@ -130,7 +120,7 @@ export async function listPublishedPuzzles(
 ): Promise<readonly PublishedPuzzle[]> {
   const candidates = previousPuzzleIds(todayId, ARCHIVE_WINDOW_DAYS).flatMap(puzzleIdsForDay)
   const results = await Promise.allSettled(
-    candidates.map(async (id) => ({ id, puzzle: await fetchPuzzle(id, fetcher, 'puzzles/') })),
+    candidates.map(async (id) => ({ id, puzzle: await fetchPuzzle(id, fetcher) })),
   )
   return results.flatMap((result) =>
     result.status === 'fulfilled' && result.value.puzzle !== null

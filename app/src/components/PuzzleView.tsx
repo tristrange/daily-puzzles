@@ -47,22 +47,7 @@ function sameState(a: GameState, b: GameState): boolean {
  * (board, timer, undo history) starts fresh whenever a different puzzle is
  * shown.
  */
-export function PuzzleStage({
-  puzzle,
-  timeZone,
-  recordSolve = true,
-}: {
-  puzzle: Puzzle
-  timeZone: string
-  /** Whether finishing writes to the player's stored history.
-   *
-   *  Off only for the unlinked difficulty-test page, which plays the real board
-   *  but must not drop eight dated solves into someone's streak and averages.
-   *  The playing experience is identical either way — this gates the bookkeeping,
-   *  not the board.
-   */
-  recordSolve?: boolean
-}) {
+function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string }) {
   const [game, setGame] = useState<GameState>(() => createGame(puzzle.board))
   const [history, setHistory] = useState<GameState[]>([])
   const [hint, setHint] = useState<Hint | null>(null)
@@ -130,29 +115,28 @@ export function PuzzleStage({
     if (solvedAt === null && isSolved(next)) {
       const when = Date.now()
       setSolvedAt(when)
-      if (recordSolve) {
-        // Read before storing, so a replay can be told why its time was not kept.
-        const earlier = readStoredStats().find((record) => record.id === puzzle.id)
-        // Recorded once, at the moment it happens, and never revised: a replay is
-        // played knowing the answer, so its time would flatter the record.
-        setStats(
-          summarise(
-            storeSolve({
-              id: puzzle.id,
-              puzzleType: puzzle.puzzleType,
-              size: puzzle.board.size,
-              elapsedMs: when - startedAt,
-              hints: hintsUsed,
-              solvedAt: when,
-            }),
-            puzzleOfToday(new Date(when), timeZone),
-          ),
-        )
-        setFirstSolve(earlier ?? null)
-      }
+      // Read before storing, so a replay can be told why its time was not kept.
+      const earlier = readStoredStats().find((record) => record.id === puzzle.id)
+      // Recorded once, at the moment it happens, and never revised: a replay is
+      // played knowing the answer, so its time would flatter the record.
+      setStats(
+        summarise(
+          storeSolve({
+            id: puzzle.id,
+            puzzleType: puzzle.puzzleType,
+            size: puzzle.board.size,
+            elapsedMs: when - startedAt,
+            hints: hintsUsed,
+            solvedAt: when,
+          }),
+          puzzleOfToday(new Date(when), timeZone),
+        ),
+      )
+      setFirstSolve(earlier ?? null)
       setAnnouncement(`Solved in ${formatTime(when - startedAt)}!`)
     }
   }
+
   const beginStroke = () => {
     strokeStart.current = game
   }
@@ -426,23 +410,17 @@ function describeCell(board: Puzzle['board'], cell: number): string {
 export function PuzzleView({
   id,
   notFoundMessage,
-  dir,
-  recordSolve = true,
 }: {
   id: string
   /** Shown instead of the raw miss when this puzzle may simply not be out yet. */
   notFoundMessage?: string
-  /** Directory the puzzle files live in. Only the difficulty-test page differs. */
-  dir?: string
-  /** Whether finishing writes to the player's stored history. See `PuzzleStage`. */
-  recordSolve?: boolean
 }) {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
   const [state, setState] = useState<LoadState>({ status: 'loading' })
 
   useEffect(() => {
     let cancelled = false
-    loadPuzzle(id, fetch, dir).then(
+    loadPuzzle(id).then(
       (puzzle) => {
         if (!cancelled) setState({ status: 'ready', puzzle })
       },
@@ -470,7 +448,7 @@ export function PuzzleView({
     <article className="puzzle">
       <h1>{formatPuzzleLabel(id, timeZone)}</h1>
       <div key={state.puzzle.id}>
-        <PuzzleStage puzzle={state.puzzle} timeZone={timeZone} recordSolve={recordSolve} />
+        <PuzzleStage puzzle={state.puzzle} timeZone={timeZone} />
       </div>
     </article>
   )
