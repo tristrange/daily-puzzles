@@ -119,9 +119,9 @@
                 "items": { "type": "integer", "minimum": 0 }
               },
               "givens": {
-                "description": "Piece number per cell, row-major, length exactly width * height. 0 is an empty cell; 1 and 6 are straights, 2 and 5 cross the grid's axes, 3 and 4 turn, and 7 marks a cell the line must skip. Exactly two givens face off the edge, because the line has two ends.",
+                "description": "Piece number per cell, row-major, length exactly width * height. 0 is an empty cell, and 1 to 6 are the six pieces: two straights and four turns. Exactly two givens face off the edge, because the line has two ends.",
                 "type": "array",
-                "items": { "type": "integer", "minimum": 0, "maximum": 7 }
+                "items": { "type": "integer", "minimum": 0, "maximum": 6 }
               }
             }
           }

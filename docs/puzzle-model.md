@@ -242,10 +242,22 @@ it. `publish.py` skips unpublished books in both the write loop and
 `_ids_for_day`, so a day is not held open forever by a type that is never
 written.
 
+The app mirrors it in `PUZZLE_TYPE_PUBLISHED`, and it has to: the two halves fail
+separately and visibly. The engine half alone writes files nothing can parse; the
+app half alone probes a file that is never there and offers a permanent "not
+published yet" card, because `puzzleIdsForDay` is the chokepoint every page asks
+through. Neither half is a subset of the other, so a gate with one of them is not
+a gate.
+
 The mark games keep their existing classes, behind the same interface. That is
 the whole point: the refactor is additive.
 
 ### L3 — app: per-type state and a per-type registry
+
+Not built. The registration landed the parts of it that do not require playing the
+grid — `PUZZLE_TYPE_SUFFIX`, `LABEL`, `PIECE`, `HAS_HINTS` and `PUBLISHED` are all
+keyed by type, and `Board` stays a marks board until a `TrackGrid` has somewhere to
+live beside it.
 
 `GameState` stops being one shape. It becomes a union, and the mark variant is
 today's shape unchanged:

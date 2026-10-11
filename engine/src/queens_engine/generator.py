@@ -36,6 +36,11 @@ MAX_GENERATABLE_SIZE: Final[int] = 9
 MAX_SEED: Final[int] = 0xFFFFFFFF
 MIN_STARS_PER_ROW: Final[int] = 2
 
+#: The families this module builds. Enumerated rather than derived from "not
+#: Queens", because every `PuzzleType` that is not a mark game would otherwise be
+#: built as a Star Battle — see the check in `generate_puzzle`.
+_MARKS_TYPES: Final[frozenset[PuzzleType]] = frozenset({PuzzleType.QUEENS, PuzzleType.STAR_BATTLE})
+
 #: Days of "two weeks" a published star board must stay clear of a layout that
 #: is already on disk. Back-to-back days sharing a star arrangement would be
 #: playable from memory, which is the guessability `STAR_BATTLE_SIZE` removed.
@@ -96,6 +101,13 @@ def generate_puzzle(*, seed: int, puzzle_id: str, config: GenerationConfig | Non
     if not 0 <= seed <= MAX_SEED:
         raise GenerationError(f"seed {seed} outside [0, 2**32-1]")
     cfg = config or GenerationConfig()
+    # This is the marks generator, so it says so rather than falling through. The
+    # branch below is `QUEENS` else Star Battle, which silently made a new enum
+    # member a two-star board — a puzzle of a type nobody asked for, built by a
+    # generator that does not know the type exists. Such a type has its own
+    # rulebook, which is what its caller should be reaching for.
+    if cfg.puzzle_type not in _MARKS_TYPES:
+        raise GenerationError(f"{cfg.puzzle_type} is not generated here; use its rulebook")
     if not MIN_GENERATABLE_SIZE <= cfg.size <= MAX_GENERATABLE_SIZE:
         raise GenerationError(
             f"size {cfg.size} outside [{MIN_GENERATABLE_SIZE}, {MAX_GENERATABLE_SIZE}]"

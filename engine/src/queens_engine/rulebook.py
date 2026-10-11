@@ -42,6 +42,7 @@ from .deduce import deduce as deduce_board
 from .difficulty import score_difficulty
 from .generator import (
     DEFAULT_SIZE,
+    MAX_SEED,
     GenerationConfig,
     GenerationError,
     generate_puzzle,
@@ -430,6 +431,12 @@ class TrackRulebook(Rulebook):
         # unique solution. Tracks placement is a deterministic fill from the seed,
         # so there is one board per seed and nothing to retry.
         del max_attempts
+        # `generate_puzzle` checks this for the marks types because it hands the
+        # seed to `Prng`, which masks an out-of-range one to 64 bits rather than
+        # refusing it. `generate_grid` does the same, so the check belongs here:
+        # without it a file can be written recording a seed its own schema refuses.
+        if not 0 <= seed <= MAX_SEED:
+            raise GenerationError(f"seed {seed} outside [0, 2**32-1]")
         grid = generate_grid(seed=seed, width=TRACKS_WIDTH, height=TRACKS_HEIGHT)
         return Puzzle(
             id=puzzle_id,
@@ -455,9 +462,14 @@ class TrackRulebook(Rulebook):
         return None
 
     def replay(self, puzzle: Puzzle) -> Puzzle:
+        # The version is restated from this module, not carried over from the file.
+        # `verify_replay` compares the regenerated version against the recorded one
+        # so a generator change cannot silently reinterpret published puzzles, and
+        # `replace` would have compared the file's value with itself.
         board = self._grid(puzzle)
         return replace(
             puzzle,
+            generator_version=TRACKS_GENERATOR_VERSION,
             board=generate_grid(seed=puzzle.seed, width=board.width, height=board.height),
         )
 

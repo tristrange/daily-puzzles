@@ -14,7 +14,7 @@ from __future__ import annotations
 from typing import Final
 
 from .board import Board
-from .tracks import Assignment, TrackGrid
+from .tracks import TrackGrid
 
 _REGION_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -46,28 +46,23 @@ def render_board(board: Board, solution: set[int] | tuple[int, ...] = ()) -> str
 PIECE_GLYPHS: Final[tuple[str, ...]] = (" ", "─", "│", "└", "┌", "┐", "┘")
 
 
-def render_grid(grid: TrackGrid, solution: Assignment | None = None) -> str:
-    """Render a track grid, row by row, one space between cells.
+def render_grid(grid: TrackGrid) -> str:
+    """Render a track grid's givens, row by row, two characters per cell.
 
-    With a solution, the line's cells are shown and the rest blanked, so the
-    rendered board is a player's view of the answer rather than a second way of
-    reading the givens. The givens are always drawn — they are clues, and hiding
-    them would make the output useless for checking a puzzle.
+    Only the givens. `render_board` takes a solution because a marks board's marks
+    *are* the state; a track grid's givens are clues, and showing an answer
+    alongside them would need the piece number at every cell rather than the
+    occupancy the assignment happens to hold. The first caller to want an answer
+    drawn can add it, with the type it is drawing.
     """
-    filled = set(solution) if solution is not None else None
-    rows: list[str] = []
-    for row in range(grid.height):
-        cells: list[str] = []
-        for col in range(grid.width):
-            cell = grid.index(row, col)
-            piece = grid.givens[cell]
-            if filled is not None and piece == 0 and cell not in filled:
-                cells.append(" ")
-            else:
-                cells.append(PIECE_GLYPHS[piece])
-        # Same `" " + glyph` shape as `render_board`, so every renderer emits two
-        # characters per cell and a row is as wide as its grid without counting.
-        rows.append("".join(f" {glyph}" for glyph in cells))
+    rows = [
+        "".join(
+            f" {PIECE_GLYPHS[grid.piece_at(grid.index(row, col))]}" for col in range(grid.width)
+        )
+        for row in range(grid.height)
+    ]
+    # Same `" " + glyph` shape as `render_board`, so every renderer emits two
+    # characters per cell and a row is as wide as its grid without counting.
     return "\n".join(rows)
 
 

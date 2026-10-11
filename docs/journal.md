@@ -194,6 +194,43 @@ worth keeping, more than any of the three bugs underneath it: the solver and the
 independent reference agreed with each other on every board and were both wrong, because I
 had written the wrong rule into both before either was written.
 
+## Six holes the review found in a type that was not shipping
+
+The first review of the Train Tracks registration found six faults, and every one was
+mine and every one was in code I had just written and believed finished. They are worth
+listing together, because the pattern is more useful than any of them alone: **five of the
+six are a value that was checked at the entry point and then trusted all the way down.**
+
+- The schema documented a piece code `7`. `TrackGrid` has six pieces. A file written to
+  the format as documented would validate and then fail to parse. A description is not a
+  comment; it is a promise the validator then has to keep, and I wrote one the validator
+  did not keep.
+- `replay` carried `generator_version` over from the file it was replaying, so
+  `verify_replay` compared the file's version with itself and accepted any
+  schema-valid value. The check existed, ran, and could not fail.
+- `generate` handed the seed straight to `Prng`, which masks to 64 bits rather than
+  refusing. `--seed -1` would have written a file recording a seed its own schema
+  rejects on read. `generate_puzzle` checks this; the new path did not, because it was
+  written by copying the shape of a function without its guards.
+- The marks generator's branch is `QUEENS` else Star Battle, so a new enum member became
+  a two-star board. Not a crash — the wrong game, generated successfully, by a generator
+  that does not know the type exists.
+- `render_grid` took a solution and compared it against cell indices, while the type it
+  was handed is a piece number per cell. It drew the givens and ignored the solution,
+  which looks identical to the no-solution case, so the tests passed.
+
+The sixth was the app's, and it is the one that would have shipped: registering the type
+in `PUZZLE_TYPES` made `puzzleIdsForDay` probe a `-tracks.json` that will never exist,
+putting a permanent "not published yet" card on the home page. `Rulebook.published` was
+the engine half of that gate and I had added it there and nowhere else — the same
+mistake as the `_ids_for_day` loop, one layer up, and I had just written the post-mortem
+for the first one.
+
+The honest summary is that a type which cannot be reached is the easiest thing in the
+repository to get right, and I got six things wrong anyway. What caught them was a
+reviewer reading the diff against the model rather than against my description of it.
+That is the argument for the reviewer, not for writing fewer comments.
+
 ## Registering a type without shipping it
 
 `TrainTracks` is in the engine's registry, generating and proving unique solutions, and

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { PUZZLE_TYPES } from './board'
-import { PUZZLE_TYPE_SUFFIX } from './games'
+import { PUZZLE_TYPE_PUBLISHED, PUZZLE_TYPE_SUFFIX } from './games'
 import {
   companionPuzzleId,
   formatPuzzleLabel,
@@ -93,10 +93,18 @@ describe('companionPuzzleId', () => {
 })
 
 describe('puzzleIdsForDay', () => {
-  it('lists one id per registered family, in registry order', () => {
-    expect(puzzleIdsForDay('2026-09-30')).toEqual(
-      PUZZLE_TYPES.map((type) => puzzleIdFor('2026-09-30', type)),
-    )
+  it('lists one id per published family, in registry order', () => {
+    // Spelled out rather than derived: deriving it from the same registry and the
+    // same table the implementation reads would pass for any filter whatsoever,
+    // including one that dropped Star Battle. Train Tracks is the case that
+    // matters — registered, unpublished, and absent.
+    expect(puzzleIdsForDay('2026-09-30')).toEqual(['2026-09-30', '2026-09-30-star'])
+  })
+
+  it('drops a family that is registered but not published', () => {
+    expect(PUZZLE_TYPE_PUBLISHED['train-tracks']).toBe(false)
+    expect(PUZZLE_TYPES).toContain('train-tracks')
+    expect(puzzleIdsForDay('2026-09-30')).not.toContain('2026-09-30-tracks')
   })
 })
 

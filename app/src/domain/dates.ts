@@ -18,7 +18,12 @@
  */
 
 import { PUZZLE_TYPES, type PuzzleType } from './board'
-import { DEFAULT_PUZZLE_TYPE, PUZZLE_TYPE_SUFFIX, isDefaultPuzzleType } from './games'
+import {
+  DEFAULT_PUZZLE_TYPE,
+  PUZZLE_TYPE_PUBLISHED,
+  PUZZLE_TYPE_SUFFIX,
+  isDefaultPuzzleType,
+} from './games'
 
 /** The day and family a puzzle id names. */
 export type PuzzleIdParts = {
@@ -111,16 +116,23 @@ export function puzzleIdFor(day: string, type: PuzzleType): string {
 }
 
 /**
- * Every puzzle id a calendar day carries, one per registered family.
+ * Every puzzle id a calendar day carries, one per published family.
  *
  * This is the app's chokepoint for what exists: the chooser probes these for today
  * and the archive probes them for every day in its window, so nothing else ever
  * asks for a puzzle by id. A family missing from here is a puzzle that is published
  * correctly and never requested — invisible rather than broken, which is why the
  * list is derived from the registry instead of written out.
+ *
+ * Unpublished families are excluded, mirroring the engine's `Rulebook.published`.
+ * A registered type the publisher will not write is a type with no files, and
+ * probing for one on every visit turns a half-built game into a permanent
+ * "not published yet" card.
  */
 export function puzzleIdsForDay(day: string): string[] {
-  return PUZZLE_TYPES.map((type) => puzzleIdFor(day, type))
+  return PUZZLE_TYPES.filter((type) => PUZZLE_TYPE_PUBLISHED[type]).map((type) =>
+    puzzleIdFor(day, type),
+  )
 }
 
 /** The puzzle id owed to a player in `timeZone` at the instant `date`. */
