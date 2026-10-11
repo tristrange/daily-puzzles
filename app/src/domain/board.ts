@@ -143,21 +143,28 @@ export function validateBoard(board: Board): void {
     throw new BoardError('region ids must be exactly 0..regionCount-1, with no gaps')
   }
 
+  // Not "no rule for this type, carry on". `Board` is the marks model: regions,
+  // capacities, one square. Train Tracks plays a grid with none of those, so a
+  // `Board` claiming that type is a board the marks solver would accept as a
+  // valid puzzle of a game it cannot express. Mirrors `_genre_violation`, where
+  // the same check is the fall-through return rather than a branch.
+  if (board.puzzleType !== 'queens' && board.puzzleType !== 'star-battle') {
+    throw new BoardError(`${board.puzzleType} is not played on a marks board`)
+  }
+
+  if (board.regionCount !== board.size) {
+    throw new BoardError(
+      `${board.puzzleType} needs exactly ${board.size} regions, found ${board.regionCount}`,
+    )
+  }
+
   if (board.puzzleType === 'queens') {
-    if (board.regionCount !== board.size) {
-      throw new BoardError(`queens needs exactly ${board.size} regions, found ${board.regionCount}`)
-    }
     if (board.regionCapacity.some((capacity) => capacity !== 1)) {
       throw new BoardError('queens requires a capacity of exactly 1 per region')
     }
   }
 
   if (board.puzzleType === 'star-battle') {
-    if (board.regionCount !== board.size) {
-      throw new BoardError(
-        `star battle needs exactly ${board.size} regions, found ${board.regionCount}`,
-      )
-    }
     if (board.regionCapacity.some((capacity) => capacity !== board.regionCapacity[0])) {
       throw new BoardError('star battle requires one capacity shared by every region')
     }

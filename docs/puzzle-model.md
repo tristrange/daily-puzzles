@@ -235,6 +235,14 @@ step. `deduce` returning `None` for a genre with no engine is part of the
 contract, not a gap in it: a family without one plays without hints rather than
 with wrong ones.
 
+And every function that switches on `PuzzleType` has to make the unknown member an
+error rather than a fall-through. Adding an enum member widens a domain, and every
+branch written before it keeps working — which is how `generate_puzzle` came to
+build a Train Tracks board as a two-star Star Battle, and how `Board` came to accept
+a grid of regions and capacities labelled `train-tracks`. The compiler cannot help:
+a `PuzzleType` that no branch names is a perfectly good value. Both are now
+rejected, and `conformance/board-cases/` pins the second one across both languages.
+
 `Rulebook.published` is the one field here that is not about the rules. It says
 whether the nightly publisher may write files of this type, which is what lets
 `TrainTracks` be fully registered and generating while the app still cannot play

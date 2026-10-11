@@ -219,6 +219,21 @@ six are a value that was checked at the entry point and then trusted all the way
   was handed is a piece number per cell. It drew the givens and ignored the solution,
   which looks identical to the no-solution case, so the tests passed.
 
+And then the second review found the seventh, which is the same shape as the whole
+family: `Board.puzzle_type` is a `PuzzleType`, and `_genre_violation` handled Queens
+and Star Battle and then returned `None` for anything else. Adding the enum member
+therefore made a grid of regions and capacities constructible *and* callable Train
+Tracks — the marks solver accepting a valid puzzle of a game it cannot express. The
+generator guard did not cover it because a `Board` can be built directly.
+
+Five of the seven are the same sentence: **a new enum member widened a domain, and
+every function that switched on the old members fell through the new one.** The
+compiler did not help, because nothing about a `PuzzleType` that no branch names is
+an error — it is a value, and values are what these functions were written to accept.
+The fix that generalises is the one that makes the unknown case an error rather than
+a fall-through, and it has to be written in each validator rather than once, because
+there is no shared code between the two languages to put it in.
+
 The sixth was the app's, and it is the one that would have shipped: registering the type
 in `PUZZLE_TYPES` made `puzzleIdsForDay` probe a `-tracks.json` that will never exist,
 putting a permanent "not published yet" card on the home page. `Rulebook.published` was

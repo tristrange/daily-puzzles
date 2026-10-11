@@ -26,6 +26,13 @@ one only describes a board where regions hold different numbers of stars, and th
 region-count one only describes a board whose regions are not one per row; Queens
 puts exactly one queen in each of `size` regions, so neither rule can fail there.
 
+`tracks-type-on-a-marks-board.reject.json` is the one fixture whose subject is the
+type rather than the geometry. `Board` models regions, capacities and one square;
+Train Tracks plays a grid with none of those, so a `Board` naming that family is a
+board the marks solver would otherwise accept as a valid puzzle of a game it cannot
+express. Both validators reject it before consulting any region rule, and the
+fixture is what keeps them agreeing on that.
+
 ## Relationship to the other suites
 
 `schema-cases/` proves the two languages *read the same bytes*. This proves they
