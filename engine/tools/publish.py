@@ -49,6 +49,7 @@ from queens_engine import (
     GenerationError,
     Puzzle,
     PuzzleType,
+    as_marks_board,
     dumps_puzzle,
     generate_ramped,
     load_puzzle,
@@ -90,7 +91,7 @@ def _nearby_star_layouts(
         if other == day or abs(other - day).days > window:
             continue
         if puzzle_type is PuzzleType.STAR_BATTLE:
-            recent.add(star_layout(load_puzzle(day_id).board))
+            recent.add(star_layout(as_marks_board(load_puzzle(day_id).board)))
     return recent
 
 
@@ -116,8 +117,14 @@ def _existing(out_dir: Path) -> tuple[set[str], set[date]]:
 
 
 def _ids_for_day(day: date) -> tuple[str, ...]:
-    """The puzzle ids a day carries, one per registered type, in registry order."""
-    return tuple(puzzle_id(day, book.puzzle_type) for book in rulebooks())
+    """The puzzle ids a day carries, one per publishable type, in registry order.
+
+    `published` rather than `rulebooks()`, because this answers "what must exist on
+    disk for the day to count as complete" and an unregistered-as-published type is
+    never written, so counting it would make every past day look incomplete and the
+    resume would never advance.
+    """
+    return tuple(puzzle_id(day, book.puzzle_type) for book in rulebooks() if book.published)
 
 
 def _first_incomplete_day(existing: set[str], first: date, end: date) -> date | None:
@@ -172,7 +179,7 @@ def _generate(
                 f"{result.attempts} boards, published {result.achieved.level_name}"
             )
         return replace(result.puzzle, difficulty=result.achieved.level), score_difficulty(
-            result.puzzle.board
+            as_marks_board(result.puzzle.board)
         ).score
     for _bump in range(LOGIC_ONLY_TRIES):
         try:
@@ -183,7 +190,7 @@ def _generate(
         if (
             avoid_layouts is not None
             and book.puzzle_type is PuzzleType.STAR_BATTLE
-            and star_layout(puzzle.board) in avoid_layouts
+            and star_layout(as_marks_board(puzzle.board)) in avoid_layouts
         ):
             seed = (seed + 1) % (2**32)
             continue
@@ -221,6 +228,12 @@ def main(argv: list[str] | None = None) -> int:
     window = start
     while window <= end:
         for book in rulebooks():
+            # A registered type can still be unpublishable. Train Tracks is the
+            # case: its rulebook generates and replays, but nothing in the app can
+            # parse or play the grid yet, so publishing it would write files the
+            # nightly verify and the browser both choke on.
+            if not book.published:
+                continue
             day_id = puzzle_id(window, book.puzzle_type)
             if day_id in existing:
                 print(f"skip   {day_id} (already published)")

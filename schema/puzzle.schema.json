@@ -10,11 +10,11 @@
     "id": {
       "description": "Puzzle date in UTC, YYYY-MM-DD, with an optional family suffix for a companion puzzle of that day. Also the filename stem. The suffix list is generated from `conformance/id-cases/manifest.json`, which also pins the engine's `Rulebook.id_suffix` and the app's `PUZZLE_TYPE_SUFFIX` to it. Escapes are kept to what both regex flavours accept: ajv compiles patterns with the `u` flag, which rejects a hyphen escaped the Python way.",
       "type": "string",
-      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(-star)?$"
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(-tracks|-star)?$"
     },
     "type": {
       "description": "Puzzle family. Selects the adapter in the app.",
-      "enum": ["queens", "star-battle"]
+      "enum": ["queens", "star-battle", "train-tracks"]
     },
     "seed": {
       "description": "Seed for the deterministic PRNG, so any puzzle can be replayed exactly.",
@@ -35,31 +35,45 @@
       "maximum": 5
     },
     "board": {
-      "description": "The grid and everything that describes it, nested so the shape belongs to the game rather than the envelope. `size` sat at the top level until this migration, where it meant 'size x size' for one genre and would mean 'size wide' for another; nesting it is what stops a third game inheriting that ambiguity. The star-battle capacity requirement is enforced by the top-level `allOf` below, since `type` is a sibling of `board`, not a member of it.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["size", "regions"],
-      "properties": {
-        "size": {
-          "description": "Grid is size x size, and the number of regions equals size.",
-          "type": "integer",
-          "minimum": 2,
-          "maximum": 16
-        },
-        "regions": {
-          "description": "Region id per cell, row-major, length exactly size * size.",
-          "type": "array",
-          "items": { "type": "integer", "minimum": 0, "maximum": 15 }
-        },
-        "regionCapacity": {
-          "description": "Queens per region, per region id. Defaults to 1 for every region (the Queens case). Required for star-battle.",
-          "type": "array",
-          "items": { "type": "integer", "minimum": 1, "maximum": 16 }
-        }
-      }
+      "description": "The grid and everything that describes it, nested so the shape belongs to the game rather than the envelope. `size` sat at the top level until this migration, where it meant 'size x size' for one genre and would mean 'size wide' for another; nesting it is what stops a third game inheriting that ambiguity. Which shape applies is chosen by the sibling `type` in the top-level `allOf` below, because `type` is not a member of `board` and so cannot pick a variant from inside.",
+      "type": "object"
     }
   },
   "allOf": [
+    {
+      "if": {
+        "properties": { "type": { "enum": ["queens", "star-battle"] } },
+        "required": ["type"]
+      },
+      "then": {
+        "properties": {
+          "board": {
+            "description": "The marks board: a square grid divided into regions, one or more marks to place per region. `size` means size x size here and nothing else, which is why Train Tracks states its own dimensions rather than reusing it.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["size", "regions"],
+            "properties": {
+              "size": {
+                "description": "Grid is size x size, and the number of regions equals size.",
+                "type": "integer",
+                "minimum": 2,
+                "maximum": 16
+              },
+              "regions": {
+                "description": "Region id per cell, row-major, length exactly size * size.",
+                "type": "array",
+                "items": { "type": "integer", "minimum": 0, "maximum": 15 }
+              },
+              "regionCapacity": {
+                "description": "Queens per region, per region id. Defaults to 1 for every region (the Queens case). Required for star-battle.",
+                "type": "array",
+                "items": { "type": "integer", "minimum": 1, "maximum": 16 }
+              }
+            }
+          }
+        }
+      }
+    },
     {
       "if": { "properties": { "type": { "const": "star-battle" } }, "required": ["type"] },
       "then": {
@@ -68,6 +82,48 @@
             "type": "object",
             "required": ["regionCapacity"],
             "properties": { "regionCapacity": { "type": "array", "minItems": 1 } }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "train-tracks" } }, "required": ["type"] },
+      "then": {
+        "properties": {
+          "board": {
+            "description": "The track grid: a rectangular grid of pieces joined into one line. No regions and no single `size`, which is the whole reason it is a variant rather than another member of the marks shape.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["width", "height", "rowClues", "colClues", "givens"],
+            "properties": {
+              "width": {
+                "description": "Columns in the grid.",
+                "type": "integer",
+                "minimum": 2,
+                "maximum": 16
+              },
+              "height": {
+                "description": "Rows in the grid.",
+                "type": "integer",
+                "minimum": 2,
+                "maximum": 16
+              },
+              "rowClues": {
+                "description": "Cells the line occupies in each row, length exactly height. Zero is legal: the line may skip a row entirely. Summed across rows and columns alike, because one line cannot disagree with itself.",
+                "type": "array",
+                "items": { "type": "integer", "minimum": 0 }
+              },
+              "colClues": {
+                "description": "Cells the line occupies in each column, length exactly width. Zero is legal for the same reason a row's zero is.",
+                "type": "array",
+                "items": { "type": "integer", "minimum": 0 }
+              },
+              "givens": {
+                "description": "Piece number per cell, row-major, length exactly width * height. 0 is an empty cell; 1 and 6 are straights, 2 and 5 cross the grid's axes, 3 and 4 turn, and 7 marks a cell the line must skip. Exactly two givens face off the edge, because the line has two ends.",
+                "type": "array",
+                "items": { "type": "integer", "minimum": 0, "maximum": 7 }
+              }
+            }
           }
         }
       }

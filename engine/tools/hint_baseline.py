@@ -36,7 +36,7 @@ from typing import Any, Final, cast
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from queens_engine import Puzzle, iter_solutions, load_puzzle
+from queens_engine import Board, Puzzle, as_marks_board, iter_solutions, load_puzzle
 from queens_engine.deduce import first_forced_move
 from queens_engine.puzzle import JsonValue, canonical_dumps
 
@@ -68,7 +68,8 @@ def walk(puzzle: Puzzle, queens: list[int]) -> list[tuple[list[int], list[Any] |
     marks: list[int] = []
     steps: list[tuple[list[int], list[Any] | None]] = []
     for _ in range(MARK_ROUNDS):
-        move = first_forced_move(puzzle.board, queens=queens, marks=marks)
+        move = first_forced_move(as_marks_board(puzzle.board), queens=queens, marks=marks)
+
         steps.append((list(marks), None if move is None else [move.cell, move.action, move.rule]))
         if move is None or move.action != "x":
             break
@@ -81,7 +82,13 @@ def build_baseline() -> dict[str, JsonValue]:
     baseline: dict[str, JsonValue] = {}
     for path in sorted(ARCHIVE.glob("*.json")):
         puzzle = load_puzzle(path)
-        solutions = list(iter_solutions(puzzle.board))
+        board = puzzle.board
+        # Marks only, because this baseline is the hint engine's corpus and the hint
+        # engine is a marks thing: a track puzzle has no forced moves to record. A
+        # family without hints is not a gap here, it is the absence of a subject.
+        if not isinstance(board, Board):
+            continue
+        solutions = list(iter_solutions(board))
         solution = sorted(next(iter(solutions)))
         positions: list[JsonValue] = []
         for placed in range(len(solution) + 1):

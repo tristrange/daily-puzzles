@@ -16,7 +16,13 @@ from __future__ import annotations
 from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Final, cast
+from typing import TYPE_CHECKING, Final, cast
+
+if TYPE_CHECKING:
+    # A string annotation only. Imported for real at module scope this would be a
+    # cycle: `tracks.py` reaches for the solver's default limit, and the solver
+    # builds `Board`s.
+    from .tracks import TrackGrid
 
 MIN_SIZE: Final[int] = 2
 MAX_SIZE: Final[int] = 16
@@ -31,6 +37,7 @@ type JsonValue = str | int | float | bool | list[JsonValue] | dict[str, JsonValu
 class PuzzleType(StrEnum):
     QUEENS = "queens"
     STAR_BATTLE = "star-battle"
+    TRAIN_TRACKS = "train-tracks"
 
 
 class BoardError(ValueError):
@@ -176,7 +183,11 @@ class Puzzle:
     puzzle_type: PuzzleType
     seed: int
     generator_version: int
-    board: Board
+    #: The board this type plays. `Board` for the two marks genres, `TrackGrid` for
+    #: Train Tracks — a grid that is not made of regions, is not square, and obeys
+    #: reciprocity rather than a capacity. Callers that need the geometry ask the
+    #: rulebook's `dimensions`, which answers for both.
+    board: Board | TrackGrid
     #: Band index, 1-based into `LEVEL_NAMES`. `None` for boards published
     #: before the weekly ramp, and for anything generated outside a target.
     difficulty: int | None = None

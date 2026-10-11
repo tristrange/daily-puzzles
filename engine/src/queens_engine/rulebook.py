@@ -24,6 +24,7 @@ board class, which is why #31 left `Board` square instead of widening it.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from dataclasses import replace
 from datetime import date
 from typing import Any, Final
 
@@ -45,9 +46,12 @@ from .generator import (
     GenerationError,
     generate_puzzle,
 )
-from .render import render_board
+from .render import render_board, render_grid
 from .solver import DEFAULT_LIMIT, iter_solutions
 from .solver import count_solutions as count_board_solutions
+from .tracks import TrackGrid, TrackGridError
+from .tracks import count_solutions as count_track_solutions
+from .tracks_gen import generate_grid
 
 #: Star Battle stays at one size until the deduction engine can rate a star board,
 #: so there is nothing to ramp towards and the size is pinned rather than tuned.
@@ -58,6 +62,23 @@ STAR_BATTLE_SIZE: Final[int] = 9
 
 #: A Star Battle board is played with two stars per row and column.
 STAR_BATTLE_STARS: Final[int] = 2
+
+#: The grid Train Tracks publishes at, in cells.
+#:
+#: 7x7 is chosen on measurement, not taste. Generating 200 boards at that size
+#: took 14s in total with a worst case of 3.6s; at 8x8 the worst case was 129s
+#: and at 9x7 it was 89s, because the generator grows a route and adds givens one
+#: at a time until the grid is unique and the tail is where the work goes. A daily
+#: publisher walks the seed upward on failure, so a two-minute board is a stall
+#: with no output and no error. Bigger grids come when that tail is fixed, not
+#: before.
+TRACKS_WIDTH: Final[int] = 7
+TRACKS_HEIGHT: Final[int] = 7
+
+#: Which generation algorithm produced a Train Tracks board. 1 and 2 are the
+#: Queens and Star Battle paths; this is the first algorithm of its own, so it
+#: gets its own number rather than borrowing either.
+TRACKS_GENERATOR_VERSION: Final[int] = 1
 
 
 class RulebookError(ValueError):
@@ -105,8 +126,19 @@ class Rulebook(ABC):
     #: offering the gate would reject essentially all of them.
     logic_only: bool = True
 
-    #: Board size this type publishes at when nothing else says otherwise.
+    #: Board size this type publishes at when nothing else says otherwise. A marks
+    #: fact: a genre whose grid is not square has no size, and says so through its
+    #: own `generate`.
     default_size: int = DEFAULT_SIZE
+
+    #: Whether the daily publisher writes this type's files.
+    #:
+    #: False for a type that can be generated, parsed, rendered and verified but is
+    #: not yet something to serve. Train Tracks registers with this off until the app
+    #: can play it: publishing first would put files in the archive that
+    #: `tools.hint_baseline` — which runs the *marks* solver over every committed
+    #: puzzle — and the app's own parser would both choke on.
+    published: bool = True
 
     #: Stars per line, or `None` when the type's regions each hold exactly one.
     default_stars_per_row: int | None = None
@@ -130,11 +162,13 @@ class Rulebook(ABC):
         """
 
     @abstractmethod
-    def count_solutions(self, board: Board, *, limit: int = DEFAULT_LIMIT) -> int:
+    def count_solutions(self, board: Board | TrackGrid, *, limit: int = DEFAULT_LIMIT) -> int:
         """Count this type's solutions on `board`, stopping at `limit`."""
 
     @abstractmethod
-    def deduce(self, board: Board, *, allow_guesses: bool = True) -> DeductionTrace | None:
+    def deduce(
+        self, board: Board | TrackGrid, *, allow_guesses: bool = True
+    ) -> DeductionTrace | None:
         """Deduce what `board` forces, or `None` if this type has no such engine."""
 
     @abstractmethod
@@ -185,7 +219,7 @@ class Rulebook(ABC):
         """
 
     @abstractmethod
-    def parse_board(self, record: dict[str, Any]) -> Board:
+    def parse_board(self, record: dict[str, Any]) -> Board | TrackGrid:
         """The board a file's `board` object describes.
 
         The schema has already refused the shapes it can express, so this reads the
@@ -197,13 +231,29 @@ class Rulebook(ABC):
         """
 
     @abstractmethod
-    def board_to_dict(self, board: Board) -> dict[str, JsonValue]:
+    def board_to_dict(self, board: Board | TrackGrid) -> dict[str, JsonValue]:
         """The schema-shaped `board` object for `board`.
 
         The counterpart to `parse_board`, and the other half of removing that branch
         from `puzzle_to_dict`, which used to decide per type which optional keys to
         write.
         """
+
+
+def as_marks_board(board: Board | TrackGrid) -> Board:
+    """`board`, if it is a marks board.
+
+    A caller is handed whatever the file carried, so anything that reads marks
+    fields has to check rather than assume. Narrowing here names the mismatch at
+    the boundary; reaching a marks field on a track grid would otherwise fail deep
+    inside the solver, where nothing says which of the two kinds was expected.
+
+    Public because the marks-only tools need it too — the ramp, the hint and trace
+    baselines, and the two repeat checks all read regions and capacities.
+    """
+    if not isinstance(board, Board):
+        raise BoardError(f"expected a marks board, got a {type(board).__name__}")
+    return board
 
 
 class MarkRulebook(Rulebook):
@@ -255,39 +305,42 @@ class MarkRulebook(Rulebook):
             ),
         )
 
-    def count_solutions(self, board: Board, *, limit: int = DEFAULT_LIMIT) -> int:
-        return count_board_solutions(board, limit=limit)
+    def count_solutions(self, board: Board | TrackGrid, *, limit: int = DEFAULT_LIMIT) -> int:
+        return count_board_solutions(as_marks_board(board), limit=limit)
 
-    def deduce(self, board: Board, *, allow_guesses: bool = True) -> DeductionTrace | None:
-        return deduce_board(board, allow_guesses=allow_guesses)
+    def deduce(
+        self, board: Board | TrackGrid, *, allow_guesses: bool = True
+    ) -> DeductionTrace | None:
+        return deduce_board(as_marks_board(board), allow_guesses=allow_guesses)
 
     def replay(self, puzzle: Puzzle) -> Puzzle:
         # A mark family either plays one mark per line or k per line, and the rulebook
         # already says which it is. So the board's own capacity is the answer for the
         # second case and nothing is the answer for the first — no branch on the enum.
+        board = as_marks_board(puzzle.board)
         return generate_puzzle(
             seed=puzzle.seed,
             puzzle_id=puzzle.id,
             config=GenerationConfig(
-                size=puzzle.board.size,
+                size=board.size,
                 puzzle_type=self.puzzle_type,
                 stars_per_row=(
-                    puzzle.board.region_capacity[0]
-                    if self.default_stars_per_row is not None
-                    else None
+                    board.region_capacity[0] if self.default_stars_per_row is not None else None
                 ),
             ),
         )
 
     def dimensions(self, puzzle: Puzzle) -> tuple[int, int]:
-        return (puzzle.board.size, puzzle.board.size)
+        board = as_marks_board(puzzle.board)
+        return (board.size, board.size)
 
     def render(self, puzzle: Puzzle) -> str:
-        best = next(iter_solutions(puzzle.board), None)
-        header = f"{puzzle.id} seed={puzzle.seed} size={puzzle.board.size}x{puzzle.board.size}"
+        board = as_marks_board(puzzle.board)
+        best = next(iter_solutions(board), None)
+        header = f"{puzzle.id} seed={puzzle.seed} size={board.size}x{board.size}"
         if best is not None:
-            return f"{header}\n{render_board(puzzle.board, best)}"
-        return f"{header}\n{render_board(puzzle.board)}"
+            return f"{header}\n{render_board(board, best)}"
+        return f"{header}\n{render_board(board)}"
 
     def parse_board(self, record: dict[str, Any]) -> Board:
         size = require_int(record.get("size"), "board.size")
@@ -321,14 +374,146 @@ class MarkRulebook(Rulebook):
             puzzle_type=self.puzzle_type,
         )
 
-    def board_to_dict(self, board: Board) -> dict[str, JsonValue]:
+    def board_to_dict(self, board: Board | TrackGrid) -> dict[str, JsonValue]:
+        marks = as_marks_board(board)
         data: dict[str, JsonValue] = {
-            "size": board.size,
-            "regions": list(board.regions),
+            "size": marks.size,
+            "regions": list(marks.regions),
         }
         if self.default_stars_per_row is not None:
-            data["regionCapacity"] = list(board.region_capacity)
+            data["regionCapacity"] = list(marks.region_capacity)
         return data
+
+
+class TrackRulebook(Rulebook):
+    """Train Tracks: a continuous line across a grid that need not be square.
+
+    A companion, on Star Battle's reasoning rather than by omission. The generator
+    proves exactly one solution, which is the guarantee worth publishing; it cannot
+    promise a board solvable without a hypothesis, because there is no deduction
+    engine for this genre yet and `deduce` returns `None`. So no band is recorded
+    and the ramp does not apply — the same position Star Battle is in, for the same
+    reason.
+
+    Not a `MarkRulebook`, and not a marks board with a different subject. A cell
+    here holds one of six pieces or nothing, the line obeys reciprocity rather than
+    a capacity, and the grid may be 7x9, which is why `Board` stayed square.
+    """
+
+    def __init__(self) -> None:
+        self.puzzle_type = PuzzleType.TRAIN_TRACKS
+        self.id_suffix = "-tracks"
+        self.on_ramp = False
+        self.rated = False
+        self.logic_only = False
+        self.published = False
+
+    def generate(
+        self,
+        *,
+        seed: int,
+        puzzle_id: str,
+        size: int | None = None,
+        stars_per_row: int | None = None,
+        max_attempts: int | None = None,
+    ) -> Puzzle:
+        # `size` and `stars_per_row` are the marks generator's knobs and mean
+        # nothing here, so a caller passing them gets told rather than having them
+        # quietly ignored. `--size` against a tracks board is a mistake worth a
+        # message; the grid is rectangular and has no single size to set.
+        if size is not None or stars_per_row is not None:
+            raise GenerationError(
+                "train-tracks is not square and takes no stars per row; its grid is "
+                f"fixed at {TRACKS_WIDTH}x{TRACKS_HEIGHT}"
+            )
+        # `max_attempts` bounds how many boards the marks generator retries for a
+        # unique solution. Tracks placement is a deterministic fill from the seed,
+        # so there is one board per seed and nothing to retry.
+        del max_attempts
+        grid = generate_grid(seed=seed, width=TRACKS_WIDTH, height=TRACKS_HEIGHT)
+        return Puzzle(
+            id=puzzle_id,
+            puzzle_type=self.puzzle_type,
+            seed=seed,
+            generator_version=TRACKS_GENERATOR_VERSION,
+            board=grid,
+        )
+
+    def count_solutions(self, board: Board | TrackGrid, *, limit: int = DEFAULT_LIMIT) -> int:
+        if not isinstance(board, TrackGrid):
+            raise GenerationError("train-tracks count needs a track grid")
+        return count_track_solutions(board, limit=limit)
+
+    def deduce(
+        self, board: Board | TrackGrid, *, allow_guesses: bool = True
+    ) -> DeductionTrace | None:
+        # No engine for this genre yet. `None` is the honest answer and is what the
+        # contract allows: a family without one plays without hints rather than
+        # with wrong ones. The arguments are part of the contract every rulebook
+        # answers to, and a genre with no engine has nothing to say about either.
+        del board, allow_guesses
+        return None
+
+    def replay(self, puzzle: Puzzle) -> Puzzle:
+        board = self._grid(puzzle)
+        return replace(
+            puzzle,
+            board=generate_grid(seed=puzzle.seed, width=board.width, height=board.height),
+        )
+
+    def dimensions(self, puzzle: Puzzle) -> tuple[int, int]:
+        grid = self._grid(puzzle)
+        return (grid.width, grid.height)
+
+    def render(self, puzzle: Puzzle) -> str:
+        grid = self._grid(puzzle)
+        header = f"{puzzle.id} seed={puzzle.seed} size={grid.width}x{grid.height}"
+        return f"{header}\n{render_grid(grid)}"
+
+    def _grid(self, puzzle: Puzzle) -> TrackGrid:
+        """The track grid `puzzle` holds, or a message saying what it holds instead."""
+        board = puzzle.board
+        if not isinstance(board, TrackGrid):
+            raise GenerationError(f"{puzzle.id} carries a {type(board).__name__}, not a track grid")
+        return board
+
+    def parse_board(self, record: dict[str, Any]) -> TrackGrid:
+        width = require_int(record.get("width"), "board.width")
+        height = require_int(record.get("height"), "board.height")
+        row_clues = tuple(
+            require_int(value, "board.rowClues[]")
+            for value in require_list(record.get("rowClues"), "board.rowClues")
+        )
+        col_clues = tuple(
+            require_int(value, "board.colClues[]")
+            for value in require_list(record.get("colClues"), "board.colClues")
+        )
+        givens = tuple(
+            require_int(value, "board.givens[]")
+            for value in require_list(record.get("givens"), "board.givens")
+        )
+        # TrackGrid validates lengths, clue ranges, the two running totals and the
+        # mandatory ends in its own constructor. The one thing it cannot know is
+        # whether the file asked for the dimensions it was given, so the array
+        # lengths are checked here against the same numbers.
+        if len(row_clues) != height:
+            raise TrackGridError(f"rowClues has {len(row_clues)} entries, expected {height}")
+        if len(col_clues) != width:
+            raise TrackGridError(f"colClues has {len(col_clues)} entries, expected {width}")
+        if len(givens) != width * height:
+            raise TrackGridError(f"givens has {len(givens)} entries, expected {width * height}")
+        return TrackGrid(width, height, row_clues, col_clues, givens)
+
+    def board_to_dict(self, board: Board | TrackGrid) -> dict[str, JsonValue]:
+        if not isinstance(board, TrackGrid):
+            raise GenerationError("train-tracks writes a track grid, not a marks board")
+        return {
+            "width": board.width,
+            "height": board.height,
+            "rowClues": list(board.row_clues),
+            "colClues": list(board.col_clues),
+            "givens": list(board.givens),
+        }
 
 
 _RULEBOOKS: Final[dict[PuzzleType, Rulebook]] = {
@@ -342,6 +527,7 @@ _RULEBOOKS: Final[dict[PuzzleType, Rulebook]] = {
         default_size=STAR_BATTLE_SIZE,
         default_stars_per_row=STAR_BATTLE_STARS,
     ),
+    PuzzleType.TRAIN_TRACKS: TrackRulebook(),
 }
 
 
@@ -391,7 +577,10 @@ def verify_replay(puzzle: Puzzle) -> Puzzle:
             f"through version {regenerated.generator_version}"
         )
     if puzzle.difficulty is not None:
-        achieved = score_difficulty(regenerated.board).level
+        # Only a marks board carries a band, and only a rated type writes one, so a
+        # track grid never reaches this. Narrowed rather than cast: if a future type
+        # ever does, this says so here instead of failing inside the scorer.
+        achieved = score_difficulty(as_marks_board(regenerated.board)).level
         if achieved != puzzle.difficulty:
             raise GenerationError(
                 f"difficulty mismatch for {puzzle.id}: recorded level {puzzle.difficulty}, "

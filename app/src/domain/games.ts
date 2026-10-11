@@ -30,6 +30,7 @@ import type { DifficultyBand } from './puzzle'
 export const PUZZLE_TYPE_SUFFIX: Record<PuzzleType, string> = {
   queens: '',
   'star-battle': '-star',
+  'train-tracks': '-tracks',
 }
 
 /** The family whose id carries no suffix: the day's default puzzle. */
@@ -53,11 +54,16 @@ export function isDefaultPuzzleType(puzzleType: PuzzleType): boolean {
 export const PUZZLE_TYPE_HAS_HINTS: Record<PuzzleType, boolean> = {
   queens: true,
   'star-battle': true,
+  // No deduction engine for this genre yet, so the engine answers `null` and the
+  // button would be a claim about a board nothing can reason about. The two
+  // tables are one fact: registering the family here is also deciding this.
+  'train-tracks': false,
 }
 
 export const PUZZLE_TYPE_LABEL: Record<PuzzleType, string> = {
   queens: 'Queens',
   'star-battle': 'Star Battle',
+  'train-tracks': 'Train Tracks',
 }
 
 /**
@@ -86,4 +92,5 @@ export const DIFFICULTY_LABEL: Record<DifficultyBand, string> = {
 export const PUZZLE_PIECE: Record<PuzzleType, { noun: string; plural: string; glyph: string }> = {
   queens: { noun: 'queen', plural: 'queens', glyph: '♛' },
   'star-battle': { noun: 'star', plural: 'stars', glyph: '★' },
+  'train-tracks': { noun: 'track', plural: 'tracks', glyph: '─' },
 }

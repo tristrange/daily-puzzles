@@ -6,12 +6,15 @@ font makes the puzzle legible in a terminal or patch.
 
 Rendering a whole *puzzle* is not here — it is `Rulebook.render`, because the header
 it prints is the puzzle's dimensions and only the type knows what those are. This
-module draws the marks board, which is what the marks rulebook asks it for.
+module draws the boards, which is what the rulebooks ask it for.
 """
 
 from __future__ import annotations
 
+from typing import Final
+
 from .board import Board
+from .tracks import Assignment, TrackGrid
 
 _REGION_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -35,4 +38,37 @@ def render_board(board: Board, solution: set[int] | tuple[int, ...] = ()) -> str
     return "\n".join(rows)
 
 
-__all__ = ["render_board"]
+#: One glyph per track piece, indexed by the number the format uses. Index 0 is an
+#: empty cell and stays a space, so a gap in the line reads as a gap. The two
+#: straights and the four curves are drawn rather than named because the whole
+#: point of the puzzle is telling a line running alongside itself from one turning,
+#: and a glyph shows that where a letter would hide it.
+PIECE_GLYPHS: Final[tuple[str, ...]] = (" ", "─", "│", "└", "┌", "┐", "┘")
+
+
+def render_grid(grid: TrackGrid, solution: Assignment | None = None) -> str:
+    """Render a track grid, row by row, one space between cells.
+
+    With a solution, the line's cells are shown and the rest blanked, so the
+    rendered board is a player's view of the answer rather than a second way of
+    reading the givens. The givens are always drawn — they are clues, and hiding
+    them would make the output useless for checking a puzzle.
+    """
+    filled = set(solution) if solution is not None else None
+    rows: list[str] = []
+    for row in range(grid.height):
+        cells: list[str] = []
+        for col in range(grid.width):
+            cell = grid.index(row, col)
+            piece = grid.givens[cell]
+            if filled is not None and piece == 0 and cell not in filled:
+                cells.append(" ")
+            else:
+                cells.append(PIECE_GLYPHS[piece])
+        # Same `" " + glyph` shape as `render_board`, so every renderer emits two
+        # characters per cell and a row is as wide as its grid without counting.
+        rows.append("".join(f" {glyph}" for glyph in cells))
+    return "\n".join(rows)
+
+
+__all__ = ["PIECE_GLYPHS", "render_board", "render_grid"]

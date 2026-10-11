@@ -94,7 +94,6 @@ describe('companionPuzzleId', () => {
 
 describe('puzzleIdsForDay', () => {
   it('lists one id per registered family, in registry order', () => {
-    expect(puzzleIdsForDay('2026-09-30')).toEqual(['2026-09-30', '2026-09-30-star'])
     expect(puzzleIdsForDay('2026-09-30')).toEqual(
       PUZZLE_TYPES.map((type) => puzzleIdFor('2026-09-30', type)),
     )

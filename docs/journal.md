@@ -23,6 +23,7 @@ avoided. The reasoning is the point; the shipped code is in `git log`.
 | 14 | Remember the auto-mark choice between visits | done |
 | 15 | A weekly difficulty ramp for Queens, and the band in the puzzle file | done |
 | 16 | Port the deduction engine to per-group counts so Star Battle can be rated, then ramp it too | done — rating deferred, below |
+| 17 | Train Tracks: a per-type contract the model was missing, and the type registered against it | done — engine only, unpublished |
 
 Milestones 2 to 4 were the critical path, and they are all Python. The engine alone — a
 CLI with an exact uniqueness prover and property tests — would have been worth publishing
@@ -192,6 +193,35 @@ in the repository, read it before designing anything it covers.** That is the pa
 worth keeping, more than any of the three bugs underneath it: the solver and the
 independent reference agreed with each other on every board and were both wrong, because I
 had written the wrong rule into both before either was written.
+
+## Registering a type without shipping it
+
+`TrainTracks` is in the engine's registry, generating and proving unique solutions, and
+nothing has been published for it. That is one boolean, `Rulebook.published`, and it is
+the only thing standing between a finished solver and a broken daily archive — because
+the alternative is worse than it looks. `publish.py` and `schema_ids` both iterate the
+registry, so registering the type alone would have started writing files the app's
+parser rejects, and `conformance/id-cases` is asserted for equality from both languages,
+so the schema's id pattern would have widened without the app ever learning the suffix.
+
+It is tempting to leave the type unregistered until all of that is ready, and the guard
+against that is worth naming: `rulebook_for` raising on an unknown type is the thing that
+stops a new type being published under another type's rules. Hiding a type that works
+reintroduces exactly the failure the registry was built to prevent, only silently. Being
+registered and unpublished keeps the loud guard and adds a quiet one.
+
+The second gate was in a place I would not have looked. `publish.py` has two loops over
+the registry — the one that writes files and the one that decides whether a day is
+already complete. Gating only the writer meant every day looked permanently incomplete,
+so a rerun tried to republish the archive from the beginning, forever. A gate that is not
+applied at every read of the thing it gates is not a gate; it is a branch in one place
+and a bug in another.
+
+`deduce` returning `None` was the same shape of decision. There is no deduction engine
+for this genre, and the contract makes that a value rather than a gap, so a board with
+no hints is one the app already knows how to render. The alternative — inventing a
+solver to fill the signature — would have produced hints that could contradict the
+answer, which is worse than no button.
 
 ## What the clues are actually for
 

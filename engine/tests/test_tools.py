@@ -17,6 +17,7 @@ from tools import generate as generate_tool
 from tools import publish, verify
 from tools.generate import id_for_day, seed_from_date
 
+from helpers import marks_board
 from queens_engine import (
     MIN_LEVEL,
     RAMP_ATTEMPTS,
@@ -110,7 +111,7 @@ class TestPublishWindow:
         # The companion's id carries the suffix, so a solve recorded against one
         # of the day cannot be taken as a solve of the other.
         assert star["id"] == f"{today.isoformat()}-star"
-        assert parse_puzzle(star).board.puzzle_type is PuzzleType.STAR_BATTLE
+        assert marks_board(parse_puzzle(star)).puzzle_type is PuzzleType.STAR_BATTLE
 
     def test_star_boards_report_no_difficulty(self, tmp_path: Path) -> None:
         """A star board is unique but not logic-gated, so it has no score to
@@ -248,7 +249,7 @@ class TestVerify:
         """The counterpart to the rejection above, so the check is not always-fail."""
         first = self._write_star(tmp_path, "2026-10-05-star", 2)
         second = self._write_star(tmp_path, "2026-10-06-star", 18)
-        assert star_layout(first.board) != star_layout(second.board)
+        assert star_layout(marks_board(first)) != star_layout(marks_board(second))
 
         result = verify.main(["--dir", str(tmp_path)])
 
@@ -447,7 +448,7 @@ class TestVerifyRamp:
             puzzle_id=f"{day}-star",
             config=GenerationConfig(size=SMALL_SIZE + 2, puzzle_type=PuzzleType.QUEENS),
         )
-        difficulty = score_difficulty(board.board)
+        difficulty = score_difficulty(marks_board(board))
         mislabelled = replace(board, id=f"{day}-star", difficulty=difficulty.level)
         assert difficulty.level > target_for(date.fromisoformat(day)).level
         (tmp_path / f"{day}-star.json").write_text(dumps_puzzle(mislabelled), encoding="utf-8")
@@ -660,8 +661,14 @@ class TestStarLayoutRepeat:
         # and the day itself (not yet on disk) all stay out; the fourteen-day
         # edges and everything between are in, from both directions.
         expected = {
-            star_layout(self._star_puzzle(f"{past.isoformat()}-star", 7, self.COL_BOARD).board),
-            star_layout(self._star_puzzle(f"{last.isoformat()}-star", 7, self.ROW_BOARD).board),
-            star_layout(self._star_puzzle(f"{future.isoformat()}-star", 7, self.BLOCK_BOARD).board),
+            star_layout(
+                marks_board(self._star_puzzle(past.isoformat() + "-star", 7, self.COL_BOARD))
+            ),
+            star_layout(
+                marks_board(self._star_puzzle(last.isoformat() + "-star", 7, self.ROW_BOARD))
+            ),
+            star_layout(
+                marks_board(self._star_puzzle(future.isoformat() + "-star", 7, self.BLOCK_BOARD))
+            ),
         }
         assert recent == expected

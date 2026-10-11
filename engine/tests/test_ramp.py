@@ -15,6 +15,7 @@ from unittest.mock import patch
 
 import pytest
 
+from helpers import marks_board
 from queens_engine import (
     LEVEL_NAMES,
     MAX_LEVEL,
@@ -94,19 +95,19 @@ def test_every_size_in_the_ramp_has_a_search_budget() -> None:
 
 def test_generated_board_is_logic_only() -> None:
     result = generate_ramped(seed=1, puzzle_id="2026-10-05", target=WEEKLY_RAMP[0], max_attempts=40)
-    assert deduce(result.puzzle.board, allow_guesses=False).solved
+    assert deduce(marks_board(result.puzzle), allow_guesses=False).solved
 
 
 def test_generated_board_uses_the_targets_size() -> None:
     result = generate_ramped(seed=1, puzzle_id="2026-10-05", target=WEEKLY_RAMP[0], max_attempts=40)
-    assert result.puzzle.board.size == WEEKLY_RAMP[0].size
+    assert marks_board(result.puzzle).size == WEEKLY_RAMP[0].size
 
 
 def test_result_reports_what_it_delivered() -> None:
     result = generate_ramped(seed=1, puzzle_id="2026-10-05", target=WEEKLY_RAMP[0], max_attempts=40)
     assert result.target == WEEKLY_RAMP[0]
     assert result.achieved.size == result.target.size
-    assert result.achieved.level == score_difficulty(result.puzzle.board).level
+    assert result.achieved.level == score_difficulty(marks_board(result.puzzle)).level
     assert 1 <= result.attempts <= 40
 
 

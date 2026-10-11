@@ -8,7 +8,7 @@
 const MIN_SIZE = 2
 const MAX_SIZE = 16
 
-export const PUZZLE_TYPES = ['queens', 'star-battle'] as const
+export const PUZZLE_TYPES = ['queens', 'star-battle', 'train-tracks'] as const
 export type PuzzleType = (typeof PUZZLE_TYPES)[number]
 
 export class BoardError extends Error {

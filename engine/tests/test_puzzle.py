@@ -8,6 +8,7 @@ from typing import Any
 
 import pytest
 
+from helpers import marks_board
 from queens_engine import PuzzleParseError, PuzzleType, parse_puzzle
 from queens_engine.puzzle import load_puzzle
 
@@ -35,13 +36,13 @@ def board_of(data: dict[str, Any]) -> dict[str, Any]:
 class TestDefaults:
     def test_region_capacity_defaults_to_one_per_region(self) -> None:
         puzzle = parse_puzzle(minimal(5))
-        assert puzzle.board.region_capacity == (1, 1, 1, 1, 1)
+        assert marks_board(puzzle).region_capacity == (1, 1, 1, 1, 1)
 
     def test_explicit_capacity_is_used_verbatim(self) -> None:
         data = minimal(4)
         board_of(data)["regionCapacity"] = [1, 1, 1, 1]
         puzzle = parse_puzzle(data)
-        assert puzzle.board.region_capacity == (1, 1, 1, 1)
+        assert marks_board(puzzle).region_capacity == (1, 1, 1, 1)
 
     def test_puzzle_type_is_parsed(self) -> None:
         data = minimal(4) | {"type": "star-battle"}
@@ -106,12 +107,12 @@ class TestNumberRepresentation:
         board_of(data)["size"] = 4.0
         board_of(data)["regions"] = [float(r) for r in board_of(data)["regions"]]
         puzzle = parse_puzzle(data)
-        assert puzzle.board.size == 4
-        assert isinstance(puzzle.board.size, int)
+        assert marks_board(puzzle).size == 4
+        assert isinstance(marks_board(puzzle).size, int)
         assert puzzle.seed == 1
         assert isinstance(puzzle.seed, int)
-        assert puzzle.board.regions == (0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3)
-        assert all(isinstance(region, int) for region in puzzle.board.regions)
+        assert marks_board(puzzle).regions == (0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3)
+        assert all(isinstance(region, int) for region in marks_board(puzzle).regions)
 
     @pytest.mark.parametrize("value", [4.5, "4", True, None, [4]])
     def test_values_that_are_not_numbers_are_rejected(self, value: object) -> None:
@@ -125,7 +126,7 @@ class TestLoadingFromDisk:
     def test_loads_a_file(self, tmp_path: Path) -> None:
         path = tmp_path / "2026-09-30.json"
         path.write_text(json.dumps(minimal(5)), encoding="utf-8")
-        assert load_puzzle(path).board.size == 5
+        assert marks_board(load_puzzle(path)).size == 5
 
     def test_malformed_json_is_reported(self, tmp_path: Path) -> None:
         path = tmp_path / "broken.json"

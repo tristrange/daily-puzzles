@@ -164,9 +164,9 @@ describe('listPublishedPuzzles', () => {
       return spaShellResponse()
     }
     await listPublishedPuzzles('2026-10-03', probeFetcher)
-    // Both ids of every day in the window: a companion that is not published
-    // yet has to be asked for before it can be reported as absent.
-    expect(probes).toHaveLength(ARCHIVE_WINDOW_DAYS * 2)
+    // Every family's id of every day in the window: a family that is not
+    // published yet has to be asked for before it can be reported as absent.
+    expect(probes).toHaveLength(ARCHIVE_WINDOW_DAYS * PUZZLE_TYPES.length)
     expect(probes).toContain('2026-10-03.json')
     expect(probes).toContain('2026-10-03-star.json')
   })
@@ -201,7 +201,7 @@ describe('listPublishedPuzzles', () => {
       return response
     }
     const found = await listPublishedPuzzles('2026-10-03', countingFetcher)
-    expect(answeredOk).toBe(ARCHIVE_WINDOW_DAYS * 2)
+    expect(answeredOk).toBe(ARCHIVE_WINDOW_DAYS * PUZZLE_TYPES.length)
     expect(found).toEqual(queens)
   })
 

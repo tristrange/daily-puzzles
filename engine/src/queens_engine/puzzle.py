@@ -126,7 +126,9 @@ def parse_puzzle(data: object) -> Puzzle:
 
     return Puzzle(
         id=_require_str(record.get("id"), "id"),
-        puzzle_type=board.puzzle_type,
+        # The declared type, not the board's. Only a `Board` carries its own back,
+        # and a track grid is identified by the envelope it arrived in.
+        puzzle_type=puzzle_type,
         seed=_require_int(record.get("seed"), "seed"),
         generator_version=_require_int(record.get("generatorVersion"), "generatorVersion"),
         board=board,

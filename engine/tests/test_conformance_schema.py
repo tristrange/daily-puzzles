@@ -12,6 +12,7 @@ from typing import Any
 
 import pytest
 
+from helpers import marks_board
 from queens_engine import PuzzleParseError, parse_puzzle, rulebook_for
 from queens_engine.puzzle import CONFORMANCE_DIR
 
@@ -68,7 +69,7 @@ def test_schema_case(case: dict[str, Any]) -> None:
         assert (width, height) == (expected["size"], expected["size"])
         assert puzzle.seed == expected["seed"]
         assert puzzle.generator_version == expected["generatorVersion"]
-        assert list(puzzle.board.region_capacity) == expected["regionCapacity"]
+        assert list(marks_board(puzzle).region_capacity) == expected["regionCapacity"]
         assert puzzle.difficulty == expected["difficulty"]
     else:
         with pytest.raises(PuzzleParseError) as caught:
