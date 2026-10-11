@@ -29,6 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from queens_engine import (
     GenerationError,
     PuzzleType,
+    as_marks_board,
     dumps_puzzle,
     puzzle_id,
     rulebook_for,
@@ -139,7 +140,7 @@ def main(argv: list[str] | None = None) -> int:
     if not book.rated:
         print(f"difficulty: not rated ({puzzle_type.value} boards are unique but unscored)")
     else:
-        difficulty = score_difficulty(puzzle.board)
+        difficulty = score_difficulty(as_marks_board(puzzle.board))
         status = "logic" if difficulty.needs_guessing else "pure-logic"
         print(f"difficulty: {difficulty.level_name} (score {difficulty.score:g}, {status})")
 

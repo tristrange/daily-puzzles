@@ -1,9 +1,14 @@
 # Generalizing the puzzle model for a third game
 
-Status: proposal, not a plan. Nothing here is built. The purpose is to fix the
-shape of the model *before* a third game lands, because both candidate games
-break it in different places, and doing that twice is more expensive than doing
-it once.
+Status: L1 and L2 are built (the per-type `Rulebook` contract, and the
+`TrainTracks` rulebook registered behind `published = False`). L3 — the app's
+per-type state — is not. The purpose of writing this down before a third game
+landed was to fix the shape of the model *before* it did, because both candidate
+games break it in different places, and doing that twice is more expensive than
+doing it once.
+
+Sections 1 and 4 below describe the model as it was before this work; they are
+kept as the record of what had to change and why.
 
 ## 1. What the model is today
 
@@ -142,8 +147,9 @@ the `region_count` bug in #29.
 
 ### Where a puzzle file's `size` goes when a game has no size
 
-Not yet built, and worth writing down before it is, because the obvious answer is
-wrong in a way that only shows up in the tools.
+Built. `Puzzle.size` is deleted rather than widened, and `Rulebook.dimensions`
+answers `(width, height)` for every genre. The inventory and the reasoning below
+are what the change was based on.
 
 `Puzzle.size` reads as a property of a puzzle and is really a property of the two
 square genres. A Train Tracks grid has `width` and `height` and **no `size` at all** —
@@ -200,30 +206,66 @@ published wrongly — the guardrail that #57's `test_every_type_has_a_rulebook` 
 So the enum, the rulebook, `puzzle_to_dict`, `parse_puzzle`, `render.py`, the schema and the
 tools land together or not at all.
 
-Also note `test_an_unregistered_type_raises_rather_than_defaulting` currently uses
-`"train-tracks"` as its example of a type with no rulebook, so it needs a different
-example the moment this lands.
+`test_an_unregistered_type_raises_rather_than_defaulting` used `"train-tracks"` as
+its example of a type with no rulebook; it now uses `"light-up"`.
 
 ### L2 — engine: a per-type rulebook registry
 
-One interface, four operations, one implementation per game:
+Built, with six operations rather than the four below. `parse_board` and
+`board_to_dict` joined them because `parse_puzzle` still had to pick a shape and
+`puzzle_to_dict` still had to pick keys to write; without those two, `parse` keeps
+its branch on the enum and only moves it.
 
 ```
-parse(data) -> Puzzle              # structural + the invariants the schema cannot express
+parse_board(record) -> Board | TrackGrid  # structural + what the schema cannot express
+board_to_dict(board) -> dict             # the counterpart
 generate(seed, id, ...) -> Puzzle
-count_solutions(puzzle, limit=2) -> int     # the uniqueness gate
-deduce(puzzle, allow_guesses) -> SolveResult # hints, logic-only, difficulty
+count_solutions(board, limit=2) -> int   # the uniqueness gate
+deduce(board, allow_guesses) -> Trace | None  # hints, logic-only, difficulty
+replay(puzzle) -> Puzzle
+dimensions(puzzle) -> (width, height)
+render(puzzle) -> str
 ```
 
 `ramp.py`, `tools/generate.py`, `tools/publish.py` and `tools/verify.py` call
-through `rulebook_for(puzzle_type)` instead of branching. `Puzzle` becomes a
-discriminated union — one variant per game, each holding its own payload — rather
-than one record that must contain every game's fields.
+through `rulebook_for(puzzle_type)` instead of branching. `Puzzle.board` is
+`Board | TrackGrid` — a union, not a discriminated union per game, because
+`puzzle_type` already discriminates it and a second tag would have to be kept in
+step. `deduce` returning `None` for a genre with no engine is part of the
+contract, not a gap in it: a family without one plays without hints rather than
+with wrong ones.
+
+And every function that switches on `PuzzleType` has to make the unknown member an
+error rather than a fall-through. Adding an enum member widens a domain, and every
+branch written before it keeps working — which is how `generate_puzzle` came to
+build a Train Tracks board as a two-star Star Battle, and how `Board` came to accept
+a grid of regions and capacities labelled `train-tracks`. The compiler cannot help:
+a `PuzzleType` that no branch names is a perfectly good value. Both are now
+rejected, and `conformance/board-cases/` pins the second one across both languages.
+
+`Rulebook.published` is the one field here that is not about the rules. It says
+whether the nightly publisher may write files of this type, which is what lets
+`TrainTracks` be fully registered and generating while the app still cannot play
+it. `publish.py` skips unpublished books in both the write loop and
+`_ids_for_day`, so a day is not held open forever by a type that is never
+written.
+
+The app mirrors it in `PUZZLE_TYPE_PUBLISHED`, and it has to: the two halves fail
+separately and visibly. The engine half alone writes files nothing can parse; the
+app half alone probes a file that is never there and offers a permanent "not
+published yet" card, because `puzzleIdsForDay` is the chokepoint every page asks
+through. Neither half is a subset of the other, so a gate with one of them is not
+a gate.
 
 The mark games keep their existing classes, behind the same interface. That is
 the whole point: the refactor is additive.
 
 ### L3 — app: per-type state and a per-type registry
+
+Not built. The registration landed the parts of it that do not require playing the
+grid — `PUZZLE_TYPE_SUFFIX`, `LABEL`, `PIECE`, `HAS_HINTS` and `PUBLISHED` are all
+keyed by type, and `Board` stays a marks board until a `TrackGrid` has somewhere to
+live beside it.
 
 `GameState` stops being one shape. It becomes a union, and the mark variant is
 today's shape unchanged:

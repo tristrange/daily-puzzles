@@ -50,6 +50,7 @@ from queens_engine.deduce import deduce
 from queens_engine.difficulty import LEVEL_NAMES, score_difficulty
 from queens_engine.generator import GenerationConfig, GenerationError, generate_puzzle
 from queens_engine.puzzle import Puzzle
+from queens_engine.rulebook import as_marks_board
 
 #: Lowest and highest band index, 1-based into `LEVEL_NAMES`.
 MIN_LEVEL: Final[int] = 1
@@ -167,9 +168,12 @@ def generate_ramped(
             cursor = (cursor + 1) % (2**32)
             continue
         cursor = (cursor + 1) % (2**32)
-        if not deduce(puzzle.board, allow_guesses=False).solved:
+        # `generate_puzzle` is asked for `RAMP_TYPE`, so its board is a marks one.
+        # Narrowing says so out loud rather than leaving the reader to wonder.
+        board = as_marks_board(puzzle.board)
+        if not deduce(board, allow_guesses=False).solved:
             continue
-        level = score_difficulty(puzzle.board).level
+        level = score_difficulty(board).level
         if level == target.level:
             return RampedPuzzle(puzzle, target, target, attempts)
         if level < target.level and (best is None or level > best[1]):

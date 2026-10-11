@@ -16,7 +16,13 @@ from __future__ import annotations
 from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Final, cast
+from typing import TYPE_CHECKING, Final, cast
+
+if TYPE_CHECKING:
+    # A string annotation only. Imported for real at module scope this would be a
+    # cycle: `tracks.py` reaches for the solver's default limit, and the solver
+    # builds `Board`s.
+    from .tracks import TrackGrid
 
 MIN_SIZE: Final[int] = 2
 MAX_SIZE: Final[int] = 16
@@ -31,6 +37,7 @@ type JsonValue = str | int | float | bool | list[JsonValue] | dict[str, JsonValu
 class PuzzleType(StrEnum):
     QUEENS = "queens"
     STAR_BATTLE = "star-battle"
+    TRAIN_TRACKS = "train-tracks"
 
 
 class BoardError(ValueError):
@@ -176,7 +183,11 @@ class Puzzle:
     puzzle_type: PuzzleType
     seed: int
     generator_version: int
-    board: Board
+    #: The board this type plays. `Board` for the two marks genres, `TrackGrid` for
+    #: Train Tracks — a grid that is not made of regions, is not square, and obeys
+    #: reciprocity rather than a capacity. Callers that need the geometry ask the
+    #: rulebook's `dimensions`, which answers for both.
+    board: Board | TrackGrid
     #: Band index, 1-based into `LEVEL_NAMES`. `None` for boards published
     #: before the weekly ramp, and for anything generated outside a target.
     difficulty: int | None = None
@@ -273,19 +284,26 @@ def _genre_violation(board: Board) -> str | None:
     that all share one capacity, with Queens fixing that capacity at 1. Runs
     before the per-region loop so a genre violation is named over a shape
     detail: a two-region star board says so, rather than pointing at one of its
-    regions first.
+    regions first. A type this function does not know is itself a violation rather
+    than an unexamined pass, which is the branch between the two marks types: a
+    new member of the enum is otherwise accepted by every function that switches
+    on the members it had when it was written.
     """
+    if board.puzzle_type not in (PuzzleType.QUEENS, PuzzleType.STAR_BATTLE):
+        # Not "no rule for this type, carry on". A `Board` is the marks model:
+        # regions, capacities, one square. Train Tracks plays a grid that has none
+        # of those, so a `Board` claiming that type is a board that would reach the
+        # marks solver as a valid puzzle of a game it cannot express. Rejecting it
+        # here means the only way to build one is `TrackGrid`.
+        return f"{board.puzzle_type} is not played on a marks board"
+    if board.region_count != board.size:
+        return f"{board.puzzle_type} needs exactly {board.size} regions, found {board.region_count}"
     if board.puzzle_type is PuzzleType.QUEENS:
-        if board.region_count != board.size:
-            return f"queens needs exactly {board.size} regions, found {board.region_count}"
         if any(capacity != 1 for capacity in board.region_capacity):
             return "queens requires a capacity of exactly 1 per region"
         return None
-    if board.puzzle_type is PuzzleType.STAR_BATTLE:
-        if board.region_count != board.size:
-            return f"star battle needs exactly {board.size} regions, found {board.region_count}"
-        if any(capacity != board.region_capacity[0] for capacity in board.region_capacity):
-            return "star battle requires one capacity shared by every region"
+    if any(capacity != board.region_capacity[0] for capacity in board.region_capacity):
+        return "star battle requires one capacity shared by every region"
     return None
 
 

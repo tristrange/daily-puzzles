@@ -36,7 +36,13 @@
       "file": "star-battle-region-count-mismatch.reject.json",
       "valid": false,
       "note": "star battle needs exactly size regions",
-      "error": "star battle needs exactly"
+      "error": "star-battle needs exactly"
+    },
+    {
+      "file": "tracks-type-on-a-marks-board.reject.json",
+      "valid": false,
+      "error": "is not played on a marks board",
+      "note": "the enum member is not the model: a grid with regions and capacities is a Board, and a family that plays neither cannot be one. Rejected on type before any region rule is consulted."
     },
     {
       "file": "queens-capacity-above-one.reject.json",

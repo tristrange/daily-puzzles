@@ -17,6 +17,7 @@ from queens_engine import (
     Difficulty,
     GenerationConfig,
     PuzzleType,
+    as_marks_board,
     deduce,
     generate_puzzle,
     score_difficulty,
@@ -37,15 +38,19 @@ SIZE_ST = st.sampled_from(SIZES)
 
 
 def _board(size: int, seed: int) -> Board:
-    return generate_puzzle(seed=seed, puzzle_id="x", config=GenerationConfig(size=size)).board
+    return as_marks_board(
+        generate_puzzle(seed=seed, puzzle_id="x", config=GenerationConfig(size=size)).board
+    )
 
 
 def _star_board(size: int, seed: int) -> Board:
-    return generate_puzzle(
-        seed=seed,
-        puzzle_id="star",
-        config=GenerationConfig(size=size, puzzle_type=PuzzleType.STAR_BATTLE, stars_per_row=2),
-    ).board
+    return as_marks_board(
+        generate_puzzle(
+            seed=seed,
+            puzzle_id="star",
+            config=GenerationConfig(size=size, puzzle_type=PuzzleType.STAR_BATTLE, stars_per_row=2),
+        ).board
+    )
 
 
 def _unique_solution(board: Board) -> set[int]:

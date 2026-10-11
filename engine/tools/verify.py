@@ -34,6 +34,7 @@ from queens_engine import (
     Puzzle,
     PuzzleParseError,
     PuzzleType,
+    as_marks_board,
     dumps_puzzle,
     load_puzzle,
     rulebook_for,
@@ -73,9 +74,12 @@ def _star_repeat_problem(
     and the first out-of-window one means nothing earlier can be closer. A board
     that passes is appended, holding later files to the same rule.
     """
-    if puzzle.puzzle_type is not PuzzleType.STAR_BATTLE or puzzle.board.size != STAR_BATTLE_SIZE:
+    if puzzle.puzzle_type is not PuzzleType.STAR_BATTLE:
         return None
-    layout = star_layout(puzzle.board)
+    board = as_marks_board(puzzle.board)
+    if board.size != STAR_BATTLE_SIZE:
+        return None
+    layout = star_layout(board)
     # Reversing matters: an entry more than the window behind would stop an
     # ascending scan on its very first item and skip the in-window layouts
     # published just before this file, so duplicates from yesterday would be

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { Board, PUZZLE_TYPES, type PuzzleType } from './board'
+import { Board, PUZZLE_TYPES } from './board'
 import { puzzleIdFor, puzzleTypeOf } from './dates'
 import { firstHint } from './hints'
 import { parsePuzzle } from './puzzle'
@@ -14,8 +14,14 @@ import {
   isDefaultPuzzleType,
 } from './games'
 
-/** A legal board of any family: one region per row, one piece per row. */
-function makeBoard(puzzleType: PuzzleType, size = 4): Board {
+/**
+ * A legal marks board of `puzzleType`: one region per row, one piece per row.
+ *
+ * Marks families only, and the callers say which. Train Tracks cannot be built
+ * this way — `Board` refuses a type it does not model — so asking for one here
+ * would be asking for a board that cannot exist rather than for a puzzle.
+ */
+function makeBoard(puzzleType: 'queens' | 'star-battle', size = 4): Board {
   const regions = Array.from({ length: size * size }, (_, cell) => Math.floor(cell / size))
   const capacity = puzzleType === 'queens' ? 1 : 2
   return new Board(size, regions, new Array(size).fill(capacity), puzzleType)
@@ -114,7 +120,12 @@ describe('puzzle type registry', () => {
     for (const type of PUZZLE_TYPES) {
       expect(typeof PUZZLE_TYPE_HAS_HINTS[type]).toBe('boolean')
       // A family without hints must never produce one, whatever the position.
-      if (!PUZZLE_TYPE_HAS_HINTS[type]) expect(firstHint(makeBoard(type))).toBeNull()
+      // Train Tracks is that family today, and it cannot be handed a `Board` at
+      // all — which is the stronger statement, and the reason this loop has to
+      // narrow rather than pass every type to `makeBoard`.
+      if (!PUZZLE_TYPE_HAS_HINTS[type] && type !== 'train-tracks') {
+        expect(firstHint(makeBoard(type))).toBeNull()
+      }
     }
   })
 })

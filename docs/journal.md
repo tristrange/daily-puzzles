@@ -23,6 +23,7 @@ avoided. The reasoning is the point; the shipped code is in `git log`.
 | 14 | Remember the auto-mark choice between visits | done |
 | 15 | A weekly difficulty ramp for Queens, and the band in the puzzle file | done |
 | 16 | Port the deduction engine to per-group counts so Star Battle can be rated, then ramp it too | done — rating deferred, below |
+| 17 | Train Tracks: a per-type contract the model was missing, and the type registered against it | done — engine only, unpublished |
 
 Milestones 2 to 4 were the critical path, and they are all Python. The engine alone — a
 CLI with an exact uniqueness prover and property tests — would have been worth publishing
@@ -192,6 +193,87 @@ in the repository, read it before designing anything it covers.** That is the pa
 worth keeping, more than any of the three bugs underneath it: the solver and the
 independent reference agreed with each other on every board and were both wrong, because I
 had written the wrong rule into both before either was written.
+
+## Six holes the review found in a type that was not shipping
+
+The first review of the Train Tracks registration found six faults, and every one was
+mine and every one was in code I had just written and believed finished. They are worth
+listing together, because the pattern is more useful than any of them alone: **five of the
+six are a value that was checked at the entry point and then trusted all the way down.**
+
+- The schema documented a piece code `7`. `TrackGrid` has six pieces. A file written to
+  the format as documented would validate and then fail to parse. A description is not a
+  comment; it is a promise the validator then has to keep, and I wrote one the validator
+  did not keep.
+- `replay` carried `generator_version` over from the file it was replaying, so
+  `verify_replay` compared the file's version with itself and accepted any
+  schema-valid value. The check existed, ran, and could not fail.
+- `generate` handed the seed straight to `Prng`, which masks to 64 bits rather than
+  refusing. `--seed -1` would have written a file recording a seed its own schema
+  rejects on read. `generate_puzzle` checks this; the new path did not, because it was
+  written by copying the shape of a function without its guards.
+- The marks generator's branch is `QUEENS` else Star Battle, so a new enum member became
+  a two-star board. Not a crash — the wrong game, generated successfully, by a generator
+  that does not know the type exists.
+- `render_grid` took a solution and compared it against cell indices, while the type it
+  was handed is a piece number per cell. It drew the givens and ignored the solution,
+  which looks identical to the no-solution case, so the tests passed.
+
+And then the second review found the seventh, which is the same shape as the whole
+family: `Board.puzzle_type` is a `PuzzleType`, and `_genre_violation` handled Queens
+and Star Battle and then returned `None` for anything else. Adding the enum member
+therefore made a grid of regions and capacities constructible *and* callable Train
+Tracks — the marks solver accepting a valid puzzle of a game it cannot express. The
+generator guard did not cover it because a `Board` can be built directly.
+
+Five of the seven are the same sentence: **a new enum member widened a domain, and
+every function that switched on the old members fell through the new one.** The
+compiler did not help, because nothing about a `PuzzleType` that no branch names is
+an error — it is a value, and values are what these functions were written to accept.
+The fix that generalises is the one that makes the unknown case an error rather than
+a fall-through, and it has to be written in each validator rather than once, because
+there is no shared code between the two languages to put it in.
+
+The sixth was the app's, and it is the one that would have shipped: registering the type
+in `PUZZLE_TYPES` made `puzzleIdsForDay` probe a `-tracks.json` that will never exist,
+putting a permanent "not published yet" card on the home page. `Rulebook.published` was
+the engine half of that gate and I had added it there and nowhere else — the same
+mistake as the `_ids_for_day` loop, one layer up, and I had just written the post-mortem
+for the first one.
+
+The honest summary is that a type which cannot be reached is the easiest thing in the
+repository to get right, and I got six things wrong anyway. What caught them was a
+reviewer reading the diff against the model rather than against my description of it.
+That is the argument for the reviewer, not for writing fewer comments.
+
+## Registering a type without shipping it
+
+`TrainTracks` is in the engine's registry, generating and proving unique solutions, and
+nothing has been published for it. That is one boolean, `Rulebook.published`, and it is
+the only thing standing between a finished solver and a broken daily archive — because
+the alternative is worse than it looks. `publish.py` and `schema_ids` both iterate the
+registry, so registering the type alone would have started writing files the app's
+parser rejects, and `conformance/id-cases` is asserted for equality from both languages,
+so the schema's id pattern would have widened without the app ever learning the suffix.
+
+It is tempting to leave the type unregistered until all of that is ready, and the guard
+against that is worth naming: `rulebook_for` raising on an unknown type is the thing that
+stops a new type being published under another type's rules. Hiding a type that works
+reintroduces exactly the failure the registry was built to prevent, only silently. Being
+registered and unpublished keeps the loud guard and adds a quiet one.
+
+The second gate was in a place I would not have looked. `publish.py` has two loops over
+the registry — the one that writes files and the one that decides whether a day is
+already complete. Gating only the writer meant every day looked permanently incomplete,
+so a rerun tried to republish the archive from the beginning, forever. A gate that is not
+applied at every read of the thing it gates is not a gate; it is a branch in one place
+and a bug in another.
+
+`deduce` returning `None` was the same shape of decision. There is no deduction engine
+for this genre, and the contract makes that a value rather than a gap, so a board with
+no hints is one the app already knows how to render. The alternative — inventing a
+solver to fill the signature — would have produced hints that could contradict the
+answer, which is worse than no button.
 
 ## What the clues are actually for
 

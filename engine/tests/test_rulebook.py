@@ -8,17 +8,26 @@ of this file checks.
 
 from __future__ import annotations
 
+import json
+from dataclasses import replace
 from datetime import date
 
 import pytest
 
+from helpers import marks_board
 from queens_engine import (
     RAMP_TYPE,
     STAR_BATTLE_STARS,
+    TRACKS_HEIGHT,
+    TRACKS_WIDTH,
     GenerationConfig,
+    GenerationError,
+    MarkRulebook,
     PuzzleType,
     Rulebook,
+    dumps_puzzle,
     generate_puzzle,
+    parse_puzzle,
     puzzle_id,
     rulebook_for,
     rulebooks,
@@ -47,7 +56,7 @@ class TestCompleteness:
         # A default would be the worst outcome: it would publish a new type using
         # another type's rules, which is wrong in a way that still succeeds.
         with pytest.raises(RulebookError):
-            rulebook_for("train-tracks")  # type: ignore[arg-type]
+            rulebook_for("light-up")  # type: ignore[arg-type]
 
     def test_every_type_names_its_files_distinctly(self) -> None:
         # `split_puzzle_id` reads the type out of the suffix, so a shared suffix
@@ -118,7 +127,12 @@ class TestGeneration:
         # The rulebook is meant to be a place to record facts, not a second
         # implementation. If this ever diverges, the two paths would disagree about
         # what a type is, and the archive would depend on which one ran.
+        # Marks types only: the claim is that `Rulebook.generate` adds nothing to
+        # the generator it wraps, and a type with its own generator has no second
+        # implementation for that comparison to be against.
         for book in rulebooks():
+            if not isinstance(book, MarkRulebook):
+                continue
             direct = generate_puzzle(
                 seed=7,
                 puzzle_id="2026-10-12",
@@ -165,13 +179,13 @@ class TestGeneration:
         book = rulebook_for(PuzzleType.STAR_BATTLE)
         puzzle = book.generate(seed=7, puzzle_id="2026-10-12")
         replayed = book.replay(puzzle)
-        assert replayed.board.region_capacity[0] == STAR_BATTLE_STARS
-        assert replayed.board.region_capacity == puzzle.board.region_capacity
+        assert marks_board(replayed).region_capacity[0] == STAR_BATTLE_STARS
+        assert marks_board(replayed).region_capacity == marks_board(puzzle).region_capacity
         # Replaying the star board through the queens rulebook must not work: the
         # capacities it would rebuild are one per region, not two.
         queens_replay = rulebook_for(PuzzleType.QUEENS).replay(puzzle)
-        assert queens_replay.board.region_capacity[0] == 1
-        assert queens_replay.board.region_capacity != puzzle.board.region_capacity
+        assert marks_board(queens_replay).region_capacity[0] == 1
+        assert marks_board(queens_replay).region_capacity != marks_board(puzzle).region_capacity
 
     def test_counting_and_deducing_go_through_the_rulebook(self) -> None:
         book = rulebook_for(PuzzleType.QUEENS)
@@ -190,7 +204,7 @@ class TestGeneration:
             if not book.rated:
                 continue
             puzzle = book.generate(seed=7, puzzle_id="2026-10-12", size=SMALL)
-            assert 1 <= score_difficulty(puzzle.board).level <= 3
+            assert 1 <= score_difficulty(marks_board(puzzle)).level <= 3
 
 
 class TestTheShapeOfAPuzzle:
@@ -227,4 +241,90 @@ class TestTheShapeOfAPuzzle:
         assert f"{width}x{height}" in lines[0]
         grid = lines[1:]
         assert len(grid) == height
-        assert all(len(line.split()) == width for line in grid)
+        # Characters, not words: both renderers draw two per cell, and a track grid
+        # has cells an empty line legitimately leaves blank, which `split()` would
+        # collapse and read as a short row.
+        assert all(len(line) == 2 * width for line in grid)
+
+
+class TestTracks:
+    """The promises Train Tracks makes that the marks genres cannot make.
+
+    Everything here is a decision rather than a consequence: the grid is
+    rectangular, there is no deduction engine, and nothing is published yet.
+    """
+
+    def test_it_is_registered_but_not_published(self) -> None:
+        # The registry entry is what makes the type visible to `verify`, the schema
+        # and the parser. `published` is the separate gate that keeps the nightly
+        # publisher from writing files the app cannot parse or play yet. Both, not
+        # either: a rulebook with no entry is invisible, and a published one ships.
+        book = rulebook_for(PuzzleType.TRAIN_TRACKS)
+        assert book.puzzle_type is PuzzleType.TRAIN_TRACKS
+        assert not book.published
+        assert all(other.published for other in rulebooks() if other is not book)
+
+    def test_it_is_off_the_ramp_and_unrated(self) -> None:
+        # The ramp is what records a band, and a band is a claim about how hard a
+        # board is. There is no deduction engine to gate a band on, so claiming one
+        # would be a number nothing in the repo could justify.
+        book = rulebook_for(PuzzleType.TRAIN_TRACKS)
+        assert not book.on_ramp
+        assert not book.rated
+        assert not book.logic_only
+
+    def test_a_size_is_refused_rather_than_ignored(self) -> None:
+        # `--size` against a non-square grid has no meaning, and silently using the
+        # published one would report success for a board nobody asked for.
+        with pytest.raises(GenerationError, match="not square"):
+            rulebook_for(PuzzleType.TRAIN_TRACKS).generate(seed=7, puzzle_id="2026-10-12", size=8)
+
+    def test_it_generates_a_rectangular_grid_at_the_published_size(self) -> None:
+        book = rulebook_for(PuzzleType.TRAIN_TRACKS)
+        puzzle = book.generate(seed=7, puzzle_id="2026-10-12")
+        assert book.dimensions(puzzle) == (TRACKS_WIDTH, TRACKS_HEIGHT)
+        assert TRACKS_WIDTH == TRACKS_HEIGHT, "the constants are two numbers, not a size"
+
+    def test_a_seed_the_schema_refuses_is_refused_here_too(self) -> None:
+        # `generate_grid` hands the seed to `Prng`, which masks an out-of-range one
+        # rather than refusing it. Without this check `--seed -1` writes a puzzle
+        # recording a seed its own schema will not accept back.
+        with pytest.raises(GenerationError, match="outside"):
+            rulebook_for(PuzzleType.TRAIN_TRACKS).generate(seed=-1, puzzle_id="2026-10-12")
+
+    def test_replay_restates_the_generator_version_rather_than_trusting_the_file(self) -> None:
+        # `verify_replay` compares the regenerated version against the recorded one
+        # so a generator change cannot silently reinterpret published puzzles. A
+        # `replace` that kept the file's value would compare it with itself.
+        book = rulebook_for(PuzzleType.TRAIN_TRACKS)
+        puzzle = book.generate(seed=7, puzzle_id="2026-10-12")
+        forged = replace(puzzle, generator_version=99)
+        with pytest.raises(GenerationError, match="version"):
+            verify_replay(forged)
+
+    def test_the_marks_generator_refuses_a_type_it_does_not_build(self) -> None:
+        # Its branch is `QUEENS` else Star Battle, so a new enum member would have
+        # been built as a two-star board — the wrong game, generated by a generator
+        # that does not know the type exists, and reporting success.
+        with pytest.raises(GenerationError, match="not generated here"):
+            generate_puzzle(
+                seed=7,
+                puzzle_id="2026-10-12",
+                config=GenerationConfig(size=8, puzzle_type=PuzzleType.TRAIN_TRACKS),
+            )
+
+    def test_it_has_exactly_one_solution_and_no_hints(self) -> None:
+        # The uniqueness is what the generator proves and therefore what may be
+        # published. The `None` is what the contract allows for a genre with no
+        # engine: no hints rather than hints that could contradict the answer.
+        book = rulebook_for(PuzzleType.TRAIN_TRACKS)
+        puzzle = book.generate(seed=7, puzzle_id="2026-10-12")
+        assert book.count_solutions(puzzle.board) == 1
+        assert book.deduce(puzzle.board) is None
+
+    def test_a_tracks_puzzle_survives_its_own_file_format(self) -> None:
+        # The point of `parse_board` and `board_to_dict` on the rulebook: the file
+        # carries the grid, and reading it back gives the same puzzle. Asserted
+        # through `parse_puzzle` so the schema is in the path too.
+        puzzle = rulebook_for(PuzzleType.TRAIN_TRACKS).generate(seed=7, puzzle_id="2026-10-12")
+        assert parse_puzzle(json.loads(dumps_puzzle(puzzle))) == puzzle

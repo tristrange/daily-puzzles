@@ -16,6 +16,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
+from helpers import marks_board
 from queens_engine import (
     DEFAULT_ATTEMPTS,
     Board,
@@ -74,16 +75,16 @@ def test_same_seed_generates_the_same_board(seed: int, size: int) -> None:
 @given(SEEDS, SIZES_FAST)
 def test_generated_puzzle_has_exactly_one_solution(seed: int, size: int) -> None:
     puzzle = _generate(seed, size)
-    assert len(_solutions(puzzle.board)) == 1
+    assert len(_solutions(marks_board(puzzle))) == 1
 
 
 def test_every_supported_size_generates() -> None:
     for size in SIZES:
         seed = KNOWN_GOOD.get(size, 3)
         puzzle = _generate(seed, size)
-        assert puzzle.board.size == size
+        assert marks_board(puzzle).size == size
         assert puzzle.puzzle_type is PuzzleType.QUEENS
-        assert puzzle.board.region_count == size
+        assert marks_board(puzzle).region_count == size
 
 
 def test_verify_replay_rebuilds_the_same_board() -> None:
@@ -94,10 +95,10 @@ def test_verify_replay_rebuilds_the_same_board() -> None:
 
 def test_verify_replay_detects_tampering() -> None:
     puzzle = _generate(seed=1)
-    from_ids = {puzzle.board.region_at(i) for i in range(len(puzzle.board.regions))}
+    from_ids = {marks_board(puzzle).region_at(i) for i in range(len(marks_board(puzzle).regions))}
     a, b = sorted(from_ids)[:2]
     swapped = [
-        b if region == a else a if region == b else region for region in puzzle.board.regions
+        b if region == a else a if region == b else region for region in marks_board(puzzle).regions
     ]
     forged = Puzzle(
         id=puzzle.id,
@@ -105,10 +106,10 @@ def test_verify_replay_detects_tampering() -> None:
         seed=puzzle.seed,
         generator_version=puzzle.generator_version,
         board=Board(
-            size=puzzle.board.size,
+            size=marks_board(puzzle).size,
             regions=tuple(swapped),
-            region_capacity=puzzle.board.region_capacity,
-            puzzle_type=puzzle.board.puzzle_type,
+            region_capacity=marks_board(puzzle).region_capacity,
+            puzzle_type=marks_board(puzzle).puzzle_type,
         ),
     )
     assert forged.board != puzzle.board
@@ -155,13 +156,13 @@ def test_unsupported_size_is_rejected() -> None:
 
 def test_solution_is_legal_and_fits_the_board() -> None:
     puzzle = _generate(seed=7, size=8)
-    solution = _solutions(puzzle.board)[0]
-    size = puzzle.board.size
+    solution = _solutions(marks_board(puzzle))[0]
+    size = marks_board(puzzle).size
     assert len(solution) == size
     # One star per row, column, and region.
     rows = [cell // size for cell in solution]
     cols = [cell % size for cell in solution]
-    regions_seen = [puzzle.board.region_at(cell) for cell in solution]
+    regions_seen = [marks_board(puzzle).region_at(cell) for cell in solution]
     assert sorted(rows) == list(range(size))
     assert sorted(cols) == list(range(size))
     assert sorted(regions_seen) == list(range(size))
@@ -175,10 +176,10 @@ def test_dumps_is_stable_and_round_trips() -> None:
     assert parsed["id"] == puzzle.id
     assert parsed["seed"] == puzzle.seed
     board = parsed["board"]
-    assert board["size"] == puzzle.board.size
-    assert list(board["regions"]) == list(puzzle.board.regions)
+    assert board["size"] == marks_board(puzzle).size
+    assert list(board["regions"]) == list(marks_board(puzzle).regions)
     if "regionCapacity" in board:
-        assert list(board["regionCapacity"]) == list(puzzle.board.region_capacity)
+        assert list(board["regionCapacity"]) == list(marks_board(puzzle).region_capacity)
 
 
 def test_render_shows_a_queen_per_row_and_column() -> None:
@@ -186,14 +187,14 @@ def test_render_shows_a_queen_per_row_and_column() -> None:
     lines = rulebook_for(puzzle.puzzle_type).render(puzzle).splitlines()
     assert "2026-04-05" in lines[0] and "seed=11" in lines[0]
     board_lines = lines[1:]
-    assert len(board_lines) == puzzle.board.size
+    assert len(board_lines) == marks_board(puzzle).size
     for line in board_lines:
         assert line.count("Q") == 1
     # columns
     assert all(line.count("Q") == 1 for line in board_lines)
     assert all(
         sum(line.split()[col] == "Q" for line in board_lines) == 1
-        for col in range(puzzle.board.size)
+        for col in range(marks_board(puzzle).size)
     )
 
 
@@ -241,22 +242,22 @@ def test_star_battle_same_seed_generates_the_same_board(seed: int) -> None:
 @given(STAR_SEEDS)
 def test_star_battle_has_exactly_one_solution(seed: int) -> None:
     puzzle = _generate_star(seed, 8, 2)
-    assert len(_solutions(puzzle.board)) == 1
+    assert len(_solutions(marks_board(puzzle))) == 1
 
 
 def test_every_supported_star_battle_combo_generates() -> None:
     for size, stars in FEASIBLE_STAR_BATTLE:
         puzzle = _generate_star(STAR_KNOWN_GOOD[(size, stars)], size, stars)
-        assert puzzle.board.size == size
+        assert marks_board(puzzle).size == size
         assert puzzle.puzzle_type is PuzzleType.STAR_BATTLE
-        assert puzzle.board.region_count == size
-        assert puzzle.board.region_capacity == (stars,) * size
+        assert marks_board(puzzle).region_count == size
+        assert marks_board(puzzle).region_capacity == (stars,) * size
 
 
 def test_star_battle_solution_is_legal_and_fits_the_board() -> None:
     puzzle = _generate_star(0, 8, 2)
-    solution = _solutions(puzzle.board)[0]
-    assert obeys_the_rules(puzzle.board, solution)
+    solution = _solutions(marks_board(puzzle))[0]
+    assert obeys_the_rules(marks_board(puzzle), solution)
 
 
 def test_star_battle_verify_replay_rebuilds_the_same_board() -> None:
@@ -266,17 +267,17 @@ def test_star_battle_verify_replay_rebuilds_the_same_board() -> None:
 
 def test_star_battle_verify_replay_detects_tampering() -> None:
     puzzle = _generate_star(0, 8, 2)
-    swapped = [1 - region if region < 2 else region for region in puzzle.board.regions]
+    swapped = [1 - region if region < 2 else region for region in marks_board(puzzle).regions]
     forged = Puzzle(
         id=puzzle.id,
         puzzle_type=puzzle.puzzle_type,
         seed=puzzle.seed,
         generator_version=puzzle.generator_version,
         board=Board(
-            size=puzzle.board.size,
+            size=marks_board(puzzle).size,
             regions=tuple(swapped),
-            region_capacity=puzzle.board.region_capacity,
-            puzzle_type=puzzle.board.puzzle_type,
+            region_capacity=marks_board(puzzle).region_capacity,
+            puzzle_type=marks_board(puzzle).puzzle_type,
         ),
     )
     assert forged.board != puzzle.board
@@ -320,7 +321,7 @@ def test_star_battle_dumps_round_trips_with_capacity() -> None:
     assert text == dumps_puzzle(puzzle)
     parsed = json.loads(text)
     assert parsed["type"] == "star-battle"
-    assert list(parsed["board"]["regionCapacity"]) == list(puzzle.board.region_capacity)
+    assert list(parsed["board"]["regionCapacity"]) == list(marks_board(puzzle).region_capacity)
     assert dumps_puzzle(parse_puzzle(parsed)) == text
 
 
@@ -329,8 +330,8 @@ def test_star_battle_render_shows_two_stars_per_row_and_column() -> None:
     lines = rulebook_for(puzzle.puzzle_type).render(puzzle).splitlines()
     assert "2026-04-05" in lines[0] and "seed=0" in lines[0]
     board_lines = lines[1:]
-    assert len(board_lines) == puzzle.board.size
+    assert len(board_lines) == marks_board(puzzle).size
     for line in board_lines:
         assert line.count("Q") == 2
-    for col in range(puzzle.board.size):
+    for col in range(marks_board(puzzle).size):
         assert sum(line.split()[col] == "Q" for line in board_lines) == 2

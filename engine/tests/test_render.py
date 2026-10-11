@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from helpers import marks_board
 from queens_engine import (
     Board,
     Puzzle,
@@ -52,7 +53,7 @@ def test_render_puzzle_header_and_grid() -> None:
     assert lines[0].startswith("2026-01-01")
     assert f"seed={puzzle.seed}" in lines[0]
     grid = lines[1]
-    assert len(grid.split()) == puzzle.board.size
+    assert len(grid.split()) == marks_board(puzzle).size
 
 
 def test_render_puzzle_uses_real_solution() -> None:
@@ -65,7 +66,9 @@ def test_render_puzzle_uses_real_solution() -> None:
         for col, cell in enumerate(line.split())
         if cell == "Q"
     }
-    actual = {divmod(cell, puzzle.board.size) for cell in next(iter_solutions(puzzle.board))}
+    actual = {
+        divmod(cell, marks_board(puzzle).size) for cell in next(iter_solutions(marks_board(puzzle)))
+    }
     assert expected == actual
 
 
@@ -75,5 +78,5 @@ def test_render_puzzle_uniqueness_visible() -> None:
     rows = rendered.splitlines()[1:]
     assert all(row.count("Q") == 1 for row in rows)
     assert all(
-        sum(row.split()[col] == "Q" for row in rows) == 1 for col in range(puzzle.board.size)
+        sum(row.split()[col] == "Q" for row in rows) == 1 for col in range(marks_board(puzzle).size)
     )

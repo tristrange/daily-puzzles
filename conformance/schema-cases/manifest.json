@@ -209,6 +209,13 @@
       "errorPaths": [
         "required:board:regionCapacity"
       ]
+    },
+    {
+      "file": "tracks-givens-out-of-range.reject.json",
+      "valid": false,
+      "errorPaths": [
+        "maximum:board/givens/3"
+      ]
     }
   ]
 }

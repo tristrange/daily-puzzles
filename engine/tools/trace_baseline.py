@@ -38,6 +38,7 @@ from queens_engine import (
     GenerationConfig,
     JsonValue,
     PuzzleType,
+    as_marks_board,
     canonical_dumps,
     deduce,
     generate_puzzle,
@@ -74,9 +75,12 @@ def build_baseline() -> dict[str, JsonValue]:
                 puzzle_id=f"trace-{size}-{seed}",
                 config=GenerationConfig(size=size, puzzle_type=PuzzleType.QUEENS),
             )
-            full = deduce(puzzle.board)
-            pure = deduce(puzzle.board, allow_guesses=False)
-            scored = score_difficulty(puzzle.board)
+            # Asked for Queens explicitly, so the board is a marks one. Narrowing
+            # says so rather than leaving the reader to trust the config.
+            board = as_marks_board(puzzle.board)
+            full = deduce(board)
+            pure = deduce(board, allow_guesses=False)
+            scored = score_difficulty(board)
             baseline[f"{size}:{seed}"] = {
                 "solved": full.solved,
                 "exhausted": full.exhausted,

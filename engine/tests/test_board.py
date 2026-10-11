@@ -129,6 +129,16 @@ class TestRejectedBoards:
         with pytest.raises(BoardError, match="one capacity shared"):
             make_board(4, regions, (1, 1, 1, 2), PuzzleType.STAR_BATTLE)
 
+    def test_a_type_this_board_cannot_play_is_rejected(self) -> None:
+        # Adding an enum member widened what a `Board` claims to be, and the genre
+        # rules fell through for the new one — so a grid of regions and capacities
+        # could be built and called Train Tracks, and the marks solver would accept
+        # it as a valid puzzle of a game it cannot express. `TrackGrid` is the only
+        # thing that should build one.
+        regions = (0,) * 8 + (1,) * 8
+        with pytest.raises(BoardError, match="is not played on a marks board"):
+            make_board(4, regions, (1, 1), PuzzleType.TRAIN_TRACKS)
+
     def test_derive_stars_per_row_divides_an_even_total(self) -> None:
         assert derive_stars_per_row((2,) * 4, 4) == 2
 

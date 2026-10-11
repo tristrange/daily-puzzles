@@ -267,7 +267,7 @@ describe('summarise', () => {
       fastestMs: null,
       averageMs: null,
       hints: 0,
-      byType: { queens: 0, 'star-battle': 0 },
+      byType: { queens: 0, 'star-battle': 0, 'train-tracks': 0 },
     })
   })
 
@@ -292,7 +292,7 @@ describe('summarise', () => {
       fastestMs: 100_000,
       averageMs: 200_000,
       hints: 3,
-      byType: { queens: 2, 'star-battle': 1 },
+      byType: { queens: 2, 'star-battle': 1, 'train-tracks': 0 },
     })
   })
 
@@ -318,16 +318,18 @@ describe('summarise', () => {
 
 describe('formatSolveCounts', () => {
   it('spells out both families with their counts', () => {
-    expect(formatSolveCounts({ queens: 3, 'star-battle': 5 })).toBe('3 Queens and 5 Star Battle')
+    expect(formatSolveCounts({ queens: 3, 'star-battle': 5, 'train-tracks': 0 })).toBe(
+      '3 Queens and 5 Star Battle',
+    )
   })
 
   it('says nothing rather than reporting a family the player has not played', () => {
     // The line used to gate on Star Battle alone, so a Queens-only history saw
     // no split at all while a Star Battle-only one read "0 Queens and 5 Star
     // Battle." A split of one is the total again, whichever family it is.
-    expect(formatSolveCounts({ queens: 12, 'star-battle': 0 })).toBeNull()
-    expect(formatSolveCounts({ queens: 0, 'star-battle': 5 })).toBeNull()
-    expect(formatSolveCounts({ queens: 0, 'star-battle': 0 })).toBeNull()
+    expect(formatSolveCounts({ queens: 12, 'star-battle': 0, 'train-tracks': 0 })).toBeNull()
+    expect(formatSolveCounts({ queens: 0, 'star-battle': 5, 'train-tracks': 0 })).toBeNull()
+    expect(formatSolveCounts({ queens: 0, 'star-battle': 0, 'train-tracks': 0 })).toBeNull()
   })
 
   it('names every registered family with a count, from the registry rather than the copy', () => {
