@@ -51,11 +51,20 @@ export interface TracksBoardProps {
  */
 function reasonFor(grid: TrackGrid, conflict: TrackConflict): string {
   switch (conflict.rule) {
-    case 'unmet-end': {
+    case 'mismatched-end': {
       const other = conflict.other
       if (other === undefined) return ', does not meet its neighbour'
       const { row, col } = grid.coords(other)
       return `, does not meet row ${row + 1}, column ${col + 1}`
+    }
+    case 'unfinished-end': {
+      // "Still needs" rather than "does not meet": the piece may be right and the
+      // route unfinished, and telling someone mid-solve that their work is broken
+      // is the one thing a conflict marker must not do.
+      const other = conflict.other
+      if (other === undefined) return ', still needs to reach its neighbour'
+      const { row, col } = grid.coords(other)
+      return `, still needs to reach row ${row + 1}, column ${col + 1}`
     }
     case 'off-grid-end':
       return ', runs off the grid, and only the line\u2019s two ends may'

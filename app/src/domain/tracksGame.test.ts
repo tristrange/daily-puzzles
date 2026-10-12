@@ -110,14 +110,29 @@ describe('trackConflicts', () => {
     ).toEqual([])
   })
 
-  it('flags a piece whose end nothing meets', () => {
+  it('tells an unfinished route apart from a piece facing the wrong way', () => {
     const grid = middleRow()
-    // Cell 4 turns south; the cell below it is empty.
-    expect(trackConflicts(placed(grid, [0, 0, 0, 1, 5, 1, 0, 0, 0]))).toContainEqual({
-      rule: 'unmet-end',
-      cell: 4,
-      other: 7,
-    })
+    // Cell 4 turns south at an empty cell: the route is not finished, which is
+    // not the same fault as a piece pointing the wrong way, and saying so is the
+    // difference between a warning and an accusation.
+    const unfinished = trackConflicts(placed(grid, [0, 0, 0, 1, 5, 1, 0, 0, 0]))
+    expect(unfinished).toContainEqual({ rule: 'unfinished-end', cell: 4, other: 7 })
+
+    // Cell 4 is vertical, so the given at cell 3 — which points east — meets a
+    // cell facing the other way. That is a piece that is wrong, not a route that
+    // is unfinished.
+    const wrong = trackConflicts(placed(grid, [0, 0, 0, 1, 2, 1, 0, 0, 0]))
+    expect(wrong).toContainEqual({ rule: 'mismatched-end', cell: 3, other: 4 })
+    expect(wrong).not.toContainEqual(expect.objectContaining({ rule: 'unfinished-end', cell: 3 }))
+  })
+
+  it('points at the extra end the player placed, not at the given ends', () => {
+    // The grid's two given ends are correct by construction — the validator
+    // refuses anything else — so marking them when a third appears points at two
+    // fixed clues the player cannot change and hides what they just did.
+    const grid = middleRow()
+    const extra = trackConflicts(placed(grid, [1, 0, 0, 1, 1, 1, 0, 0, 0]))
+    expect(extra.filter((c) => c.rule === 'off-grid-end').map((c) => c.cell)).toEqual([0])
   })
 
   it('flags a row holding more than its clue', () => {

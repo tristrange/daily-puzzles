@@ -36,7 +36,12 @@ export function createTracksGame(grid: TrackGrid): TracksGame {
 }
 
 /** Why a cell is wrong, named so the view can say so rather than just red it. */
-export type TrackConflictRule = 'unmet-end' | 'off-grid-end' | 'row-count' | 'col-count'
+export type TrackConflictRule =
+  | 'mismatched-end'
+  | 'unfinished-end'
+  | 'off-grid-end'
+  | 'row-count'
+  | 'col-count'
 
 export interface TrackConflict {
   rule: TrackConflictRule
@@ -130,13 +135,25 @@ export function trackConflicts(game: TracksGame): readonly TrackConflict[] {
       const other = grid.neighbour(cell, direction)
       const back = (direction + OPPOSITE) % 4
       if (other === null) continue // judged above, by the total
-      if (!isOn(game, other) || !endsTowards(game.pieces[other] ?? 0, back)) {
-        found.push({ rule: 'unmet-end', cell, other })
+      // Three situations, and the player has to be told the first two apart. An
+      // empty cell is a route not finished yet; a cell facing the other way is a
+      // piece that is wrong. Reporting both as the same fault tells someone
+      // mid-solve that their correctly-placed work is broken.
+      if (!isOn(game, other)) {
+        found.push({ rule: 'unfinished-end', cell, other })
+      } else if (!endsTowards(game.pieces[other] ?? 0, back)) {
+        found.push({ rule: 'mismatched-end', cell, other })
       }
     }
   }
   if (openEnds.length > LINE_ENDS) {
-    for (const cell of openEnds) found.push({ rule: 'off-grid-end', cell })
+    // Only the player's. The grid's two given ends are correct by construction —
+    // the validator refuses any grid that does not have exactly two — so marking
+    // them would point at two fixed clues the player cannot change, and hide the
+    // extra end they just placed.
+    for (const cell of openEnds) {
+      if (grid.pieceAt(cell) === 0) found.push({ rule: 'off-grid-end', cell })
+    }
   }
 
   for (let row = 0; row < grid.height; row += 1) {

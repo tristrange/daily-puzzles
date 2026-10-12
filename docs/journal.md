@@ -334,8 +334,18 @@ on the new cell while the focus ring stayed on the old one. Nothing caught it
 because the two agree until the first key press, and there is no DOM test in the
 project to press one.
 
-All seven were in the half of the model that exists only in the browser, or in the
-one rule both languages share. Neither
+The last two were the same failure wearing different clothes, and they are worth
+naming because they are the kind that never show up as a crash. Both were the
+board telling a player they had done something wrong when they had not. An end
+pointing at an empty cell was reported as "does not meet", which is a fault; it is
+actually a route that is not finished yet. And when a player created a third
+off-grid end, the report pointed at the two *given* ends as well — two fixed clues
+the player cannot change — while hiding the end they had just placed.
+
+Both are the conflict marker doing its job too eagerly. The rule I would carry
+from them: **a warning that names the wrong fault is worse than no warning**, because
+the player learns to ignore the marker, and then it is not doing its job either.
+Knowing what is wrong is not the same as knowing what to do about it. Neither
 conformance suite covers a half-finished board, because the engine never has one.
 The gap is structural, and the answer to it is a cross-check against generated
 ground truth rather than another hand-written fixture: three of my hand-built
