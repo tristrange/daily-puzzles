@@ -370,6 +370,20 @@ is a line they cannot play. It is drawn now as two arms from the centre to the t
 edges, which is a thing a font character cannot do, because its width is the font's
 and the platform's and the size's.
 
+**Then I went and got a browser, and it was still broken.** Two more faults, both
+invisible to every check I had: empty cells rendered in the page's own colour so the
+board was a blank page with two clues on it, and the arms stopped short of each cell's
+edge so a joined pair looked unjoined. The first was *caused* by my own fix an hour
+earlier — I had removed the cell border to close the gap between arms, and removed
+the only thing that made a cell visible. A fix that breaks something else is not a
+fix that passed, whatever the tests say.
+
+The lesson is the one I keep earning: **some defects are not assertable, they are
+only visible, and installing the thing that can see them cost two minutes and found
+what an hour of reading had not.** I had written that down in this very entry, above,
+and then shipped the bug anyway — which is worth knowing about myself, and is
+probably the reason to write it down at all.
+
 The failure is worth naming because nothing reported it. No test failed, no type
 complained, the markup was correct, the arithmetic in the CSS was correct, and the
 board was still unreadable — a defect that exists entirely in the space between what
