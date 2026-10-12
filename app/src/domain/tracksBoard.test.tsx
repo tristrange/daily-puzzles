@@ -12,14 +12,28 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { TrackGrid } from './tracks'
 import type { TrackConflict } from './tracksGame'
-import { createTracksGame, type TracksGame } from './tracksGame'
+import { applyBrush, createTracksGame, CROSS, MAYBE, type TracksGame } from './tracksGame'
+import { TrackPicker } from '../components/TrackPicker'
 import { TracksBoard } from '../components/TracksBoard'
 
 const GRID = new TrackGrid(3, 3, [0, 3, 0], [1, 1, 1], [0, 0, 0, 1, 0, 1, 0, 0, 0])
 
+const NOOP = () => {}
+
 function render(game: TracksGame): string {
   return renderToStaticMarkup(
-    <TracksBoard grid={GRID} game={game} conflicts={[]} onCycle={() => {}} onClear={() => {}} onUndo={() => {}} />,
+    <TracksBoard
+      grid={GRID}
+      game={game}
+      conflicts={[]}
+      brush={1}
+      onBrush={NOOP}
+      onClear={NOOP}
+      onUndo={NOOP}
+      onGestureStart={NOOP}
+      onPaint={NOOP}
+      onGestureEnd={NOOP}
+    />,
   )
 }
 
@@ -80,9 +94,13 @@ describe('TracksBoard', () => {
           grid={GRID}
           game={createTracksGame(GRID)}
           conflicts={conflicts}
-          onCycle={() => {}}
-          onClear={() => {}}
-          onUndo={() => {}}
+          brush={1}
+          onBrush={NOOP}
+          onClear={NOOP}
+          onUndo={NOOP}
+          onGestureStart={NOOP}
+          onPaint={NOOP}
+          onGestureEnd={NOOP}
         />,
       )
 
@@ -112,5 +130,37 @@ describe('TracksBoard', () => {
     expect(markup).toContain('cell given')
     // Cells 3 and 5 are givens; cell 0 is the player's and must not be marked.
     expect(markup.match(/cell given/g)).toHaveLength(2)
+  })
+
+  it('draws a cross and a maybe, and tells a screen reader which is which', () => {
+    // The two notes are opposites and must not read as the same cell, so they get
+    // their own glyphs and their own words. Neither is a piece, and a screen
+    // reader told "a horizontal track" about a crossed-out cell has been told a
+    // lie that would then be counted towards the win check.
+    const marked = applyBrush(applyBrush(createTracksGame(GRID), 0, CROSS), 1, MAYBE)
+    const markup = render(marked)
+    expect(markup).toContain('marker mark')
+    expect(markup).toContain('marker maybe')
+    expect(markup).toContain('Row 1, column 1, marked out')
+    expect(markup).toContain('Row 1, column 2, a track, direction not decided')
+    // Neither draws a track, so the arms count is unchanged from the givens alone.
+    expect(markup.match(/track-piece/g)).toHaveLength(2)
+  })
+
+  it('offers every way of filling a cell in the picker, and marks the picked one', () => {
+    // Nine entries: two notes, six tracks, an eraser. A picker that was missing
+    // one would silently remove the only route to that state once cycling is gone.
+    const markup = renderToStaticMarkup(<TrackPicker brush={4} onPick={NOOP} />)
+    expect(markup).toContain('radiogroup')
+    // Named, because a piece face is drawn rather than typed and carries no text:
+    // a radio announced only as "radio button, 4 of 9" is a nine-way choice
+    // nobody can take.
+    for (const label of ['Marked out', 'Eraser', 'A horizontal track', 'A vertical track']) {
+      expect(markup).toContain(`aria-label="${label}"`)
+    }
+    expect(markup.match(/type="radio"/g)).toHaveLength(9)
+    // One checked, and it is the one that was passed in.
+    expect(markup.match(/checked=""/g)).toHaveLength(1)
+    expect(markup).toContain('aria-label="A track turning east to south" name="track-brush" checked=""')
   })
 })

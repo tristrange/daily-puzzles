@@ -540,3 +540,55 @@ stored, and leaves one honest invariant — **the bare date is the Queens puzzle
 `-star` is the companion** — which is why the one Star Battle board that predates
 companions, 2026-09-26, was moved into the companion slot and given the Queens board its
 date had been missing.
+
+## What a cell can hold
+
+Train Tracks went out with the honest interaction and the unusable one: a click cycled a
+cell through empty and then each of six tracks, because the piece *is* the orientation and
+so there was no separate rotate step to invent. Seven clicks to lay one piece, on a board
+that wants twenty-odd of them. Six things were asked for — a cross, a question mark, a
+picker, an eraser, right-click, and drag — and the answer is that they are all one
+decision: **what does a click put in this cell.**
+
+So there is a brush, and it is a number. Zero, a piece 1-6, or `CROSS` and `MAYBE` past the
+end of the pieces. A union would have been a second thing to keep exclusive that already
+cannot collide, and the eraser would have been a case in it; instead the eraser *is* zero,
+and because the brush toggles, running an eraser over an empty cell computes the same
+value it already had and returns the same object — which the view reads as "changed
+nothing" and does not push a history step for. One type, one function, one rule.
+
+**The toggle is what makes nine entries survivable.** Applying a brush to a cell already
+holding it clears it, so a misjudged click is undone by clicking the same thing again. The
+picker therefore needs no second gesture for undoing, which is what it would otherwise
+have needed once there were nine targets rather than three.
+
+Two things had to give, and the first was not obvious until the tests ran. `isOn` meant
+"this cell holds something", and it now means "this cell holds a *piece*". Every caller
+wanted the piece — a cross counts towards no row clue, is a pair of no ends, and is not a
+cell the line has to reach — but the name had been doing the reasoning for them. Reading a
+cross as a piece would have made the win check pass on a board with two crosses in it, so
+the function is now `hasPiece` and says what it means.
+
+The second is that `?` has no engine behind it. Nothing derives it, nothing checks it,
+and it does not block a solve. A note is the player's reasoning, not a claim the answer can
+fail: someone whose last `?` outlived the piece they were undecided about has a stale note,
+not a wrong answer, and blocking the solve over it would make that last note the thing
+standing between them and finishing.
+
+Right-click erases, which is the one thing the picker cannot do for you mid-thought — you
+reach for it after the mistake, not before it. The marks board uses right-click for a
+cross, and consistency across games is worth something, but there the cross is a state you
+cycle through and here it is a picker entry you chose, so the shortcut is worth more as
+the thing that needs no choosing. `contextmenu` is what a two-finger click raises on a
+trackpad, so it is the same gesture on a Mac. That needed `event.ctrlKey` in the stroke
+guard as well: macOS reports a two-finger click as a *primary* press with the modifier set,
+not as button 2, so without the guard the board painted its brush and then erased it.
+
+Drag applies the brush to every cell it crosses, whatever the brush is. The marks board
+deliberately stops a stroke short of pieces; here you chose the brush, so a stroke cannot
+misunderstand it, and a whole stroke is one Undo however many cells it covered.
+
+**Still to look at:** the picker is one row above the board, not one above and one below.
+The board is as tall as a phone viewport, so a copy beneath it scrolls off exactly when it
+is wanted — but that is reasoning, not a measurement, and it is the kind of thing that
+should be tried on a phone rather than argued about on a desktop.

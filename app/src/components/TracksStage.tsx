@@ -2,25 +2,27 @@
  * The Train Tracks playing area.
  *
  * Separate from the marks stage rather than a second branch inside it, because
- * almost nothing is shared: there are no marks to cross out, no auto-mark (a
- * piece rules out nothing on its own — the whole question is what its neighbour
- * does back), and no hints. The clock, undo and reset are a few lines each and
- * are duplicated rather than hoisted, because hoisting them means a generic over
- * two unrelated state types to share code that is mostly `setState`.
+ * almost nothing is shared: no auto-mark (a piece rules out nothing on its own —
+ * the whole question is what its neighbour does back), no hints, and a different
+ * set of things a click can leave behind. The clock, undo and reset are a few
+ * lines each and are duplicated rather than hoisted, because hoisting them means a
+ * generic over two unrelated state types to share code that is mostly `setState`.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatTime } from '../domain/game'
 import type { Puzzle } from '../domain/puzzle'
 import type { TrackGrid } from '../domain/tracks'
 import {
+  applyBrush,
   clearCell,
   createTracksGame,
-  cyclePiece,
   isEmpty,
   isTracksSolved,
+  paintBrush,
   resetGame,
   isFault,
+  type TrackBrush,
   type TrackConflict,
   trackConflicts,
   type TracksGame,
@@ -34,6 +36,7 @@ import {
   puzzleShareLink,
   type ShareResult,
 } from '../lib/share'
+import { TrackPicker } from './TrackPicker'
 import { TracksBoard } from './TracksBoard'
 import { SolvedPanel } from './SolvedPanel'
 
@@ -56,6 +59,10 @@ export function TracksStage({
   const [firstSolve, setFirstSolve] = useState<SolveRecord | null>(null)
   const [copied, setCopied] = useState<'idle' | 'result' | 'solution' | 'failed'>('idle')
   const [shareText, setShareText] = useState<string | null>(null)
+  // What a click puts in a cell. Kept here rather than inside the board because
+  // the picker and the board are two controls over one choice, and neither owns it.
+  const [brush, setBrush] = useState<TrackBrush>(1)
+  const strokeStart = useRef<TracksGame | null>(null)
 
   useEffect(() => {
     if (solvedAt !== null) return
@@ -113,16 +120,45 @@ export function TracksStage({
   }, [solvedAt, game, recordSolve])
 
   const applyGame = (next: TracksGame, before: TracksGame = game) => {
-    // A no-op records nothing. `cyclePiece` and `clearCell` both return the
-    // state unchanged for a given, and clearing an empty cell does the same, so a
-    // click on a given would otherwise enable Undo and displace a real move from
-    // the bounded history — and an Undo that appears to do nothing is worse than
-    // no Undo at all. The marks board has the same rule in `endStroke`.
+    // A no-op records nothing. `applyBrush` and `clearCell` both return the state
+    // unchanged for a given, and either brush over an already-empty cell does the
+    // same, so a click on a given would otherwise enable Undo and displace a real
+    // move from the bounded history — and an Undo that appears to do nothing is
+    // worse than no Undo at all. The marks board has the same rule in `endStroke`.
     if (next === before) return
     setHistory((past) => [...past.slice(1 - HISTORY_LIMIT), before])
     setGame(next)
     if (solvedAt !== null || !isTracksSolved(next)) return
     recordSolve(Date.now())
+  }
+
+  /** A press landed. The whole stroke, drag or click, is one move from here. */
+  const beginStroke = () => {
+    strokeStart.current = game
+  }
+
+  /** Live feedback while dragging: no history, the stroke is not over yet. */
+  const paint = (cell: number, withBrush: TrackBrush) => {
+    setGame((current) => paintBrush(current, cell, withBrush))
+  }
+
+  /**
+   * A press that never became a drag is a click, and the board has already painted
+   * its first cell, so the brush is applied from the pre-press snapshot instead of
+   * from the live state. A real drag is already on screen and just needs
+   * committing.
+   */
+  const endStroke = (clickedCell: number | null, withBrush: TrackBrush) => {
+    const before = strokeStart.current
+    strokeStart.current = null
+    if (before === null) return
+    if (clickedCell === null) {
+      // A stroke over cells already holding what the brush puts there changed
+      // nothing, and `applyGame` drops the no-op rather than the history.
+      applyGame(game, before)
+      return
+    }
+    applyGame(applyBrush(before, clickedCell, withBrush), before)
   }
 
   const undo = () => {
@@ -206,14 +242,19 @@ export function TracksStage({
           Reset
         </button>
       </div>
+      <TrackPicker brush={brush} onPick={setBrush} disabled={solved} />
       <TracksBoard
         grid={grid}
         game={game}
         conflicts={conflictList}
         locked={solved}
-        onCycle={(cell) => applyGame(cyclePiece(game, cell))}
+        brush={brush}
+        onBrush={(cell, withBrush) => applyGame(applyBrush(game, cell, withBrush))}
         onClear={(cell) => applyGame(clearCell(game, cell))}
         onUndo={undo}
+        onGestureStart={beginStroke}
+        onPaint={paint}
+        onGestureEnd={endStroke}
       />
       <p className="hint-text">
         {solved

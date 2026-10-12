@@ -12,10 +12,15 @@
 import { describe, expect, it } from 'vitest'
 import { TrackGrid } from './tracks'
 import {
+  applyBrush,
+  paintBrush,
   clearCell,
   createTracksGame,
-  cyclePiece,
+  CROSS,
+  MAYBE,
   isEmpty,
+  cellState,
+  hasPiece,
   isFault,
   isTracksSolved,
   resetGame,
@@ -40,29 +45,49 @@ function placed(grid: TrackGrid, pieces: readonly number[]): TracksGame {
   return { grid, pieces }
 }
 
-describe('cyclePiece', () => {
-  it('walks empty, the six pieces, and back to empty', () => {
-    let game = createTracksGame(middleRow())
-    expect(game.pieces[0]).toBe(0)
-    for (let step = 1; step <= 6; step += 1) {
-      game = cyclePiece(game, 0)
-      expect(game.pieces[0]).toBe(step)
+describe('applyBrush', () => {
+  it('puts any of the nine things a cell can hold straight into a cell', () => {
+    const game = createTracksGame(middleRow())
+    for (const brush of [1, 2, 3, 4, 5, 6, CROSS, MAYBE]) {
+      const next = applyBrush(game, 0, brush)
+      expect(next.pieces[0]).toBe(brush)
+      expect(cellState(next, 0)).toBe(
+        brush === CROSS ? 'cross' : brush === MAYBE ? 'maybe' : 'piece',
+      )
     }
-    game = cyclePiece(game, 0)
-    expect(game.pieces[0]).toBe(0)
   })
 
-  it('refuses to cycle a given, and returns the same object when it does', () => {
-    // Cell 3 is a given horizontal piece. Cycling it would let a player edit the
-    // board's own statement, and the win check still expects the original.
+  it('takes back what it put there, so a misjudged click undoes itself', () => {
+    // The reason a picker can have nine entries and still need no separate undo
+    // gesture: applying a brush to a cell already holding it clears it. That is
+    // also what makes the eraser the value zero rather than a case of its own --
+    // running an eraser over an empty cell changes nothing at all.
+    const game = createTracksGame(middleRow())
+    const crossed = applyBrush(game, 0, CROSS)
+    expect(applyBrush(crossed, 0, CROSS).pieces[0]).toBe(0)
+    expect(applyBrush(applyBrush(game, 0, 3), 0, 0).pieces[0]).toBe(0)
+    expect(applyBrush(game, 0, 0)).toBe(game)
+  })
+
+  it('replaces whatever was in the cell rather than adding to it', () => {
+    // A cell holds one thing. Two collections for the pieces and the notes would
+    // be a second thing to keep exclusive that already cannot collide.
+    const game = applyBrush(applyBrush(createTracksGame(middleRow()), 0, 3), 0, CROSS)
+    expect(game.pieces[0]).toBe(CROSS)
+    expect(hasPiece(game, 0)).toBe(false)
+  })
+
+  it('refuses a given, and returns the same object when it does', () => {
+    // Cell 3 is a given horizontal piece. Overwriting it would let a player edit
+    // the board's own statement, and the win check still expects the original.
     //
     // Identity, not equality: the view decides a click changed nothing by
     // comparing the state it was handed with the one it already had, so returning
     // an equal-but-new object would record a history step for a click that did
-    // nothing — which enables an Undo that appears to do nothing and pushes a
+    // nothing -- which enables an Undo that appears to do nothing and pushes a
     // real move out of the bounded history.
     const game = createTracksGame(middleRow())
-    expect(cyclePiece(game, 3)).toBe(game)
+    for (const brush of [1, CROSS, MAYBE, 0]) expect(applyBrush(game, 3, brush)).toBe(game)
     expect(clearCell(game, 3)).toBe(game)
   })
 
@@ -80,15 +105,45 @@ describe('cyclePiece', () => {
   })
 })
 
+describe('paintBrush', () => {
+  it('keeps the selected brush when a stroke revisits a cell', () => {
+    for (const brush of [1, 2, 3, 4, 5, 6, CROSS, MAYBE]) {
+      const painted = paintBrush(createTracksGame(middleRow()), 0, brush)
+      expect(painted.pieces[0]).toBe(brush)
+      expect(paintBrush(painted, 0, brush)).toBe(painted)
+    }
+  })
+
+  it('replaces another value while leaving the original game unchanged', () => {
+    const before = applyBrush(createTracksGame(middleRow()), 0, MAYBE)
+    expect(paintBrush(before, 0, CROSS).pieces[0]).toBe(CROSS)
+    expect(before.pieces[0]).toBe(MAYBE)
+  })
+
+  it('leaves givens unchanged for every brush', () => {
+    const game = createTracksGame(middleRow())
+    for (const brush of [0, 1, 2, 3, 4, 5, 6, CROSS, MAYBE]) {
+      expect(paintBrush(game, 3, brush)).toBe(game)
+    }
+  })
+
+  it('erases a note once and preserves identity on subsequent passes', () => {
+    const marked = applyBrush(createTracksGame(middleRow()), 0, CROSS)
+    const erased = paintBrush(marked, 0, 0)
+    expect(erased.pieces[0]).toBe(0)
+    expect(paintBrush(erased, 0, 0)).toBe(erased)
+  })
+})
+
 describe('isEmpty', () => {
   it('is false the moment the player places anything', () => {
     const game = createTracksGame(middleRow())
     expect(isEmpty(game)).toBe(true)
-    expect(isEmpty(cyclePiece(game, 0))).toBe(false)
+    expect(isEmpty(applyBrush(game, 0, CROSS))).toBe(false)
   })
 
   it('is true again after a reset, which keeps the givens', () => {
-    const game = resetGame(cyclePiece(createTracksGame(middleRow()), 0))
+    const game = resetGame(applyBrush(createTracksGame(middleRow()), 0, 3))
     expect(isEmpty(game)).toBe(true)
     expect(game.pieces).toEqual(middleRow().givens)
   })
@@ -173,7 +228,7 @@ describe('trackConflicts', () => {
 
   it('flags only the cells a player can clear when a row is over its clue', () => {
     const grid = middleRow()
-    const game = cyclePiece(createTracksGame(grid), 0)
+    const game = applyBrush(createTracksGame(grid), 0, 4)
     const rowFaults = trackConflicts(game).filter((c) => c.rule === 'row-count')
     // Row 0 wants 0 cells. Only cell 0 is placed and the player's, so it is the
     // only one flagged: the empty cells beside it have no action that helps, and

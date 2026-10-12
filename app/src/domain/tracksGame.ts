@@ -68,27 +68,89 @@ export interface TrackConflict {
 }
 
 /**
- * Cycle the piece in `cell`: empty, then each of the six, then empty again.
+ * The two notes a player can leave in a cell, beside the six pieces.
  *
- * One action per click and one key per cell, like the marks games. Rotation is
- * the reason the cycle is long — a cell has six states, not three — and it is the
- * honest consequence of the model: the piece *is* the orientation, so there is no
- * separate rotate gesture to invent and no second place for it to be wrong.
+ * `CROSS` is "no track here" and `MAYBE` is "a track here, direction not decided".
+ * The second is the one this genre needs and the marks board does not: a row clue
+ * that is nearly spent fixes that a cell holds *something* a good while before it
+ * fixes which of six, and there is no way to write that down without a second note.
  *
- * A given is skipped rather than cycled into. The player cannot change a clue, so
- * clicking one should say so by doing nothing rather than appearing to work.
+ * They are values in the same array as the pieces rather than a set beside it. A
+ * cell holds exactly one of empty, a piece, a cross or a maybe, so a second
+ * collection would be a second thing to keep exclusive that already cannot
+ * collide — and every reader of `pieces` would have to remember to check it.
  */
-export function cyclePiece(game: TracksGame, cell: number): TracksGame {
-  if (game.grid.pieceAt(cell) !== 0) return game
-  const next = ((game.pieces[cell] ?? 0) + 1) % (PIECE_COUNT + 1)
-  return { grid: game.grid, pieces: replace(game.pieces, cell, next) }
+export const CROSS = PIECE_COUNT + 1
+export const MAYBE = PIECE_COUNT + 2
+
+/**
+ * What a click puts in the cell, which is one of the values above — or `0`, which
+ * erases.
+ *
+ * A number and not a tagged union, because the picker, the keyboard and the drag
+ * all want the same thing: the value to leave behind. The eraser is `0` for free
+ * rather than as a case: `applyBrush` toggles, so "put 0 here" on a cell that
+ * already holds 0 changes nothing and records no undo step, which is exactly what
+ * running an eraser over empty board should do.
+ */
+export type TrackBrush = number
+
+/** The picker entries, in the order they are drawn: notes, then pieces, then the eraser. */
+export const TRACK_BRUSHES: readonly TrackBrush[] = [
+  CROSS,
+  MAYBE,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  0,
+]
+
+/** Every value a cell can hold, in words a screen reader can say aloud. */
+export const TRACK_CELL_NAME: readonly string[] = [
+  'empty',
+  'a horizontal track',
+  'a vertical track',
+  'a track turning north to east',
+  'a track turning east to south',
+  'a track turning south to west',
+  'a track turning west to north',
+  'marked out',
+  'a track, direction not decided',
+]
+
+/**
+ * Put `brush` in `cell`, or take it back if that is already there.
+ *
+ * The toggle is what makes one gesture enough for every entry in the picker. A
+ * click with the cross already up means *undo that cross*, not "do nothing", so a
+ * misjudged click is undone by clicking the same thing again rather than by first
+ * finding the eraser and then the piece you had before it. Every other board
+ * interaction in this app — including the marks board's stroke — was written to
+ * the same rule for the same reason.
+ *
+ * A given is left alone, as everywhere else. The player cannot change a clue, so
+ * clicking one should say so by doing nothing rather than appearing to work.
+ *
+ * Returns the same object when nothing changes, which is how the view knows not to
+ * push a history entry for a click that did nothing.
+ */
+export function applyBrush(game: TracksGame, cell: number, brush: TrackBrush): TracksGame {
+  const current = game.pieces[cell] ?? 0
+  return paintBrush(game, cell, current === brush ? 0 : brush)
+}
+
+/** Set a cell during a drag; revisiting it must not toggle what was painted. */
+export function paintBrush(game: TracksGame, cell: number, brush: TrackBrush): TracksGame {
+  if (game.grid.pieceAt(cell) !== 0 || (game.pieces[cell] ?? 0) === brush) return game
+  return { grid: game.grid, pieces: replace(game.pieces, cell, brush) }
 }
 
 /** Clear `cell` back to empty. A given is left alone; it is the clue. */
 export function clearCell(game: TracksGame, cell: number): TracksGame {
-  if (game.grid.pieceAt(cell) !== 0) return game
-  if ((game.pieces[cell] ?? 0) === 0) return game
-  return { grid: game.grid, pieces: replace(game.pieces, cell, 0) }
+  return paintBrush(game, cell, 0)
 }
 
 /** Every piece off the board that is not a given, leaving it as newly opened. */
@@ -107,8 +169,28 @@ function replace(pieces: readonly number[], cell: number, value: number): number
   return next
 }
 
-export function isOn(game: TracksGame, cell: number): boolean {
-  return (game.pieces[cell] ?? 0) !== 0
+/**
+ * Whether a cell holds a piece.
+ *
+ * Named for what it means rather than kept as `isOn`, because a cell can now hold
+ * something that is not a piece — a cross, a maybe — and every caller of the old
+ * name wanted the piece. A cross has to count towards nothing: not towards a row
+ * clue, not as a pair of ends, not as a cell the line has to reach. Reading a
+ * cross as a piece would have made the win condition pass on a board with two
+ * crosses in it.
+ */
+export function hasPiece(game: TracksGame, cell: number): boolean {
+  const value = game.pieces[cell] ?? 0
+  return value !== 0 && value <= PIECE_COUNT
+}
+
+/** What `cell` holds, as one of the four things a cell can be. */
+export function cellState(game: TracksGame, cell: number): 'empty' | 'piece' | 'cross' | 'maybe' {
+  const value = game.pieces[cell] ?? 0
+  if (value === 0) return 'empty'
+  if (value === CROSS) return 'cross'
+  if (value === MAYBE) return 'maybe'
+  return 'piece'
 }
 
 /**
@@ -127,7 +209,7 @@ export function trackConflicts(game: TracksGame): readonly TrackConflict[] {
   const colCount = new Array<number>(grid.width).fill(0)
 
   for (let cell = 0; cell < grid.cellCount; cell += 1) {
-    if (!isOn(game, cell)) continue
+    if (!hasPiece(game, cell)) continue
     const { row, col } = grid.coords(cell)
     rowCount[row] = (rowCount[row] ?? 0) + 1
     colCount[col] = (colCount[col] ?? 0) + 1
@@ -138,14 +220,14 @@ export function trackConflicts(game: TracksGame): readonly TrackConflict[] {
   // reporting it per cell is only meaningful once there is one to report.
   const openEnds: number[] = []
   for (let cell = 0; cell < grid.cellCount; cell += 1) {
-    if (!isOn(game, cell)) continue
+    if (!hasPiece(game, cell)) continue
     for (const direction of pieceEnds(game.pieces[cell] ?? 0)) {
       if (grid.neighbour(cell, direction) === null) openEnds.push(cell)
     }
   }
 
   for (let cell = 0; cell < grid.cellCount; cell += 1) {
-    if (!isOn(game, cell)) continue
+    if (!hasPiece(game, cell)) continue
     const piece = game.pieces[cell] ?? 0
     for (const direction of pieceEnds(piece)) {
       const other = grid.neighbour(cell, direction)
@@ -155,7 +237,7 @@ export function trackConflicts(game: TracksGame): readonly TrackConflict[] {
       // empty cell is a route not finished yet; a cell facing the other way is a
       // piece that is wrong. Reporting both as the same fault tells someone
       // mid-solve that their correctly-placed work is broken.
-      if (!isOn(game, other)) {
+      if (!hasPiece(game, other)) {
         found.push({ rule: 'unfinished-end', cell, other })
       } else if (!endsTowards(game.pieces[other] ?? 0, back)) {
         // Reciprocity is symmetric, so only the cell whose end found this
@@ -189,7 +271,7 @@ export function trackConflicts(game: TracksGame): readonly TrackConflict[] {
     if ((rowCount[row] ?? 0) <= (grid.rowClues[row] ?? 0)) continue
     for (let col = 0; col < grid.width; col += 1) {
       const cell = grid.index(row, col)
-      if (isOn(game, cell) && grid.pieceAt(cell) === 0) {
+      if (hasPiece(game, cell) && grid.pieceAt(cell) === 0) {
         found.push({ rule: 'row-count', cell, other: row })
       }
     }
@@ -198,7 +280,7 @@ export function trackConflicts(game: TracksGame): readonly TrackConflict[] {
     if ((colCount[col] ?? 0) <= (grid.colClues[col] ?? 0)) continue
     for (let row = 0; row < grid.height; row += 1) {
       const cell = grid.index(row, col)
-      if (isOn(game, cell) && grid.pieceAt(cell) === 0) {
+      if (hasPiece(game, cell) && grid.pieceAt(cell) === 0) {
         found.push({ rule: 'col-count', cell, other: col })
       }
     }
@@ -226,6 +308,13 @@ function pieceEnds(piece: number): readonly number[] {
  *   ends, so two cells have one neighbour and the rest have two — which admits a
  *   single path *and* any number of separate loops. The line has to be the whole
  *   of it, which is what the connectivity check is for.
+ *
+ * Crosses and maybes are not consulted. A note is the player's reasoning, not a
+ * claim the answer can fail: someone who has crossed out a cell the finished line
+ * does not use has been right all along, and someone whose last `?` outlived the
+ * piece they were undecided about has a stale note, not a wrong answer. Blocking
+ * a solve over either would mean the last note before finishing was the thing
+ * standing between them and finishing. Reset clears them.
  */
 export function isTracksSolved(game: TracksGame): boolean {
   const { grid } = game
@@ -242,7 +331,7 @@ export function isTracksSolved(game: TracksGame): boolean {
   const rowCount = new Array<number>(grid.height).fill(0)
   const colCount = new Array<number>(grid.width).fill(0)
   for (let cell = 0; cell < grid.cellCount; cell += 1) {
-    if (!isOn(game, cell)) continue
+    if (!hasPiece(game, cell)) continue
     const { row, col } = grid.coords(cell)
     rowCount[row] = (rowCount[row] ?? 0) + 1
     colCount[col] = (colCount[col] ?? 0) + 1
@@ -279,7 +368,7 @@ export function isTracksSolved(game: TracksGame): boolean {
     current = next
   }
   for (let cell = 0; cell < grid.cellCount; cell += 1) {
-    if (isOn(game, cell) && !seen.has(cell)) return false
+    if (hasPiece(game, cell) && !seen.has(cell)) return false
   }
   return true
 }
