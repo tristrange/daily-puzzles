@@ -2,13 +2,19 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { PuzzleType } from '../domain/board'
 import { formatPuzzleLabel, puzzleIdsForDay, puzzleOfToday, puzzleTypeOf } from '../domain/dates'
-import { DEFAULT_PUZZLE_TYPE, DIFFICULTY_LABEL, PUZZLE_TYPE_LABEL } from '../domain/games'
+import { DEFAULT_PUZZLE_TYPE, DIFFICULTY_LABEL, PUZZLE_TYPE_LABEL, PUZZLE_PIECE } from '../domain/games'
 import { probePuzzles, type ProbedPuzzle } from '../lib/puzzles'
 import { readStoredStats } from '../lib/stats'
 
 type LoadState =
   | { status: 'loading' }
   | { status: 'ready'; probes: readonly ProbedPuzzle[] }
+
+const DESCRIPTION: Record<PuzzleType, string> = {
+  queens: 'One queen in each row, column and region. No touching.',
+  'star-battle': 'Place stars to satisfy each row, column and region. Keep them apart.',
+  'train-tracks': 'Connect the ends with one track. Match every row and column count.',
+}
 
 /**
  * The landing page: a choice between today's puzzles rather than today's puzzle.
@@ -43,38 +49,50 @@ export function HomePage() {
   }, [todayId])
 
   return (
-    <section>
-      <h2 className="page-title">Today&rsquo;s puzzles</h2>
-      <p className="status">A new puzzle of each game every day. Pick one to play.</p>
+    <section className="today">
+      <div className="today-heading">
+        <p className="eyebrow">{formatPuzzleLabel(todayId, timeZone)}</p>
+        <h1 className="page-title">Today&rsquo;s puzzles</h1>
+        <p className="page-intro">Fresh logic puzzles, every day. Pick your challenge.</p>
+      </div>
       {state.status === 'loading' && <p className="status">Checking what&rsquo;s out…</p>}
       {state.status === 'ready' && (
         <ul className="game-cards">
           {state.probes.map((probe) => {
             const family = probe.puzzle?.puzzleType ?? familyOf(probe.id)
             return (
-            <li key={probe.id} className="game-card">
-              <h3 className="game-card-title">{PUZZLE_TYPE_LABEL[family]}</h3>
+            <li key={probe.id} className={`game-card game-${family}`}>
+              <div className="game-motif" aria-hidden="true">
+                <div className="motif-grid">
+                  {Array.from({ length: 9 }, (_, cell) => (
+                    <span key={cell} className={cell === 4 ? 'motif-piece' : ''}>
+                      {cell === 4 && PUZZLE_PIECE[family].glyph}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <h2 className="game-card-title">{PUZZLE_TYPE_LABEL[family]}</h2>
+              <p className="game-card-description">{DESCRIPTION[family]}</p>
               <p className="game-card-detail">
-                {formatPuzzleLabel(probe.id, timeZone)}
                 {probe.puzzle !== null && (
-                  <> · {probe.puzzle.board.width}&times;{probe.puzzle.board.height}</>
+                  <>{probe.puzzle.board.width}&times;{probe.puzzle.board.height} grid</>
                 )}
                 {probe.puzzle?.difficulty != null && (
                   <> · {DIFFICULTY_LABEL[probe.puzzle.difficulty]}</>
                 )}
               </p>
               {probe.puzzle === null ? (
-                <p className="game-card-detail">Not published yet.</p>
+                <p className="game-card-state">Not published yet.</p>
               ) : solved.has(probe.id) ? (
                 <>
-                  <p className="game-card-detail">Solved today.</p>
-                  <Link className="tool-button" to={`/archive/${probe.id}`}>
-                    Play again
+                  <p className="game-card-state solved">Solved today.</p>
+                  <Link className="tool-button primary" to={`/archive/${probe.id}`} aria-label={`Play ${PUZZLE_TYPE_LABEL[family]} again`}>
+                    Play again <span aria-hidden="true">↗</span>
                   </Link>
                 </>
               ) : (
-                <Link className="tool-button" to={`/archive/${probe.id}`}>
-                  Play
+                <Link className="tool-button primary" to={`/archive/${probe.id}`} aria-label={`Play ${PUZZLE_TYPE_LABEL[family]}`}>
+                  Play <span aria-hidden="true">↗</span>
                 </Link>
               )}
             </li>
@@ -82,10 +100,11 @@ export function HomePage() {
           })}
         </ul>
       )}
-      <p className="status">
-        Every day so far is in the <Link to="/archive">archive</Link>, and your solves are
-        counted on the <Link to="/stats">stats</Link> page.
-      </p>
+      <div className="today-more">
+        <p>Another round?</p>
+        <Link to="/archive">Explore the archive <span aria-hidden="true">→</span></Link>
+        <Link to="/stats">Your progress <span aria-hidden="true">→</span></Link>
+      </div>
     </section>
   )
 }

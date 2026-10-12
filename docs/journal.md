@@ -617,3 +617,25 @@ or guarantees. All 60 committed puzzles still passed replay verification.
 Larger boards and size-based difficulty tiers remain a separate change. Using every
 line makes the nominal board size meaningful, but neither that nor size alone measures
 the difficulty of the deductions.
+
+## A calmer daily puzzle interface
+
+The shared shell now uses system typography, a quiet blue accent and solid surfaces
+for cards and controls. Today has one dated heading and three distinct game cards;
+each puzzle puts its game name above the board. The region palette and game rules
+remain unchanged. There are no new dependencies or animation libraries.
+
+Auto remains the default appearance and follows the system through `color-scheme`.
+Light and Dark overrides persist locally. Contrast tests cover the new surfaces,
+primary actions and fixed track clues; theme-picker tests cover the default, saved
+overrides and unavailable storage. Reduced motion removes press transitions, reduced
+transparency makes the header solid, and increased contrast strengthens borders.
+
+Browser checks covered light and dark appearances, reload persistence, keyboard play
+and undo, the skip link, and layouts from 320 to 1280 pixels wide. A complete Queens
+solve still recorded successfully. Rules anchors now clear the sticky header, and
+unavailable-puzzle messages leave room for the back control. These checks use desktop
+viewport resizing; real phone touch testing remains useful.
+
+Screenshots: [light](images/redesign-light.jpg), [dark](images/redesign-dark.jpg),
+and [mobile Train Tracks](images/redesign-mobile-tracks.jpg).
