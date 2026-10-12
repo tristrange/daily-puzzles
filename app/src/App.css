@@ -310,6 +310,93 @@
   }
 }
 
+/* The two numbers the arm geometry depends on, declared once for the board and the
+   picker together: the rail is drawn relative to both, and the picker is a sibling
+   of the board rather than a descendant, so a value set on `.tracks` would not
+   reach it. They live here rather than in a component's inline style because they
+   are only ever these two values, and a custom property that is a constant is a
+   constant with extra indirection.
+
+   `--tracks-gap` is how far each arm runs past its own cell, so two joined pieces
+   overlap rather than meet. `--track-thickness` is about the weight of a border,
+   so two meeting rails read as one line rather than a blob. The picker sets the
+   gap to zero, because its pieces have no neighbour to reach. */
+.tracks,
+.track-picker {
+  --tracks-gap: 3px;
+  --track-thickness: max(2px, 0.14em);
+}
+
+.track-picker {
+  --tracks-gap: 0px;
+}
+
+/* The picker: one row of square faces, the same size as a cell so a piece looks
+   here exactly as it will look on the board. */
+.track-picker {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.track-pick {
+  display: block;
+  cursor: pointer;
+}
+
+.track-pick-face {
+  display: grid;
+  place-items: center;
+  position: relative;
+  aspect-ratio: 1;
+  width: 1.9em;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+}
+
+.track-pick input:checked + .track-pick-face {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.track-pick input:focus-visible + .track-pick-face {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.track-pick input:disabled + .track-pick-face {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.track-pick-glyph {
+  font-size: 1.15em;
+  line-height: 1;
+}
+
+/* A note, not a piece: it is the player's working, so it takes the muted colour
+   the marks board crosses out in rather than the piece colour. `--mark-ink` is set
+   per region by the marks board and exists nowhere else, so a cross on a track
+   board has to name a colour rather than inherit one that was never set.
+
+   The `?` is a different ink from the cross because the two mean opposites and
+   must not be confused at a glance — a crossed-out cell and an undecided one are
+   exactly the two cells a player is most likely to misread. */
+.tracks .marker.mark {
+  color: var(--text-h);
+  -webkit-text-stroke: 0;
+}
+
+.tracks .marker.maybe {
+  color: var(--accent);
+  -webkit-text-stroke: 0;
+  font-weight: 700;
+}
+
 /* Train Tracks: a clue gutter beside the grid rather than cells inside it.
    The gutter and the board are two CSS grids built from the *same* column
    template — a fixed gutter column, then one per cell — so a column's count lines

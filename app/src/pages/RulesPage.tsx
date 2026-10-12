@@ -125,6 +125,41 @@ export function RulesPage() {
         offers none.
       </p>
 
+      <h3 id="notes">Notes, and the picker</h3>
+      <p>
+        A cell can hold a piece, or one of two notes, or nothing:
+      </p>
+      <ul>
+        <li>
+          <strong>&times;</strong> &mdash; no track goes here. Your own reasoning; the app
+          never checks it.
+        </li>
+        <li>
+          <strong>?</strong> &mdash; a track <em>does</em> go here, you just have not settled
+          which way it turns. A row clue that is nearly spent fixes that long before it fixes
+          the direction, and this is how you write that down.
+        </li>
+      </ul>
+      <p>
+        The row of buttons above the board is the <strong>picker</strong>. Pick what you want
+        and then click: each cell takes whatever is picked. Clicking a cell that already holds
+        it clears it, so a misjudged click is undone by clicking the same thing again. The
+        last entry is the eraser, which clears a cell whatever is in it.
+      </p>
+      <p>
+        <strong>Right-click</strong> &mdash; or a two-finger click on a trackpad &mdash;
+        erases the cell outright, without changing what the picker is set to.
+        <strong>Click and drag</strong> applies whatever is picked to every cell you cross, so
+        a run of exclusions is one stroke. A whole stroke is one Undo, however many cells it
+        covered.
+      </p>
+      <p>
+        From the keyboard: <strong>1</strong> to <strong>6</strong> put that track in the
+        focused cell without going near the picker, <strong>x</strong> marks it out,
+        <strong>?</strong> marks it undecided, <strong>Delete</strong> clears it, and
+        <strong>Enter</strong> puts the picked entry in it.
+      </p>
+
       <h3 id="crosses">Crosses and auto-mark</h3>
       <p>
         A cross marks a cell you have ruled out. The app never checks them: they are your
@@ -157,20 +192,24 @@ export function RulesPage() {
           <tr>
             <th scope="row">Click a cell</th>
             <td>
-              Cycles it: empty &rarr; cross &rarr; piece &rarr; empty. On Train Tracks, empty
-              and then the six pieces.
+              Cycles it: empty &rarr; cross &rarr; piece &rarr; empty. On Train Tracks, puts
+              whatever the picker is set to.
             </td>
           </tr>
           <tr>
             <th scope="row">Drag across cells</th>
             <td>
-              Applies one action to every cell you cross. Starting on a cross erases the crosses
-              instead of adding them. Marks games only.
+              Applies one action to every cell you cross. On the marks games, starting on a
+              cross erases the crosses instead of adding them; on Train Tracks the stroke
+              applies the picker to every cell it crosses.
             </td>
           </tr>
           <tr>
             <th scope="row">Right-click a cell</th>
-            <td>Toggles a cross. Marks games only.</td>
+            <td>
+              Toggles a cross on the marks games; erases the cell on Train Tracks. Also a
+              two-finger click on a trackpad.
+            </td>
           </tr>
           <tr>
             <th scope="row">Arrow keys</th>
@@ -187,6 +226,17 @@ export function RulesPage() {
           <tr>
             <th scope="row">X</th>
             <td>Toggle a cross. Marks games only.</td>
+          </tr>
+          <tr>
+            <th scope="row">1 to 6</th>
+            <td>
+              Put that track straight into the focused cell, without going to the picker. Train
+              Tracks only.
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">?</th>
+            <td>Mark the cell undecided. Train Tracks only.</td>
           </tr>
           <tr>
             <th scope="row">Delete or Backspace</th>
