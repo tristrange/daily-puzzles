@@ -43,6 +43,22 @@ export type TrackConflictRule =
   | 'row-count'
   | 'col-count'
 
+/**
+ * Whether this rule is a fault the player has made.
+ *
+ * `unfinished-end` is not, and the difference is the whole point of it: an end
+ * pointing at an empty cell is what every board looks like while it is being
+ * solved. Marking those red, or reporting them in the status line, tells someone
+ * mid-solve that their work is broken — and a marker that cries wolf gets ignored,
+ * at which point it is not doing its job either.
+ *
+ * The rules still count towards `isTracksSolved`, which is where "unfinished"
+ * belongs.
+ */
+export function isFault(rule: TrackConflictRule): boolean {
+  return rule !== 'unfinished-end'
+}
+
 export interface TrackConflict {
   rule: TrackConflictRule
   /** The cell at fault. The cell it conflicts *with* is named too where there is one. */

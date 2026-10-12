@@ -57,15 +57,12 @@ function reasonFor(grid: TrackGrid, conflict: TrackConflict): string {
       const { row, col } = grid.coords(other)
       return `, does not meet row ${row + 1}, column ${col + 1}`
     }
-    case 'unfinished-end': {
-      // "Still needs" rather than "does not meet": the piece may be right and the
-      // route unfinished, and telling someone mid-solve that their work is broken
-      // is the one thing a conflict marker must not do.
-      const other = conflict.other
-      if (other === undefined) return ', still needs to reach its neighbour'
-      const { row, col } = grid.coords(other)
-      return `, still needs to reach row ${row + 1}, column ${col + 1}`
-    }
+    case 'unfinished-end':
+      // Unreachable through this component — `TracksStage` filters these out, and
+      // an end pointing at an empty cell is the normal state of an unfinished
+      // board rather than something to mark. Kept so the switch is total, and said
+      // plainly if it ever arrives.
+      return ', still needs to reach its neighbour'
     case 'off-grid-end':
       return ', runs off the grid, and only the line\u2019s two ends may'
     case 'row-count':

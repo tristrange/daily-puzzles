@@ -16,6 +16,7 @@ import {
   createTracksGame,
   cyclePiece,
   isEmpty,
+  isFault,
   isTracksSolved,
   resetGame,
   trackConflicts,
@@ -110,6 +111,19 @@ describe('trackConflicts', () => {
     ).toEqual([])
   })
 
+  it('does not call an unfinished route a fault', () => {
+    const grid = middleRow()
+    expect(isFault('unfinished-end')).toBe(false)
+    expect(isFault('mismatched-end')).toBe(true)
+    expect(isFault('row-count')).toBe(true)
+    expect(isFault('col-count')).toBe(true)
+    expect(isFault('off-grid-end')).toBe(true)
+    // Still reported, and still counted towards the win check.
+    const unfinished = placed(grid, [0, 0, 0, 1, 5, 1, 0, 0, 0])
+    expect(trackConflicts(unfinished).length).toBeGreaterThan(0)
+    expect(isTracksSolved(unfinished)).toBe(false)
+  })
+
   it('tells an unfinished route apart from a piece facing the wrong way', () => {
     const grid = middleRow()
     // Cell 4 turns south at an empty cell: the route is not finished, which is
@@ -117,6 +131,10 @@ describe('trackConflicts', () => {
     // difference between a warning and an accusation.
     const unfinished = trackConflicts(placed(grid, [0, 0, 0, 1, 5, 1, 0, 0, 0]))
     expect(unfinished).toContainEqual({ rule: 'unfinished-end', cell: 4, other: 7 })
+    // Reported, but not a fault: an end pointing at an empty cell is what every
+    // board looks like while it is being solved. Marking it red teaches a player
+    // to ignore the marker, and then it is not doing its job either.
+    expect(unfinished.filter((c) => isFault(c.rule)).map((c) => c.cell)).not.toContain(4)
 
     // Cell 4 is vertical, so the given at cell 3 — which points east — meets a
     // cell facing the other way. That is a piece that is wrong, not a route that

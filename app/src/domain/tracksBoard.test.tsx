@@ -84,16 +84,6 @@ describe('TracksBoard', () => {
     )
     expect(words([{ rule: 'off-grid-end', cell: 4 }])).toContain('runs off the grid')
     // Several rules on one cell, rather than only the last one.
-    // An end pointing at an empty cell is a route unfinished, not a piece wrong,
-    // and the two are announced differently.
-    expect(words([{ rule: 'unfinished-end', cell: 4, other: 7 }])).toContain(
-      'still needs to reach row 3, column 2',
-    )
-    // An end pointing at an empty cell is a route unfinished, not a piece wrong,
-    // and the two are announced differently.
-    expect(words([{ rule: 'unfinished-end', cell: 4, other: 7 }])).toContain(
-      'still needs to reach row 3, column 2',
-    )
     const both = words([
       { rule: 'mismatched-end', cell: 4, other: 7 },
       { rule: 'row-count', cell: 4, other: 1 },

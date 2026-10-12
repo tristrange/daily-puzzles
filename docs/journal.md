@@ -342,6 +342,14 @@ actually a route that is not finished yet. And when a player created a third
 off-grid end, the report pointed at the two *given* ends as well — two fixed clues
 the player cannot change — while hiding the end they had just placed.
 
+And the next round caught me having fixed only half of it: I had split the rule in
+two and given them different *words*, while the board still painted both red and
+still said "some track does not meet — fix it". A distinction the player cannot see
+is not a distinction. That is the third time in this run the same finding came
+back wearing a different hat, and the pattern is worth keeping: **fixing a
+presentation fault by changing only the text is half a fix**, because the styling
+and the status line are the same statement in a louder voice.
+
 Both are the conflict marker doing its job too eagerly. The rule I would carry
 from them: **a warning that names the wrong fault is worse than no warning**, because
 the player learns to ignore the marker, and then it is not doing its job either.

@@ -20,6 +20,7 @@ import {
   isEmpty,
   isTracksSolved,
   resetGame,
+  isFault,
   trackConflicts,
   type TracksGame,
 } from '../domain/tracksGame'
@@ -67,7 +68,10 @@ export function TracksStage({
   // broken", and the marks board never starts that way. The glyph says which way
   // an end is pointing, so the information is not lost; it is just not an alarm.
   const placed = !isEmpty(game)
-  const conflictList = useMemo(() => (placed ? trackConflicts(game) : []), [game, placed])
+  const conflictList = useMemo(
+    () => (placed ? trackConflicts(game).filter((c) => isFault(c.rule)) : []),
+    [game, placed],
+  )
   const solved = isTracksSolved(game)
   const shownTime = solvedAt === null ? elapsed : solvedAt - startedAt
 
