@@ -303,7 +303,16 @@ checking whether the reviewer had read it properly. It is a reminder that a
 docstring is a claim, not a control, and the cheapest possible check on it is a
 test that states the case the docstring says cannot happen.
 
-All three bugs were in the half of the model that exists only in the browser. Neither
+A second pass on the same review found two more, both in what the player is told
+rather than in what is computed: a solved route shared as text mixed the wide
+emoji `⬛` for an empty cell in among one-column box-drawing characters, so every
+piece after an empty one shifted and the copied answer stopped being the shape it
+was; and every conflict was announced as "not connected", including a fully
+connected route that was simply over a row clue. The second is the worse of the
+two. A wrong label does not merely fail to inform — it tells a screen-reader user
+they have a fault they do not have, while the one they do have goes unnamed.
+
+All five bugs were in the half of the model that exists only in the browser. Neither
 conformance suite covers a half-finished board, because the engine never has one.
 The gap is structural, and the answer to it is a cross-check against generated
 ground truth rather than another hand-written fixture: three of my hand-built

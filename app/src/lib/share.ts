@@ -75,7 +75,11 @@ export function trackGridText(grid: TrackGrid, pieces: readonly number[]): strin
     let line = ''
     for (let col = 0; col < grid.width; col += 1) {
       const piece = pieces[grid.index(row, col)] ?? 0
-      line += piece === 0 ? EMPTY : PIECE_GLYPHS[piece]
+      // A space, not the marks board's `EMPTY`. That is a wide emoji, and a wide
+      // emoji beside box-drawing characters that occupy one column shifts every
+      // piece after it — so the copied answer would not read as the rectangle it
+      // is. The route is the point of the share, so every cell has to be one wide.
+      line += piece === 0 ? ' ' : PIECE_GLYPHS[piece]
     }
     rows.push(line)
   }

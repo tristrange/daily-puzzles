@@ -19,6 +19,7 @@
  */
 
 import {
+  useMemo,
   useState,
   type CSSProperties,
   type KeyboardEvent,
@@ -26,16 +27,42 @@ import {
 } from 'react'
 import { PUZZLE_TYPE_LABEL } from '../domain/games'
 import { PIECE_GLYPHS, TrackGrid } from '../domain/tracks'
-import type { TracksGame } from '../domain/tracksGame'
+import type { TrackConflict, TracksGame } from '../domain/tracksGame'
 
 export interface TracksBoardProps {
   grid: TrackGrid
   game: TracksGame
-  conflictCells: ReadonlySet<number>
+  /** What is wrong, if anything. A cell can break several rules at once. */
+  conflicts: readonly TrackConflict[]
   locked?: boolean
   onCycle: (cell: number) => void
   onClear: (cell: number) => void
   onUndo: () => void
+}
+
+/**
+ * What `conflict` is called out loud.
+ *
+ * Each rule gets its own sentence because one sentence for all of them names the
+ * wrong fault: a route that is fully connected and simply over a row clue is not
+ * "not connected", and saying so names a fault the player does not have while
+ * hiding the one they do.
+ */
+function reasonFor(grid: TrackGrid, conflict: TrackConflict): string {
+  switch (conflict.rule) {
+    case 'unmet-end': {
+      const other = conflict.other
+      if (other === undefined) return ', does not meet its neighbour'
+      const { row, col } = grid.coords(other)
+      return `, does not meet row ${row + 1}, column ${col + 1}`
+    }
+    case 'off-grid-end':
+      return ', runs off the grid, and only the line\u2019s two ends may'
+    case 'row-count':
+      return `, row ${(conflict.other ?? 0) + 1} already holds its full count`
+    case 'col-count':
+      return `, column ${(conflict.other ?? 0) + 1} already holds its full count`
+  }
 }
 
 /** What each piece is called out loud, so a screen reader says more than a glyph. */
@@ -52,7 +79,7 @@ const PIECE_NAME: readonly string[] = [
 export function TracksBoard({
   grid,
   game,
-  conflictCells,
+  conflicts,
   locked = false,
   onCycle,
   onClear,
@@ -109,14 +136,31 @@ export function TracksBoard({
 
   const pieceAt = (cell: number): number => game.pieces[cell] ?? 0
 
+  const conflictCells = useMemo(
+    () => new Set(conflicts.map((conflict) => conflict.cell)),
+    [conflicts],
+  )
+
+  // Each rule gets its own words. One word for all of them was worse than none: a
+  // fully connected route that simply exceeds a row clue was announced as "not
+  // connected", which names a fault the player does not have and hides the one
+  // they do. A cell can break several, so the reasons are collected and joined.
+  const faults = useMemo(() => {
+    const text = new Map<number, string>()
+    for (const conflict of conflicts) {
+      const words = reasonFor(grid, conflict)
+      text.set(conflict.cell, text.has(conflict.cell) ? `${text.get(conflict.cell)}, ${words}` : words)
+    }
+    return text
+  }, [conflicts, grid])
+
   const labelFor = (cell: number): string => {
     const { row, col } = grid.coords(cell)
     const given = grid.pieceAt(cell)
     const piece = pieceAt(cell)
     const what = given !== 0 ? `given ${PIECE_NAME[piece] ?? 'track'}` : PIECE_NAME[piece] ?? 'empty'
     const clue = `, row needs ${grid.rowClues[row] ?? 0}, column needs ${grid.colClues[col] ?? 0}`
-    const conflict = conflictCells.has(cell) ? ', not connected' : ''
-    return `Row ${row + 1}, column ${col + 1}, ${what}${clue}${conflict}`
+    return `Row ${row + 1}, column ${col + 1}, ${what}${clue}${faults.get(cell) ?? ''}`
   }
 
   const classNameFor = (cell: number): string =>

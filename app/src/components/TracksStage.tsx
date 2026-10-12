@@ -21,7 +21,6 @@ import {
   isTracksSolved,
   resetGame,
   trackConflicts,
-  type TrackConflict,
   type TracksGame,
 } from '../domain/tracksGame'
 import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } from '../lib/stats'
@@ -69,7 +68,6 @@ export function TracksStage({
   // an end is pointing, so the information is not lost; it is just not an alarm.
   const placed = !isEmpty(game)
   const conflictList = useMemo(() => (placed ? trackConflicts(game) : []), [game, placed])
-  const conflictCells = useMemo(() => conflictCellSet(conflictList), [conflictList])
   const solved = isTracksSolved(game)
   const shownTime = solvedAt === null ? elapsed : solvedAt - startedAt
 
@@ -179,7 +177,7 @@ export function TracksStage({
       <TracksBoard
         grid={grid}
         game={game}
-        conflictCells={conflictCells}
+        conflicts={conflictList}
         locked={solved}
         onCycle={(cell) => applyGame(cyclePiece(game, cell))}
         onClear={(cell) => applyGame(clearCell(game, cell))}
@@ -208,15 +206,3 @@ export function TracksStage({
 }
 
 const HISTORY_LIMIT = 100
-/**
- * The cells a conflict list blames, for the board to outline.
- *
- * Here rather than in `TracksBoard` because a file that exports a component and a
- * function breaks React Fast Refresh, which is the kind of warning that costs a
- * developer a reload every time they save.
- */
-function conflictCellSet(conflicts: readonly TrackConflict[]): Set<number> {
-  const cells = new Set<number>()
-  for (const conflict of conflicts) cells.add(conflict.cell)
-  return cells
-}

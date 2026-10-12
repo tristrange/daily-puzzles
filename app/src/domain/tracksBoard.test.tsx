@@ -11,6 +11,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { TrackGrid } from './tracks'
+import type { TrackConflict } from './tracksGame'
 import { createTracksGame, type TracksGame } from './tracksGame'
 import { TracksBoard } from '../components/TracksBoard'
 
@@ -18,7 +19,7 @@ const GRID = new TrackGrid(3, 3, [0, 3, 0], [1, 1, 1], [0, 0, 0, 1, 0, 1, 0, 0, 
 
 function render(game: TracksGame): string {
   return renderToStaticMarkup(
-    <TracksBoard grid={GRID} game={game} conflictCells={new Set()} onCycle={() => {}} onClear={() => {}} onUndo={() => {}} />,
+    <TracksBoard grid={GRID} game={game} conflicts={[]} onCycle={() => {}} onClear={() => {}} onUndo={() => {}} />,
   )
 }
 
@@ -56,17 +57,38 @@ describe('TracksBoard', () => {
     expect(markup).toContain('row needs 3, column needs 1')
   })
 
-  it('marks a conflicting cell in words as well as colour', () => {
-    const markup = renderToStaticMarkup(
-      <TracksBoard
-        grid={GRID}
-        game={createTracksGame(GRID)}
-        conflictCells={new Set([4])}
-        onCycle={() => {}}
-        onClear={() => {}}
-        onUndo={() => {}}
-      />,
+  it('names the fault a cell has, rather than one word for every fault', () => {
+    // A fully connected route that is simply over a row clue is not "not
+    // connected". One sentence for all four rules names a fault the player does
+    // not have and hides the one they do, which is worse than saying nothing.
+    const words = (conflicts: TrackConflict[]) =>
+      renderToStaticMarkup(
+        <TracksBoard
+          grid={GRID}
+          game={createTracksGame(GRID)}
+          conflicts={conflicts}
+          onCycle={() => {}}
+          onClear={() => {}}
+          onUndo={() => {}}
+        />,
+      )
+
+    expect(words([{ rule: 'unmet-end', cell: 4, other: 7 }])).toContain(
+      'does not meet row 3, column 2',
     )
-    expect(markup).toContain('not connected')
+    expect(words([{ rule: 'row-count', cell: 4, other: 1 }])).toContain(
+      'row 2 already holds its full count',
+    )
+    expect(words([{ rule: 'col-count', cell: 4, other: 1 }])).toContain(
+      'column 2 already holds its full count',
+    )
+    expect(words([{ rule: 'off-grid-end', cell: 4 }])).toContain('runs off the grid')
+    // Several rules on one cell, rather than only the last one.
+    const both = words([
+      { rule: 'unmet-end', cell: 4, other: 7 },
+      { rule: 'row-count', cell: 4, other: 1 },
+    ])
+    expect(both).toContain('does not meet row 3, column 2')
+    expect(both).toContain('row 2 already holds its full count')
   })
 })
