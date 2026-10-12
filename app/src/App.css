@@ -333,7 +333,7 @@
 .tracks .board,
 .tracks-line {
   display: grid;
-  gap: 3px;
+  gap: var(--tracks-gap);
   grid-template-columns: var(--tracks-gutter) repeat(var(--tracks-cols), 1fr);
 }
 
@@ -348,6 +348,10 @@
   border: 0;
   padding: 0;
   margin: 0;
+  /* Arms deliberately overshoot their cell by one gap so that two joined pieces
+     overlap rather than meet, which is what makes the track look continuous. This
+     clips that overshoot at the board's edge so none of it spills outside. */
+  overflow: hidden;
   /* One column, so each `.tracks-line` fills the width and lays out its own
      gutter-then-cells. Without this the rows would be packed into the first
      column of the outer grid and the clues would stop lining up. */
@@ -374,6 +378,9 @@
    player is asking of the cell next door. */
 .tracks .cell {
   background: var(--bg);
+  /* A border, because a cell with no piece in it is otherwise the same colour as
+     the page and the board renders as nothing at all — which is what it did. The
+     bleed below is what stops the border from breaking the line. */
   border: 1px solid var(--border);
 }
 
@@ -383,9 +390,15 @@
    between two cells whose pieces do meet makes a joined line look broken, which
    is the one thing this genre cannot afford, because reciprocity is the rule.
 
-   Each arm is exactly half a cell, so an arm here and the arm facing it on the
-   next cell meet on the line between them with nothing in between. The 3px gap
-   lives between cells, not inside them. */
+   Each arm runs from the centre right past its own edge, into the next cell. The
+   exact distance needed is half the gap plus the border, which is what it was set
+   to first and which left a visible hairline at every boundary — a rail that is
+   broken once per cell is not a rail. So it overshoots by the whole gap, the two
+   arms overlap in the middle, and the track reads as continuous. The board clips
+   the overshoot at its own edge, so nothing spills outside the grid.
+
+   `--tracks-gap` is set by the component beside the column count, so the two
+   numbers that have to agree are declared next to each other. */
 .track-piece {
   position: absolute;
   inset: 0;
@@ -402,14 +415,14 @@
 .track-arm.s {
   left: 50%;
   width: var(--track-thickness);
-  height: 50%;
+  height: calc(50% + var(--tracks-gap));
   margin-left: calc(var(--track-thickness) / -2);
 }
 
 .track-arm.e,
 .track-arm.w {
   top: 50%;
-  width: 50%;
+  width: calc(50% + var(--tracks-gap));
   height: var(--track-thickness);
   margin-top: calc(var(--track-thickness) / -2);
 }

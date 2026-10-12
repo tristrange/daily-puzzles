@@ -21,6 +21,7 @@ import {
   isTracksSolved,
   resetGame,
   isFault,
+  type TrackConflict,
   trackConflicts,
   type TracksGame,
 } from '../domain/tracksGame'
@@ -168,6 +169,18 @@ export function TracksStage({
     )
   }
 
+  // Said in terms of the rules that actually fired. One message for all of them
+  // would send a player to fix joins when the board is joined and a clue is
+  // wrong, which is the same fault-naming mistake the per-cell labels had.
+  const statusTextFor = (faults: readonly TrackConflict[]): string => {
+    const joins = faults.some((f) => f.rule === 'mismatched-end')
+    const counts = faults.some((f) => f.rule === 'row-count' || f.rule === 'col-count')
+    if (joins && counts) return 'Some track does not meet, and a line is over its count.'
+    if (joins) return 'Some track does not meet — fix it.'
+    if (counts) return 'A line holds more than its count — remove a piece.'
+    return 'Too many track ends run off the grid.'
+  }
+
   return (
     <>
       <div className="puzzle-tools">
@@ -206,7 +219,7 @@ export function TracksStage({
         {solved
           ? `Solved in ${formatTime(shownTime)}`
           : conflictList.length > 0
-            ? 'Some track does not meet — fix it.'
+            ? statusTextFor(conflictList)
             : ' '}
       </p>
       <SolvedPanel

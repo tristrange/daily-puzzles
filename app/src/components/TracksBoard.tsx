@@ -225,6 +225,9 @@ export function TracksBoard({
           '--tracks-cols': grid.width,
           '--tracks-rows': grid.height,
           '--tracks-gutter': '1.7em',
+          // Half of this is the arm bleed each cell adds, so the two agree by
+          // construction rather than by two numbers agreeing.
+          '--tracks-gap': '3px',
           // A third of the cell's gap, so the rail is about the weight of a
           // border and two meeting rails read as one line rather than a blob.
           '--track-thickness': 'max(2px, 0.14em)',

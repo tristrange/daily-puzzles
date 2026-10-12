@@ -1,11 +1,9 @@
 # Generalizing the puzzle model for a third game
 
-Status: L1 and L2 are built (the per-type `Rulebook` contract, and the
-`TrainTracks` rulebook registered behind `published = False`). L3 — the app's
-per-type state — is not. The purpose of writing this down before a third game
-landed was to fix the shape of the model *before* it did, because both candidate
-games break it in different places, and doing that twice is more expensive than
-doing it once.
+Status: built. The per-type `Rulebook` contract, `TrackGrid` in both languages, and
+`TrainTracks` published alongside the other two families. The document was written
+before the third game landed, to fix the shape of the model first — both candidates
+break it in different places, and doing that twice is more expensive than once.
 
 Sections 1 and 4 below describe the model as it was before this work; they are
 kept as the record of what had to change and why.

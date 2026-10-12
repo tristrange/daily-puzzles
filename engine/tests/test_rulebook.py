@@ -254,15 +254,16 @@ class TestTracks:
     rectangular, there is no deduction engine, and nothing is published yet.
     """
 
-    def test_it_is_registered_but_not_published(self) -> None:
-        # The registry entry is what makes the type visible to `verify`, the schema
-        # and the parser. `published` is the separate gate that keeps the nightly
-        # publisher from writing files the app cannot parse or play yet. Both, not
-        # either: a rulebook with no entry is invisible, and a published one ships.
+    def test_it_is_registered_and_published(self) -> None:
+        # Two separate gates, and both are open. The registry entry is what makes
+        # the type visible to `verify`, the schema and the parser; `published` is
+        # what lets the nightly write its files. A rulebook with no entry is
+        # invisible, and one that is registered but unpublished generates without
+        # ever shipping — which is how Train Tracks spent milestone 17.
         book = rulebook_for(PuzzleType.TRAIN_TRACKS)
         assert book.puzzle_type is PuzzleType.TRAIN_TRACKS
-        assert not book.published
-        assert all(other.published for other in rulebooks() if other is not book)
+        assert book.published
+        assert {b.puzzle_type for b in rulebooks()} == set(PuzzleType)
 
     def test_it_is_off_the_ramp_and_unrated(self) -> None:
         # The ramp is what records a band, and a band is a claim about how hard a

@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 
 /**
- * How to play, for both games.
+ * How to play, for all three games.
  *
  * Written from the rules the engine enforces rather than from the genre's
  * conventions, because this app's Queens is not the same puzzle as the puzzle
@@ -30,9 +30,10 @@ export function RulesPage() {
     <section className="rules">
       <h2 className="page-title">How to play</h2>
       <p className="status">
-        Two puzzles are published every day, one of each game. They share a board, a set of
-        moves and a win condition &mdash; they differ only in how many pieces a row and a
-        region hold. Every day so far is kept in the <Link to="/archive">archive</Link>.
+        Three puzzles are published every day, one of each game. The first two share a board,
+        a set of moves and a win condition &mdash; they differ only in how many pieces a row
+        and a region hold. The third is played on a board of its own. Every day so far is kept
+        in the <Link to="/archive">archive</Link>.
       </p>
 
       <h3>The board</h3>
@@ -86,6 +87,44 @@ export function RulesPage() {
         engine applies it.
       </p>
 
+      <h3>Train Tracks</h3>
+      <p>
+        Join every cell into <strong>one unbroken line</strong>. Each cell holds one of six
+        pieces &mdash; two straights and four turns &mdash; and a piece's arms say which of the
+        four sides it reaches out to.
+      </p>
+      <ul>
+        <li>
+          <strong>An arm must be met.</strong> If a piece points at a neighbouring cell, that
+          cell must point back. This is the rule the whole game rests on, and it is why two
+          side-by-side cells do not have to be joined: the pieces themselves decide.
+        </li>
+        <li>
+          <strong>It is one line, not several.</strong> Every piece belongs to the same path,
+          and a closed loop is not allowed.
+        </li>
+        <li>
+          <strong>Both ends leave the board.</strong> The two open ends run off the grid
+          rather than stopping at a cell.
+        </li>
+        <li>
+          <strong>Rows and columns are counted.</strong> The numbers beside the board say how
+          many cells the line occupies in each row and column. They are the clue, and they
+          must come out exactly.
+        </li>
+      </ul>
+      <p>
+        The pieces already on the board are <strong>givens</strong> and cannot be moved; they
+        are drawn on a sunken cell so you can tell them from your own. They always include the
+        two ends of the line, which is what fixes where the line starts and finishes before you
+        place anything.
+      </p>
+      <p>
+        Train Tracks has <strong>no hints and no difficulty band</strong> &mdash; there is no
+        hint engine for it yet, so rather than offer hints that might contradict the answer it
+        offers none.
+      </p>
+
       <h3 id="crosses">Crosses and auto-mark</h3>
       <p>
         A cross marks a cell you have ruled out. The app never checks them: they are your
@@ -102,7 +141,11 @@ export function RulesPage() {
       </p>
 
       <h3>Controls</h3>
-      <p>A left click cycles a cell through empty, cross, piece, empty.</p>
+      <p>
+        A left click cycles a cell through its states: empty, cross, piece, empty for the two
+        marks games; and for Train Tracks, empty and then each of the six pieces in turn,
+        because the piece <em>is</em> the direction it runs.
+      </p>
       <table className="controls">
         <thead>
           <tr>
@@ -113,18 +156,21 @@ export function RulesPage() {
         <tbody>
           <tr>
             <th scope="row">Click a cell</th>
-            <td>Cycles it: empty &rarr; cross &rarr; piece &rarr; empty.</td>
+            <td>
+              Cycles it: empty &rarr; cross &rarr; piece &rarr; empty. On Train Tracks, empty
+              and then the six pieces.
+            </td>
           </tr>
           <tr>
             <th scope="row">Drag across cells</th>
             <td>
               Applies one action to every cell you cross. Starting on a cross erases the crosses
-              instead of adding them.
+              instead of adding them. Marks games only.
             </td>
           </tr>
           <tr>
             <th scope="row">Right-click a cell</th>
-            <td>Toggles a cross.</td>
+            <td>Toggles a cross. Marks games only.</td>
           </tr>
           <tr>
             <th scope="row">Arrow keys</th>
@@ -140,7 +186,7 @@ export function RulesPage() {
           </tr>
           <tr>
             <th scope="row">X</th>
-            <td>Toggle a cross.</td>
+            <td>Toggle a cross. Marks games only.</td>
           </tr>
           <tr>
             <th scope="row">Delete or Backspace</th>
@@ -158,8 +204,10 @@ export function RulesPage() {
       </table>
       <p>
         The board is a single tab stop: one cell is in the tab order at a time and the arrow
-        keys move within it. Each cell announces its row, column and contents, and says how
-        many pieces its region needs and whether the piece standing there conflicts.
+        keys move within it. On the marks games each cell announces its row, column and
+        contents, and says how many pieces its region needs and whether the piece standing
+        there conflicts. On Train Tracks it says what the piece is, what its row and column
+        need, and what is wrong with it if anything is.
       </p>
 
       <h3>Hints</h3>

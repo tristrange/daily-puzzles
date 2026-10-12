@@ -407,7 +407,6 @@ class TrackRulebook(Rulebook):
         self.on_ramp = False
         self.rated = False
         self.logic_only = False
-        self.published = False
 
     def generate(
         self,

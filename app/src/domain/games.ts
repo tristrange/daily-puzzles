@@ -45,7 +45,7 @@ export const PUZZLE_TYPE_SUFFIX: Record<PuzzleType, string> = {
 export const PUZZLE_TYPE_PUBLISHED: Record<PuzzleType, boolean> = {
   queens: true,
   'star-battle': true,
-  'train-tracks': false,
+  'train-tracks': true,
 }
 
 /** The family whose id carries no suffix: the day's default puzzle. */
