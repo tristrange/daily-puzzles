@@ -9,6 +9,7 @@ import {
   trackGridText,
 } from './share'
 import { TrackGrid } from '../domain/tracks'
+import { CROSS, MAYBE } from '../domain/tracksGame'
 
 /**
  * Stand in for a browser at `href`, with Vite's `BASE_URL` set to `basePath`.
@@ -227,6 +228,13 @@ describe('puzzleShareLink', () => {
 })
 
 describe('trackGridText', () => {
+  it('shares notes in unused cells as empty cells', () => {
+    const grid = new TrackGrid(3, 3, [0, 3, 0], [1, 1, 1], [0, 0, 0, 1, 0, 1, 0, 0, 0])
+    expect(trackGridText(grid, [CROSS, MAYBE, 0, 1, 1, 1, 0, CROSS, MAYBE])).toBe(
+      '···\n───\n···',
+    )
+  })
+
   it('draws every cell the same width, so the route stays a rectangle', () => {
     // The marks board's empty cell is a wide emoji. Beside box-drawing
     // characters that occupy one column, every piece after an empty one shifts,

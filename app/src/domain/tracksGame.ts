@@ -138,18 +138,19 @@ export const TRACK_CELL_NAME: readonly string[] = [
  * push a history entry for a click that did nothing.
  */
 export function applyBrush(game: TracksGame, cell: number, brush: TrackBrush): TracksGame {
-  if (game.grid.pieceAt(cell) !== 0) return game
   const current = game.pieces[cell] ?? 0
-  const next = current === brush ? 0 : brush
-  if (next === current) return game
-  return { grid: game.grid, pieces: replace(game.pieces, cell, next) }
+  return paintBrush(game, cell, current === brush ? 0 : brush)
+}
+
+/** Set a cell during a drag; revisiting it must not toggle what was painted. */
+export function paintBrush(game: TracksGame, cell: number, brush: TrackBrush): TracksGame {
+  if (game.grid.pieceAt(cell) !== 0 || (game.pieces[cell] ?? 0) === brush) return game
+  return { grid: game.grid, pieces: replace(game.pieces, cell, brush) }
 }
 
 /** Clear `cell` back to empty. A given is left alone; it is the clue. */
 export function clearCell(game: TracksGame, cell: number): TracksGame {
-  if (game.grid.pieceAt(cell) !== 0) return game
-  if ((game.pieces[cell] ?? 0) === 0) return game
-  return { grid: game.grid, pieces: replace(game.pieces, cell, 0) }
+  return paintBrush(game, cell, 0)
 }
 
 /** Every piece off the board that is not a given, leaving it as newly opened. */

@@ -19,6 +19,7 @@ import {
   createTracksGame,
   isEmpty,
   isTracksSolved,
+  paintBrush,
   resetGame,
   isFault,
   type TrackBrush,
@@ -138,7 +139,7 @@ export function TracksStage({
 
   /** Live feedback while dragging: no history, the stroke is not over yet. */
   const paint = (cell: number, withBrush: TrackBrush) => {
-    setGame((current) => applyBrush(current, cell, withBrush))
+    setGame((current) => paintBrush(current, cell, withBrush))
   }
 
   /**

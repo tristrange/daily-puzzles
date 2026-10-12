@@ -13,6 +13,7 @@ import { describe, expect, it } from 'vitest'
 import { TrackGrid } from './tracks'
 import {
   applyBrush,
+  paintBrush,
   clearCell,
   createTracksGame,
   CROSS,
@@ -101,6 +102,36 @@ describe('applyBrush', () => {
     const grid = middleRow()
     expect(placed(grid, [0, 0, 0, 1, 1, 1, 0, 0, 0]).pieces[0]).toBe(0)
     expect(isTracksSolved(placed(grid, [0, 0, 0, 1, 1, 1, 0, 0, 0]))).toBe(true)
+  })
+})
+
+describe('paintBrush', () => {
+  it('keeps the selected brush when a stroke revisits a cell', () => {
+    for (const brush of [1, 2, 3, 4, 5, 6, CROSS, MAYBE]) {
+      const painted = paintBrush(createTracksGame(middleRow()), 0, brush)
+      expect(painted.pieces[0]).toBe(brush)
+      expect(paintBrush(painted, 0, brush)).toBe(painted)
+    }
+  })
+
+  it('replaces another value while leaving the original game unchanged', () => {
+    const before = applyBrush(createTracksGame(middleRow()), 0, MAYBE)
+    expect(paintBrush(before, 0, CROSS).pieces[0]).toBe(CROSS)
+    expect(before.pieces[0]).toBe(MAYBE)
+  })
+
+  it('leaves givens unchanged for every brush', () => {
+    const game = createTracksGame(middleRow())
+    for (const brush of [0, 1, 2, 3, 4, 5, 6, CROSS, MAYBE]) {
+      expect(paintBrush(game, 3, brush)).toBe(game)
+    }
+  })
+
+  it('erases a note once and preserves identity on subsequent passes', () => {
+    const marked = applyBrush(createTracksGame(middleRow()), 0, CROSS)
+    const erased = paintBrush(marked, 0, 0)
+    expect(erased.pieces[0]).toBe(0)
+    expect(paintBrush(erased, 0, 0)).toBe(erased)
   })
 })
 

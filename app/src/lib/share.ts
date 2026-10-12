@@ -84,7 +84,7 @@ export function trackGridText(grid: TrackGrid, pieces: readonly number[]): strin
       // HTML collapse runs of spaces and trim the ends, so an empty corner would
       // shorten its row and two empty cells in a row would vanish. A visible
       // one-column character survives both.
-      line += piece === 0 ? TRACK_EMPTY : PIECE_GLYPHS[piece]
+      line += piece === 0 ? TRACK_EMPTY : (PIECE_GLYPHS[piece] ?? TRACK_EMPTY)
     }
     rows.push(line)
   }

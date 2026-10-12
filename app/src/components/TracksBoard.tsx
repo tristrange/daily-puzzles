@@ -126,7 +126,12 @@ export function TracksBoard({
   const [focusIndex, setFocusIndex] = useState(0)
   const boardRef = useRef<HTMLDivElement>(null)
   const [painting, setPainting] = useState(false)
-  const stroke = useRef<{ pointerId: number; firstCell: number; lastCell: number } | null>(null)
+  const stroke = useRef<{
+    pointerId: number
+    firstCell: number
+    lastCell: number
+    dragged: boolean
+  } | null>(null)
 
   // Moving the roving index is not the same as moving focus, and only the second
   // one moves the focus ring and the screen reader's cursor. Without this, an
@@ -160,7 +165,7 @@ export function TracksBoard({
       // The first cell is already painted, so a press that never left it has
       // still happened: the view reapplies it from the snapshot as a click, and
       // one that did move has painted its run and needs committing as it stands.
-      end.current(current.lastCell === current.firstCell ? current.firstCell : null, brush)
+      end.current(current.dragged ? null : current.firstCell, brush)
     }
     window.addEventListener('pointerup', finish)
     window.addEventListener('pointercancel', finish)
@@ -176,7 +181,7 @@ export function TracksBoard({
     // board paints the brush and then the contextmenu handler erases it, and the
     // cell ends up as the erase left it — which looks like a broken right-click.
     if (locked || event.button !== 0 || event.ctrlKey) return
-    stroke.current = { pointerId: event.pointerId, firstCell: cell, lastCell: cell }
+    stroke.current = { pointerId: event.pointerId, firstCell: cell, lastCell: cell, dragged: false }
     onGestureStart()
     onPaint(cell, brush)
     setPainting(true)
@@ -191,6 +196,7 @@ export function TracksBoard({
     if (under === null || under === undefined) return
     const cell = Number(under.getAttribute('data-cell'))
     if (!Number.isInteger(cell) || cell === current.lastCell) return
+    current.dragged = true
     current.lastCell = cell
     onPaint(cell, brush)
   }
