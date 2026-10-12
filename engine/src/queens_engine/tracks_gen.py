@@ -71,7 +71,7 @@ _FLOOR_SHARE: Final = 5
 _MIN_SIDE: Final = 2
 
 # Frozen version-3 work limits: deterministic replay cannot depend on machine speed.
-_CHECK_STATES: Final = 25_000
+_CHECK_STATES: Final = 10_000
 _SEED_STATES: Final = 1_000_000
 _SCATTERED_VERSION: Final = 3
 _MIN_GIVEN_DISTANCE: Final = 2

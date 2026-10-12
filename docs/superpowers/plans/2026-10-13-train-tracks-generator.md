@@ -1,6 +1,6 @@
 # Train Tracks Generator Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Deliver PR 1: scattered, separated givens and bounded deterministic generation that can reliably produce 8×8, 10×10 and 12×12 Train Tracks boards.
 
@@ -52,12 +52,12 @@
 - Extend `count_solutions(grid: TrackGrid, *, limit: int = DEFAULT_LIMIT, max_states: int | None = None, budget: SearchBudget | None = None) -> int`.
 - One visited state is an entry to `_walk`, including a complete assignment. Each query has fresh solver state; a caller may reuse only the aggregate budget.
 
-- [ ] **Write failing budget tests** in `engine/tests/test_tracks.py`: zero budget raises `TrackSearchLimitError`; a generous bounded count equals exhaustive counting; negative limits raise `TrackGridError`; a shared budget never overspends across two searches; a fresh exhaustive search after exhaustion still returns the reference answers.
-- [ ] **Add the partial-result regression:** use the existing ambiguous 4×4 fixture in `TestKnownAnswers.test_a_grid_with_two_routes_has_both`. Advance a generously bounded iterator to its first solution and record `budget.spent`; counting with exactly that many allowed states and `limit=2` must raise rather than return 1.
-- [ ] **Run the tests red:** from `engine`, `./.venv/bin/python -m pytest tests/test_tracks.py -q`. New tests must fail because budget support is absent; existing tests remain green.
-- [ ] **Implement the interfaces** in `tracks.py`. Check both limits before entering a state; propagate `TrackSearchLimitError` unchanged. Avoid state-budget work on the existing unbounded path where possible. Retain candidate ordering and solver rules.
-- [ ] **Run the tests green**, including the existing tiny-board independent reference cases. Do not replace the reference with the production solver.
-- [ ] **Commit:** `feat(engine): bound optional Train Tracks search by visited states`.
+- [x] **Write failing budget tests** in `engine/tests/test_tracks.py`: zero budget raises `TrackSearchLimitError`; a generous bounded count equals exhaustive counting; negative limits raise `TrackGridError`; a shared budget never overspends across two searches; a fresh exhaustive search after exhaustion still returns the reference answers.
+- [x] **Add the partial-result regression:** use the existing ambiguous 4×4 fixture in `TestKnownAnswers.test_a_grid_with_two_routes_has_both`. Advance a generously bounded iterator to its first solution and record `budget.spent`; counting with exactly that many allowed states and `limit=2` must raise rather than return 1.
+- [x] **Run the tests red:** from `engine`, `./.venv/bin/python -m pytest tests/test_tracks.py -q`. New tests must fail because budget support is absent; existing tests remain green.
+- [x] **Implement the interfaces** in `tracks.py`. Check both limits before entering a state; propagate `TrackSearchLimitError` unchanged. Avoid state-budget work on the existing unbounded path where possible. Retain candidate ordering and solver rules.
+- [x] **Run the tests green**, including the existing tiny-board independent reference cases. Do not replace the reference with the production solver.
+- [x] **Commit:** `feat(engine): bound optional Train Tracks search by visited states`.
 
 ### Task 2: Introduce scattered generator version 3
 
@@ -68,15 +68,15 @@
 - Retain `_build` as the legacy builder. Add `_build_scattered(width: int, height: int, pieces: list[int], route: list[int], positions: list[int]) -> TrackGrid`; reuse row/column counting without changing legacy output.
 - Set `TRACKS_GENERATOR_VERSION = 3`; daily width and height remain 7. Replay 1, 2 and 3 through explicit branches independent of the current-version constant.
 
-- [ ] **Capture the version-2 fixture before changing generation:** serialize the current rulebook's seed-7 puzzle with ID `2026-10-16-tracks` into `engine/tests/fixtures/tracks-v2-seed7.json`. Pin its complete content in a fixture replay test, not just dimensions or a comparison of two fresh draws.
-- [ ] **Write failing placement tests:** for `route=list(range(11))`, the first two scattered positions are `[5, 2]`; all selected positions exclude 0 and 10 and differ by at least 2. A three-cell route has no eligible interior given. Pin repeat ordering and a doubling-back route to distinguish route separation from arbitrary geometric distance.
-- [ ] **Write failing generation tests:** parameterize 8×8, 10×10 and 12×12; prove nonzero clues, two off-grid given ends, a valid unique solution and no connected pair of given pieces. Use existing `obeys` for independent assignment validation. Pin a complete successful version-3 replay fixture after its policy is implemented.
-- [ ] **Write failing failure-path tests:** force per-check exhaustion and verify that generation tries another clue; force aggregate exhaustion and verify `TrackGenerationError`; force every check to remain incomplete and verify no grid is returned. Verify route rejection when the separation rule prevents another given. Retain the cap-below-two and whole-set-cap tests.
-- [ ] **Update rulebook tests:** new serialized puzzles declare version 3; the captured version-2 fixture and existing version-1 archived puzzle replay unchanged even if the current-version constant is monkeypatched to 4. Unsupported versions still fail, and generation exhaustion is translated to `GenerationError` for publisher seed retries.
-- [ ] **Run the new tests red:** `./.venv/bin/python -m pytest tests/test_tracks_gen.py tests/test_rulebook.py -q`.
-- [ ] **Implement version 3** in `tracks_gen.py` and explicit replay branches in `rulebook.py`. Use one aggregate `SearchBudget(250_000)` per seed and `max_states=25_000` per check. Catch per-check exhaustion to add a clue only while aggregate budget remains. Never catch it as a successful count. Reuse the existing route retries and given cap.
-- [ ] **Run focused tests green** and `./.venv/bin/python -m tools.verify --dir ../app/public/puzzles`. Preserve corpus bytes; do not regenerate published puzzles or the hint baseline to conceal replay drift.
-- [ ] **Commit:** `feat(engine): scatter Train Tracks clues in generator version three`.
+- [x] **Capture the version-2 fixture before changing generation:** serialize the current rulebook's seed-7 puzzle with ID `2026-10-16-tracks` into `engine/tests/fixtures/tracks-v2-seed7.json`. Pin its complete content in a fixture replay test, not just dimensions or a comparison of two fresh draws.
+- [x] **Write failing placement tests:** for `route=list(range(11))`, the first two scattered positions are `[5, 2]`; all selected positions exclude 0 and 10 and differ by at least 2. A three-cell route has no eligible interior given. Pin repeat ordering and a doubling-back route to distinguish route separation from arbitrary geometric distance.
+- [x] **Write failing generation tests:** parameterize 8×8, 10×10 and 12×12; prove nonzero clues, two off-grid given ends, a valid unique solution and no connected pair of given pieces. Use existing `obeys` for independent assignment validation. Pin a complete successful version-3 replay fixture after its policy is implemented.
+- [x] **Write failing failure-path tests:** force per-check exhaustion and verify that generation tries another clue; force aggregate exhaustion and verify `TrackGenerationError`; force every check to remain incomplete and verify no grid is returned. Verify route rejection when the separation rule prevents another given. Retain the cap-below-two and whole-set-cap tests.
+- [x] **Update rulebook tests:** new serialized puzzles declare version 3; the captured version-2 fixture and existing version-1 archived puzzle replay unchanged even if the current-version constant is monkeypatched to 4. Unsupported versions still fail, and generation exhaustion is translated to `GenerationError` for publisher seed retries.
+- [x] **Run the new tests red:** `./.venv/bin/python -m pytest tests/test_tracks_gen.py tests/test_rulebook.py -q`.
+- [x] **Implement version 3** in `tracks_gen.py` and explicit replay branches in `rulebook.py`. Initial policy: one aggregate `SearchBudget(250_000)` per seed and `max_states=25_000` per check. Measured final policy: `SearchBudget(1_000_000)` and `max_states=10_000` (see journal). Catch per-check exhaustion to add a clue only while aggregate budget remains. Never catch it as a successful count. Reuse the existing route retries and given cap.
+- [x] **Run focused tests green** and `./.venv/bin/python -m tools.verify --dir ../app/public/puzzles`. Preserve corpus bytes; do not regenerate published puzzles or the hint baseline to conceal replay drift.
+- [x] **Commit:** `feat(engine): scatter Train Tracks clues in generator version three`.
 
 ### Task 3: Measure and prove the larger sizes
 
@@ -86,14 +86,14 @@
 - Independently validate every generated board with an unbounded solution enumeration stopping at two and a direct check of row/column counts, reciprocity, endpoints, givens and single-path connectivity. Keep validation outcomes distinct from generation timings.
 - Summaries include all attempted seeds, success fraction, median/maximum successful generation times, failed seed IDs and given-count range. Return nonzero if any size misses 95% completion, or any returned board fails validation.
 
-- [ ] **Write failing benchmark tests** in `engine/tests/test_benchmark_tracks.py`: scripted success, generation failure and timeout all count toward attempted seeds; validation failure cannot be reported as `ok`; a 94/100 summary fails and 95/100 passes; reject nonpositive counts/timeouts and unsupported requested dimensions.
-- [ ] **Run the tests red:** `./.venv/bin/python -m pytest tests/test_benchmark_tracks.py -q`.
-- [ ] **Implement the tool** using standard-library subprocess, JSON, timing and statistics modules. Bound worker cleanup and retain partial results if interrupted. Do not add infrastructure or external dependencies.
-- [ ] **Run tests green**, then run the default 300-seed probe. Independently validate every successful board; record machine/runtime details and the full JSON results in a temporary file for inspection.
-- [ ] **Evaluate the gate:** if any size misses 95%, inspect measured failures and tune the version-3 budgets within this PR, rerunning affected tests and the full probe after tuning. Record the final values in the design and journal. If bounded existing search still misses the gate, stop publication expansion and report evidence; do not quietly add adjacent givens or remove uniqueness checks.
-- [ ] **Run final required checks** from `engine`: `./.venv/bin/python -m pytest -q`, `./.venv/bin/pyright`, `./.venv/bin/ruff check .`, `./.venv/bin/ruff format --check .`, `./.venv/bin/python -m tools.verify --dir ../app/public/puzzles`, and `./.venv/bin/python -m tools.schema_ids --check`. From `app`, run `npm test` and `npm run build` to confirm corpus consumers still work.
-- [ ] **Document measured results** in `docs/journal.md`, including final budgets, sample failure rates, given counts and the unchanged 7×7 publishing schedule. Update the benchmark's usage documentation in its module docstring.
-- [ ] **Commit:** `test(engine): measure larger Train Tracks generation`.
+- [x] **Write failing benchmark tests** in `engine/tests/test_benchmark_tracks.py`: scripted success, generation failure and timeout all count toward attempted seeds; validation failure cannot be reported as `ok`; a 94/100 summary fails and 95/100 passes; reject nonpositive counts/timeouts and unsupported requested dimensions.
+- [x] **Run the tests red:** `./.venv/bin/python -m pytest tests/test_benchmark_tracks.py -q`.
+- [x] **Implement the tool** using standard-library subprocess, JSON, timing and statistics modules. Bound worker cleanup and retain partial results if interrupted. Do not add infrastructure or external dependencies.
+- [x] **Run tests green**, then run the default 300-seed probe. Independently validate every successful board; record machine/runtime details and the full JSON results in a temporary file for inspection.
+- [x] **Evaluate the gate:** if any size misses 95%, inspect measured failures and tune the version-3 budgets within this PR, rerunning affected tests and the full probe after tuning. Record the final values in the design and journal. If bounded existing search still misses the gate, stop publication expansion and report evidence; do not quietly add adjacent givens or remove uniqueness checks.
+- [x] **Run final required checks** from `engine`: `./.venv/bin/python -m pytest -q`, `./.venv/bin/pyright`, `./.venv/bin/ruff check .`, `./.venv/bin/ruff format --check .`, `./.venv/bin/python -m tools.verify --dir ../app/public/puzzles`, and `./.venv/bin/python -m tools.schema_ids --check`. From `app`, run `npm test` and `npm run build` to confirm corpus consumers still work.
+- [x] **Document measured results** in `docs/journal.md`, including final budgets, sample failure rates, given counts and the unchanged 7×7 publishing schedule. Update the benchmark's usage documentation in its module docstring.
+- [x] **Commit:** `test(engine): measure larger Train Tracks generation`.
 - [ ] **Request one independent whole-branch review**, fix actionable findings and rerun relevant checks. Open and attach PR 1 with the measured results and legacy-replay proof; wait for its checks and leave merging to the user. Do not activate the three daily variants in this PR.
 
 ## PR 2 handoff

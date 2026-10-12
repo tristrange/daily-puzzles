@@ -64,8 +64,9 @@ publisher can advance the seed.
 
 Use initial version-3 limits of 25,000 search states per uniqueness check and
 250,000 across one seed. Measure these during implementation; any adjustment
-must be recorded in the PR and frozen before version 3 is published. Existing
-solver callers retain their exhaustive behavior unless they explicitly request
+must be recorded in the PR and frozen before version 3 is published. The measured
+policy is 10,000 states per check and 1,000,000 per seed; the journal records
+the final 300-seed results. Existing solver callers retain their exhaustive behavior unless they explicitly request
 a limit. Do not introduce a replacement solver unless measurements show the
 bounded existing search cannot meet the acceptance gates below.
 
