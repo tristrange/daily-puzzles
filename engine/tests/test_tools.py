@@ -33,6 +33,7 @@ from queens_engine import (
     generate_ramped,
     parse_puzzle,
     rulebook_for,
+    rulebooks,
     score_difficulty,
     star_layout,
     target_for,
@@ -80,8 +81,10 @@ class TestPublishWindow:
 
         lines = "\n".join(_run_publish(tmp_path, None, 1))
 
-        # Two puzzles for today and two for tomorrow's lead day.
-        assert lines.count("publish ") == 4
+        # Every published family for today and for tomorrow's lead day. Counted
+        # from the registry rather than written as two, so a third family arriving
+        # does not quietly fail a test that was never about the number.
+        assert lines.count("publish ") == len(PUBLISHED) * 2
         assert today.isoformat() in lines
         assert (tmp_path / f"{today.isoformat()}.json").exists() is False
 
@@ -121,11 +124,15 @@ class TestPublishWindow:
 
         lines = _run_publish(tmp_path, today, 0, dry_run=False)
 
+        # The publisher does not name the family on the line it prints, so the
+        # claim is stated over all of them: a unique but unrated board says so
+        # instead of printing a number, and exactly the rated one prints a score.
         scored = [line for line in lines if " score " in line]
         unrated = [line for line in lines if "(unique, not logic-gated)" in line]
         assert len(scored) == 1
-        assert len(unrated) == 1
-        assert "score" not in unrated[0]
+        assert len(unrated) == len(PUBLISHED) - 1
+        for line in unrated:
+            assert "score" not in line
 
     def test_rerunning_publishes_nothing_new(self, tmp_path: Path) -> None:
         today = date.today()
@@ -167,11 +174,11 @@ class TestPublishWindow:
 
         queued = [line for line in lines if line.startswith("publish ")]
         # Nothing is republished, and the window picks up at the day after,
-        # offering each day's two puzzles together.
+        # offering each day's puzzles together — one per published family.
         assert queued == [
             f"publish {(today + timedelta(days=offset)).isoformat()}{suffix} (dry run)"
             for offset in (1, 2, 3)
-            for suffix in ("", "-star")
+            for suffix in PUBLISHED
         ]
 
 
@@ -497,6 +504,10 @@ class TestGenerateId:
         assert generate_tool.main(args) == 0
         assert (tmp_path / "2026-10-04-star.json").read_text(encoding="utf-8") == first
         assert verify.main(["--dir", str(tmp_path)]) == 0
+
+
+#: The suffix of every family the nightly is allowed to write, in registry order.
+PUBLISHED: tuple[str, ...] = tuple(book.id_suffix for book in rulebooks() if book.published)
 
 
 def _run_publish(

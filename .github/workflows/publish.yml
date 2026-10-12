@@ -42,7 +42,12 @@ jobs:
           # the engine and the app sweep. Regenerated here rather than after,
           # because the commit is what CI then verifies.
           uv run python -m tools.hint_baseline --write
-          git add ../app/public/puzzles engine/tests/fixtures/hint-baseline.json
+          # Paths are relative to `engine/`, the step's working-directory. The
+          # baseline is `engine/tests/fixtures/…`, so from here it is
+          # `tests/fixtures/…` — and `git add` treats a pathspec that matches
+          # nothing as fatal, which is how the nightly stopped publishing for four
+          # days without anything else reporting it.
+          git add ../app/public/puzzles tests/fixtures/hint-baseline.json
           if ! git diff --cached --quiet; then
             git commit -m "Publish daily puzzles"
             git push origin main

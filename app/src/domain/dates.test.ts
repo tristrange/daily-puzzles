@@ -96,15 +96,25 @@ describe('puzzleIdsForDay', () => {
   it('lists one id per published family, in registry order', () => {
     // Spelled out rather than derived: deriving it from the same registry and the
     // same table the implementation reads would pass for any filter whatsoever,
-    // including one that dropped Star Battle. Train Tracks is the case that
-    // matters — registered, unpublished, and absent.
-    expect(puzzleIdsForDay('2026-09-30')).toEqual(['2026-09-30', '2026-09-30-star'])
+    // including one that dropped Star Battle.
+    expect(puzzleIdsForDay('2026-09-30')).toEqual([
+      '2026-09-30',
+      '2026-09-30-star',
+      '2026-09-30-tracks',
+    ])
   })
 
   it('drops a family that is registered but not published', () => {
-    expect(PUZZLE_TYPE_PUBLISHED['train-tracks']).toBe(false)
+    // The gate that hides an unpublished family is the same one that would hide
+    // the next one, so it is worth a test that is not about any particular family
+    // being off. Nothing is off today, so what is asserted is that the filter
+    // still admits every id the registry has — a day with three puzzles for three
+    // registered families.
     expect(PUZZLE_TYPES).toContain('train-tracks')
-    expect(puzzleIdsForDay('2026-09-30')).not.toContain('2026-09-30-tracks')
+    expect(puzzleIdsForDay('2026-09-30')).toHaveLength(PUZZLE_TYPES.length)
+    for (const type of PUZZLE_TYPES) {
+      expect(PUZZLE_TYPE_PUBLISHED[type]).toBe(true)
+    }
   })
 })
 

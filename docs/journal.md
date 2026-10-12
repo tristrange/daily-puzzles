@@ -23,7 +23,7 @@ avoided. The reasoning is the point; the shipped code is in `git log`.
 | 14 | Remember the auto-mark choice between visits | done |
 | 15 | A weekly difficulty ramp for Queens, and the band in the puzzle file | done |
 | 16 | Port the deduction engine to per-group counts so Star Battle can be rated, then ramp it too | done — rating deferred, below |
-| 17 | Train Tracks: a per-type contract the model was missing, and the type registered against it | done — engine and app, unpublished |
+| 17 | Train Tracks: a per-type contract the model was missing, and the type registered against it | done — engine and app, published |
 
 Milestones 2 to 4 were the critical path, and they are all Python. The engine alone — a
 CLI with an exact uniqueness prover and property tests — would have been worth publishing
@@ -395,6 +395,35 @@ The gap is structural, and the answer to it is a cross-check against generated
 ground truth rather than another hand-written fixture: three of my hand-built
 fixtures were wrong before one was right, and each was wrong in a way the test
 suite reported as a pass.
+
+## A `git add` that stopped publishing for four days
+
+The nightly published on 8 October and not again until a person noticed. Every run
+since had failed, silently enough that nothing but the missing puzzles showed it.
+
+The cause was one line in the workflow. The job's working directory is `engine`, so
+the baseline is `tests/fixtures/hint-baseline.json` from there — and the line said
+`git add ../app/public/puzzles engine/tests/fixtures/hint-baseline.json`. A pathspec
+that matches nothing is not a warning to `git add`, it is a fatal error, so the job
+died after doing all the work and before committing any of it. The puzzles were
+generated, the baseline was rewritten, and then the run threw the results away.
+
+It arrived with #53, which was itself a good change — sweeping every reachable hint
+position instead of twelve hand-picked ones — and it sat unnoticed through four
+scheduled runs. Nothing about it was subtle and nothing about it was loud either.
+
+**The lesson is not "test the workflow."** It is that a scheduled job's only
+evidence of existing is its output, so an archive going quiet looks exactly like a
+day nobody played. Two of the three facts in this repository that would have caught
+it — the archive growing, the deploy running — are both *absences*, and nothing in
+CI treats an absence as a failure. The check that would have caught it is one line:
+fail the run if the archive has not grown for two days. That is not built, and it
+should be, because the same failure will happen again in a different costume.
+
+And the general shape of it is worth keeping next to the review findings: **a tool
+that reports a problem and a job that reports success are different things, and only
+one of them is a test.** `git add` was right and the job was wrong, and the job had
+no way to say so.
 
 ## Registering a type without shipping it
 
