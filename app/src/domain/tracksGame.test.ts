@@ -51,12 +51,23 @@ describe('cyclePiece', () => {
     expect(game.pieces[0]).toBe(0)
   })
 
-  it('refuses to cycle a given, because a given is the clue', () => {
+  it('refuses to cycle a given, and returns the same object when it does', () => {
     // Cell 3 is a given horizontal piece. Cycling it would let a player edit the
     // board's own statement, and the win check still expects the original.
+    //
+    // Identity, not equality: the view decides a click changed nothing by
+    // comparing the state it was handed with the one it already had, so returning
+    // an equal-but-new object would record a history step for a click that did
+    // nothing — which enables an Undo that appears to do nothing and pushes a
+    // real move out of the bounded history.
     const game = createTracksGame(middleRow())
     expect(cyclePiece(game, 3)).toBe(game)
     expect(clearCell(game, 3)).toBe(game)
+  })
+
+  it('returns the same object when clearing an already-empty cell', () => {
+    const game = createTracksGame(middleRow())
+    expect(clearCell(game, 0)).toBe(game)
   })
 
   it('treats a given of zero as no clue rather than as an empty cell', () => {
@@ -138,6 +149,18 @@ describe('isTracksSolved', () => {
   it('rejects a board one cell short of its clue', () => {
     const grid = middleRow()
     expect(isTracksSolved(placed(grid, [0, 0, 0, 1, 1, 0, 0, 0, 0]))).toBe(false)
+  })
+
+  it('rejects a good path that is short of a clue', () => {
+    // Reciprocity, one path and exactly two open ends are all satisfied here, and
+    // so is every local conflict rule — the line simply does not fill row 0 or
+    // column 1. A ceiling check cannot see this, because nothing is over its
+    // clue; the clues are the puzzle, so a line that misses them is not an answer
+    // however well formed it is.
+    const grid = new TrackGrid(4, 4, [3, 3, 2, 1], [2, 3, 2, 2], [0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0])
+    const pieces = [0, 0, 0, 2, 0, 4, 1, 6, 4, 6, 0, 0, 6, 0, 0, 0]
+    expect(trackConflicts(placed(grid, pieces))).toEqual([])
+    expect(isTracksSolved(placed(grid, pieces))).toBe(false)
   })
 
   it('rejects a board that contradicts a given', () => {

@@ -171,12 +171,16 @@ export function InteractiveBoard({
   }
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    // `locked` first, so the keyboard cannot undo a solved board through a path
+    // the disabled button does not have. Undoing after the solve would reopen the
+    // board while the clock stays frozen and the solve transition cannot run
+    // again.
+    if (locked) return
     if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
       event.preventDefault()
       onUndo()
       return
     }
-    if (locked) return
     const { row, col } = board.coords(focusIndex)
     switch (event.key) {
       case 'ArrowUp':

@@ -186,13 +186,30 @@ export function isTracksSolved(game: TracksGame): boolean {
 
   const openEnds: number[] = []
   const seen = new Set<number>()
+  const rowCount = new Array<number>(grid.height).fill(0)
+  const colCount = new Array<number>(grid.width).fill(0)
   for (let cell = 0; cell < grid.cellCount; cell += 1) {
     if (!isOn(game, cell)) continue
+    const { row, col } = grid.coords(cell)
+    rowCount[row] = (rowCount[row] ?? 0) + 1
+    colCount[col] = (colCount[col] ?? 0) + 1
     for (const direction of pieceEnds(game.pieces[cell] ?? 0)) {
       if (grid.neighbour(cell, direction) === null) openEnds.push(cell)
     }
   }
   if (openEnds.length !== LINE_ENDS) return false
+
+  // Equality, not the ceiling `trackConflicts` checks. A row or column holding
+  // *less* than its clue raises no local conflict, and reciprocity plus exactly
+  // two open ends does not rule it out either — it is a perfectly good path, just
+  // not the one this grid asked for. Without this the app records a solve for a
+  // board that is short in a line, which is the one thing the clues exist to say.
+  for (let row = 0; row < grid.height; row += 1) {
+    if ((rowCount[row] ?? 0) !== grid.rowClues[row]) return false
+  }
+  for (let col = 0; col < grid.width; col += 1) {
+    if ((colCount[col] ?? 0) !== grid.colClues[col]) return false
+  }
 
   // Walk the line from one of its two ends. Reaching every occupied cell is what
   // "one line" means; anything left over is a second path or a closed loop.

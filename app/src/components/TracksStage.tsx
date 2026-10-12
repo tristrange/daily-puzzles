@@ -74,6 +74,12 @@ export function TracksStage({
   const shownTime = solvedAt === null ? elapsed : solvedAt - startedAt
 
   const applyGame = (next: TracksGame, before: TracksGame = game) => {
+    // A no-op records nothing. `cyclePiece` and `clearCell` both return the
+    // state unchanged for a given, and clearing an empty cell does the same, so a
+    // click on a given would otherwise enable Undo and displace a real move from
+    // the bounded history — and an Undo that appears to do nothing is worse than
+    // no Undo at all. The marks board has the same rule in `endStroke`.
+    if (next === before) return
     setHistory((past) => [...past.slice(1 - HISTORY_LIMIT), before])
     setGame(next)
     if (solvedAt !== null || !isTracksSolved(next)) return

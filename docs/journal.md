@@ -287,7 +287,23 @@ one rule with no counterpart in Python was wrong in the way a passing test canno
 see. The second bug that sweep found — reading a given of `0` as "this cell must
 stay empty" rather than "nothing is given here" — came from the same place.
 
-Both bugs were in the half of the model that exists only in the browser. Neither
+Then a reviewer found the third, and it was the same shape as the second one. The
+win check asked whether any row or column *exceeded* its clue, which is what
+`conflicts` reports — but a line can be short of a clue without exceeding it, and
+reciprocity plus exactly two open ends does not rule that out either. A perfectly
+formed seven-cell path through a 4x4, every join reciprocal, both ends off the
+grid, and row 0 holding 1 cell where the clue says 3. The app recorded that as a
+solve.
+
+What makes it worth three paragraphs rather than one line: I had *written* the rule
+correctly in the docstring above the function — "counts, asked for equality, because
+a short row is a puzzle in progress" — and then implemented the ceiling instead.
+The prose was right and the code was not, and the prose is what I re-read while
+checking whether the reviewer had read it properly. It is a reminder that a
+docstring is a claim, not a control, and the cheapest possible check on it is a
+test that states the case the docstring says cannot happen.
+
+All three bugs were in the half of the model that exists only in the browser. Neither
 conformance suite covers a half-finished board, because the engine never has one.
 The gap is structural, and the answer to it is a cross-check against generated
 ground truth rather than another hand-written fixture: three of my hand-built

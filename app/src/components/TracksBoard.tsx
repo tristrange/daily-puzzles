@@ -62,12 +62,12 @@ export function TracksBoard({
   const puzzleName = PUZZLE_TYPE_LABEL['train-tracks'].toLowerCase()
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (locked) return
     if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
       event.preventDefault()
       onUndo()
       return
     }
-    if (locked) return
     const { row, col } = grid.coords(focusIndex)
     switch (event.key) {
       case 'ArrowUp':
