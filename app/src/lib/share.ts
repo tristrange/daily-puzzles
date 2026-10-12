@@ -14,6 +14,7 @@
 import type { Board, PuzzleType } from '../domain/board'
 import { PUZZLE_TYPE_LABEL } from '../domain/games'
 import { formatTime } from '../domain/game'
+import { PIECE_GLYPHS, TrackGrid } from '../domain/tracks'
 
 /**
  * Filled and empty cells.
@@ -25,6 +26,8 @@ import { formatTime } from '../domain/game'
  * it: a white square is invisible on the light background most chat clients
  * default to, and a share that has lost its empty cells reads as scattered dots.
  */
+const TRACK_EMPTY = '·'
+
 const FILLED = '🟪'
 const EMPTY = '⬛'
 
@@ -36,7 +39,8 @@ const EMPTY = '⬛'
  * was, and none of them give the puzzle away.
  */
 export type ShareResult = {
-  readonly size: number
+  readonly width: number
+  readonly height: number
   readonly puzzleType: PuzzleType
   readonly elapsedMs: number
   readonly hints: number
@@ -54,6 +58,33 @@ export function boardGrid(board: Board, pieces: ReadonlySet<number>): string {
     let line = ''
     for (let col = 0; col < board.size; col += 1) {
       line += pieces.has(board.index(row, col)) ? FILLED : EMPTY
+    }
+    rows.push(line)
+  }
+  return rows.join('\n')
+}
+
+/**
+ * A solved track grid, drawn with its own piece glyphs.
+ *
+ * Its own function rather than a `boardGrid` that asks what kind of board it has:
+ * a cell here shows which way the line turns, which is the answer the share is
+ * giving away. Filling the cell would say only that something is there.
+ */
+export function trackGridText(grid: TrackGrid, pieces: readonly number[]): string {
+  const rows: string[] = []
+  for (let row = 0; row < grid.height; row += 1) {
+    let line = ''
+    for (let col = 0; col < grid.width; col += 1) {
+      const piece = pieces[grid.index(row, col)] ?? 0
+      // A middle dot, and neither of the two answers that look right. The marks
+      // board's `EMPTY` is a wide emoji, and a wide emoji beside box-drawing
+      // characters that occupy one column shifts every piece after it. A plain
+      // space is one wide, but shared text is not in a preformatted block: chat and
+      // HTML collapse runs of spaces and trim the ends, so an empty corner would
+      // shorten its row and two empty cells in a row would vanish. A visible
+      // one-column character survives both.
+      line += piece === 0 ? TRACK_EMPTY : PIECE_GLYPHS[piece]
     }
     rows.push(line)
   }
@@ -85,13 +116,17 @@ export function buildShareText(result: ShareResult): string {
  */
 export function buildSolutionShareText(
   result: ShareResult,
-  board: Board,
-  pieces: ReadonlySet<number>,
+  board: Board | TrackGrid,
+  pieces: ReadonlySet<number> | readonly number[],
 ): string {
+  const drawing =
+    board instanceof TrackGrid
+      ? trackGridText(board, pieces as readonly number[])
+      : boardGrid(board, pieces as ReadonlySet<number>)
   return [
     ...headerLines(result),
     '',
-    boardGrid(board, pieces),
+    drawing,
     '',
     ...(result.streak > 1 ? [`${result.streak}-day streak`] : []),
     result.link,
@@ -101,7 +136,7 @@ export function buildSolutionShareText(
 function headerLines(result: ShareResult): [string, string] {
   const hints = result.hints === 0 ? 'no hints' : `${result.hints} hint${result.hints === 1 ? '' : 's'}`
   return [
-    `Daily Puzzles — ${PUZZLE_TYPE_LABEL[result.puzzleType]} ${result.size}×${result.size}`,
+    `Daily Puzzles — ${PUZZLE_TYPE_LABEL[result.puzzleType]} ${result.width}×${result.height}`,
     `${formatTime(result.elapsedMs)} · ${hints}`,
   ]
 }

@@ -310,6 +310,137 @@
   }
 }
 
+/* Train Tracks: a clue gutter beside the grid rather than cells inside it.
+   The gutter and the board are two CSS grids built from the *same* column
+   template — a fixed gutter column, then one per cell — so a column's count lines
+   up with its column without either grid knowing about the other. The gutter is a
+   fixed width rather than `auto` precisely so the two templates resolve to the
+   same pixels: an `auto` column is sized by its own content, and two grids sizing
+   one independently is a promise neither of them keeps. */
+.tracks {
+  /* Capped by height as well as width, and not simply by `54svh`: every cell is
+     square, so a grid taller than it is wide is taller on screen than its column
+     count suggests, and a width-only cap would put a 2x16 board eight viewports
+     down the page. Dividing the height budget by the grid's own ratio is what
+     makes the cap mean what it says. */
+  width: min(76vw, 480px, calc(54svh * var(--tracks-cols) / var(--tracks-rows)));
+  margin: 0 auto;
+  display: grid;
+  gap: 3px;
+}
+
+.tracks-head,
+.tracks .board,
+.tracks-line {
+  display: grid;
+  gap: 3px;
+  grid-template-columns: var(--tracks-gutter) repeat(var(--tracks-cols), 1fr);
+}
+
+.tracks-head {
+  align-items: end;
+  padding-bottom: 2px;
+}
+
+.tracks .board {
+  width: auto;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  /* One column, so each `.tracks-line` fills the width and lays out its own
+     gutter-then-cells. Without this the rows would be packed into the first
+     column of the outer grid and the clues would stop lining up. */
+  grid-template-columns: 1fr;
+}
+
+.tracks-line {
+  align-items: center;
+}
+
+.tracks-count {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-align: center;
+  color: var(--text-h);
+}
+
+/* A cell holding a piece is the same `.cell` the marks board uses, so a track
+   and a queen read as the same kind of thing on the same kind of board. The
+   glyph fills more of the cell than a queen does, because a piece has to reach
+   both its edges for the join to be visible — which is the whole question the
+   player is asking of the cell next door. */
+.tracks .cell {
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+
+/* A piece is two arms from the centre of its cell to the two edges it ends in,
+   drawn rather than typed. A glyph cannot be made to reach the edges reliably —
+   its width is the font's, the platform's and the size's — and any gap it leaves
+   between two cells whose pieces do meet makes a joined line look broken, which
+   is the one thing this genre cannot afford, because reciprocity is the rule.
+
+   Each arm is exactly half a cell, so an arm here and the arm facing it on the
+   next cell meet on the line between them with nothing in between. The 3px gap
+   lives between cells, not inside them. */
+.track-piece {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.track-arm {
+  position: absolute;
+  display: block;
+  background: var(--text);
+}
+
+.track-arm.n,
+.track-arm.s {
+  left: 50%;
+  width: var(--track-thickness);
+  height: 50%;
+  margin-left: calc(var(--track-thickness) / -2);
+}
+
+.track-arm.e,
+.track-arm.w {
+  top: 50%;
+  width: 50%;
+  height: var(--track-thickness);
+  margin-top: calc(var(--track-thickness) / -2);
+}
+
+.track-arm.n { top: 0; }
+.track-arm.s { bottom: 0; }
+.track-arm.e { right: 0; }
+.track-arm.w { left: 0; }
+
+/* A given is a clue the board fixes: printed information, not work in progress.
+   Its arms carry the high-contrast colour and its cell is sunken, so the two
+   kinds of piece are told apart at a glance and by the cell's own accessible
+   name. Without the difference a fixed clue looks like anything the player
+   placed, and clicking one silently does nothing. */
+.tracks .cell.given {
+  background: var(--bg-sunken);
+}
+
+.tracks .cell.given .track-arm {
+  background: var(--text-h);
+}
+
+/* The tracks board acts on a tap, not on a drag, so it must not claim the
+   gesture. `.board.playable` sets `touch-action: none` for the marks board's
+   mark-painting strokes, and inheriting it here would mean a swipe starting over
+   this board could not scroll the page. `manipulation` keeps panning and drops
+   the double-tap-zoom delay, which is the whole cost of tapping a cell. */
+.tracks .board.playable {
+  touch-action: manipulation;
+}
+
 .hint-text {
   min-height: 1.6em;
   margin: 10px 0 0;

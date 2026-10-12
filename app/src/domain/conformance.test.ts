@@ -8,6 +8,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parsePuzzle, PuzzleParseError } from "./puzzle";
+import { marksBoard } from './helpers'
 
 const REPO_ROOT = new URL("../../..", import.meta.url).pathname;
 const CASES_DIR = join(REPO_ROOT, "conformance", "schema-cases");
@@ -76,10 +77,10 @@ describe("conformance: schema-cases", () => {
       expect(puzzle.puzzleType).toBe(expected.type);
       // A file writing `4.0` must parse as the integer 4, not as 4.0: every
       // downstream index and loop bound assumes ints.
-      expect(puzzle.size).toBe(expected.size);
+      expect(puzzle.board.width).toBe(expected.size);
       expect(puzzle.seed).toBe(expected.seed);
       expect(puzzle.generatorVersion).toBe(expected.generatorVersion);
-      expect([...puzzle.board.regionCapacity]).toEqual(expected.regionCapacity);
+      expect([...marksBoard(puzzle).regionCapacity]).toEqual(expected.regionCapacity);
       expect(puzzle.difficulty).toBe(expected.difficulty);
     } else {
       let message: string | null = null;

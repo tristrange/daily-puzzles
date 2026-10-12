@@ -20,7 +20,8 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { firstHint } from './hints'
-import { parsePuzzle } from './puzzle'
+import { isMarksPuzzle, parsePuzzle } from './puzzle'
+import { marksBoard } from './helpers'
 
 const REPO_ROOT = new URL('../../..', import.meta.url).pathname
 const ARCHIVE = join(REPO_ROOT, 'app', 'public', 'puzzles')
@@ -41,7 +42,13 @@ describe('hint baseline', () => {
     let checked = 0
 
     for (const [stem, rows] of Object.entries(baseline)) {
-      const { board } = parsePuzzle(JSON.parse(readFileSync(join(ARCHIVE, `${stem}.json`), 'utf8')))
+      const puzzle = parsePuzzle(JSON.parse(readFileSync(join(ARCHIVE, `${stem}.json`), 'utf8')))
+      // Marks families only, because this baseline is the hint engine's corpus
+      // and the hint engine is a marks thing. A family without hints has no
+      // forced moves to record, so its absence is not a gap here — and the
+      // engine's `hint_baseline` skips them for the same reason.
+      if (!isMarksPuzzle(puzzle)) continue
+      const board = marksBoard(puzzle)
       for (const [queens, marks, expected] of rows) {
         const hint = firstHint(board, new Set(queens), new Set(marks))
         const found = hint === null ? null : [hint.cell, hint.action, hint.rule]
@@ -66,6 +73,10 @@ describe('hint baseline', () => {
     const onDisk = readdirSync(ARCHIVE)
       .filter((name) => name.endsWith('.json'))
       .map((name) => name.replace(/\.json$/, ''))
+      .filter((stem) => {
+        const puzzle = parsePuzzle(JSON.parse(readFileSync(join(ARCHIVE, `${stem}.json`), 'utf8')))
+        return isMarksPuzzle(puzzle)
+      })
     expect(Object.keys(baseline).sort()).toEqual(onDisk.sort())
   })
 })

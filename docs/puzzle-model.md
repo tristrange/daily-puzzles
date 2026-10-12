@@ -262,10 +262,47 @@ the whole point: the refactor is additive.
 
 ### L3 — app: per-type state and a per-type registry
 
-Not built. The registration landed the parts of it that do not require playing the
-grid — `PUZZLE_TYPE_SUFFIX`, `LABEL`, `PIECE`, `HAS_HINTS` and `PUBLISHED` are all
-keyed by type, and `Board` stays a marks board until a `TrackGrid` has somewhere to
-live beside it.
+Built, and smaller than this section predicted. The registry did not grow:
+`PUZZLE_TYPE_SUFFIX`, `LABEL`, `PIECE`, `HAS_HINTS` and `PUBLISHED` were already
+`Record<PuzzleType, …>`, so registering the family was five table entries. What did
+grow is `Board`, which became a two-model union — `Board | TrackGrid`, discriminated
+by `puzzleType` — plus a second stage component.
+
+The pieces the plan called for and the shape they took:
+
+- **`TrackGrid`** is a class beside `Board`, not a subclass and not a widening of
+  it. Both answer `width`, `height`, `cellCount`, `index` and `coords`, which is
+  what lets a caller that only needs geometry ask for those and not branch.
+- **`Puzzle.size` is deleted**, exactly as in the engine. Every consumer reads
+  `puzzle.board.width` and `.height` instead, which is why the home page and the
+  share text needed no per-type branch.
+- **`GameState` did not become a union.** It would have meant narrowing in every
+  handler, and there is almost nothing shared to generalise: a tracks board has no
+  marks to cross out, no auto-mark (a piece rules out nothing on its own — the
+  whole question is what its neighbour does back), and no hints. `TracksStage` is
+  its own component next to `PuzzleStage`; what the two share — the clock, undo,
+  reset, the solved panel and the share — is `SolvedPanel`, extracted as
+  presentation over facts both already hold.
+- **`isSolved` and `conflicts` are the tracks rules**, not a generalised version of
+  the marks ones. See below.
+
+The win condition is four rules and each is doing work the others cannot.
+**Reciprocity** — every end met. **Counts** — every row and column exactly its
+clue, asked as equality rather than as a ceiling, because a short row is a puzzle
+in progress and a wrong answer. **Two open ends** — and this is the rule that
+surprised me. An end running off the grid is *required*, not an error: a line has
+two ends and they leave the board. My first version flagged any off-grid end as a
+conflict and rejected every correct solution. **One path** — and reciprocity plus
+exactly two open ends is not enough on its own: every cell has two ends, so two
+cells have one neighbour and the rest have two, which admits a single path *and*
+any number of separate loops. Connectivity has to be checked.
+
+The one thing the conformance suites cannot cover is what a *player's half-finished
+board* means, because Python never holds one — `isTracksSolved` has no counterpart
+in the engine to pin itself to. That gap was closed by generating 400 boards in the
+engine, taking each one's unique solution, and checking the app accepts all 400 and
+rejects 1200 single-piece mutations of them. It found two real bugs in the first
+version, both of which the hand-written fixtures had missed.
 
 `GameState` stops being one shape. It becomes a union, and the mark variant is
 today's shape unchanged:

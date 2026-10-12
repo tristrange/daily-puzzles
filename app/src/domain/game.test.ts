@@ -32,6 +32,7 @@ import {
   toggleQueen,
 } from './game'
 import { parsePuzzle } from './puzzle'
+import { marksBoard } from './helpers'
 
 const BLOCKS = new Board(4, [
   0, 0, 1, 1,
@@ -550,13 +551,14 @@ describe('star battle parity with the engine', () => {
   const ENGINE_SOLUTION = [1, 3, 13, 15, 17, 19, 29, 31, 32, 34, 44, 46, 48, 50, 60, 62]
 
   it('parses and reads 2 stars per row', () => {
-    const { board, puzzleType } = parsePuzzle(ENGINE_PUZZLE)
+    const { puzzleType } = parsePuzzle(ENGINE_PUZZLE)
+    const board = marksBoard(parsePuzzle(ENGINE_PUZZLE))
     expect(puzzleType).toBe('star-battle')
     expect(starsPerRow(board)).toBe(2)
   })
 
   it('accepts the engine solution as solved', () => {
-    const { board } = parsePuzzle(ENGINE_PUZZLE)
+    const board = marksBoard(parsePuzzle(ENGINE_PUZZLE))
     const game = ENGINE_SOLUTION.reduce(
       (state, cell) => toggleQueen(state, cell),
       createGame(board),
@@ -568,7 +570,7 @@ describe('star battle parity with the engine', () => {
   it('rejects a swap of two stars that would leave a gap', () => {
     // Move the star at 1 to 2, which puts two stars in cell 2's region corner
     // and leaves region 0 with one; 15 stars is not a solution.
-    const { board } = parsePuzzle(ENGINE_PUZZLE)
+    const board = marksBoard(parsePuzzle(ENGINE_PUZZLE))
     const moved = [2, ...ENGINE_SOLUTION.slice(1)]
     const game = moved.reduce((state, cell) => toggleQueen(state, cell), createGame(board))
     expect(conflicts(game).length).toBeGreaterThan(0)
@@ -576,7 +578,7 @@ describe('star battle parity with the engine', () => {
   })
 
   it('flags a star placed next to another star', () => {
-    const { board } = parsePuzzle(ENGINE_PUZZLE)
+    const board = marksBoard(parsePuzzle(ENGINE_PUZZLE))
     // Cell 2 is diagonally adjacent to the solution's star at 1.
     const game = toggleQueen(toggleQueen(createGame(board), 1), 2)
     expect(conflicts(game)).toEqual([{ rule: 'touch', cells: [1, 2] }])

@@ -1,6 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Board, type PuzzleType } from '../domain/board'
-import { appBase, boardGrid, buildShareText, buildSolutionShareText, puzzleShareLink } from './share'
+import {
+  appBase,
+  boardGrid,
+  buildShareText,
+  buildSolutionShareText,
+  puzzleShareLink,
+  trackGridText,
+} from './share'
+import { TrackGrid } from '../domain/tracks'
 
 /**
  * Stand in for a browser at `href`, with Vite's `BASE_URL` set to `basePath`.
@@ -74,7 +82,8 @@ describe('boardGrid', () => {
 })
 
 const result = {
-  size: 4,
+  width: 4,
+  height: 4,
   puzzleType: 'queens' as const,
   elapsedMs: 263_000,
   hints: 0,
@@ -214,5 +223,26 @@ describe('puzzleShareLink', () => {
     withBrowserUrl('https://puzzles.example/', '/', () => {
       expect(puzzleShareLink('2026-09-30')).toContain('/#/archive/')
     })
+  })
+})
+
+describe('trackGridText', () => {
+  it('draws every cell the same width, so the route stays a rectangle', () => {
+    // The marks board's empty cell is a wide emoji. Beside box-drawing
+    // characters that occupy one column, every piece after an empty one shifts,
+    // so the copied answer stops reading as the shape it is.
+    // Two givens at the corners facing outwards, which is what the format
+    // requires; the drawing does not care what they are.
+    const grid = new TrackGrid(4, 4, [1, 1, 1, 1], [1, 1, 1, 1], [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
+    const drawing = trackGridText(grid, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3])
+    for (const line of drawing.split('\n')) {
+      expect([...line]).toHaveLength(4)
+    }
+    expect(drawing).toContain('─')
+    expect(drawing).toContain('└')
+    // No whitespace within a row, because shared text is not preformatted: chat
+    // and HTML collapse runs of spaces and trim the ends, which is how an empty
+    // corner would shorten its row.
+    for (const line of drawing.split('\n')) expect(line).not.toMatch(/\s/)
   })
 })

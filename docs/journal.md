@@ -23,7 +23,7 @@ avoided. The reasoning is the point; the shipped code is in `git log`.
 | 14 | Remember the auto-mark choice between visits | done |
 | 15 | A weekly difficulty ramp for Queens, and the band in the puzzle file | done |
 | 16 | Port the deduction engine to per-group counts so Star Battle can be rated, then ramp it too | done — rating deferred, below |
-| 17 | Train Tracks: a per-type contract the model was missing, and the type registered against it | done — engine only, unpublished |
+| 17 | Train Tracks: a per-type contract the model was missing, and the type registered against it | done — engine and app, unpublished |
 
 Milestones 2 to 4 were the critical path, and they are all Python. The engine alone — a
 CLI with an exact uniqueness prover and property tests — would have been worth publishing
@@ -245,6 +245,156 @@ The honest summary is that a type which cannot be reached is the easiest thing i
 repository to get right, and I got six things wrong anyway. What caught them was a
 reviewer reading the diff against the model rather than against my description of it.
 That is the argument for the reviewer, not for writing fewer comments.
+
+## A measurement I should have caught the first time
+
+Adding Train Tracks to the engine registry made every `for book in rulebooks()`
+test generate a track board, and I read the suite going from four minutes to
+seventeen as a CI regression I had introduced. The only engine change in that diff
+was three deleted dead checks and an unused import. Re-running the same file on
+merged `main` took 36.8s; on my tree, back to back, 32.5s — my tree was slightly
+*faster*.
+
+The machine had a game at 200% CPU and a local model server running. This is the
+third time in this project that a timing was contaminated by something other than
+the code, and the tell was the same each time: a number that changed by 4x from a
+diff that cannot plausibly cause it. The check that settles it is a back-to-back
+run of the same file on both trees, not a longer wait.
+
+**Before believing your change made something slow, prove the change could.** A
+diff of three deleted lines is not a plausible cause of a 4x slowdown, and treating
+it as one sends you optimising code that was already fine — which is what I
+started to do, twice, before measuring properly.
+
+## A rule that was required, and I wrote it as an error
+
+The app's Train Tracks win check flagged any end running off the grid as a conflict.
+That is not a rare edge case; it is what a *correct* answer looks like. A line has
+two ends and both leave the board — that is the format's own definition, and
+`TrackGrid`'s constructor rejects any grid whose givens do not produce exactly two.
+
+So the first version of the rule rejected every correct solution, and it did so
+quietly: no error, no red board, just a puzzle that could never be won. The engine's
+solver has the same rule stated as a ceiling it grows into rather than a floor it
+checks — `search.open_ends + off_grid <= LINE_ENDS` while searching, `== LINE_ENDS`
+at the end — and I had that in front of me when I wrote the check wrong.
+
+What made it findable was not reading the code again. It was generating 400 boards
+in the engine, taking each one's unique solution, and asking the app whether it
+agreed. Forty out of forty failed, which is a much louder signal than a green test
+suite: `Puzzle.size` had just been deleted, every marks test still passed, and the
+one rule with no counterpart in Python was wrong in the way a passing test cannot
+see. The second bug that sweep found — reading a given of `0` as "this cell must
+stay empty" rather than "nothing is given here" — came from the same place.
+
+Then a reviewer found the third, and it was the same shape as the second one. The
+win check asked whether any row or column *exceeded* its clue, which is what
+`conflicts` reports — but a line can be short of a clue without exceeding it, and
+reciprocity plus exactly two open ends does not rule that out either. A perfectly
+formed seven-cell path through a 4x4, every join reciprocal, both ends off the
+grid, and row 0 holding 1 cell where the clue says 3. The app recorded that as a
+solve.
+
+What makes it worth three paragraphs rather than one line: I had *written* the rule
+correctly in the docstring above the function — "counts, asked for equality, because
+a short row is a puzzle in progress" — and then implemented the ceiling instead.
+The prose was right and the code was not, and the prose is what I re-read while
+checking whether the reviewer had read it properly. It is a reminder that a
+docstring is a claim, not a control, and the cheapest possible check on it is a
+test that states the case the docstring says cannot happen.
+
+A second pass on the same review found two more, both in what the player is told
+rather than in what is computed: a solved route shared as text mixed the wide
+emoji `⬛` for an empty cell in among one-column box-drawing characters, so every
+piece after an empty one shifted and the copied answer stopped being the shape it
+was; and every conflict was announced as "not connected", including a fully
+connected route that was simply over a row clue. The second is the worse of the
+two. A wrong label does not merely fail to inform — it tells a screen-reader user
+they have a fault they do not have, while the one they do have goes unnamed.
+
+A third pass found two more, and the first of them was in the *engine*, not the
+app: `TrackGrid`'s validator counted open ends by counting the pieces that carried
+them. A corner turn leaves the grid at both ends at once, so a grid with three
+open ends could be counted as two and accepted — a grid with no solution at all,
+which the generator's uniqueness gate would then reject much more expensively.
+The rule and its own comment said "ends"; the code said pieces, and the comment is
+what I had read back to myself twice.
+
+That one also turned out to have a test pinning the wrong behaviour, by name and
+with a comment saying the spec checks *cells*. Its example did not distinguish the
+two rules — one corner piece alone is rejected either way — so the test asserted
+a distinction it never exercised. Replacing it meant working out which rule was
+right rather than which one was old, and the answer is that both checks are
+needed: exactly two ends, and never both on one cell, because a line's two ends
+are two cells.
+
+The second was the roving tabindex, and it had been wrong in the marks board for
+the whole project. Moving the tabindex does not move focus, so an arrow key acted
+on the new cell while the focus ring stayed on the old one. Nothing caught it
+because the two agree until the first key press, and there is no DOM test in the
+project to press one.
+
+The last two were the same failure wearing different clothes, and they are worth
+naming because they are the kind that never show up as a crash. Both were the
+board telling a player they had done something wrong when they had not. An end
+pointing at an empty cell was reported as "does not meet", which is a fault; it is
+actually a route that is not finished yet. And when a player created a third
+off-grid end, the report pointed at the two *given* ends as well — two fixed clues
+the player cannot change — while hiding the end they had just placed.
+
+And the next round caught me having fixed only half of it: I had split the rule in
+two and given them different *words*, while the board still painted both red and
+still said "some track does not meet — fix it". A distinction the player cannot see
+is not a distinction. That is the third time in this run the same finding came
+back wearing a different hat, and the pattern is worth keeping: **fixing a
+presentation fault by changing only the text is half a fix**, because the styling
+and the status line are the same statement in a louder voice.
+
+Both are the conflict marker doing its job too eagerly. The rule I would carry
+from them: And then the same fault arrived a fourth time, one level down: when a *given* faced
+a piece that did not face back, the fault was recorded against the given. Reciprocity
+is symmetric, so only one cell of a pair reports — and it was the immutable one. The
+board marked a clue red and left the piece the player could actually correct
+untouched. The generalisation is the one worth keeping, and it took a fifth pass to
+state it plainly enough to survive: **the cell a fault is reported against must be
+a cell the player can change, and the action must be one that helps.** Not the cell
+where the problem was noticed, not the first one the loop reached, not every cell
+sharing the offending row.
+
+And then the one that is not about the same rule at all, and is the worst of the
+lot for being invisible. At 480px a 7x7 cell is about 61px and the piece glyph was
+34px, so every rail stopped 30px short of the cell edge — and two cells whose
+pieces genuinely met were drawn as two pieces that did not. The gap *is* the game:
+reciprocity is the rule, and a line the player has to reason about instead of see
+is a line they cannot play. It is drawn now as two arms from the centre to the two
+edges, which is a thing a font character cannot do, because its width is the font's
+and the platform's and the size's.
+
+The failure is worth naming because nothing reported it. No test failed, no type
+complained, the markup was correct, the arithmetic in the CSS was correct, and the
+board was still unreadable — a defect that exists entirely in the space between what
+the code says and what it looks like. The only thing that could have caught it was
+looking at it, and there was no browser here to look with. **Some defects are not
+assertable; they are only visible.** Writing a test that checks for the absence of
+the glyph proves the code changed, not that the picture is right, and it would have
+been the comfortable thing to do while still shipping a broken board.
+
+Five separate findings in this one PR were that same rule missed in five places — a
+given marked red, an empty cell marked red, a whole row marked red including the
+parts that cannot help — and every one arrived reading as a bug report about
+something else until you notice they are the same sentence. Which is what a run of
+same-shaped findings means, and it is worth saying plainly rather than fixing the
+sixth one next week: when the fifth arrives, the answer is not the fifth fix. It is
+to write the rule down where the next one will find it.
+
+**a warning that names the wrong fault is worse than no warning**, because
+the player learns to ignore the marker, and then it is not doing its job either.
+Knowing what is wrong is not the same as knowing what to do about it. Neither
+conformance suite covers a half-finished board, because the engine never has one.
+The gap is structural, and the answer to it is a cross-check against generated
+ground truth rather than another hand-written fixture: three of my hand-built
+fixtures were wrong before one was right, and each was wrong in a way the test
+suite reported as a pass.
 
 ## Registering a type without shipping it
 

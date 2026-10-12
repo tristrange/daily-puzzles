@@ -88,6 +88,20 @@ export function InteractiveBoard({
   onGestureEnd,
 }: CellActionProps) {
   const [focusIndex, setFocusIndex] = useState(0)
+  const gridRef = useRef<HTMLDivElement>(null)
+
+  // Moving the roving index is not the same as moving focus, and only the second
+  // one moves the focus ring and the screen reader's cursor. Without this, an
+  // arrow key acted on the new cell while the board still *looked* focused on the
+  // old one — Enter placing a queen the player cannot see where it went.
+  //
+  // Guarded on the grid already holding focus, so mounting does not steal the
+  // page's focus from wherever the player actually is.
+  useEffect(() => {
+    const grid = gridRef.current
+    if (grid === null || !grid.contains(document.activeElement)) return
+    grid.querySelector<HTMLElement>(`[data-cell="${focusIndex}"]`)?.focus()
+  }, [focusIndex])
   const [painting, setPainting] = useState(false)
   const stroke = useRef<Stroke | null>(null)
   const piece = PUZZLE_PIECE[board.puzzleType]
@@ -171,12 +185,16 @@ export function InteractiveBoard({
   }
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    // `locked` first, so the keyboard cannot undo a solved board through a path
+    // the disabled button does not have. Undoing after the solve would reopen the
+    // board while the clock stays frozen and the solve transition cannot run
+    // again.
+    if (locked) return
     if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
       event.preventDefault()
       onUndo()
       return
     }
-    if (locked) return
     const { row, col } = board.coords(focusIndex)
     switch (event.key) {
       case 'ArrowUp':
@@ -312,6 +330,7 @@ export function InteractiveBoard({
 
   return (
     <div
+      ref={gridRef}
       className={painting ? 'board playable painting' : 'board playable'}
       role="grid"
       aria-label={`${board.size} by ${board.size} ${puzzleName} puzzle with ${board.regionCount} regions`}

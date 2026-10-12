@@ -50,7 +50,7 @@ from .generator import (
 from .render import render_board, render_grid
 from .solver import DEFAULT_LIMIT, iter_solutions
 from .solver import count_solutions as count_board_solutions
-from .tracks import TrackGrid, TrackGridError
+from .tracks import TrackGrid
 from .tracks import count_solutions as count_track_solutions
 from .tracks_gen import generate_grid
 
@@ -504,16 +504,9 @@ class TrackRulebook(Rulebook):
             require_int(value, "board.givens[]")
             for value in require_list(record.get("givens"), "board.givens")
         )
-        # TrackGrid validates lengths, clue ranges, the two running totals and the
-        # mandatory ends in its own constructor. The one thing it cannot know is
-        # whether the file asked for the dimensions it was given, so the array
-        # lengths are checked here against the same numbers.
-        if len(row_clues) != height:
-            raise TrackGridError(f"rowClues has {len(row_clues)} entries, expected {height}")
-        if len(col_clues) != width:
-            raise TrackGridError(f"colClues has {len(col_clues)} entries, expected {width}")
-        if len(givens) != width * height:
-            raise TrackGridError(f"givens has {len(givens)} entries, expected {width * height}")
+        # `TrackGrid`'s constructor checks the array lengths against these
+        # dimensions, the clue ranges, the two running totals, the piece numbers
+        # and the two open ends — so there is nothing left to check here.
         return TrackGrid(width, height, row_clues, col_clues, givens)
 
     def board_to_dict(self, board: Board | TrackGrid) -> dict[str, JsonValue]:

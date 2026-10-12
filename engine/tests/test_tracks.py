@@ -92,15 +92,29 @@ class TestValidation:
         # One given end piece: the line's far end is unaccounted for.
         givens = [0] * 9
         givens[0] = HORIZONTAL
-        with pytest.raises(TrackGridError, match="1 given pieces run off"):
+        with pytest.raises(TrackGridError, match="1 given ends run off"):
             TrackGrid(3, 3, (1, 1, 1), (1, 1, 1), tuple(givens))
 
-    def test_counts_a_corner_piece_once_however_many_ends_it_has(self) -> None:
-        # The spec's check is on *cells*, not ends: a corner curve with both ends off
-        # the grid is one cell running out, so a grid needing two such cells has one.
+    def test_rejects_a_grid_whose_only_open_end_is_a_corner_turn(self) -> None:
+        # A corner turn leaves the grid at both ends at once, so this one cell
+        # accounts for two open ends and the line's other end is unaccounted for.
         givens = [0] * 9
         givens[0] = _BY_ENDS[frozenset({NORTH, WEST})]
-        with pytest.raises(TrackGridError, match="1 given pieces run off"):
+        with pytest.raises(TrackGridError, match="two ends are two cells"):
+            TrackGrid(3, 3, (1, 1, 1), (1, 1, 1), tuple(givens))
+
+    def test_counts_open_ends_not_the_cells_carrying_them(self) -> None:
+        # The rule is two open ends, and a corner turn has two. Counting cells
+        # instead made this grid — a corner turn plus an edge piece, three ends —
+        # look like the two it was meant to catch, and it has no solution at all.
+        #
+        # No valid grid is refused by the tighter rule: a piece with both ends off
+        # the grid would be the whole line, which no solution is. So the two checks
+        # are separate — the count, and whether one cell is trying to be both ends.
+        givens = [0] * 9
+        givens[0] = _BY_ENDS[frozenset({NORTH, WEST})]  # top-left corner: two ends
+        givens[2] = HORIZONTAL  # right edge: one end
+        with pytest.raises(TrackGridError, match="two ends are two cells"):
             TrackGrid(3, 3, (1, 1, 1), (1, 1, 1), tuple(givens))
 
     def test_rejects_three_open_ends(self) -> None:
@@ -108,7 +122,7 @@ class TestValidation:
         givens[0] = HORIZONTAL  # left edge
         givens[2] = HORIZONTAL  # right edge
         givens[8] = _BY_ENDS[frozenset({SOUTH, WEST})]  # bottom-left corner
-        with pytest.raises(TrackGridError, match="3 given pieces run off"):
+        with pytest.raises(TrackGridError, match="3 given ends run off"):
             TrackGrid(3, 3, (1, 1, 2), (1, 1, 2), tuple(givens))
 
     def test_rejects_a_line_shorter_than_its_two_end_cells(self) -> None:

@@ -175,14 +175,24 @@ def _validate(grid: TrackGrid) -> None:
     # Both ends of the line are givens, so exactly two of them face off the grid.
     # Anything else and the grid either cannot be finished or has ends in the middle
     # of the board, which no solution would explain.
-    open_ends = sum(
-        1
-        for index, piece in enumerate(grid.givens)
-        if piece and any(grid.neighbour(index, end) is None for end in PIECE_ENDS[piece])
-    )
+    #
+    # Ends, not pieces. A corner turn can leave the grid at both ends at once, and
+    # counting the piece once would let a grid with three open ends through as one
+    # with two — a grid with no solution at all, accepted.
+    #
+    # And the two have to be on different cells. One cell cannot be both of a
+    # line's ends: it would be the whole line, which no solution is.
+    open_ends = 0
+    for index, piece in enumerate(grid.givens):
+        here = sum(1 for end in PIECE_ENDS[piece] if grid.neighbour(index, end) is None)
+        if here > 1:
+            raise TrackGridError(
+                f"cell {index} runs off the grid at both ends, but a line's two ends are two cells"
+            )
+        open_ends += here
     if open_ends != LINE_ENDS:
         raise TrackGridError(
-            f"{open_ends} given pieces run off the grid, but a line has exactly 2 ends"
+            f"{open_ends} given ends run off the grid, but a line has exactly 2 ends"
         )
     if grid.total < LINE_ENDS:
         raise TrackGridError("a line needs at least its two end cells")
