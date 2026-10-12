@@ -246,6 +246,26 @@ repository to get right, and I got six things wrong anyway. What caught them was
 reviewer reading the diff against the model rather than against my description of it.
 That is the argument for the reviewer, not for writing fewer comments.
 
+## A measurement I should have caught the first time
+
+Adding Train Tracks to the engine registry made every `for book in rulebooks()`
+test generate a track board, and I read the suite going from four minutes to
+seventeen as a CI regression I had introduced. The only engine change in that diff
+was three deleted dead checks and an unused import. Re-running the same file on
+merged `main` took 36.8s; on my tree, back to back, 32.5s — my tree was slightly
+*faster*.
+
+The machine had a game at 200% CPU and a local model server running. This is the
+third time in this project that a timing was contaminated by something other than
+the code, and the tell was the same each time: a number that changed by 4x from a
+diff that cannot plausibly cause it. The check that settles it is a back-to-back
+run of the same file on both trees, not a longer wait.
+
+**Before believing your change made something slow, prove the change could.** A
+diff of three deleted lines is not a plausible cause of a 4x slowdown, and treating
+it as one sends you optimising code that was already fine — which is what I
+started to do, twice, before measuring properly.
+
 ## A rule that was required, and I wrote it as an error
 
 The app's Train Tracks win check flagged any end running off the grid as a conflict.
