@@ -52,7 +52,7 @@ export function StatsPage() {
 
   return (
     <section>
-      <h2 className="page-title">Your stats</h2>
+      <h1 className="page-title">Your stats</h1>
       {/* One live region, at a fixed position in a single tree shape, so that clearing
           updates its text instead of swapping the page for a new one carrying the
           notice already set. A screen reader announces a change to a region that is
@@ -80,7 +80,7 @@ export function StatsPage() {
             ))}
           </dl>
           {solveCounts !== null && <p className="status">{solveCounts}.</p>}
-          <h3 className="page-title">Recent solves</h3>
+          <h2 className="page-title">Recent solves</h2>
           <ul className="archive">
             {recent.map((record) => (
               <li key={record.id}>

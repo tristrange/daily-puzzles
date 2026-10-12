@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { useRef } from 'react'
+import { Link, NavLink, Outlet } from 'react-router-dom'
 import { ThemePicker } from './ThemePicker'
 
 function navClass({ isActive }: { isActive: boolean }): string {
@@ -6,12 +7,19 @@ function navClass({ isActive }: { isActive: boolean }): string {
 }
 
 export function Shell() {
+  const content = useRef<HTMLElement>(null)
   return (
     <div className="shell">
+      <a className="skip-link" href="#main-content" onClick={(event) => {
+        // HashRouter owns fragments, so skipping moves focus without navigating.
+        event.preventDefault()
+        content.current?.focus()
+      }}>Skip to content</a>
       <header className="site-header">
-        <span className="brand" aria-hidden="true">
+        <Link className="brand" to="/" aria-label="Daily Puzzles, today">
+          <span className="brand-mark" aria-hidden="true"><i /><i /><i /><i /></span>
           Daily&nbsp;Puzzles
-        </span>
+        </Link>
         <nav aria-label="Main">
           <NavLink to="/" end className={navClass}>
             Today
@@ -28,10 +36,13 @@ export function Shell() {
         </nav>
         <ThemePicker />
       </header>
-      <main className="content">
+      <main ref={content} className="content" id="main-content" tabIndex={-1}>
         <Outlet />
       </main>
-      <footer className="site-footer">A hand-built daily logic puzzle app.</footer>
+      <footer className="site-footer">
+        <span>A little logic, every day.</span>
+        <span>Hand-built. Played at your pace.</span>
+      </footer>
     </div>
   )
 }

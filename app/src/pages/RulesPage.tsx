@@ -28,7 +28,7 @@ export function RulesPage() {
 
   return (
     <section className="rules">
-      <h2 className="page-title">How to play</h2>
+      <h1 className="page-title">How to play</h1>
       <p className="status">
         Three puzzles are published every day, one of each game. The first two share a board,
         a set of moves and a win condition &mdash; they differ only in how many pieces a row
@@ -36,7 +36,7 @@ export function RulesPage() {
         in the <Link to="/archive">archive</Link>.
       </p>
 
-      <h3>The board</h3>
+      <h2>The board</h2>
       <p>
         The daily board varies in size from 7&times;7 to 9&times;9, depending on the day and
         the game. Cells that share a background colour form a{' '}
@@ -49,7 +49,7 @@ export function RulesPage() {
         always one and drawing it in every top-left cell would only be noise.
       </p>
 
-      <h3>Rules both games share</h3>
+      <h2>Rules both games share</h2>
       <ul>
         <li>
           <strong>Regions are filled exactly.</strong> Every region ends up holding precisely
@@ -65,14 +65,14 @@ export function RulesPage() {
         </li>
       </ul>
 
-      <h3>Queens</h3>
+      <h2>Queens</h2>
       <p>
         Place one queen in each row, in each column and in each region, with no two queens
         touching, not even at a corner. Crosses are yours to place as notes; see{' '}
         <Link to={{ pathname: '/how-to-play', hash: '#crosses' }}>Crosses and auto-mark</Link>.
       </p>
 
-      <h3>Star Battle</h3>
+      <h2>Star Battle</h2>
       <p>
         Place stars so that each region holds exactly the number printed in it, so that every
         row and every column holds the same number of stars, and so that no two stars touch,
@@ -87,7 +87,7 @@ export function RulesPage() {
         engine applies it.
       </p>
 
-      <h3>Train Tracks</h3>
+      <h2>Train Tracks</h2>
       <p>
         Join every cell into <strong>one unbroken line</strong>. Each cell holds one of six
         pieces &mdash; two straights and four turns &mdash; and a piece's arms say which of the
@@ -125,7 +125,7 @@ export function RulesPage() {
         offers none.
       </p>
 
-      <h3 id="notes">Notes, and the picker</h3>
+      <h2 id="notes">Notes, and the picker</h2>
       <p>
         A cell can hold a piece, or one of two notes, or nothing:
       </p>
@@ -160,7 +160,7 @@ export function RulesPage() {
         <strong>Enter</strong> puts the picked entry in it.
       </p>
 
-      <h3 id="crosses">Crosses and auto-mark</h3>
+      <h2 id="crosses">Crosses and auto-mark</h2>
       <p>
         A cross marks a cell you have ruled out. The app never checks them: they are your
         working notes, and a cross on a cell that should hold a piece is simply a mistake you
@@ -175,7 +175,7 @@ export function RulesPage() {
         only what you have worked out yourself.
       </p>
 
-      <h3>Controls</h3>
+      <h2>Controls</h2>
       <p>
         A left click cycles a cell through its states: empty, cross, piece, empty for the two
         marks games; and for Train Tracks, empty and then each of the six pieces in turn,
@@ -260,7 +260,7 @@ export function RulesPage() {
         need, and what is wrong with it if anything is.
       </p>
 
-      <h3>Hints</h3>
+      <h2>Hints</h2>
       <p>
         In Queens, <strong>H</strong> or the <strong>Hint</strong> button names a cell and says
         whether to place a queen there or cross it off. A hint is only given once the board has
@@ -269,7 +269,7 @@ export function RulesPage() {
         your result, so a solve without them shares differently.
       </p>
 
-      <h3>Finishing and sharing</h3>
+      <h2>Finishing and sharing</h2>
       <p>
         When the board is solved it locks and offers two share texts: the result, and the same
         text with the finished board included, which gives the puzzle away. Only your first
@@ -277,7 +277,7 @@ export function RulesPage() {
         you the time you first set, rather than overwriting it.
       </p>
 
-      <h3>Your stats</h3>
+      <h2>Your stats</h2>
       <p>
         Solves are kept in this browser only. There is no account and nothing is uploaded, so
         clearing your browser data clears them with it. A streak counts a day once, whether you

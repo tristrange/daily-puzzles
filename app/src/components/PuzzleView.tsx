@@ -17,7 +17,7 @@ import {
   toggleQueen,
   type GameState,
 } from '../domain/game'
-import { PUZZLE_PIECE, PUZZLE_TYPE_HAS_HINTS } from '../domain/games'
+import { DIFFICULTY_LABEL, PUZZLE_PIECE, PUZZLE_TYPE_HAS_HINTS, PUZZLE_TYPE_LABEL } from '../domain/games'
 import { firstHint, type Hint } from '../domain/hints'
 import type { Board } from '../domain/board'
 import { isMarksPuzzle, isTracksPuzzle, type Puzzle } from '../domain/puzzle'
@@ -458,7 +458,14 @@ export function PuzzleView({
   }
   return (
     <article className="puzzle">
-      <h1>{formatPuzzleLabel(id, timeZone)}</h1>
+      <div className="puzzle-heading">
+        <p className="eyebrow">{formatPuzzleLabel(id, timeZone)}</p>
+        <h1>{PUZZLE_TYPE_LABEL[state.puzzle.puzzleType]}</h1>
+        <p className="puzzle-detail">
+          {state.puzzle.board.width}&times;{state.puzzle.board.height} grid
+          {state.puzzle.difficulty != null && <> · {DIFFICULTY_LABEL[state.puzzle.difficulty]}</>}
+        </p>
+      </div>
       <div key={state.puzzle.id}>
         {isTracksPuzzle(state.puzzle) ? (
           <TracksStage puzzle={state.puzzle} grid={state.puzzle.board} timeZone={timeZone} />

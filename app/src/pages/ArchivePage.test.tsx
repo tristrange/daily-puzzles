@@ -48,15 +48,15 @@ describe('ArchiveGroups', () => {
     ])
 
     // Two headings, each one family, in the declared order.
-    expect(html).toContain('<h3 class="archive-group-title">Queens</h3>')
-    expect(html).toContain('<h3 class="archive-group-title">Star Battle</h3>')
+    expect(html).toContain('<h2 class="archive-group-title">Queens</h2>')
+    expect(html).toContain('<h2 class="archive-group-title">Star Battle</h2>')
     expect(html.indexOf('Queens')).toBeLessThan(html.indexOf('Star Battle'))
 
     // Every puzzle sits inside a list belonging to its own family's block, so the
     // two puzzles of a day are no longer only distinguishable by their date.
     const queensBlock = html.slice(
-      html.indexOf('<h3 class="archive-group-title">Queens</h3>'),
-      html.indexOf('<h3 class="archive-group-title">Star Battle</h3>'),
+      html.indexOf('<h2 class="archive-group-title">Queens</h2>'),
+      html.indexOf('<h2 class="archive-group-title">Star Battle</h2>'),
     )
     expect(queensBlock).toContain('href="/archive/2026-10-03"')
     expect(queensBlock).toContain('href="/archive/2026-10-02"')
@@ -84,7 +84,7 @@ describe('ArchiveGroups', () => {
 
   it('omits a family with nothing published', () => {
     const html = render([queens('2026-10-03')])
-    expect(html).toContain('<h3 class="archive-group-title">Queens</h3>')
+    expect(html).toContain('<h2 class="archive-group-title">Queens</h2>')
     expect(html).not.toContain('Star Battle')
   })
 

@@ -12,7 +12,6 @@ export function StarBattlePage() {
   const [id] = useState(() => puzzleIdFor(puzzleOfToday(new Date(), timeZone), 'star-battle'))
   return (
     <section>
-      <h2 className="page-title">Today&rsquo;s Star Battle</h2>
       <PuzzleView
         key={id}
         id={id}

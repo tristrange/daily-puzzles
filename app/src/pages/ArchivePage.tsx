@@ -42,7 +42,7 @@ export function ArchivePage() {
 
   return (
     <section>
-      <h2 className="page-title">Archive</h2>
+      <h1 className="page-title">Archive</h1>
       {state.status === 'loading' && <p className="status">Scanning archive…</p>}
       {state.status === 'error' && (
         <p className="status error">Could not read the archive.</p>
@@ -74,7 +74,7 @@ export function ArchiveGroups({
     <>
       {groups.map((group) => (
         <section className="archive-group" key={group.type}>
-          <h3 className="archive-group-title">{PUZZLE_TYPE_LABEL[group.type]}</h3>
+          <h2 className="archive-group-title">{PUZZLE_TYPE_LABEL[group.type]}</h2>
           <ul className="archive">
             {group.puzzles.map((puzzle) => (
               <li key={puzzle.id}>

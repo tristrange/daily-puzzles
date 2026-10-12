@@ -138,6 +138,27 @@ describe.each(['light', 'dark'] as const)('the %s theme', (side) => {
     expect(contrast(opaque(readColour('text', side)), page)).toBeGreaterThanOrEqual(TEXT_MINIMUM)
   })
 
+  it('keeps card and toolbar text legible on their solid surfaces', () => {
+    const surface = opaque(readColour('surface', side))
+    for (const ink of ['text', 'text-h', 'accent']) {
+      expect(contrast(opaque(readColour(ink, side)), surface)).toBeGreaterThanOrEqual(TEXT_MINIMUM)
+    }
+  })
+
+  it('keeps the primary Play action legible in either appearance', () => {
+    expect(contrast(
+      opaque(readColour('primary-ink', side)),
+      opaque(readColour('primary-bg', side)),
+    )).toBeGreaterThanOrEqual(TEXT_MINIMUM)
+  })
+
+  it('keeps fixed Train Tracks clues legible on sunken cells', () => {
+    expect(contrast(
+      opaque(readColour('accent', side)),
+      opaque(readColour('bg-sunken', side)),
+    )).toBeGreaterThanOrEqual(TEXT_MINIMUM)
+  })
+
   it('has headings that clears AA', () => {
     expect(contrast(opaque(readColour('text-h', side)), page)).toBeGreaterThanOrEqual(TEXT_MINIMUM)
   })
