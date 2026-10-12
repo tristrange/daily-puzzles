@@ -17,7 +17,6 @@ import time
 import pytest
 
 import queens_engine.tracks as track_solver
-
 from queens_engine.tracks import (
     EAST,
     LINE_ENDS,
@@ -42,7 +41,7 @@ VERTICAL = _BY_ENDS[frozenset({NORTH, SOUTH})]
 
 class TestSearchBudgets:
     def test_zero_states_reports_incomplete_search(self) -> None:
-        with pytest.raises(track_solver.TrackSearchLimit):
+        with pytest.raises(track_solver.TrackSearchLimitError):
             count_solutions(solved(3, 3), max_states=0)
 
     def test_bounded_count_agrees_with_exhaustive_count(self) -> None:
@@ -57,8 +56,7 @@ class TestSearchBudgets:
         answers = iter_solutions(grid, budget=budget)
         next(answers)
         first_answer_states = budget.spent
-        answers.close()
-        with pytest.raises(track_solver.TrackSearchLimit):
+        with pytest.raises(track_solver.TrackSearchLimitError):
             count_solutions(grid, limit=2, max_states=first_answer_states)
         assert count_solutions(grid) == 2
 
@@ -67,7 +65,7 @@ class TestSearchBudgets:
         budget = track_solver.SearchBudget(15)
         assert count_solutions(grid, budget=budget) == 1
         assert budget.spent == 10
-        with pytest.raises(track_solver.TrackSearchLimit):
+        with pytest.raises(track_solver.TrackSearchLimitError):
             count_solutions(grid, budget=budget)
         assert budget.spent == 15
         assert budget.remaining == 0

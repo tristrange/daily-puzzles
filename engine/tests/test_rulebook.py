@@ -289,31 +289,40 @@ class TestTracks:
         assert book.dimensions(puzzle) == (TRACKS_WIDTH, TRACKS_HEIGHT)
         assert TRACKS_WIDTH == TRACKS_HEIGHT, "the constants are two numbers, not a size"
 
-    def test_new_tracks_puzzles_use_every_line_and_replay_as_version_two(self) -> None:
+    def test_new_tracks_puzzles_use_every_line_and_replay_as_version_three(self) -> None:
         puzzle = rulebook_for(PuzzleType.TRAIN_TRACKS).generate(
             seed=7, puzzle_id="2026-10-16-tracks"
         )
         record = json.loads(dumps_puzzle(puzzle))
-        assert record["generatorVersion"] == 2
+        assert record["generatorVersion"] == 3
         assert all(clue >= 1 for clue in record["board"]["rowClues"])
         assert all(clue >= 1 for clue in record["board"]["colClues"])
         assert verify_replay(parse_puzzle(record)) == puzzle
 
-    def test_version_one_archive_puzzles_still_replay_with_zero_clues(self) -> None:
+    def test_version_one_archive_puzzles_still_replay_with_zero_clues(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         path = Path(__file__).resolve().parents[2] / "app/public/puzzles/2026-10-12-tracks.json"
         puzzle = load_puzzle(path)
         assert puzzle.generator_version == 1
+        monkeypatch.setattr("queens_engine.rulebook.TRACKS_GENERATOR_VERSION", 4)
         assert 0 in json.loads(dumps_puzzle(puzzle))["board"]["colClues"]
         assert verify_replay(puzzle) == puzzle
 
     def test_version_two_replay_survives_a_later_generator_version(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        puzzle = rulebook_for(PuzzleType.TRAIN_TRACKS).generate(
-            seed=7, puzzle_id="2026-10-16-tracks"
-        )
+        puzzle = load_puzzle(Path(__file__).parent / "fixtures/tracks-v2-seed7.json")
         assert puzzle.generator_version == 2
-        monkeypatch.setattr("queens_engine.rulebook.TRACKS_GENERATOR_VERSION", 3)
+        monkeypatch.setattr("queens_engine.rulebook.TRACKS_GENERATOR_VERSION", 4)
+        assert verify_replay(puzzle) == puzzle
+
+    def test_version_three_replay_survives_a_later_generator_version(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        puzzle = load_puzzle(Path(__file__).parent / "fixtures/tracks-v3-seed7.json")
+        assert puzzle.generator_version == 3
+        monkeypatch.setattr("queens_engine.rulebook.TRACKS_GENERATOR_VERSION", 4)
         assert verify_replay(puzzle) == puzzle
 
     def test_a_seed_the_schema_refuses_is_refused_here_too(self) -> None:

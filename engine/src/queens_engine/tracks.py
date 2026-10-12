@@ -73,7 +73,7 @@ class TrackGridError(ValueError):
     """A track grid violates one of the structural guarantees."""
 
 
-class TrackSearchLimit(RuntimeError):
+class TrackSearchLimitError(RuntimeError):
     """The search stopped before it could prove a solution count."""
 
 
@@ -98,7 +98,7 @@ class SearchBudget:
 
     def consume(self) -> None:
         if self.remaining == 0:
-            raise TrackSearchLimit("aggregate search-state budget exhausted")
+            raise TrackSearchLimitError("aggregate search-state budget exhausted")
         self._spent += 1
 
 
@@ -419,7 +419,7 @@ def _one_path(search: _Search) -> bool:
 def _walk(search: _Search, cell: int) -> Iterator[Assignment]:
     if search.max_states is not None or search.budget is not None:
         if search.max_states is not None and search.states >= search.max_states:
-            raise TrackSearchLimit("search-state limit exhausted")
+            raise TrackSearchLimitError("search-state limit exhausted")
         if search.budget is not None:
             search.budget.consume()
         search.states += 1
@@ -448,8 +448,8 @@ def iter_solutions(
 ) -> Iterator[Assignment]:
     """Yield every solution, each as one piece number per cell.
 
-    Unbounded and uncached, for callers that need the solutions themselves. Use
-    `count_solutions` when only the number matters.
+    Unbounded by default. Optional state limits raise `TrackSearchLimitError` if
+    enumeration is incomplete. Use `count_solutions` when only the number matters.
     """
     search = _Search(grid, max_states, budget)
     yield from _walk(search, 0)
@@ -467,6 +467,7 @@ def count_solutions(
     Returns `min(actual, limit)`, so the default limit of 2 distinguishes zero, one
     and many without paying to enumerate the many — the only question the generator
     asks. Proving a grid has *exactly* one solution means exhausting the search.
+    Optional state limits raise `TrackSearchLimitError`, never a partial count.
     """
     if limit < 1:
         raise TrackGridError(f"limit must be at least 1, got {limit}")

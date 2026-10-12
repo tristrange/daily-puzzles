@@ -14,6 +14,7 @@ the archive keeps regenerating from its original random stream.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Final
 
 from .prng import Prng
@@ -24,8 +25,10 @@ from .tracks import (
     PIECE_ENDS,
     SOUTH,
     WEST,
+    SearchBudget,
     TrackGrid,
     TrackGridError,
+    TrackSearchLimitError,
     count_solutions,
 )
 
@@ -66,6 +69,12 @@ _FLOOR_SHARE: Final = 5
 #: Enough of a grid to hold one. The real limits are much larger; this only stops a
 #: nonsensical call before the walk starts.
 _MIN_SIDE: Final = 2
+
+# Frozen version-3 work limits: deterministic replay cannot depend on machine speed.
+_CHECK_STATES: Final = 25_000
+_SEED_STATES: Final = 1_000_000
+_SCATTERED_VERSION: Final = 3
+_MIN_GIVEN_DISTANCE: Final = 2
 
 
 class TrackGenerationError(ValueError):
@@ -185,6 +194,78 @@ def _build(
     return TrackGrid(grid_width, grid_height, tuple(rows), tuple(cols), tuple(frozen))
 
 
+def _scattered_positions(route: list[int]) -> list[int]:
+    """Split the largest unknown route sections, leaving gaps between givens."""
+    selected = [0, len(route) - 1]
+    positions: list[int] = []
+    while True:
+        distances = [
+            (min(abs(pos - given) for given in selected), pos) for pos in range(1, len(route) - 1)
+        ]
+        distance, position = max(distances, key=lambda pair: (pair[0], -pair[1]), default=(0, 0))
+        if distance < _MIN_GIVEN_DISTANCE:
+            return positions
+        selected.append(position)
+        positions.append(position)
+
+
+def _build_scattered(
+    width: int, height: int, pieces: list[int], route: list[int], positions: list[int]
+) -> TrackGrid:
+    grid = _build(width, height, pieces, route, 0)
+    frozen = list(grid.givens)
+    for position in positions:
+        cell = route[position]
+        frozen[cell] = pieces[cell]
+    return replace(grid, givens=tuple(frozen))
+
+
+def _pin_route(
+    width: int,
+    height: int,
+    pieces: list[int],
+    route: list[int],
+    *,
+    max_givens: int | None,
+    generator_version: int,
+    search_budget: SearchBudget | None,
+    seed: int,
+) -> TrackGrid | None:
+    """Add eligible clues until uniqueness is proved or this route is rejected."""
+    interior = len(route) - LINE_ENDS
+    share = interior // _GIVEN_SHARE
+    # The cap is on the whole set, so the two mandatory ends come off it first.
+    clue_budget = share if max_givens is None else max_givens - LINE_ENDS
+    positions = _scattered_positions(route) if generator_version == _SCATTERED_VERSION else []
+    limit = min(share, clue_budget)
+    if generator_version == _SCATTERED_VERSION:
+        limit = min(limit, len(positions))
+    for givens in range(0, limit + 1):
+        try:
+            grid = (
+                _build_scattered(width, height, pieces, route, positions[:givens])
+                if generator_version == _SCATTERED_VERSION
+                else _build(width, height, pieces, route, givens)
+            )
+        except TrackGridError:
+            break
+        try:
+            count = (
+                count_solutions(grid, limit=2, max_states=_CHECK_STATES, budget=search_budget)
+                if generator_version == _SCATTERED_VERSION
+                else count_solutions(grid, limit=2)
+            )
+        except TrackSearchLimitError as error:
+            if search_budget is not None and search_budget.remaining == 0:
+                raise TrackGenerationError(
+                    f"search-state budget exhausted for seed {seed}"
+                ) from error
+            continue
+        if count == 1:
+            return grid
+    return None
+
+
 def generate_grid(
     *,
     seed: int,
@@ -192,6 +273,7 @@ def generate_grid(
     height: int,
     max_givens: int | None = None,
     require_nonzero_clues: bool = True,
+    generator_version: int = 3,
 ) -> TrackGrid:
     """A grid with exactly one solution, drawn from `seed`.
 
@@ -210,6 +292,12 @@ def generate_grid(
     Raises `TrackGenerationError` if no route from this seed could be pinned down, or if
     `max_givens` is below the two ends no grid can do without.
     """
+    if generator_version not in (1, 2, 3):
+        raise TrackGenerationError(
+            f"unsupported train-tracks generator version {generator_version}"
+        )
+    if generator_version == _SCATTERED_VERSION and not require_nonzero_clues:
+        raise TrackGenerationError("version 3 requires nonzero clues")
     if max_givens is not None and max_givens < LINE_ENDS:
         raise TrackGenerationError(
             f"max_givens={max_givens} is below the {LINE_ENDS} ends every grid must give"
@@ -219,6 +307,7 @@ def generate_grid(
     if width < _MIN_SIDE or height < _MIN_SIDE:
         raise TrackGenerationError(f"a track grid needs at least 2x2, got {width}x{height}")
     rng = Prng(seed)
+    search_budget = SearchBudget(_SEED_STATES) if generator_version == _SCATTERED_VERSION else None
 
     for _ in range(_ROUTES):
         for _ in range(_ROUTE_TRIES):
@@ -235,16 +324,16 @@ def generate_grid(
             pieces = _route_pieces(width, height, route, rng)
             if pieces is None:
                 continue
-            interior = len(route) - LINE_ENDS
-            share = interior // _GIVEN_SHARE
-            # The cap is on the whole set, so the two mandatory ends come off it first.
-            budget = share if max_givens is None else max_givens - LINE_ENDS
-            limit = min(share, budget)
-            for givens in range(0, limit + 1):
-                try:
-                    grid = _build(width, height, pieces, route, givens)
-                except TrackGridError:
-                    break
-                if count_solutions(grid, limit=2) == 1:
-                    return grid
+            grid = _pin_route(
+                width,
+                height,
+                pieces,
+                route,
+                max_givens=max_givens,
+                generator_version=generator_version,
+                search_budget=search_budget,
+                seed=seed,
+            )
+            if grid is not None:
+                return grid
     raise TrackGenerationError(f"no unique grid from seed {seed}")

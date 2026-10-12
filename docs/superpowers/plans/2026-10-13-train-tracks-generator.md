@@ -46,16 +46,16 @@
 ### Task 1: Add opt-in solver budgets
 
 **Interfaces:**
-- Produce `TrackSearchLimit(RuntimeError)` for an incomplete bounded search.
+- Produce `TrackSearchLimitError(RuntimeError)` for an incomplete bounded search.
 - Produce `SearchBudget(max_states: int)` with read-only `spent` and `remaining` counts; reject negative limits. Zero permits no visited states.
 - Extend `iter_solutions(grid: TrackGrid, *, max_states: int | None = None, budget: SearchBudget | None = None) -> Iterator[Assignment]`.
 - Extend `count_solutions(grid: TrackGrid, *, limit: int = DEFAULT_LIMIT, max_states: int | None = None, budget: SearchBudget | None = None) -> int`.
 - One visited state is an entry to `_walk`, including a complete assignment. Each query has fresh solver state; a caller may reuse only the aggregate budget.
 
-- [ ] **Write failing budget tests** in `engine/tests/test_tracks.py`: zero budget raises `TrackSearchLimit`; a generous bounded count equals exhaustive counting; negative limits raise `TrackGridError`; a shared budget never overspends across two searches; a fresh exhaustive search after exhaustion still returns the reference answers.
+- [ ] **Write failing budget tests** in `engine/tests/test_tracks.py`: zero budget raises `TrackSearchLimitError`; a generous bounded count equals exhaustive counting; negative limits raise `TrackGridError`; a shared budget never overspends across two searches; a fresh exhaustive search after exhaustion still returns the reference answers.
 - [ ] **Add the partial-result regression:** use the existing ambiguous 4×4 fixture in `TestKnownAnswers.test_a_grid_with_two_routes_has_both`. Advance a generously bounded iterator to its first solution and record `budget.spent`; counting with exactly that many allowed states and `limit=2` must raise rather than return 1.
 - [ ] **Run the tests red:** from `engine`, `./.venv/bin/python -m pytest tests/test_tracks.py -q`. New tests must fail because budget support is absent; existing tests remain green.
-- [ ] **Implement the interfaces** in `tracks.py`. Check both limits before entering a state; propagate `TrackSearchLimit` unchanged. Avoid state-budget work on the existing unbounded path where possible. Retain candidate ordering and solver rules.
+- [ ] **Implement the interfaces** in `tracks.py`. Check both limits before entering a state; propagate `TrackSearchLimitError` unchanged. Avoid state-budget work on the existing unbounded path where possible. Retain candidate ordering and solver rules.
 - [ ] **Run the tests green**, including the existing tiny-board independent reference cases. Do not replace the reference with the production solver.
 - [ ] **Commit:** `feat(engine): bound optional Train Tracks search by visited states`.
 
