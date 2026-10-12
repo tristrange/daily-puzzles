@@ -233,12 +233,16 @@ describe('trackGridText', () => {
     // so the copied answer stops reading as the shape it is.
     // Two givens at the corners facing outwards, which is what the format
     // requires; the drawing does not care what they are.
-    const grid = new TrackGrid(4, 4, [1, 1, 1, 1], [1, 1, 1, 1], [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4])
+    const grid = new TrackGrid(4, 4, [1, 1, 1, 1], [1, 1, 1, 1], [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
     const drawing = trackGridText(grid, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3])
     for (const line of drawing.split('\n')) {
       expect([...line]).toHaveLength(4)
     }
     expect(drawing).toContain('─')
     expect(drawing).toContain('└')
+    // No whitespace within a row, because shared text is not preformatted: chat
+    // and HTML collapse runs of spaces and trim the ends, which is how an empty
+    // corner would shorten its row.
+    for (const line of drawing.split('\n')) expect(line).not.toMatch(/\s/)
   })
 })

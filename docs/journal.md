@@ -312,7 +312,30 @@ connected route that was simply over a row clue. The second is the worse of the
 two. A wrong label does not merely fail to inform — it tells a screen-reader user
 they have a fault they do not have, while the one they do have goes unnamed.
 
-All five bugs were in the half of the model that exists only in the browser. Neither
+A third pass found two more, and the first of them was in the *engine*, not the
+app: `TrackGrid`'s validator counted open ends by counting the pieces that carried
+them. A corner turn leaves the grid at both ends at once, so a grid with three
+open ends could be counted as two and accepted — a grid with no solution at all,
+which the generator's uniqueness gate would then reject much more expensively.
+The rule and its own comment said "ends"; the code said pieces, and the comment is
+what I had read back to myself twice.
+
+That one also turned out to have a test pinning the wrong behaviour, by name and
+with a comment saying the spec checks *cells*. Its example did not distinguish the
+two rules — one corner piece alone is rejected either way — so the test asserted
+a distinction it never exercised. Replacing it meant working out which rule was
+right rather than which one was old, and the answer is that both checks are
+needed: exactly two ends, and never both on one cell, because a line's two ends
+are two cells.
+
+The second was the roving tabindex, and it had been wrong in the marks board for
+the whole project. Moving the tabindex does not move focus, so an arrow key acted
+on the new cell while the focus ring stayed on the old one. Nothing caught it
+because the two agree until the first key press, and there is no DOM test in the
+project to press one.
+
+All seven were in the half of the model that exists only in the browser, or in the
+one rule both languages share. Neither
 conformance suite covers a half-finished board, because the engine never has one.
 The gap is structural, and the answer to it is a cross-check against generated
 ground truth rather than another hand-written fixture: three of my hand-built

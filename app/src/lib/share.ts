@@ -26,6 +26,8 @@ import { PIECE_GLYPHS, TrackGrid } from '../domain/tracks'
  * it: a white square is invisible on the light background most chat clients
  * default to, and a share that has lost its empty cells reads as scattered dots.
  */
+const TRACK_EMPTY = '·'
+
 const FILLED = '🟪'
 const EMPTY = '⬛'
 
@@ -75,11 +77,14 @@ export function trackGridText(grid: TrackGrid, pieces: readonly number[]): strin
     let line = ''
     for (let col = 0; col < grid.width; col += 1) {
       const piece = pieces[grid.index(row, col)] ?? 0
-      // A space, not the marks board's `EMPTY`. That is a wide emoji, and a wide
-      // emoji beside box-drawing characters that occupy one column shifts every
-      // piece after it — so the copied answer would not read as the rectangle it
-      // is. The route is the point of the share, so every cell has to be one wide.
-      line += piece === 0 ? ' ' : PIECE_GLYPHS[piece]
+      // A middle dot, and neither of the two answers that look right. The marks
+      // board's `EMPTY` is a wide emoji, and a wide emoji beside box-drawing
+      // characters that occupy one column shifts every piece after it. A plain
+      // space is one wide, but shared text is not in a preformatted block: chat and
+      // HTML collapse runs of spaces and trim the ends, so an empty corner would
+      // shorten its row and two empty cells in a row would vanish. A visible
+      // one-column character survives both.
+      line += piece === 0 ? TRACK_EMPTY : PIECE_GLYPHS[piece]
     }
     rows.push(line)
   }

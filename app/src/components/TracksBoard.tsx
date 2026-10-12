@@ -19,7 +19,9 @@
  */
 
 import {
+  useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
   type KeyboardEvent,
@@ -86,6 +88,20 @@ export function TracksBoard({
   onUndo,
 }: TracksBoardProps) {
   const [focusIndex, setFocusIndex] = useState(0)
+  const boardRef = useRef<HTMLDivElement>(null)
+
+  // Moving the roving index is not the same as moving focus, and only the second
+  // one moves the focus ring and the screen reader's cursor. Without this, an
+  // arrow key acted on the new cell while the board still *looked* focused on the
+  // old one — Enter placing a piece the player cannot see where it went.
+  //
+  // Guarded on the board already holding focus, so mounting does not steal the
+  // page's focus from wherever the player actually is.
+  useEffect(() => {
+    const board = boardRef.current
+    if (board === null || !board.contains(document.activeElement)) return
+    board.querySelector<HTMLElement>(`[data-cell="${focusIndex}"]`)?.focus()
+  }, [focusIndex])
   const puzzleName = PUZZLE_TYPE_LABEL['train-tracks'].toLowerCase()
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -214,6 +230,7 @@ export function TracksBoard({
         ))}
       </div>
       <div
+        ref={boardRef}
         className="board playable"
         role="grid"
         aria-label={`${grid.width} by ${grid.height} ${puzzleName} puzzle. Rows need ${grid.rowClues.join(', ')} cells; columns need ${grid.colClues.join(', ')}`}

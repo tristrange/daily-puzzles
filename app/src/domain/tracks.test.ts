@@ -92,6 +92,25 @@ describe('parsePuzzle on a track grid', () => {
     ).toThrow(/pieces run 0 to 6/)
   })
 
+  it('counts open ends, not the pieces that carry them', () => {
+    // Piece 6 is a west-north turn in the top-left corner, so both its ends leave
+    // the grid. Counting the *piece* once made this a grid with two open ends and
+    // so accepted, when it has three and no solution at all. The engine had the
+    // same rule written the same wrong way, in the same words.
+    //
+    // The second given below is the whole point: without it this grid has one
+    // corner turn and one edge piece, which counting *cells* reads as exactly
+    // two and accepts.
+    expect(
+      () => new TrackGrid(3, 3, [1, 1, 1], [1, 1, 1], [6, 0, 1, 0, 0, 0, 0, 0, 0]),
+    ).toThrow(/two ends are two cells/)
+    // And a lone corner turn is not two ends either: one cell cannot be both of a
+    // line's ends, because it would be the whole line.
+    expect(() => new TrackGrid(3, 3, [1, 1, 1], [1, 1, 1], [6, 0, 0, 0, 0, 0, 0, 0, 0])).toThrow(
+      /two ends are two cells/,
+    )
+  })
+
   it('rejects a track grid whose givens do not make exactly two ends', () => {
     // Both ends given, both facing outwards — that is the format's promise. Take
     // one away and the grid can no longer be finished.

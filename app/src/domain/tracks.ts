@@ -131,6 +131,11 @@ export class TrackGrid {
   }
 }
 
+/** The directions `piece` ends in. Index 0 is an empty cell and ends nowhere. */
+function pieceEnds(piece: number): readonly number[] {
+  return PIECE_ENDS[piece] ?? []
+}
+
 /** Whether `piece` has an end facing `direction`. */
 export function endsTowards(piece: number, direction: number): boolean {
   return (PIECE_ENDS[piece] ?? []).includes(direction)
@@ -187,21 +192,29 @@ export function validateTrackGrid(grid: TrackGrid): void {
   // Both ends of the line are givens, so exactly two of them face off the grid.
   // Anything else and the grid either cannot be finished or has ends in the middle
   // of the board, which no solution would explain.
-  const openEnds = grid.givens.filter(
-    (piece, index) =>
-      piece !== 0 && (endsAtGrid(grid, index, piece) ?? []).some((end) => end === null),
-  ).length
+  //
+  // Ends, not pieces. A corner turn can leave the grid at both ends at once, and
+  // counting that piece once would let a grid with three open ends through as one
+  // with two — a grid with no solution at all, accepted.
+  //
+  // And the two have to be on different cells. One cell cannot be both of a
+  // line's ends: it would be the whole line, which no solution is.
+  let openEnds = 0
+  grid.givens.forEach((piece, index) => {
+    const here = pieceEnds(piece).filter((end) => grid.neighbour(index, end) === null).length
+    if (here > 1) {
+      throw new TrackGridError(
+        `cell ${index} runs off the grid at both ends, but a line's two ends are two cells`,
+      )
+    }
+    openEnds += here
+  })
   if (openEnds !== LINE_ENDS) {
     throw new TrackGridError(
-      `${openEnds} given pieces run off the grid, but a line has exactly 2 ends`,
+      `${openEnds} given ends run off the grid, but a line has exactly 2 ends`,
     )
   }
   if (grid.total < LINE_ENDS) {
     throw new TrackGridError('a line needs at least its two end cells')
   }
-}
-
-/** The directions in which `piece` runs off the grid, as `null` ends. */
-function endsAtGrid(grid: TrackGrid, index: number, piece: number): (number | null)[] {
-  return (PIECE_ENDS[piece] ?? []).map((end) => grid.neighbour(index, end))
 }
