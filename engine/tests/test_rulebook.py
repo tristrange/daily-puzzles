@@ -306,6 +306,16 @@ class TestTracks:
         assert 0 in json.loads(dumps_puzzle(puzzle))["board"]["colClues"]
         assert verify_replay(puzzle) == puzzle
 
+    def test_version_two_replay_survives_a_later_generator_version(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        puzzle = rulebook_for(PuzzleType.TRAIN_TRACKS).generate(
+            seed=7, puzzle_id="2026-10-16-tracks"
+        )
+        assert puzzle.generator_version == 2
+        monkeypatch.setattr("queens_engine.rulebook.TRACKS_GENERATOR_VERSION", 3)
+        assert verify_replay(puzzle) == puzzle
+
     def test_a_seed_the_schema_refuses_is_refused_here_too(self) -> None:
         # `generate_grid` hands the seed to `Prng`, which masks an out-of-range one
         # rather than refusing it. Without this check `--seed -1` writes a puzzle

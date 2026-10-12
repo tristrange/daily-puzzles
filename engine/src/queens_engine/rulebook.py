@@ -463,17 +463,24 @@ class TrackRulebook(Rulebook):
         return None
 
     def replay(self, puzzle: Puzzle) -> Puzzle:
-        if puzzle.generator_version not in (1, TRACKS_GENERATOR_VERSION):
-            raise GenerationError(
-                f"unsupported train-tracks generator version {puzzle.generator_version}"
-            )
+        # Archived versions select their own policy, independent of the version
+        # currently written by generate(). Keep these branches when adding one.
+        match puzzle.generator_version:
+            case 1:
+                require_nonzero_clues = False
+            case 2:
+                require_nonzero_clues = True
+            case _:
+                raise GenerationError(
+                    f"unsupported train-tracks generator version {puzzle.generator_version}"
+                )
         board = self._grid(puzzle)
         try:
             regenerated = generate_grid(
                 seed=puzzle.seed,
                 width=board.width,
                 height=board.height,
-                require_nonzero_clues=puzzle.generator_version == TRACKS_GENERATOR_VERSION,
+                require_nonzero_clues=require_nonzero_clues,
             )
         except TrackGenerationError as error:
             raise GenerationError(str(error)) from error
