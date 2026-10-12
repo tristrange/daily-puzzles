@@ -134,14 +134,22 @@ describe('trackConflicts', () => {
     // Reported, but not a fault: an end pointing at an empty cell is what every
     // board looks like while it is being solved. Marking it red teaches a player
     // to ignore the marker, and then it is not doing its job either.
-    expect(unfinished.filter((c) => isFault(c.rule)).map((c) => c.cell)).not.toContain(4)
+    // Nothing is marked that the player cannot fix: every fault this board
+    // reports lands on a cell they placed, never on a given.
+    const faults = unfinished.filter((c) => isFault(c.rule))
+    expect(faults.length).toBeGreaterThan(0)
+    for (const fault of faults) expect(middleRow().pieceAt(fault.cell)).toBe(0)
 
     // Cell 4 is vertical, so the given at cell 3 — which points east — meets a
     // cell facing the other way. That is a piece that is wrong, not a route that
     // is unfinished.
     const wrong = trackConflicts(placed(grid, [0, 0, 0, 1, 2, 1, 0, 0, 0]))
-    expect(wrong).toContainEqual({ rule: 'mismatched-end', cell: 3, other: 4 })
     expect(wrong).not.toContainEqual(expect.objectContaining({ rule: 'unfinished-end', cell: 3 }))
+    // And it is reported against cell 4, not cell 3. Reciprocity is symmetric so
+    // only one of the pair reports, and it must be the one the player can change:
+    // a red cell that is a fixed clue is a red cell nothing can be done about.
+    expect(wrong).toContainEqual({ rule: 'mismatched-end', cell: 4, other: 3 })
+    expect(wrong).not.toContainEqual(expect.objectContaining({ rule: 'mismatched-end', cell: 3 }))
   })
 
   it('points at the extra end the player placed, not at the given ends', () => {

@@ -351,7 +351,15 @@ presentation fault by changing only the text is half a fix**, because the stylin
 and the status line are the same statement in a louder voice.
 
 Both are the conflict marker doing its job too eagerly. The rule I would carry
-from them: **a warning that names the wrong fault is worse than no warning**, because
+from them: And then the same fault arrived a fourth time, one level down: when a *given* faced
+a piece that did not face back, the fault was recorded against the given. Reciprocity
+is symmetric, so only one cell of a pair reports — and it was the immutable one. The
+board marked a clue red and left the piece the player could actually correct
+untouched. The generalisation is the one worth keeping: **the cell a fault is
+reported against must be a cell the player can change.** Not the one where the
+problem was noticed, and not the one that happens to be first in the loop.
+
+**a warning that names the wrong fault is worse than no warning**, because
 the player learns to ignore the marker, and then it is not doing its job either.
 Knowing what is wrong is not the same as knowing what to do about it. Neither
 conformance suite covers a half-finished board, because the engine never has one.

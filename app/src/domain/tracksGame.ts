@@ -158,7 +158,17 @@ export function trackConflicts(game: TracksGame): readonly TrackConflict[] {
       if (!isOn(game, other)) {
         found.push({ rule: 'unfinished-end', cell, other })
       } else if (!endsTowards(game.pieces[other] ?? 0, back)) {
-        found.push({ rule: 'mismatched-end', cell, other })
+        // Reciprocity is symmetric, so only the cell whose end found this
+        // reports it — and that cell may be a given, which the player cannot
+        // change. A red cell nothing can be done about is worse than no red cell:
+        // the fault belongs on the piece they can correct.
+        const blameGiven =
+          grid.pieceAt(cell) !== 0 && grid.pieceAt(other) === 0
+        found.push(
+          blameGiven
+            ? { rule: 'mismatched-end', cell: other, other: cell }
+            : { rule: 'mismatched-end', cell, other },
+        )
       }
     }
   }
