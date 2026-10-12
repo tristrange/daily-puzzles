@@ -111,8 +111,7 @@ verification, hint-baseline regeneration, and deployment workflow.
 
 Include a validated initial batch of all three variants in PR 2, covering the
 activation day and the following three days, matching the publisher's lead
-length. Do not
-backfill sized variants into older archive dates.
+length. Do not backfill sized variants into older archive dates.
 
 ### Player interface
 
