@@ -9,7 +9,7 @@
  * two unrelated state types to share code that is mostly `setState`.
  */
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { formatTime } from '../domain/game'
 import type { Puzzle } from '../domain/puzzle'
 import type { TrackGrid } from '../domain/tracks'
@@ -71,17 +71,12 @@ export function TracksStage({
   const solved = isTracksSolved(game)
   const shownTime = solvedAt === null ? elapsed : solvedAt - startedAt
 
-  const applyGame = (next: TracksGame, before: TracksGame = game) => {
-    // A no-op records nothing. `cyclePiece` and `clearCell` both return the
-    // state unchanged for a given, and clearing an empty cell does the same, so a
-    // click on a given would otherwise enable Undo and displace a real move from
-    // the bounded history — and an Undo that appears to do nothing is worse than
-    // no Undo at all. The marks board has the same rule in `endStroke`.
-    if (next === before) return
-    setHistory((past) => [...past.slice(1 - HISTORY_LIMIT), before])
-    setGame(next)
-    if (solvedAt !== null || !isTracksSolved(next)) return
-    const when = Date.now()
+  // The one place a solve is recorded, so a board that arrives already solved and
+  // one the player finishes take the same path. Defensive today — the generator
+  // never gives away a whole route, checked over 300 boards — but the failure it
+  // prevents is silent: the board renders locked, the clock runs on, and nothing
+  // is ever stored.
+  const recordSolve = useCallback((when: number) => {
     setSolvedAt(when)
     // Read before storing, so a replay can be told why its time was not kept.
     const earlier = readStoredStats().find((record) => record.id === puzzle.id)
@@ -103,6 +98,26 @@ export function TracksStage({
     )
     setFirstSolve(earlier ?? null)
     setAnnouncement(`Solved in ${formatTime(when - startedAt)}!`)
+  }, [grid.width, puzzle.id, puzzle.puzzleType, startedAt, timeZone])
+
+  // Arrived already solved. `solvedAt` is the guard, exactly as it is for a
+  // finished game, so this fires once and never again.
+  useEffect(() => {
+    if (solvedAt !== null || !isTracksSolved(game)) return
+    recordSolve(Date.now())
+  }, [solvedAt, game, recordSolve])
+
+  const applyGame = (next: TracksGame, before: TracksGame = game) => {
+    // A no-op records nothing. `cyclePiece` and `clearCell` both return the
+    // state unchanged for a given, and clearing an empty cell does the same, so a
+    // click on a given would otherwise enable Undo and displace a real move from
+    // the bounded history — and an Undo that appears to do nothing is worse than
+    // no Undo at all. The marks board has the same rule in `endStroke`.
+    if (next === before) return
+    setHistory((past) => [...past.slice(1 - HISTORY_LIMIT), before])
+    setGame(next)
+    if (solvedAt !== null || !isTracksSolved(next)) return
+    recordSolve(Date.now())
   }
 
   const undo = () => {
