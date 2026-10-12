@@ -13,7 +13,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import { Board } from '../domain/board'
-import { parsePuzzle } from '../domain/puzzle'
+import { isMarksPuzzle, parsePuzzle } from '../domain/puzzle'
 import {
   colourDistance,
   contrastRatio,
@@ -31,8 +31,12 @@ function shippedPuzzles(): { id: string; board: Board }[] {
     .sort()
     .map((name) => {
       const puzzle = parsePuzzle(JSON.parse(readFileSync(join(PUZZLES_DIR, name), 'utf8')))
-      return { id: puzzle.id, board: puzzle.board }
+      // Region colours are a marks-board fact. A family with no regions has none
+      // to colour, so it is not a puzzle this sweep can say anything about —
+      // rather than one it should be failing on.
+      return isMarksPuzzle(puzzle) ? { id: puzzle.id, board: puzzle.board } : null
     })
+    .filter((entry): entry is { id: string; board: Board } => entry !== null)
 }
 
 /** One committed puzzle, by date. */

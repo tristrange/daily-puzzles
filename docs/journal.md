@@ -23,7 +23,7 @@ avoided. The reasoning is the point; the shipped code is in `git log`.
 | 14 | Remember the auto-mark choice between visits | done |
 | 15 | A weekly difficulty ramp for Queens, and the band in the puzzle file | done |
 | 16 | Port the deduction engine to per-group counts so Star Battle can be rated, then ramp it too | done — rating deferred, below |
-| 17 | Train Tracks: a per-type contract the model was missing, and the type registered against it | done — engine only, unpublished |
+| 17 | Train Tracks: a per-type contract the model was missing, and the type registered against it | done — engine and app, unpublished |
 
 Milestones 2 to 4 were the critical path, and they are all Python. The engine alone — a
 CLI with an exact uniqueness prover and property tests — would have been worth publishing
@@ -245,6 +245,34 @@ The honest summary is that a type which cannot be reached is the easiest thing i
 repository to get right, and I got six things wrong anyway. What caught them was a
 reviewer reading the diff against the model rather than against my description of it.
 That is the argument for the reviewer, not for writing fewer comments.
+
+## A rule that was required, and I wrote it as an error
+
+The app's Train Tracks win check flagged any end running off the grid as a conflict.
+That is not a rare edge case; it is what a *correct* answer looks like. A line has
+two ends and both leave the board — that is the format's own definition, and
+`TrackGrid`'s constructor rejects any grid whose givens do not produce exactly two.
+
+So the first version of the rule rejected every correct solution, and it did so
+quietly: no error, no red board, just a puzzle that could never be won. The engine's
+solver has the same rule stated as a ceiling it grows into rather than a floor it
+checks — `search.open_ends + off_grid <= LINE_ENDS` while searching, `== LINE_ENDS`
+at the end — and I had that in front of me when I wrote the check wrong.
+
+What made it findable was not reading the code again. It was generating 400 boards
+in the engine, taking each one's unique solution, and asking the app whether it
+agreed. Forty out of forty failed, which is a much louder signal than a green test
+suite: `Puzzle.size` had just been deleted, every marks test still passed, and the
+one rule with no counterpart in Python was wrong in the way a passing test cannot
+see. The second bug that sweep found — reading a given of `0` as "this cell must
+stay empty" rather than "nothing is given here" — came from the same place.
+
+Both bugs were in the half of the model that exists only in the browser. Neither
+conformance suite covers a half-finished board, because the engine never has one.
+The gap is structural, and the answer to it is a cross-check against generated
+ground truth rather than another hand-written fixture: three of my hand-built
+fixtures were wrong before one was right, and each was wrong in a way the test
+suite reported as a pass.
 
 ## Registering a type without shipping it
 

@@ -19,7 +19,9 @@ import {
 } from '../domain/game'
 import { PUZZLE_PIECE, PUZZLE_TYPE_HAS_HINTS } from '../domain/games'
 import { firstHint, type Hint } from '../domain/hints'
-import type { Puzzle } from '../domain/puzzle'
+import type { Board } from '../domain/board'
+import { isMarksPuzzle, isTracksPuzzle, type Puzzle } from '../domain/puzzle'
+import { TracksStage } from './TracksStage'
 import { PuzzleNotFoundError, loadPuzzle } from '../lib/puzzles'
 import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } from '../lib/stats'
 import { readStoredAutoMark, storeAutoMark } from '../lib/autoMark'
@@ -47,8 +49,17 @@ function sameState(a: GameState, b: GameState): boolean {
  * (board, timer, undo history) starts fresh whenever a different puzzle is
  * shown.
  */
-function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string }) {
-  const [game, setGame] = useState<GameState>(() => createGame(puzzle.board))
+function PuzzleStage({
+  puzzle,
+  board,
+  timeZone,
+}: {
+  puzzle: Puzzle
+  /** The marks board, narrowed once by the caller that chose this stage. */
+  board: Board
+  timeZone: string
+}) {
+  const [game, setGame] = useState<GameState>(() => createGame(board))
   const [history, setHistory] = useState<GameState[]>([])
   const [hint, setHint] = useState<Hint | null>(null)
   const [announcement, setAnnouncement] = useState('')
@@ -124,7 +135,7 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
           storeSolve({
             id: puzzle.id,
             puzzleType: puzzle.puzzleType,
-            size: puzzle.board.size,
+            size: board.size,
             elapsedMs: when - startedAt,
             hints: hintsUsed,
             solvedAt: when,
@@ -212,12 +223,12 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
       announce(`Remove the conflicting ${piece} before asking for a hint.`)
       return
     }
-    const next = firstHint(puzzle.board, game.queens, game.marks)
+    const next = firstHint(board, game.queens, game.marks)
     if (next === null) {
       // The same count the win check uses. A board is complete when it holds
       // `size * starsPerRow` pieces, so anything less is a stalled position and
       // saying otherwise would end the game from inside a hint button.
-      if (game.queens.size === piecesNeeded(puzzle.board)) {
+      if (game.queens.size === piecesNeeded(board)) {
         announce(`All ${piecePlural} are placed.`)
       } else {
         announce(`No forced move right now — try placing a ${piece} somewhere.`)
@@ -226,7 +237,7 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
     }
     setHint(next)
     setHintsUsed((count) => count + 1)
-    const position = describeCell(puzzle.board, next.cell)
+    const position = describeCell(board, next.cell)
     setAnnouncement(
       next.action === 'queen'
         ? `Hint: place a ${piece} at ${position}.`
@@ -238,8 +249,8 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
     hint === null
       ? null
       : hint.action === 'queen'
-        ? `Place a ${piece} at ${describeCell(puzzle.board, hint.cell)}.`
-        : `Mark ${describeCell(puzzle.board, hint.cell)} — it cannot hold a ${piece}.`
+        ? `Place a ${piece} at ${describeCell(board, hint.cell)}.`
+        : `Mark ${describeCell(board, hint.cell)} — it cannot hold a ${piece}.`
 
   /**
    * Copy a share, optionally with the solution on it.
@@ -259,7 +270,8 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
   const share = async (variant: 'result' | 'solution') => {
     const counted = firstSolve ?? { elapsedMs: shownTime, hints: hintsUsed }
     const result = {
-      size: puzzle.board.size,
+      width: board.width,
+      height: board.height,
       puzzleType: puzzle.puzzleType,
       elapsedMs: counted.elapsedMs,
       hints: counted.hints,
@@ -268,7 +280,7 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
     }
     const text =
       variant === 'solution'
-        ? buildSolutionShareText(result, puzzle.board, game.queens)
+        ? buildSolutionShareText(result, board, game.queens)
         : buildShareText(result)
     const ok = await copyText(text)
     setCopied(ok ? variant : 'failed')
@@ -330,7 +342,7 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
         )}
       </div>
       <InteractiveBoard
-        board={puzzle.board}
+        board={board}
         game={game}
         hint={hint}
         conflictCells={conflictCells}
@@ -402,7 +414,7 @@ function PuzzleStage({ puzzle, timeZone }: { puzzle: Puzzle; timeZone: string })
   )
 }
 
-function describeCell(board: Puzzle['board'], cell: number): string {
+function describeCell(board: Board, cell: number): string {
   const { row, col } = board.coords(cell)
   return `row ${row + 1}, column ${col + 1}`
 }
@@ -448,7 +460,11 @@ export function PuzzleView({
     <article className="puzzle">
       <h1>{formatPuzzleLabel(id, timeZone)}</h1>
       <div key={state.puzzle.id}>
-        <PuzzleStage puzzle={state.puzzle} timeZone={timeZone} />
+        {isTracksPuzzle(state.puzzle) ? (
+          <TracksStage puzzle={state.puzzle} grid={state.puzzle.board} timeZone={timeZone} />
+        ) : isMarksPuzzle(state.puzzle) ? (
+          <PuzzleStage puzzle={state.puzzle} board={state.puzzle.board} timeZone={timeZone} />
+        ) : null}
       </div>
     </article>
   )

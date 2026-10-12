@@ -310,6 +310,74 @@
   }
 }
 
+/* Train Tracks: a clue gutter beside the grid rather than cells inside it.
+   The gutter and the board are two CSS grids built from the *same* column
+   template — a fixed gutter column, then one per cell — so a column's count lines
+   up with its column without either grid knowing about the other. The gutter is a
+   fixed width rather than `auto` precisely so the two templates resolve to the
+   same pixels: an `auto` column is sized by its own content, and two grids sizing
+   one independently is a promise neither of them keeps. */
+.tracks {
+  width: min(76vw, 480px, 54svh);
+  margin: 0 auto;
+  display: grid;
+  gap: 3px;
+}
+
+.tracks-head,
+.tracks .board,
+.tracks-line {
+  display: grid;
+  gap: 3px;
+  grid-template-columns: var(--tracks-gutter) repeat(var(--tracks-cols), 1fr);
+}
+
+.tracks-head {
+  align-items: end;
+  padding-bottom: 2px;
+}
+
+.tracks .board {
+  width: auto;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  /* One column, so each `.tracks-line` fills the width and lays out its own
+     gutter-then-cells. Without this the rows would be packed into the first
+     column of the outer grid and the clues would stop lining up. */
+  grid-template-columns: 1fr;
+}
+
+.tracks-line {
+  align-items: center;
+}
+
+.tracks-count {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-align: center;
+  color: var(--text-h);
+}
+
+/* A cell holding a piece is the same `.cell` the marks board uses, so a track
+   and a queen read as the same kind of thing on the same kind of board. The
+   glyph fills more of the cell than a queen does, because a piece has to reach
+   both its edges for the join to be visible — which is the whole question the
+   player is asking of the cell next door. */
+.tracks .cell {
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+
+.tracks .marker {
+  font-size: 1.9em;
+  -webkit-text-stroke: 0;
+  color: var(--text);
+}
+
 .hint-text {
   min-height: 1.6em;
   margin: 10px 0 0;

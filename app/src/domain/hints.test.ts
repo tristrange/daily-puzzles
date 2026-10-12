@@ -11,6 +11,7 @@ import { describe, expect, it } from 'vitest'
 import { Board } from './board'
 import { firstHint } from './hints'
 import { parsePuzzle } from './puzzle'
+import { marksBoard } from './helpers'
 
 const REPO_ROOT = new URL('../../..', import.meta.url).pathname
 const CASES_DIR = join(REPO_ROOT, 'conformance', 'hint-cases')
@@ -21,23 +22,23 @@ function puzzle(file: string) {
 
 describe('firstHint', () => {
   it('advises the forced queen on an empty puzzle', () => {
-    const { board } = puzzle('2026-05-11.puzzle.json')
+    const board = marksBoard(puzzle('2026-05-11.puzzle.json'))
     expect(firstHint(board)).toEqual({ cell: 5, action: 'queen', rule: 'single-region' })
   })
 
   it('advises a dead cell when a line is claimed', () => {
-    const { board } = puzzle('2026-05-12.puzzle.json')
+    const board = marksBoard(puzzle('2026-05-12.puzzle.json'))
     expect(firstHint(board)).toEqual({ cell: 4, action: 'x', rule: 'intersection' })
   })
 
   it('reasons from player marks', () => {
-    const { board } = puzzle('2026-05-17.puzzle.json')
+    const board = marksBoard(puzzle('2026-05-17.puzzle.json'))
     const marks = new Set([0, 11, 16, 17, 21, 22])
     expect(firstHint(board, new Set(), marks)).toEqual({ cell: 5, action: 'x', rule: 'subset' })
   })
 
   it('is pure: the same state always gives the same hint', () => {
-    const { board } = puzzle('2026-05-11.puzzle.json')
+    const board = marksBoard(puzzle('2026-05-11.puzzle.json'))
     const first = firstHint(board)
     const second = firstHint(board)
     expect(second).toEqual(first)
@@ -46,7 +47,7 @@ describe('firstHint', () => {
   it('returns null once the queens alone satisfy every row and region', () => {
     // The solution of 2026-05-11: every rule has already fired once, and with
     // all queens placed nothing more can be deduced.
-    const { board } = puzzle('2026-05-11.puzzle.json')
+    const board = marksBoard(puzzle('2026-05-11.puzzle.json'))
     const queens = new Set([3, 5, 12, 19, 21])
     expect(firstHint(board, queens)).toBeNull()
   })
@@ -87,7 +88,7 @@ describe('hints never contradict the solution', () => {
   const STAR_SOLUTION = [1, 3, 13, 15, 17, 19, 29, 31, 32, 34, 44, 46, 48, 50, 60, 62]
 
   it('holds for every prefix of a star board solution', () => {
-    const board = puzzle('2026-09-26-star.puzzle.json').board
+    const board = marksBoard(puzzle('2026-09-26-star.puzzle.json'))
     let hints = 0
     for (let placed = 0; placed <= STAR_SOLUTION.length; placed += 1) {
       const hint = firstHint(board, new Set(STAR_SOLUTION.slice(0, placed)), new Set())

@@ -13,6 +13,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { firstHint } from './hints'
 import { parsePuzzle } from './puzzle'
+import { marksBoard } from './helpers'
 
 const REPO_ROOT = new URL('../../..', import.meta.url).pathname
 const CASES_DIR = join(REPO_ROOT, 'conformance', 'hint-cases')
@@ -42,6 +43,6 @@ describe('conformance: hint-cases', () => {
     const puzzle = parsePuzzle(readCase(testCase.file))
     const queens = new Set(testCase.state?.queens ?? [])
     const marks = new Set(testCase.state?.marks ?? [])
-    expect(firstHint(puzzle.board, queens, marks)).toEqual(testCase.hint)
+    expect(firstHint(marksBoard(puzzle), queens, marks)).toEqual(testCase.hint)
   })
 })

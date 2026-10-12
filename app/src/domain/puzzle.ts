@@ -9,6 +9,7 @@
 import Ajv2020, { type ErrorObject, type ValidateFunction } from 'ajv/dist/2020.js'
 import puzzleSchema from '@shared/schema/puzzle.schema.json'
 import { Board, BoardError, PUZZLE_TYPES, type PuzzleType } from './board'
+import { TrackGrid, TrackGridError } from './tracks'
 
 export class PuzzleParseError extends Error {
   constructor(message: string) {
@@ -30,11 +31,30 @@ export const DIFFICULTY_BANDS: readonly DifficultyBand[] = [1, 2, 3, 4, 5]
 export interface Puzzle {
   readonly id: string
   readonly puzzleType: PuzzleType
-  readonly size: number
   readonly seed: number
   readonly generatorVersion: number
-  readonly board: Board
+  /**
+   * The board this type plays.
+   *
+   * `Board` for the two marks genres, `TrackGrid` for Train Tracks — a grid that
+   * is not made of regions, is not square, and obeys reciprocity rather than a
+   * capacity. There is no `size` on a puzzle: a grid that need not be square has
+   * none, and reading one off the board instead is what keeps that honest. Both
+   * board classes answer `width`, `height`, `cellCount`, `index` and `coords`, so
+   * a caller that only needs geometry asks for those and does not branch.
+   */
+  readonly board: Board | TrackGrid
   readonly difficulty: DifficultyBand | null
+}
+
+/** Whether this puzzle is played on a marks board. */
+export function isMarksPuzzle(puzzle: Puzzle): puzzle is Puzzle & { board: Board } {
+  return puzzle.board instanceof Board
+}
+
+/** Whether this puzzle is played on a track grid. */
+export function isTracksPuzzle(puzzle: Puzzle): puzzle is Puzzle & { board: TrackGrid } {
+  return puzzle.board instanceof TrackGrid
 }
 
 let compiled: ValidateFunction | undefined
@@ -99,54 +119,84 @@ export function parsePuzzle(data: unknown): Puzzle {
   }
   const boardRecord = boardRaw as Record<string, unknown>
 
-  const size = boardRecord['size']
-  const regionsRaw = boardRecord['regions']
-  if (typeof size !== 'number' || !Array.isArray(regionsRaw)) {
-    throw new PuzzleParseError('board is missing a numeric size or a regions array')
+  const typeRaw = record['type']
+  if (typeof typeRaw !== 'string' || !isPuzzleType(typeRaw)) {
+    throw new PuzzleParseError(`type must be one of ${PUZZLE_TYPES.join(', ')}`)
   }
 
-  const regions = regionsRaw.map((value) => {
+  // The one place the file format branches. Everything downstream asks the board
+  // what it is rather than the type, because a board knows its own geometry and a
+  // puzzle type does not.
+  let board: Board | TrackGrid
+  try {
+    board = typeRaw === 'train-tracks' ? parseTrackGrid(boardRecord) : parseMarksBoard(boardRecord, typeRaw)
+  } catch (error) {
+    if (error instanceof BoardError || error instanceof TrackGridError) {
+      throw new PuzzleParseError(error.message)
+    }
+    throw error
+  }
+
+  return {
+    id: String(record['id']),
+    puzzleType: typeRaw,
+    seed: Number(record['seed']),
+    generatorVersion: Number(record['generatorVersion']),
+    board,
+    difficulty: toDifficultyBand(record['difficulty']),
+  }
+}
+
+function numbers(record: Record<string, unknown>, key: string): number[] {
+  const raw = record[key]
+  if (!Array.isArray(raw)) {
+    throw new PuzzleParseError(`board.${key} must be an array`)
+  }
+  return raw.map((value) => {
     if (typeof value !== 'number') {
-      throw new PuzzleParseError('board.regions[] must contain numbers')
+      throw new PuzzleParseError(`board.${key}[] must contain numbers`)
     }
     return value
   })
+}
+
+function parseMarksBoard(
+  record: Record<string, unknown>,
+  puzzleType: PuzzleType,
+): Board {
+  const size = record['size']
+  if (typeof size !== 'number') {
+    throw new PuzzleParseError('board is missing a numeric size')
+  }
+  const regions = numbers(record, 'regions')
 
   if (regions.length !== size * size) {
     throw new PuzzleParseError(`regions has ${regions.length} entries, expected ${size * size}`)
   }
 
   const regionCount = Math.max(...regions) + 1
-  const declared = boardRecord['regionCapacity']
+  const declared = record['regionCapacity']
   const capacity = Array.isArray(declared)
-    ? declared.map((value) => {
-        if (typeof value !== 'number') {
-          throw new PuzzleParseError('board.regionCapacity[] must contain numbers')
-        }
-        return value
-      })
+    ? numbers(record, 'regionCapacity')
     : Array.from({ length: regionCount }, () => 1)
 
-  const typeRaw = record['type']
-  if (typeof typeRaw !== 'string' || !isPuzzleType(typeRaw)) {
-    throw new PuzzleParseError(`type must be one of ${PUZZLE_TYPES.join(', ')}`)
-  }
+  return new Board(size, regions, capacity, puzzleType)
+}
 
-  let board: Board
-  try {
-    board = new Board(size, regions, capacity, typeRaw)
-  } catch (error) {
-    if (error instanceof BoardError) throw new PuzzleParseError(error.message)
-    throw error
+function parseTrackGrid(record: Record<string, unknown>): TrackGrid {
+  const width = record['width']
+  const height = record['height']
+  if (typeof width !== 'number' || typeof height !== 'number') {
+    throw new PuzzleParseError('board is missing a numeric width and height')
   }
-
-  return {
-    id: String(record['id']),
-    puzzleType: board.puzzleType,
-    size,
-    seed: Number(record['seed']),
-    generatorVersion: Number(record['generatorVersion']),
-    board,
-    difficulty: toDifficultyBand(record['difficulty']),
-  }
+  // `TrackGrid`'s constructor checks the array lengths against the dimensions, the
+  // clue ranges, the two running totals, the piece numbers and the two open ends —
+  // so there is nothing left to check here.
+  return new TrackGrid(
+    width,
+    height,
+    numbers(record, 'rowClues'),
+    numbers(record, 'colClues'),
+    numbers(record, 'givens'),
+  )
 }

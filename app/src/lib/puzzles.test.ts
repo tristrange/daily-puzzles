@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { PUZZLE_TYPES, type PuzzleType } from '../domain/board'
-import { PUZZLE_TYPE_PUBLISHED } from '../domain/games'
+import { PUZZLE_TYPE_LABEL, PUZZLE_TYPE_PUBLISHED } from '../domain/games'
+import { marksBoard } from '../domain/helpers'
 
 const isPublished = (type: PuzzleType) => PUZZLE_TYPE_PUBLISHED[type]
-import { PUZZLE_TYPE_LABEL } from '../domain/games'
 import type { DifficultyBand } from '../domain/puzzle'
 import {
   ARCHIVE_WINDOW_DAYS,
@@ -98,14 +98,14 @@ describe('loadPuzzle', () => {
     const fetcher = async () => jsonResponse(puzzleBody('2026-09-30'))
     const puzzle = await loadPuzzle('2026-09-30', fetcher)
     expect(puzzle.id).toBe('2026-09-30')
-    expect(puzzle.board.size).toBe(3)
+    expect(marksBoard(puzzle).size).toBe(3)
   })
 
   it('loads a star battle file with its region capacities', async () => {
     const fetcher = async () => jsonResponse(starBattle)
     const puzzle = await loadPuzzle('2026-10-04', fetcher)
     expect(puzzle.puzzleType).toBe('star-battle')
-    expect(puzzle.board.regionCapacity).toEqual([2, 2, 2, 2, 2, 2, 2, 2])
+    expect(marksBoard(puzzle).regionCapacity).toEqual([2, 2, 2, 2, 2, 2, 2, 2])
   })
 
   it('rejects ids that are not calendar dates', async () => {

@@ -74,7 +74,8 @@ describe('boardGrid', () => {
 })
 
 const result = {
-  size: 4,
+  width: 4,
+  height: 4,
   puzzleType: 'queens' as const,
   elapsedMs: 263_000,
   hints: 0,

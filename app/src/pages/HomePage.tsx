@@ -57,7 +57,7 @@ export function HomePage() {
               <p className="game-card-detail">
                 {formatPuzzleLabel(probe.id, timeZone)}
                 {probe.puzzle !== null && (
-                  <> · {probe.puzzle.size}&times;{probe.puzzle.size}</>
+                  <> · {probe.puzzle.board.width}&times;{probe.puzzle.board.height}</>
                 )}
                 {probe.puzzle?.difficulty != null && (
                   <> · {DIFFICULTY_LABEL[probe.puzzle.difficulty]}</>

@@ -13,6 +13,7 @@ import {
   PUZZLE_TYPE_SUFFIX,
   isDefaultPuzzleType,
 } from './games'
+import { marksBoard } from './helpers'
 
 /**
  * A legal marks board of `puzzleType`: one region per row, one piece per row.
@@ -114,7 +115,7 @@ describe('puzzle type registry', () => {
         ),
       ),
     )
-    expect(firstHint(hintCase.board)).not.toBeNull()
+    expect(firstHint(marksBoard(hintCase))).not.toBeNull()
     expect(PUZZLE_TYPE_HAS_HINTS[hintCase.puzzleType]).toBe(true)
 
     for (const type of PUZZLE_TYPES) {
