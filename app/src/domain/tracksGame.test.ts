@@ -161,11 +161,14 @@ describe('trackConflicts', () => {
     expect(extra.filter((c) => c.rule === 'off-grid-end').map((c) => c.cell)).toEqual([0])
   })
 
-  it('flags a row holding more than its clue', () => {
+  it('flags only the cells a player can clear when a row is over its clue', () => {
     const grid = middleRow()
     const game = cyclePiece(createTracksGame(grid), 0)
-    // Row 0 wants 0 cells.
-    expect(trackConflicts(game)).toContainEqual({ rule: 'row-count', cell: 0, other: 0 })
+    const rowFaults = trackConflicts(game).filter((c) => c.rule === 'row-count')
+    // Row 0 wants 0 cells. Only cell 0 is placed and the player's, so it is the
+    // only one flagged: the empty cells beside it have no action that helps, and
+    // pointing at them invites the one action that makes it worse.
+    expect(rowFaults).toEqual([{ rule: 'row-count', cell: 0, other: 0 }])
   })
 
   it('does not flag a row holding less than its clue', () => {

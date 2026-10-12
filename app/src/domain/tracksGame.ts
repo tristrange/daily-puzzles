@@ -182,13 +182,23 @@ export function trackConflicts(game: TracksGame): readonly TrackConflict[] {
     }
   }
 
+  // Only the cells the player can clear. An over-full line is fixed by removing a
+  // piece from it, so outlining the empty cells alongside — or the fixed givens —
+  // points at cells where the only available action makes the error worse.
   for (let row = 0; row < grid.height; row += 1) {
+    if ((rowCount[row] ?? 0) <= (grid.rowClues[row] ?? 0)) continue
     for (let col = 0; col < grid.width; col += 1) {
       const cell = grid.index(row, col)
-      if ((rowCount[row] ?? 0) > (grid.rowClues[row] ?? 0)) {
+      if (isOn(game, cell) && grid.pieceAt(cell) === 0) {
         found.push({ rule: 'row-count', cell, other: row })
       }
-      if ((colCount[col] ?? 0) > (grid.colClues[col] ?? 0)) {
+    }
+  }
+  for (let col = 0; col < grid.width; col += 1) {
+    if ((colCount[col] ?? 0) <= (grid.colClues[col] ?? 0)) continue
+    for (let row = 0; row < grid.height; row += 1) {
+      const cell = grid.index(row, col)
+      if (isOn(game, cell) && grid.pieceAt(cell) === 0) {
         found.push({ rule: 'col-count', cell, other: col })
       }
     }
