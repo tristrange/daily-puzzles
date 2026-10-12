@@ -10,6 +10,9 @@
   --text-h: light-dark(#08060d, #f3f4f6);
   --text-error: light-dark(#b3261e, #f2b8b5);
   --bg: light-dark(#fff, #16171d);
+  /* The page behind the board. A cell that is set into the page rather than
+     raised off it reads as fixed rather than placed — the tracks board's givens. */
+  --bg-sunken: light-dark(#f4f3f6, #101116);
   --border: light-dark(#e5e4e7, #2e303a);
   /* The light accent is a shade deeper than the dark one because it has to work
      as *text* on white: #aa3bff only reached 4.39:1 there, and #a231e8 clears

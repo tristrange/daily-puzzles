@@ -378,6 +378,28 @@
   color: var(--text);
 }
 
+/* A given is a clue the board fixes. It is drawn a shade dimmer than a piece the
+   player placed, which is the same treatment the marks board gives a given
+   marker — enough to tell them apart at a glance, not enough to read as disabled.
+   The cell also says so out loud, since a dimmer glyph is nothing to a screen
+   reader. */
+.tracks .cell.given {
+  background: var(--bg-sunken);
+}
+
+.tracks .cell.given .marker {
+  opacity: 0.55;
+}
+
+/* The tracks board acts on a tap, not on a drag, so it must not claim the
+   gesture. `.board.playable` sets `touch-action: none` for the marks board's
+   mark-painting strokes, and inheriting it here would mean a swipe starting over
+   this board could not scroll the page. `manipulation` keeps panning and drops
+   the double-tap-zoom delay, which is the whole cost of tapping a cell. */
+.tracks .board.playable {
+  touch-action: manipulation;
+}
+
 .hint-text {
   min-height: 1.6em;
   margin: 10px 0 0;

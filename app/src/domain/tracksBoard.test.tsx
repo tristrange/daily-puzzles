@@ -91,4 +91,13 @@ describe('TracksBoard', () => {
     expect(both).toContain('does not meet row 3, column 2')
     expect(both).toContain('row 2 already holds its full count')
   })
+
+  it('marks a given apart from a piece the player placed', () => {
+    // Nothing else says so: clicking a given does nothing, which without a
+    // visible treatment reads as a broken board rather than a fixed cell.
+    const markup = render({ grid: GRID, pieces: [1, 0, 0, 1, 0, 1, 0, 0, 0] })
+    expect(markup).toContain('cell given')
+    // Cells 3 and 5 are givens; cell 0 is the player's and must not be marked.
+    expect(markup.match(/cell given/g)).toHaveLength(2)
+  })
 })

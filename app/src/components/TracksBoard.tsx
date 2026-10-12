@@ -25,7 +25,6 @@ import {
   useState,
   type CSSProperties,
   type KeyboardEvent,
-  type PointerEvent,
 } from 'react'
 import { PUZZLE_TYPE_LABEL } from '../domain/games'
 import { PIECE_GLYPHS, TrackGrid } from '../domain/tracks'
@@ -179,8 +178,15 @@ export function TracksBoard({
     return `Row ${row + 1}, column ${col + 1}, ${what}${clue}${faults.get(cell) ?? ''}`
   }
 
-  const classNameFor = (cell: number): string =>
-    conflictCells.has(cell) ? 'cell conflict' : 'cell'
+  const classNameFor = (cell: number): string => {
+    const classes = ['cell']
+    // A given is a clue, and the player has to be able to see which pieces are
+    // clues while playing. Nothing else says so: clicking one does nothing, which
+    // without this reads as a broken board rather than a fixed cell.
+    if (grid.pieceAt(cell) !== 0) classes.push('given')
+    if (conflictCells.has(cell)) classes.push('conflict')
+    return classes.join(' ')
+  }
 
   const renderCell = (cell: number) => (
     <div
@@ -190,8 +196,8 @@ export function TracksBoard({
       aria-label={labelFor(cell)}
       className={classNameFor(cell)}
       tabIndex={cell === focusIndex ? 0 : -1}
-      onPointerDown={(event: PointerEvent<HTMLDivElement>) => {
-        if (locked || event.button !== 0) return
+      onClick={() => {
+        if (locked) return
         onCycle(cell)
       }}
       onFocus={() => setFocusIndex(cell)}
