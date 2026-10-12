@@ -318,7 +318,12 @@
    same pixels: an `auto` column is sized by its own content, and two grids sizing
    one independently is a promise neither of them keeps. */
 .tracks {
-  width: min(76vw, 480px, 54svh);
+  /* Capped by height as well as width, and not simply by `54svh`: every cell is
+     square, so a grid taller than it is wide is taller on screen than its column
+     count suggests, and a width-only cap would put a 2x16 board eight viewports
+     down the page. Dividing the height budget by the grid's own ratio is what
+     makes the cap mean what it says. */
+  width: min(76vw, 480px, calc(54svh * var(--tracks-cols) / var(--tracks-rows)));
   margin: 0 auto;
   display: grid;
   gap: 3px;

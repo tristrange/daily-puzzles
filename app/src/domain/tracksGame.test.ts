@@ -152,6 +152,16 @@ describe('trackConflicts', () => {
     expect(wrong).not.toContainEqual(expect.objectContaining({ rule: 'mismatched-end', cell: 3 }))
   })
 
+  it('reports a corner turn running off the grid once, not once per arm', () => {
+    // `openEnds` holds one entry per *end*, so a corner turn with both arms off
+    // the grid is in it twice. The count needs that; the report does not, and two
+    // identical sentences in one cell's label is worse than one.
+    const grid = middleRow()
+    const extra = trackConflicts(placed(grid, [5, 0, 0, 1, 1, 1, 0, 0, 0]))
+    const faults = extra.filter((c) => c.rule === 'off-grid-end' && c.cell === 0)
+    expect(faults).toHaveLength(1)
+  })
+
   it('points at the extra end the player placed, not at the given ends', () => {
     // The grid's two given ends are correct by construction — the validator
     // refuses anything else — so marking them when a third appears points at two

@@ -223,6 +223,7 @@ export function TracksBoard({
       style={
         {
           '--tracks-cols': grid.width,
+          '--tracks-rows': grid.height,
           '--tracks-gutter': '1.7em',
           // A third of the cell's gap, so the rail is about the weight of a
           // border and two meeting rails read as one line rather than a blob.
