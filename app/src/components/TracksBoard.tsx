@@ -27,7 +27,8 @@ import {
   type KeyboardEvent,
 } from 'react'
 import { PUZZLE_TYPE_LABEL } from '../domain/games'
-import { PIECE_GLYPHS, TrackGrid } from '../domain/tracks'
+import { TrackGrid } from '../domain/tracks'
+import { TrackPiece } from './TrackPiece'
 import type { TrackConflict, TracksGame } from '../domain/tracksGame'
 
 export interface TracksBoardProps {
@@ -209,8 +210,8 @@ export function TracksBoard({
       onFocus={() => setFocusIndex(cell)}
     >
       {pieceAt(cell) !== 0 && (
-        <span className="marker" aria-hidden="true">
-          {PIECE_GLYPHS[pieceAt(cell)]}
+        <span className="marker">
+          <TrackPiece piece={pieceAt(cell)} />
         </span>
       )}
     </div>
@@ -223,6 +224,9 @@ export function TracksBoard({
         {
           '--tracks-cols': grid.width,
           '--tracks-gutter': '1.7em',
+          // A third of the cell's gap, so the rail is about the weight of a
+          // border and two meeting rails read as one line rather than a blob.
+          '--track-thickness': 'max(2px, 0.14em)',
         } as CSSProperties
       }
     >

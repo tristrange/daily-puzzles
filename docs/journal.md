@@ -361,6 +361,24 @@ a cell the player can change, and the action must be one that helps.** Not the c
 where the problem was noticed, not the first one the loop reached, not every cell
 sharing the offending row.
 
+And then the one that is not about the same rule at all, and is the worst of the
+lot for being invisible. At 480px a 7x7 cell is about 61px and the piece glyph was
+34px, so every rail stopped 30px short of the cell edge — and two cells whose
+pieces genuinely met were drawn as two pieces that did not. The gap *is* the game:
+reciprocity is the rule, and a line the player has to reason about instead of see
+is a line they cannot play. It is drawn now as two arms from the centre to the two
+edges, which is a thing a font character cannot do, because its width is the font's
+and the platform's and the size's.
+
+The failure is worth naming because nothing reported it. No test failed, no type
+complained, the markup was correct, the arithmetic in the CSS was correct, and the
+board was still unreadable — a defect that exists entirely in the space between what
+the code says and what it looks like. The only thing that could have caught it was
+looking at it, and there was no browser here to look with. **Some defects are not
+assertable; they are only visible.** Writing a test that checks for the absence of
+the glyph proves the code changed, not that the picture is right, and it would have
+been the comfortable thing to do while still shipping a broken board.
+
 Five separate findings in this one PR were that same rule missed in five places — a
 given marked red, an empty cell marked red, a whole row marked red including the
 parts that cannot help — and every one arrived reading as a bug report about

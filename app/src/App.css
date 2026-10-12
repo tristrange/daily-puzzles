@@ -372,23 +372,59 @@
   border: 1px solid var(--border);
 }
 
-.tracks .marker {
-  font-size: 1.9em;
-  -webkit-text-stroke: 0;
-  color: var(--text);
+/* A piece is two arms from the centre of its cell to the two edges it ends in,
+   drawn rather than typed. A glyph cannot be made to reach the edges reliably —
+   its width is the font's, the platform's and the size's — and any gap it leaves
+   between two cells whose pieces do meet makes a joined line look broken, which
+   is the one thing this genre cannot afford, because reciprocity is the rule.
+
+   Each arm is exactly half a cell, so an arm here and the arm facing it on the
+   next cell meet on the line between them with nothing in between. The 3px gap
+   lives between cells, not inside them. */
+.track-piece {
+  position: absolute;
+  inset: 0;
+  display: block;
 }
 
-/* A given is a clue the board fixes. It is drawn a shade dimmer than a piece the
-   player placed, which is the same treatment the marks board gives a given
-   marker — enough to tell them apart at a glance, not enough to read as disabled.
-   The cell also says so out loud, since a dimmer glyph is nothing to a screen
-   reader. */
+.track-arm {
+  position: absolute;
+  display: block;
+  background: var(--text);
+}
+
+.track-arm.n,
+.track-arm.s {
+  left: 50%;
+  width: var(--track-thickness);
+  height: 50%;
+  margin-left: calc(var(--track-thickness) / -2);
+}
+
+.track-arm.e,
+.track-arm.w {
+  top: 50%;
+  width: 50%;
+  height: var(--track-thickness);
+  margin-top: calc(var(--track-thickness) / -2);
+}
+
+.track-arm.n { top: 0; }
+.track-arm.s { bottom: 0; }
+.track-arm.e { right: 0; }
+.track-arm.w { left: 0; }
+
+/* A given is a clue the board fixes: printed information, not work in progress.
+   Its arms carry the high-contrast colour and its cell is sunken, so the two
+   kinds of piece are told apart at a glance and by the cell's own accessible
+   name. Without the difference a fixed clue looks like anything the player
+   placed, and clicking one silently does nothing. */
 .tracks .cell.given {
   background: var(--bg-sunken);
 }
 
-.tracks .cell.given .marker {
-  opacity: 0.55;
+.tracks .cell.given .track-arm {
+  background: var(--text-h);
 }
 
 /* The tracks board acts on a tap, not on a drag, so it must not claim the
