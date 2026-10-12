@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 from dataclasses import replace
 from datetime import date
+from pathlib import Path
 
 import pytest
 
@@ -27,6 +28,7 @@ from queens_engine import (
     Rulebook,
     dumps_puzzle,
     generate_puzzle,
+    load_puzzle,
     parse_puzzle,
     puzzle_id,
     rulebook_for,
@@ -36,6 +38,7 @@ from queens_engine import (
     verify_replay,
 )
 from queens_engine.rulebook import RulebookError
+from queens_engine.tracks_gen import TrackGenerationError
 
 #: 5x5 is the cheapest board the generator makes and nothing here depends on size.
 SMALL = 5
@@ -286,6 +289,33 @@ class TestTracks:
         assert book.dimensions(puzzle) == (TRACKS_WIDTH, TRACKS_HEIGHT)
         assert TRACKS_WIDTH == TRACKS_HEIGHT, "the constants are two numbers, not a size"
 
+    def test_new_tracks_puzzles_use_every_line_and_replay_as_version_two(self) -> None:
+        puzzle = rulebook_for(PuzzleType.TRAIN_TRACKS).generate(
+            seed=7, puzzle_id="2026-10-16-tracks"
+        )
+        record = json.loads(dumps_puzzle(puzzle))
+        assert record["generatorVersion"] == 2
+        assert all(clue >= 1 for clue in record["board"]["rowClues"])
+        assert all(clue >= 1 for clue in record["board"]["colClues"])
+        assert verify_replay(parse_puzzle(record)) == puzzle
+
+    def test_version_one_archive_puzzles_still_replay_with_zero_clues(self) -> None:
+        path = Path(__file__).resolve().parents[2] / "app/public/puzzles/2026-10-12-tracks.json"
+        puzzle = load_puzzle(path)
+        assert puzzle.generator_version == 1
+        assert 0 in json.loads(dumps_puzzle(puzzle))["board"]["colClues"]
+        assert verify_replay(puzzle) == puzzle
+
+    def test_version_two_replay_survives_a_later_generator_version(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        puzzle = rulebook_for(PuzzleType.TRAIN_TRACKS).generate(
+            seed=7, puzzle_id="2026-10-16-tracks"
+        )
+        assert puzzle.generator_version == 2
+        monkeypatch.setattr("queens_engine.rulebook.TRACKS_GENERATOR_VERSION", 3)
+        assert verify_replay(puzzle) == puzzle
+
     def test_a_seed_the_schema_refuses_is_refused_here_too(self) -> None:
         # `generate_grid` hands the seed to `Prng`, which masks an out-of-range one
         # rather than refusing it. Without this check `--seed -1` writes a puzzle
@@ -293,15 +323,22 @@ class TestTracks:
         with pytest.raises(GenerationError, match="outside"):
             rulebook_for(PuzzleType.TRAIN_TRACKS).generate(seed=-1, puzzle_id="2026-10-12")
 
-    def test_replay_restates_the_generator_version_rather_than_trusting_the_file(self) -> None:
-        # `verify_replay` compares the regenerated version against the recorded one
-        # so a generator change cannot silently reinterpret published puzzles. A
-        # `replace` that kept the file's value would compare it with itself.
+    def test_replay_refuses_an_unsupported_tracks_generator_version(self) -> None:
         book = rulebook_for(PuzzleType.TRAIN_TRACKS)
         puzzle = book.generate(seed=7, puzzle_id="2026-10-12")
         forged = replace(puzzle, generator_version=99)
         with pytest.raises(GenerationError, match="version"):
             verify_replay(forged)
+
+    def test_generation_failure_uses_the_publishers_seed_retry_error(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        def no_grid(**_kwargs: object) -> None:
+            raise TrackGenerationError("no unique grid from this seed")
+
+        monkeypatch.setattr("queens_engine.rulebook.generate_grid", no_grid)
+        with pytest.raises(GenerationError, match="no unique grid"):
+            rulebook_for(PuzzleType.TRAIN_TRACKS).generate(seed=7, puzzle_id="2026-10-16-tracks")
 
     def test_the_marks_generator_refuses_a_type_it_does_not_build(self) -> None:
         # Its branch is `QUEENS` else Star Battle, so a new enum member would have

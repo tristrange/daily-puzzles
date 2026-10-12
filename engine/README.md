@@ -92,6 +92,21 @@ python -m tools.generate --date 2026-10-04 --type star-battle            # 9x9, 
 python -m tools.generate --date 2026-10-05 --type star-battle --size 8   # override a size
 ```
 
+## Train Tracks
+
+New Train Tracks puzzles use a 7x7 grid and `generatorVersion` 2. Every row and
+column clue is at least 1: the route must use every line of the board. The generator
+rejects routes with unused lines before checking that the puzzle has exactly one
+solution. Board sizes and difficulty tiers are unchanged.
+
+Version-1 puzzles may contain zero clues and still replay with their original
+algorithm. This is a generation policy rather than a new gameplay rule: existing
+archive files, including puzzles generated ahead of their date, are not rewritten.
+
+```sh
+python -m tools.generate --date 2026-10-16 --type train-tracks
+```
+
 ## The rules are a public interface
 
 Since M6, [`deduce.py`](src/queens_engine/deduce.py)'s pure rule passes (singles,

@@ -592,3 +592,28 @@ misunderstand it, and a whole stroke is one Undo however many cells it covered.
 The board is as tall as a phone viewport, so a copy beneath it scrolls off exactly when it
 is wanted — but that is reasoning, not a measurement, and it is the kind of thing that
 should be tried on a phone rather than argued about on a desktop.
+
+## Train Tracks should use the whole board
+
+Fourteen of the twenty published Train Tracks boards have a zero row or column clue.
+Those lines can be crossed out immediately, reducing the area the player has to reason
+about. New generation now requires every row and column to contain at least one track.
+The route is checked before piece assignment and uniqueness search, so an unused line
+costs another random walk rather than another solve.
+
+This is generator version 2. Version 1 retains its original random stream and may still
+produce zero clues when replaying the archive. The parser and gameplay rules continue
+to accept them; no existing file is rewritten, including files generated ahead of their
+date. Unsupported generator versions fail explicitly. Exhausting generation raises the
+publisher's normal retry error, allowing it to advance the seed.
+
+Measured locally over 100 consecutive seeds and the 20 published seeds, all 120 new
+7x7 boards used every line. 117 completed within a five-second measurement budget, with
+a median of about 0.04 seconds. The three slower seeds completed in 5.3–8.7 seconds on
+rerun. The version-1 sample completed all 120 within that budget, with a median of about
+0.004 seconds and a maximum of 3.0 seconds. These are sample timings, not runtime limits
+or guarantees. All 60 committed puzzles still passed replay verification.
+
+Larger boards and size-based difficulty tiers remain a separate change. Using every
+line makes the nominal board size meaningful, but neither that nor size alone measures
+the difficulty of the deductions.

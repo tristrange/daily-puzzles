@@ -52,7 +52,7 @@ from .solver import DEFAULT_LIMIT, iter_solutions
 from .solver import count_solutions as count_board_solutions
 from .tracks import TrackGrid
 from .tracks import count_solutions as count_track_solutions
-from .tracks_gen import generate_grid
+from .tracks_gen import TrackGenerationError, generate_grid
 
 #: Star Battle stays at one size until the deduction engine can rate a star board,
 #: so there is nothing to ramp towards and the size is pinned rather than tuned.
@@ -76,10 +76,9 @@ STAR_BATTLE_STARS: Final[int] = 2
 TRACKS_WIDTH: Final[int] = 7
 TRACKS_HEIGHT: Final[int] = 7
 
-#: Which generation algorithm produced a Train Tracks board. 1 and 2 are the
-#: Queens and Star Battle paths; this is the first algorithm of its own, so it
-#: gets its own number rather than borrowing either.
-TRACKS_GENERATOR_VERSION: Final[int] = 1
+#: Train Tracks versions are independent of other genres: 1 permits zero clues;
+#: 2 requires the route to use every row and column. Both remain replayable.
+TRACKS_GENERATOR_VERSION: Final[int] = 2
 
 
 class RulebookError(ValueError):
@@ -436,7 +435,10 @@ class TrackRulebook(Rulebook):
         # without it a file can be written recording a seed its own schema refuses.
         if not 0 <= seed <= MAX_SEED:
             raise GenerationError(f"seed {seed} outside [0, 2**32-1]")
-        grid = generate_grid(seed=seed, width=TRACKS_WIDTH, height=TRACKS_HEIGHT)
+        try:
+            grid = generate_grid(seed=seed, width=TRACKS_WIDTH, height=TRACKS_HEIGHT)
+        except TrackGenerationError as error:
+            raise GenerationError(str(error)) from error
         return Puzzle(
             id=puzzle_id,
             puzzle_type=self.puzzle_type,
@@ -461,15 +463,30 @@ class TrackRulebook(Rulebook):
         return None
 
     def replay(self, puzzle: Puzzle) -> Puzzle:
-        # The version is restated from this module, not carried over from the file.
-        # `verify_replay` compares the regenerated version against the recorded one
-        # so a generator change cannot silently reinterpret published puzzles, and
-        # `replace` would have compared the file's value with itself.
+        # Archived versions select their own policy, independent of the version
+        # currently written by generate(). Keep these branches when adding one.
+        match puzzle.generator_version:
+            case 1:
+                require_nonzero_clues = False
+            case 2:
+                require_nonzero_clues = True
+            case _:
+                raise GenerationError(
+                    f"unsupported train-tracks generator version {puzzle.generator_version}"
+                )
         board = self._grid(puzzle)
+        try:
+            regenerated = generate_grid(
+                seed=puzzle.seed,
+                width=board.width,
+                height=board.height,
+                require_nonzero_clues=require_nonzero_clues,
+            )
+        except TrackGenerationError as error:
+            raise GenerationError(str(error)) from error
         return replace(
             puzzle,
-            generator_version=TRACKS_GENERATOR_VERSION,
-            board=generate_grid(seed=puzzle.seed, width=board.width, height=board.height),
+            board=regenerated,
         )
 
     def dimensions(self, puzzle: Puzzle) -> tuple[int, int]:
