@@ -355,9 +355,19 @@ from them: And then the same fault arrived a fourth time, one level down: when a
 a piece that did not face back, the fault was recorded against the given. Reciprocity
 is symmetric, so only one cell of a pair reports — and it was the immutable one. The
 board marked a clue red and left the piece the player could actually correct
-untouched. The generalisation is the one worth keeping: **the cell a fault is
-reported against must be a cell the player can change.** Not the one where the
-problem was noticed, and not the one that happens to be first in the loop.
+untouched. The generalisation is the one worth keeping, and it took a fifth pass to
+state it plainly enough to survive: **the cell a fault is reported against must be
+a cell the player can change, and the action must be one that helps.** Not the cell
+where the problem was noticed, not the first one the loop reached, not every cell
+sharing the offending row.
+
+Five separate findings in this one PR were that same rule missed in five places — a
+given marked red, an empty cell marked red, a whole row marked red including the
+parts that cannot help — and every one arrived reading as a bug report about
+something else until you notice they are the same sentence. Which is what a run of
+same-shaped findings means, and it is worth saying plainly rather than fixing the
+sixth one next week: when the fifth arrives, the answer is not the fifth fix. It is
+to write the rule down where the next one will find it.
 
 **a warning that names the wrong fault is worse than no warning**, because
 the player learns to ignore the marker, and then it is not doing its job either.
