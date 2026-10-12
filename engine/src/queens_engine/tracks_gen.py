@@ -7,12 +7,9 @@ solution space. So rather than throw a whole route away when it comes out ambigu
 the generator freezes more of the route into `givens` and tries again on the same
 route. That turns a coin flip into a short climb.
 
-Both end pieces are always given, which the format requires and which is what pins the
-line's two ends to the grid edge.
-
-`generate_grid` deliberately returns a `TrackGrid` rather than a `Puzzle`: a puzzle file
-needs a type, a schema and a rulebook, and this type is not registered yet. Producing
-the grid is the part with the algorithm in it.
+Both end pieces are always given, which pins the line's two ends to the grid edge.
+New routes must use every row and column. Version-1 replay disables that filter so
+the archive keeps regenerating from its original random stream.
 """
 
 from __future__ import annotations
@@ -189,7 +186,12 @@ def _build(
 
 
 def generate_grid(
-    *, seed: int, width: int, height: int, max_givens: int | None = None
+    *,
+    seed: int,
+    width: int,
+    height: int,
+    max_givens: int | None = None,
+    require_nonzero_clues: bool = True,
 ) -> TrackGrid:
     """A grid with exactly one solution, drawn from `seed`.
 
@@ -201,6 +203,9 @@ def generate_grid(
     pieces**, which the format requires and which are therefore not optional. It is a
     cap on the whole set rather than on the interior clues alone, because a caller
     reading `grid.givens` cannot otherwise tell how much of the board was handed over.
+
+    `require_nonzero_clues=False` preserves the version-1 algorithm for replay only.
+    New generation rejects unused rows and columns before checking uniqueness.
 
     Raises `TrackGenerationError` if no route from this seed could be pinned down, or if
     `max_givens` is below the two ends no grid can do without.
@@ -221,6 +226,11 @@ def generate_grid(
             target = max(_MIN_ROUTE, cells // _FILL_HIGH + rng.below(span))
             route = _grow_route(width, height, rng, target)
             if len(route) < floor or len(route) * _MIN_FILL < target:
+                continue
+            if require_nonzero_clues and (
+                len({cell // width for cell in route}) != height
+                or len({cell % width for cell in route}) != width
+            ):
                 continue
             pieces = _route_pieces(width, height, route, rng)
             if pieces is None:

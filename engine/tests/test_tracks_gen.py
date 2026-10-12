@@ -10,12 +10,43 @@ from __future__ import annotations
 
 import pytest
 
-from queens_engine.tracks import PIECE_ENDS, count_solutions, iter_solutions
+from queens_engine.prng import Prng
+from queens_engine.tracks import PIECE_ENDS, TrackGrid, count_solutions, iter_solutions
 from queens_engine.tracks_gen import TrackGenerationError, generate_grid
 from test_tracks import obeys
 
 
 class TestWhatItProduces:
+    @pytest.mark.parametrize("seed", [0, 1, 2, 7, 19, 54])
+    def test_every_row_and_column_is_used(self, seed: int) -> None:
+        grid = generate_grid(seed=seed, width=7, height=7)
+        assert all(clue >= 1 for clue in grid.row_clues)
+        assert all(clue >= 1 for clue in grid.col_clues)
+
+    @pytest.mark.parametrize(
+        "route",
+        [
+            [7, 8, 9, 10, 11, 12, 13, 20, 19, 18, 17, 16, 15, 14, 21, 22, 23, 24, 25, 26, 27],
+            [0, 1, 2, 9, 8, 7, 14, 15, 16, 23, 22, 21, 28, 29, 30, 37, 36, 35, 42, 43, 44],
+        ],
+        ids=["unused-rows", "unused-columns"],
+    )
+    def test_unused_lines_are_rejected_before_solving(
+        self, monkeypatch: pytest.MonkeyPatch, route: list[int]
+    ) -> None:
+        def draw_route(_width: int, _height: int, _rng: Prng, _target: int) -> list[int]:
+            return route
+
+        def unexpected_solver(_grid: TrackGrid, *, limit: int) -> int:
+            pytest.fail(f"unused lines reached the solver with limit={limit}")
+
+        monkeypatch.setattr("queens_engine.tracks_gen._grow_route", draw_route)
+        monkeypatch.setattr("queens_engine.tracks_gen.count_solutions", unexpected_solver)
+        monkeypatch.setattr("queens_engine.tracks_gen._ROUTES", 1)
+        monkeypatch.setattr("queens_engine.tracks_gen._ROUTE_TRIES", 1)
+        with pytest.raises(TrackGenerationError, match="no unique grid"):
+            generate_grid(seed=7, width=7, height=7)
+
     @pytest.mark.parametrize("seed", range(6))
     def test_the_grid_has_exactly_one_solution(self, seed: int) -> None:
         grid = generate_grid(seed=seed, width=7, height=7)
@@ -92,13 +123,13 @@ class TestReplay:
         grids = {generate_grid(seed=seed, width=7, height=7) for seed in range(8)}
         assert len(grids) > 1, "every seed produced the same puzzle"
 
-    def test_a_pinned_grid_stays_put(self) -> None:
+    def test_a_pinned_version_one_grid_stays_put(self) -> None:
         """The value a published puzzle file would replay from.
 
         If this fails, every Train Tracks puzzle already in the archive has changed
         content while its file — and its seed — stayed the same.
         """
-        grid = generate_grid(seed=7, width=7, height=7)
+        grid = generate_grid(seed=7, width=7, height=7, require_nonzero_clues=False)
         assert grid.row_clues == (0, 0, 4, 7, 5, 4, 0)
         assert grid.col_clues == (1, 1, 2, 4, 4, 4, 4)
         assert grid.total == 20
