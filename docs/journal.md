@@ -701,7 +701,7 @@ suffixes, dimensions and labels. Named IDs must match the declared family and
 board dimensions in both parsers. Publication hashes each full ID, retains the
 version-3 budgets, and retries seeds without substituting smaller boards.
 Interrupted runs fill only missing slots. Every existing corpus byte is preserved.
-Main was checked before delivery: its latest legacy tracks date is October 15;
+Main was checked before delivery: its latest legacy tracks date is October 16;
 October 17 also clears the current three-day publishing lead. A corpus test guards
 that activation follows the latest legacy date.
 
@@ -755,8 +755,23 @@ interaction is a future improvement, not part of this PR.
 [Chooser and archive preview](images/tracks-sizes-chooser.png) ·
 [Large board in mobile dark mode](images/tracks-large-mobile.png).
 
-Verification: 490 engine tests and 460 app tests passed, plus engine typing,
-lint/format, schema IDs, all 72 committed puzzle replays, app typing/lint and
-production build. Regenerating the hint baseline produced the same 1,644 positions
-over 40 marks puzzles; Train Tracks retains its existing separate genre gate.
+Verification: 491 engine tests and 460 app tests passed, plus engine typing,
+lint/format, schema IDs, all 75 committed puzzle replays, app typing/lint and
+production build. Regenerating the hint baseline produced the updated 1,764 positions
+over 42 marks puzzles; Train Tracks retains its existing separate genre gate.
 App lint retains the existing non-failing TracksStage effect warning.
+
+The single independent whole-branch review ran 192 app and 55 engine regressions.
+It found one recovery defect: interruption during a file write left a truncated
+final filename that the next publisher run skipped. A new test reproduced the
+failure, then passed after writing to an ignored temporary sibling and renaming
+only after completion. Completed Small bytes survive and Medium/Large resume;
+all resumed files verify. The full suites were repeated after the fix. No critical
+or minor findings remained. A reviewer browser Back check restored the timer;
+native-browser back/forward-cache behavior was not separately isolated. The
+preferred reviewer hit its usage limit before a verdict, so the available model
+provided the single review.
+
+The final main refresh added the newly published October 16 Queens, Star Battle
+and legacy Train Tracks files plus their hint baseline. They were merged intact;
+activation stays October 17 and the corpus boundary regression still passes.

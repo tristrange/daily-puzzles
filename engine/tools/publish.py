@@ -249,7 +249,14 @@ def main(argv: list[str] | None = None) -> int:
                 except RuntimeError as error:
                     print(f"error: {error}", file=sys.stderr)
                     return 1
-                (args.out / f"{day_id}.json").write_text(dumps_puzzle(puzzle), encoding="utf-8")
+                path = args.out / f"{day_id}.json"
+                temporary = path.with_suffix(".json.tmp")
+                # A failed write must never look like a published slot on restart.
+                try:
+                    temporary.write_text(dumps_puzzle(puzzle), encoding="utf-8")
+                    temporary.replace(path)
+                finally:
+                    temporary.unlink(missing_ok=True)
                 # A layout written this run is on disk and therefore in the window
                 # for every later day, so the next iteration's scan picks it up; no
                 # bookkeeping of what this run itself produced is needed.

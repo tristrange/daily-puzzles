@@ -80,7 +80,9 @@ bumped at most 32 times; failure never substitutes a smaller board or drops a sl
 Skipping is per puzzle rather than per day, which is what makes this safe to run against
 an archive published before companions existed: a committed Queens board does not stop
 its missing companion or size variant from being filled in. A partial run resumes
-at the earliest incomplete day and writes only missing slots.
+at the earliest incomplete day and writes only missing slots. A new board is written
+to a temporary sibling ignored by the slot scan, then renamed into place after the
+write completes; an interrupted write cannot masquerade as a published file.
 
 It is idempotent by construction: an existing file is never rewritten and an id always
 maps to one puzzle, so running it twice in a day is a no-op and a missed week self-heals

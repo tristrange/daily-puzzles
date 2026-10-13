@@ -624,6 +624,43 @@ class TestDailyTrackSlots:
             assert not any(line.startswith("publish ") for line in again)
             assert {p.name: p.read_bytes() for p in tmp_path.glob("*.json")} == all_bytes
 
+    def test_interrupted_write_resumes_without_a_partial_published_slot(
+        self, tmp_path: Path
+    ) -> None:
+        book = rulebook_for(PuzzleType.TRAIN_TRACKS)
+        day = date(2026, 10, 17)
+        original = Path.write_text
+
+        def interrupted_write(
+            path: Path,
+            data: str,
+            encoding: str | None = None,
+            errors: str | None = None,
+            newline: str | None = None,
+        ) -> int:
+            if path.name.startswith("2026-10-17-tracks-medium"):
+                original(path, data[:10], encoding=encoding, errors=errors, newline=newline)
+                raise OSError("interrupted write")
+            return original(path, data, encoding=encoding, errors=errors, newline=newline)
+
+        with patch.object(publish, "rulebooks", return_value=(book,)):
+            with (
+                patch.object(Path, "write_text", new=interrupted_write),
+                pytest.raises(OSError, match="interrupted write"),
+            ):
+                _run_publish(tmp_path, day, 0, dry_run=False, clock=day)
+            small = tmp_path / "2026-10-17-tracks-small.json"
+            before = small.read_bytes()
+            assert not (tmp_path / "2026-10-17-tracks-medium.json").exists()
+            lines = _run_publish(tmp_path, None, 0, dry_run=False, clock=day)
+        assert small.read_bytes() == before
+        assert [line for line in lines if line.startswith("publish ")] == [
+            "publish 2026-10-17-tracks-medium",
+            "publish 2026-10-17-tracks-large",
+        ]
+        assert not list(tmp_path.glob("*.tmp"))
+        assert verify.main(["--dir", str(tmp_path)]) == 0
+
     def test_resume_only_the_missing_medium_slot(self, tmp_path: Path) -> None:
         book = rulebook_for(PuzzleType.TRAIN_TRACKS)
         day = date(2026, 10, 17)
