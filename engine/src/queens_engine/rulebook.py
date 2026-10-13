@@ -50,6 +50,7 @@ from .generator import (
 from .render import render_board, render_grid
 from .solver import DEFAULT_LIMIT, iter_solutions
 from .solver import count_solutions as count_board_solutions
+from .track_sizes import TRACK_SIZES_START, TRACK_VARIANTS, TrackSize, track_variant
 from .tracks import TrackGrid
 from .tracks import count_solutions as count_track_solutions
 from .tracks_gen import TrackGenerationError, generate_grid
@@ -66,13 +67,7 @@ STAR_BATTLE_STARS: Final[int] = 2
 
 #: The grid Train Tracks publishes at, in cells.
 #:
-#: 7x7 is chosen on measurement, not taste. Generating 200 boards at that size
-#: took 14s in total with a worst case of 3.6s; at 8x8 the worst case was 129s
-#: and at 9x7 it was 89s, because the generator grows a route and adds givens one
-#: at a time until the grid is unique and the tail is where the work goes. A daily
-#: publisher walks the seed upward on failure, so a two-minute board is a stall
-#: with no output and no error. Bigger grids come when that tail is fixed, not
-#: before.
+#: The legacy board size. Named variants use the shared ID contract instead.
 TRACKS_WIDTH: Final[int] = 7
 TRACKS_HEIGHT: Final[int] = 7
 
@@ -143,6 +138,10 @@ class Rulebook(ABC):
 
     #: Stars per line, or `None` when the type's regions each hold exactly one.
     default_stars_per_row: int | None = None
+
+    def daily_ids(self, day: date) -> tuple[str, ...]:
+        """The slots this family publishes on a calendar day."""
+        return (puzzle_id(day, self.puzzle_type),)
 
     @abstractmethod
     def generate(
@@ -408,6 +407,11 @@ class TrackRulebook(Rulebook):
         self.rated = False
         self.logic_only = False
 
+    def daily_ids(self, day: date) -> tuple[str, ...]:
+        if day < TRACK_SIZES_START:
+            return super().daily_ids(day)
+        return tuple(puzzle_id(day, self.puzzle_type, track_size=v.name) for v in TRACK_VARIANTS)
+
     def generate(
         self,
         *,
@@ -417,14 +421,11 @@ class TrackRulebook(Rulebook):
         stars_per_row: int | None = None,
         max_attempts: int | None = None,
     ) -> Puzzle:
-        # `size` and `stars_per_row` are the marks generator's knobs and mean
-        # nothing here, so a caller passing them gets told rather than having them
-        # quietly ignored. `--size` against a tracks board is a mistake worth a
-        # message; the grid is rectangular and has no single size to set.
+        # The ID owns dimensions; marks-only knobs cannot silently override it.
         if size is not None or stars_per_row is not None:
             raise GenerationError(
-                "train-tracks is not square and takes no stars per row; its grid is "
-                f"fixed at {TRACKS_WIDTH}x{TRACKS_HEIGHT}"
+                "Train Tracks dimensions come from the puzzle id; "
+                "use a named size ID instead of --size or --stars"
             )
         # `max_attempts` bounds how many boards the marks generator retries for a
         # unique solution. Tracks placement is a deterministic fill from the seed,
@@ -437,7 +438,12 @@ class TrackRulebook(Rulebook):
         if not 0 <= seed <= MAX_SEED:
             raise GenerationError(f"seed {seed} outside [0, 2**32-1]")
         try:
-            grid = generate_grid(seed=seed, width=TRACKS_WIDTH, height=TRACKS_HEIGHT)
+            variant = track_variant(puzzle_id)
+            if variant is not None and split_puzzle_id(puzzle_id) is None:
+                raise GenerationError(f"{puzzle_id} is not a canonical sized puzzle id")
+            width = TRACKS_WIDTH if variant is None else variant.side
+            height = TRACKS_HEIGHT if variant is None else variant.side
+            grid = generate_grid(seed=seed, width=width, height=height)
         except TrackGenerationError as error:
             raise GenerationError(str(error)) from error
         return Puzzle(
@@ -614,9 +620,17 @@ def verify_replay(puzzle: Puzzle) -> Puzzle:
     return regenerated
 
 
-def puzzle_id(day: date, puzzle_type: PuzzleType) -> str:
-    """The id this type's file carries for `day`, e.g. `2026-10-01-star`."""
-    return f"{day.isoformat()}{rulebook_for(puzzle_type).id_suffix}"
+def puzzle_id(day: date, puzzle_type: PuzzleType, *, track_size: TrackSize | None = None) -> str:
+    """Name a family slot, optionally selecting a named Train Tracks board."""
+    book = rulebook_for(puzzle_type)
+    if track_size is None:
+        return f"{day.isoformat()}{book.id_suffix}"
+    if book.puzzle_type is not PuzzleType.TRAIN_TRACKS:
+        raise RulebookError("only train-tracks has named board sizes")
+    variant = next((v for v in TRACK_VARIANTS if v.name == track_size), None)
+    if variant is None:
+        raise RulebookError(f"unknown train-tracks size {track_size}")
+    return f"{day.isoformat()}{variant.suffix}"
 
 
 def split_puzzle_id(value: str) -> tuple[date, PuzzleType] | None:
@@ -628,21 +642,24 @@ def split_puzzle_id(value: str) -> tuple[date, PuzzleType] | None:
     is how a mislabelled file gets caught instead of trusted.
     """
     for book in rulebooks():
-        suffix = book.id_suffix
-        if suffix and not value.endswith(suffix):
-            continue
-        stem = value[: len(value) - len(suffix)] if suffix else value
-        try:
-            day = date.fromisoformat(stem)
-        except ValueError:
-            continue
-        # `fromisoformat` also accepts the compact and ISO-week spellings
-        # ("20261012", "2026-W42-1"). The app's `isPuzzleId` only routes the
-        # canonical `YYYY-MM-DD`, so a file named any other way would be a puzzle
-        # `verify` approves and the app can never load.
-        if stem != day.isoformat():
-            continue
-        return day, book.puzzle_type
+        suffixes = (book.id_suffix,)
+        if book.puzzle_type is PuzzleType.TRAIN_TRACKS:
+            suffixes += tuple(v.suffix for v in TRACK_VARIANTS)
+        for suffix in suffixes:
+            if suffix and not value.endswith(suffix):
+                continue
+            stem = value[: len(value) - len(suffix)] if suffix else value
+            try:
+                day = date.fromisoformat(stem)
+            except ValueError:
+                continue
+            # `fromisoformat` also accepts the compact and ISO-week spellings
+            # ("20261012", "2026-W42-1"). The app's `isPuzzleId` only routes the
+            # canonical `YYYY-MM-DD`, so a file named any other way would be a puzzle
+            # `verify` approves and the app can never load.
+            if stem != day.isoformat():
+                continue
+            return day, book.puzzle_type
     return None
 
 

@@ -94,7 +94,8 @@ python -m tools.generate --date 2026-10-05 --type star-battle --size 8   # overr
 
 ## Train Tracks
 
-New Train Tracks puzzles use a 7x7 grid and `generatorVersion` 3. Every row and
+Train Tracks uses `generatorVersion` 3 for new boards. Legacy IDs name 7x7 grids;
+named IDs select Small (8x8), Medium (10x10) or Large (12x12). Every row and
 column clue is at least 1. Both endpoints are given; extra givens split unknown
 sections of the route, with at least one unrevealed cell between given pieces
 along the route. The existing clue caps remain.
@@ -109,7 +110,8 @@ Version 1 permits zero clues; version 2 requires every row and column to be used
 Existing archive files, including prepublished puzzles, are not rewritten.
 
 ```sh
-python -m tools.generate --date 2026-10-16 --type train-tracks
+python -m tools.generate --date 2026-10-16 --type train-tracks   # legacy 7x7
+python -m tools.generate --date 2026-10-17-tracks-large --type train-tracks
 ```
 
 ### Benchmarking larger boards
@@ -127,7 +129,8 @@ exclude validation and startup. JSON reports retain failed and timed-out seeds
 in the denominator and preserve completed results on interruption. The command
 exits nonzero if any size completes fewer than 95% of seeds or any returned board
 fails validation. See [measured results](../docs/journal.md#scattered-train-tracks-givens-and-larger-board-proof).
-Daily publishing remains 7x7; three daily size variants belong to the follow-up PR.
+Daily publishing switches to all three named variants on October 17, 2026.
+The shared ID manifest pins this date; existing legacy files remain unchanged.
 
 ## The rules are a public interface
 

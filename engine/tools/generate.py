@@ -21,7 +21,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import sys
-from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -35,6 +34,7 @@ from queens_engine import (
     rulebook_for,
     rulebooks,
     score_difficulty,
+    split_puzzle_id,
 )
 
 #: How many seed bumps `--logic-only` may try before failing loudly.
@@ -60,20 +60,17 @@ def id_for_day(date_text: str, puzzle_type: PuzzleType) -> str:
     type's suffix being spelled out next to a different `--type`, and that is
     reported rather than resolved silently in favour of either flag.
     """
-    book = rulebook_for(puzzle_type)
-    suffix = book.id_suffix
-    stem = date_text[: -len(suffix)] if suffix and date_text.endswith(suffix) else date_text
-    for other in rulebooks():
-        other_suffix = other.id_suffix
-        if other_suffix and other_suffix != suffix and stem.endswith(other_suffix):
-            raise ValueError(
-                f"{date_text} names a {other.puzzle_type.value} puzzle, "
-                f"but --type is {puzzle_type.value}"
-            )
-    day = date.fromisoformat(stem)
-    if stem != day.isoformat():
-        raise ValueError(f"{date_text} is not a YYYY-MM-DD date")
-    return puzzle_id(day, puzzle_type)
+    parsed = split_puzzle_id(date_text)
+    if parsed is None:
+        raise ValueError(f"{date_text} is not a YYYY-MM-DD puzzle id")
+    day, named_type = parsed
+    if date_text == day.isoformat():
+        return puzzle_id(day, puzzle_type)
+    if named_type is not puzzle_type:
+        raise ValueError(
+            f"{date_text} names a {named_type.value} puzzle, but --type is {puzzle_type.value}"
+        )
+    return date_text
 
 
 def main(argv: list[str] | None = None) -> int:

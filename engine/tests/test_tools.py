@@ -464,6 +464,13 @@ class TestVerifyRamp:
 
 
 class TestGenerateId:
+    def test_full_sized_id_selects_the_board_without_an_extra_flag(self) -> None:
+        for name in ("small", "medium", "large"):
+            identifier = f"2026-10-17-tracks-{name}"
+            assert id_for_day(identifier, PuzzleType.TRAIN_TRACKS) == identifier
+            with pytest.raises(ValueError):
+                id_for_day(identifier, PuzzleType.QUEENS)
+
     """`--date` names a day and `--type` names a suffix, so the id is derived.
 
     The bug: `--date 2026-10-04 --type star-battle --out app/public/puzzles`

@@ -6,6 +6,8 @@
  * express is mirrored from `engine/src/queens_engine/puzzle.py`.
  */
 
+import { isPuzzleId } from './dates'
+import { trackVariantOf } from './trackSizes'
 import Ajv2020, { type ErrorObject, type ValidateFunction } from 'ajv/dist/2020.js'
 import puzzleSchema from '@shared/schema/puzzle.schema.json'
 import { Board, BoardError, PUZZLE_TYPES, type PuzzleType } from './board'
@@ -137,8 +139,19 @@ export function parsePuzzle(data: unknown): Puzzle {
     throw error
   }
 
+  const id = String(record['id'])
+  const variant = trackVariantOf(id)
+  if (variant !== null) {
+    if (!isPuzzleId(id)) {
+      throw new PuzzleParseError('sized Train Tracks id must name a canonical calendar day')
+    }
+    if (typeRaw !== 'train-tracks' || board.width !== variant.side || board.height !== variant.side) {
+      throw new PuzzleParseError(`${variant.name} Train Tracks id requires a ${variant.side}x${variant.side} train-tracks board`)
+    }
+  }
+
   return {
-    id: String(record['id']),
+    id,
     puzzleType: typeRaw,
     seed: Number(record['seed']),
     generatorVersion: Number(record['generatorVersion']),

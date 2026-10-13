@@ -12,6 +12,7 @@ import { describe, expect, it } from 'vitest'
 import { PUZZLE_TYPES, type PuzzleType } from './board'
 import { isPuzzleId, puzzleIdFor, puzzleIdParts, puzzleTypeOf } from './dates'
 import { PUZZLE_TYPE_SUFFIX } from './games'
+import { parsePuzzle } from './puzzle'
 
 const REPO_ROOT = new URL('../../..', import.meta.url).pathname
 const CASES_DIR = join(REPO_ROOT, 'conformance', 'id-cases')
@@ -31,6 +32,7 @@ const manifest = JSON.parse(readFileSync(join(CASES_DIR, 'manifest.json'), 'utf8
   types: TypeEntry[]
   cases: Case[]
   unparsed: string[]
+  boardCases: { file: string; overrides?: Record<string, unknown>; valid: boolean }[]
 }
 
 describe('conformance: id-cases', () => {
@@ -68,5 +70,18 @@ describe('conformance: id-cases', () => {
     expect(puzzleIdParts(value)).toBeNull()
     expect(puzzleTypeOf(value)).toBeNull()
     expect(isPuzzleId(value)).toBe(false)
+  })
+
+  it.each(manifest.boardCases)('validates sized envelope $file ($valid)', (case_) => {
+    const data = {
+      ...JSON.parse(readFileSync(join(CASES_DIR, case_.file), 'utf8')),
+      ...case_.overrides,
+    }
+    if (case_.valid) {
+      expect(parsePuzzle(data).id).toBe(data.id)
+      expect(parsePuzzle(data).board.width).toBe(data.board.width)
+    } else {
+      expect(() => parsePuzzle(data)).toThrow()
+    }
   })
 })

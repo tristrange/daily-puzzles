@@ -251,6 +251,30 @@ class TestTheShapeOfAPuzzle:
 
 
 class TestTracks:
+    @pytest.mark.parametrize("name,side", [("small", 8), ("medium", 10), ("large", 12)])
+    def test_named_variants_generate_and_replay_at_their_prescribed_side(
+        self, name: str, side: int
+    ) -> None:
+        book = rulebook_for(PuzzleType.TRAIN_TRACKS)
+        puzzle = book.generate(seed=0, puzzle_id=f"2026-10-17-tracks-{name}")
+        assert book.dimensions(puzzle) == (side, side)
+        fixture = (
+            Path(__file__).resolve().parents[2] / f"conformance/id-cases/tracks-{name}.accept.json"
+        )
+        assert json.loads(dumps_puzzle(puzzle)) == json.loads(fixture.read_text())
+        assert puzzle.generator_version == 3
+        assert verify_replay(puzzle) == puzzle
+
+    def test_daily_slots_change_without_renaming_legacy_ids(self) -> None:
+        book = rulebook_for(PuzzleType.TRAIN_TRACKS)
+        assert book.daily_ids(date(2026, 10, 16)) == ("2026-10-16-tracks",)
+        assert book.daily_ids(date(2026, 10, 17)) == (
+            "2026-10-17-tracks-small",
+            "2026-10-17-tracks-medium",
+            "2026-10-17-tracks-large",
+        )
+        assert puzzle_id(date(2026, 10, 17), PuzzleType.TRAIN_TRACKS) == "2026-10-17-tracks"
+
     """The promises Train Tracks makes that the marks genres cannot make.
 
     Everything here is a decision rather than a consequence: the grid is
@@ -278,9 +302,8 @@ class TestTracks:
         assert not book.logic_only
 
     def test_a_size_is_refused_rather_than_ignored(self) -> None:
-        # `--size` against a non-square grid has no meaning, and silently using the
-        # published one would report success for a board nobody asked for.
-        with pytest.raises(GenerationError, match="not square"):
+        # A named ID owns its dimensions; a marks-only flag cannot override it.
+        with pytest.raises(GenerationError, match="puzzle id"):
             rulebook_for(PuzzleType.TRAIN_TRACKS).generate(seed=7, puzzle_id="2026-10-12", size=8)
 
     def test_it_generates_a_rectangular_grid_at_the_published_size(self) -> None:

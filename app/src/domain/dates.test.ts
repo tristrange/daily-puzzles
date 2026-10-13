@@ -93,6 +93,16 @@ describe('companionPuzzleId', () => {
 })
 
 describe('puzzleIdsForDay', () => {
+  it('switches to three independently named tracks boards on activation', () => {
+    expect(puzzleIdsForDay('2026-10-16')).toEqual([
+      '2026-10-16', '2026-10-16-star', '2026-10-16-tracks',
+    ])
+    expect(puzzleIdsForDay('2026-10-17')).toEqual([
+      '2026-10-17', '2026-10-17-star', '2026-10-17-tracks-small',
+      '2026-10-17-tracks-medium', '2026-10-17-tracks-large',
+    ])
+  })
+
   it('lists one id per published family, in registry order', () => {
     // Spelled out rather than derived: deriving it from the same registry and the
     // same table the implementation reads would pass for any filter whatsoever,
@@ -119,6 +129,13 @@ describe('puzzleIdsForDay', () => {
 })
 
 describe('puzzleIdFor', () => {
+  it('builds named sizes without introducing a new family', () => {
+    expect(puzzleIdFor('2026-10-17', 'train-tracks', 'small')).toBe('2026-10-17-tracks-small')
+    expect(puzzleIdFor('2026-10-17', 'train-tracks', 'medium')).toBe('2026-10-17-tracks-medium')
+    expect(puzzleIdFor('2026-10-17', 'train-tracks', 'large')).toBe('2026-10-17-tracks-large')
+    expect(() => puzzleIdFor('2026-10-17', 'queens', 'small')).toThrow(RangeError)
+  })
+
   it('builds the id from the day and the family suffix', () => {
     expect(puzzleIdFor('2026-09-30', 'queens')).toBe('2026-09-30')
     expect(puzzleIdFor('2026-09-30', 'star-battle')).toBe('2026-09-30-star')

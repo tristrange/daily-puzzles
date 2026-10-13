@@ -18,7 +18,8 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 
 from .board import BoardError, JsonValue, Puzzle, PuzzleType, require_int
-from .rulebook import rulebook_for
+from .rulebook import rulebook_for, split_puzzle_id
+from .track_sizes import track_variant
 
 REPO_ROOT: Final[Path] = Path(__file__).resolve().parents[3]
 SCHEMA_PATH: Final[Path] = REPO_ROOT / "schema" / "puzzle.schema.json"
@@ -121,11 +122,24 @@ def parse_puzzle(data: object) -> Puzzle:
     except (BoardError, ValueError) as error:
         raise PuzzleParseError(str(error)) from error
 
+    identifier = _require_str(record.get("id"), "id")
+    variant = track_variant(identifier)
+    if variant is not None:
+        if split_puzzle_id(identifier) is None:
+            raise PuzzleParseError("sized Train Tracks id must name a canonical calendar day")
+        if puzzle_type is not PuzzleType.TRAIN_TRACKS or (
+            board.width != variant.side or board.height != variant.side
+        ):
+            raise PuzzleParseError(
+                f"{variant.name} Train Tracks id requires a "
+                f"{variant.side}x{variant.side} train-tracks board"
+            )
+
     declared_level = record.get("difficulty")
     difficulty = None if declared_level is None else _require_int(declared_level, "difficulty")
 
     return Puzzle(
-        id=_require_str(record.get("id"), "id"),
+        id=identifier,
         # The declared type, not the board's. Only a `Board` carries its own back,
         # and a track grid is identified by the envelope it arrived in.
         puzzle_type=puzzle_type,
