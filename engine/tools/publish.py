@@ -3,8 +3,8 @@
 Usage:
     python -m tools.publish [--out DIR] [--lead 3] [--start YYYY-MM-DD] [--dry-run]
 
-Each day carries one puzzle per registered type: the Queens board named after
-the day, and its Star Battle companion named `<date>-star.json`. The suffix is
+Each family provides its daily slots: Queens and Star Battle each provide one;
+Train Tracks provides a legacy slot before activation and three named sizes afterward. The suffix is
 part of the puzzle's identity rather than only its filename, because a solve is
 recorded against an id and first-solve-wins would otherwise let one of the day's
 puzzles block the other. Which types exist, what they are called and how each is
@@ -53,7 +53,6 @@ from queens_engine import (
     dumps_puzzle,
     generate_ramped,
     load_puzzle,
-    puzzle_id,
     rulebook_for,
     rulebooks,
     score_difficulty,
@@ -117,18 +116,20 @@ def _existing(out_dir: Path) -> tuple[set[str], set[date]]:
 
 
 def _ids_for_day(day: date) -> tuple[str, ...]:
-    """The puzzle ids a day carries, one per publishable type, in registry order.
+    """The slots a day requires, in family order and then variant order.
 
     `published` rather than `rulebooks()`, because this answers "what must exist on
     disk for the day to count as complete" and an unregistered-as-published type is
     never written, so counting it would make every past day look incomplete and the
     resume would never advance.
     """
-    return tuple(puzzle_id(day, book.puzzle_type) for book in rulebooks() if book.published)
+    return tuple(
+        identifier for book in rulebooks() if book.published for identifier in book.daily_ids(day)
+    )
 
 
 def _first_incomplete_day(existing: set[str], first: date, end: date) -> date | None:
-    """The earliest day up to `end` that is missing either of its puzzles.
+    """The earliest day up to `end` that is missing any required slot.
 
     Deliberately the earliest rather than the latest: a run that died between
     writing one puzzle of a day and writing the other has left a half-published
@@ -228,46 +229,42 @@ def main(argv: list[str] | None = None) -> int:
     window = start
     while window <= end:
         for book in rulebooks():
-            # A registered type can still be unpublishable. Train Tracks is the
-            # case: its rulebook generates and replays, but nothing in the app can
-            # parse or play the grid yet, so publishing it would write files the
-            # nightly verify and the browser both choke on.
             if not book.published:
                 continue
-            day_id = puzzle_id(window, book.puzzle_type)
-            if day_id in existing:
-                print(f"skip   {day_id} (already published)")
-                continue
-            print(f"publish {day_id}" + (" (dry run)" if args.dry_run else ""))
-            if args.dry_run:
-                continue
-            seed = seed_from_date(day_id)
-            try:
-                puzzle, score = _generate(
-                    book.puzzle_type,
-                    day_id,
-                    seed,
-                    _nearby_star_layouts(args.out, window),
+            for day_id in book.daily_ids(window):
+                if day_id in existing:
+                    print(f"skip   {day_id} (already published)")
+                    continue
+                print(f"publish {day_id}" + (" (dry run)" if args.dry_run else ""))
+                if args.dry_run:
+                    continue
+                seed = seed_from_date(day_id)
+                try:
+                    puzzle, score = _generate(
+                        book.puzzle_type,
+                        day_id,
+                        seed,
+                        _nearby_star_layouts(args.out, window),
+                    )
+                except RuntimeError as error:
+                    print(f"error: {error}", file=sys.stderr)
+                    return 1
+                (args.out / f"{day_id}.json").write_text(dumps_puzzle(puzzle), encoding="utf-8")
+                # A layout written this run is on disk and therefore in the window
+                # for every later day, so the next iteration's scan picks it up; no
+                # bookkeeping of what this run itself produced is needed.
+                # An unrated board says so rather than printing a number that means
+                # something weaker than the same number on a ramped board.
+                band = (
+                    f" {LEVEL_NAMES[puzzle.difficulty - 1]}"
+                    if puzzle.difficulty is not None
+                    else " (not rated)"
                 )
-            except RuntimeError as error:
-                print(f"error: {error}", file=sys.stderr)
-                return 1
-            (args.out / f"{day_id}.json").write_text(dumps_puzzle(puzzle), encoding="utf-8")
-            # A layout written this run is on disk and therefore in the window
-            # for every later day, so the next iteration's scan picks it up; no
-            # bookkeeping of what this run itself produced is needed.
-            # An unrated board says so rather than printing a number that means
-            # something weaker than the same number on a ramped board.
-            band = (
-                f" {LEVEL_NAMES[puzzle.difficulty - 1]}"
-                if puzzle.difficulty is not None
-                else " (not rated)"
-            )
-            width, height = book.dimensions(puzzle)
-            print(
-                f"  seed {puzzle.seed} size {width}x{height}{band}"
-                + (f" score {score:g}" if score is not None else " (unique, not logic-gated)")
-            )
+                width, height = book.dimensions(puzzle)
+                print(
+                    f"  seed {puzzle.seed} size {width}x{height}{band}"
+                    + (f" score {score:g}" if score is not None else " (unique, not logic-gated)")
+                )
         window += timedelta(days=1)
     return 0
 

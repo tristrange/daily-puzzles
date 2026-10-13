@@ -65,27 +65,28 @@ uv run python -m tools.verify --dir ../app/public/puzzles    # replay every comm
 ```
 
 `tools/publish.py` scans the archive for missing puzzles and fills them from the first
-missing day through today plus a `--lead` (default 3). It writes **two puzzles per day**:
-the Queens board named after the day, and its Star Battle companion named
-`<date>-star.json`. Both use a seed hashed from the id, size 8, but they are gated
-differently, because they can promise different things. Queens walks the seed upward
-until `deduce` reaches a solution without guessing, exactly as
-`tools/generate --logic-only` does. A star board is not gated: `deduce` does run on a
-two-star board, but a two-star board almost never reaches a finish by rules alone — 92%
-offer an opening deduction and 0.1% complete, measured over 1000 generated 8x8 boards.
-Gating on it would reject essentially every board, so the companion takes the guarantee
-the generator actually provides — a unique solution — and says "unique, not logic-gated"
-rather than printing a difficulty number that would mean something weaker than the same
-number on a Queens board.
+missing day through today plus a `--lead` (default 3). Each rulebook owns its daily
+slots. Before October 17, 2026 a complete day carries Queens, Star Battle and one
+legacy 7x7 Train Tracks board. From that date it carries **five puzzles**: Queens,
+Star Battle, Small 8x8, Medium 10x10 and Large 12x12 Train Tracks. The shared ID
+manifest pins activation and dimensions; named variants stay in one puzzle family.
+
+Each slot starts with a seed hashed from its full ID. Queens follows its weekday's
+ramp and logic-only gate; Star Battle retains its unique-solution and nearby-layout
+checks. Train Tracks uses generator version 3's deterministic search budgets and
+proves uniqueness without claiming a difficulty rating. A failed off-ramp seed is
+bumped at most 32 times; failure never substitutes a smaller board or drops a slot.
 
 Skipping is per puzzle rather than per day, which is what makes this safe to run against
 an archive published before companions existed: a committed Queens board does not stop
-its missing companion from being filled in.
+its missing companion or size variant from being filled in. A partial run resumes
+at the earliest incomplete day and writes only missing slots.
 
 It is idempotent by construction: an existing file is never rewritten and an id always
 maps to one puzzle, so running it twice in a day is a no-op and a missed week self-heals
 on the next run. `tools/verify.py`
-re-parses every committed puzzle and calls `verify_replay` on it, so a generator change
+re-parses every committed puzzle, checks that its envelope ID matches its filename,
+and calls `verify_replay` on it, so a generator change
 that would have drifted the archive fails loudly before anything is merged.
 
 Verify also checks each Queens file against the ramp for its weekday, and treats a break

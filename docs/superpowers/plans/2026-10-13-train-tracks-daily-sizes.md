@@ -52,13 +52,13 @@
 - The TypeScript counterparts are `TrackSize`, `TrackVariant`, `TRACK_VARIANTS`, `TRACK_SIZES_START`, and `trackVariantOf(id)`. Extend `puzzleIdFor(day, type, trackSize?)`; preserve `puzzleIdParts`' existing `{day,type}` result shape. `puzzleIdsForDay` returns three or five slots according to activation.
 - `TrackRulebook.generate` derives dimensions from a sized ID, preserving legacy 7×7 generation and all replay policies. Keep `id_for_day(date_text, puzzle_type)` and recognize full sized IDs through the existing `--date` flag; refuse a full ID whose family conflicts with `--type`. No additional CLI flag is needed.
 
-- [ ] Add shared ID cases for all three suffixes, unknown sizes, impossible dates, duplicate suffixes and unchanged legacy IDs. Add shared `boardCases` in the ID manifest referencing three new generated track fixtures under `conformance/id-cases/` and an existing Queens fixture, with ID/type/dimension overrides and accept/reject expectations; test these in both language ID conformance suites.
-- [ ] Write failing tests in `test_conformance_ids.py`, `test_rulebook.py`, `test_tools.py`, `idConformance.test.ts`, `dates.test.ts`: legacy IDs unchanged; each named size round-trips; incorrect type/dimensions reject; the October 16 schedule has three slots and October 17 has five. Explicitly pin the three sides and activation date.
-- [ ] Run focused tests RED: engine `pytest tests/test_conformance_ids.py tests/test_rulebook.py tests/test_tools.py -q`; app `npm test -- src/domain/idConformance.test.ts src/domain/dates.test.ts`. Expected: new variant expectations fail.
-- [ ] Implement the contract readers, ID helpers, daily slots, parsers and generation CLI. Sized parser validation checks canonical day, `train-tracks` type, square named dimensions; legacy validation stays compatible.
-- [ ] Extend `schema_ids.expected_pattern` with variant suffixes and regenerate the schema. Do not broaden it to arbitrary suffixes.
-- [ ] Run focused suites GREEN, engine `pyright`, `ruff check .`, `ruff format --check .`, `python -m tools.schema_ids --check`, and app `npm run typecheck`. Expected: all pass.
-- [ ] Update README manual-generation examples and commit `feat: define daily Train Tracks size identities`.
+- [x] Add shared ID cases for all three suffixes, unknown sizes, impossible dates, duplicate suffixes and unchanged legacy IDs. Add shared `boardCases` in the ID manifest referencing three new generated track fixtures under `conformance/id-cases/` and an existing Queens fixture, with ID/type/dimension overrides and accept/reject expectations; test these in both language ID conformance suites.
+- [x] Write failing tests in `test_conformance_ids.py`, `test_rulebook.py`, `test_tools.py`, `idConformance.test.ts`, `dates.test.ts`: legacy IDs unchanged; each named size round-trips; incorrect type/dimensions reject; the October 16 schedule has three slots and October 17 has five. Explicitly pin the three sides and activation date.
+- [x] Run focused tests RED: engine `pytest tests/test_conformance_ids.py tests/test_rulebook.py tests/test_tools.py -q`; app `npm test -- src/domain/idConformance.test.ts src/domain/dates.test.ts`. Expected: new variant expectations fail.
+- [x] Implement the contract readers, ID helpers, daily slots, parsers and generation CLI. Sized parser validation checks canonical day, `train-tracks` type, square named dimensions; legacy validation stays compatible.
+- [x] Extend `schema_ids.expected_pattern` with variant suffixes and regenerate the schema. Do not broaden it to arbitrary suffixes.
+- [x] Run focused suites GREEN, engine `pyright`, `ruff check .`, `ruff format --check .`, `python -m tools.schema_ids --check`, and app `npm run typecheck`. Expected: all pass.
+- [x] Update README manual-generation examples and commit `feat: define daily Train Tracks size identities`.
 
 ### Task 2: Publish and resume the new daily slots
 
@@ -91,11 +91,11 @@
 
 **Interfaces:**
 - Export pure `TodayCards({probes, solved})` from `HomePage.tsx`, using existing `ProbedPuzzle` and `ReadonlySet<string>`; HomePage retains fetching/calendar state. Group sized probes into one Train Tracks card with three separate links and independent solved/unpublished states.
-- Add optional dimensions to `PublishedPuzzle`, populated from fetched boards; legacy fixtures remain compatible. Archive rows display named sizes and dimensions; historical 7×7 rows show dimensions without a size label.
+- Reject a fetched envelope whose ID differs from the requested route, so a valid Small payload cannot be played or saved under a Large link. Add optional dimensions to `PublishedPuzzle`, populated from fetched boards; legacy fixtures remain compatible. Archive rows display named sizes and dimensions; historical 7×7 rows show dimensions without a size label.
 - Add `puzzleId: string` to internal `ShareResult`, used to obtain a named size from the ID. Update both stage callers and share test fixtures. Recent solves use the same variant labels, while all variants remain in the Train Tracks statistics family.
 
 - [ ] Write failing `HomePage.test.tsx` SSR tests with controlled probes: exactly one Train Tracks card, three correct links/labels, Small solved without marking the others, missing Medium shown independently, and unchanged legacy card. Follow the existing ArchiveGroups renderer pattern without new dependencies.
-- [ ] Extend archive, puzzle-list, share and StatsPage tests: all three IDs survive discovery/grouping, size labels/dimensions appear, legacy 7×7 is unlabelled, and recent solves distinguish sizes.
+- [ ] Extend archive, puzzle-list, share and StatsPage tests: all three IDs survive discovery/grouping, a different ID returned for a requested route is rejected, size labels/dimensions appear, legacy 7×7 is unlabelled, and recent solves distinguish sizes.
 - [ ] Run focused app tests RED; expected: new links/labels/dimensions fail.
 - [ ] Implement labels on Today, puzzle headings, archive, shares and recent solves. Reuse the existing typography, appearance tokens and 44px controls. Stack clear size links inside the single Train Tracks card; do not add a page selector that discards state or any difficulty labels.
 - [ ] Run the complete app suite, typing/lint and build GREEN. Expected: pass with no new dependencies or theme changes.

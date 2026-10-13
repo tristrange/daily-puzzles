@@ -157,6 +157,8 @@ def main(argv: list[str] | None = None) -> int:
         try:
             raw = path.read_text(encoding="utf-8")
             puzzle = load_puzzle(path)
+            if puzzle.id != path.stem:
+                raise ValueError(f"filename {path.stem} does not match envelope id {puzzle.id}")
             verify_replay(puzzle)
             # The suffix and the declared type are two claims about one file, and
             # a disagreement means the archive and the app disagree about what the
