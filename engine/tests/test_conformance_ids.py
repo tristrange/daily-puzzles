@@ -118,7 +118,7 @@ def test_unparsable_ids_are_rejected(value: str) -> None:
 
 
 def test_variant_metadata_and_named_id_builders_agree() -> None:
-    assert date(2026, 10, 17) == TRACK_SIZES_START
+    assert date(2026, 10, 14) == TRACK_SIZES_START
     assert [(v.name, v.side, v.label) for v in TRACK_VARIANTS] == [
         ("small", 8, "Small"),
         ("medium", 10, "Medium"),

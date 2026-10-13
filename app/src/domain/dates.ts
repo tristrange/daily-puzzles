@@ -128,13 +128,10 @@ export function puzzleIdFor(day: string, type: PuzzleType, trackSize?: TrackSize
 }
 
 /**
- * Every puzzle id a calendar day carries, one per published family.
+ * Required daily slots, in family/size order.
  *
- * This is the app's chokepoint for what exists: the chooser probes these for today
- * and the archive probes them for every day in its window, so nothing else ever
- * asks for a puzzle by id. A family missing from here is a puzzle that is published
- * correctly and never requested — invisible rather than broken, which is why the
- * list is derived from the registry instead of written out.
+ * The chooser probes these for today. The archive also probes legacy Train Tracks
+ * IDs so prepublished boards survive a change to the activation date.
  *
  * Unpublished families are excluded, mirroring the engine's `Rulebook.published`.
  * A registered type the publisher will not write is a type with no files, and

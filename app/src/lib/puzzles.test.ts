@@ -5,6 +5,7 @@ import { marksBoard } from '../domain/helpers'
 import small from '../../../conformance/id-cases/tracks-small.accept.json'
 import medium from '../../../conformance/id-cases/tracks-medium.accept.json'
 import large from '../../../conformance/id-cases/tracks-large.accept.json'
+import legacy from '../../public/puzzles/2026-10-16-tracks.json'
 
 const isPublished = (type: PuzzleType) => PUZZLE_TYPE_PUBLISHED[type]
 import type { DifficultyBand } from '../domain/puzzle'
@@ -152,6 +153,23 @@ describe('listPublishedPuzzles', () => {
     expect(found.map((puzzle) => [puzzle.id, puzzle.width, puzzle.height])).toEqual([
       [small.id, 8, 8], [medium.id, 10, 10], [large.id, 12, 12],
     ])
+    expect(groupPublishedPuzzles(found)).toHaveLength(1)
+  })
+  it('keeps queued legacy boards discoverable beside the three daily sizes', async () => {
+    const fixtures = [legacy, ...[small, medium, large].map(data => ({
+      ...data, id: data.id.replace('2026-10-17', '2026-10-16'),
+    }))]
+    const requests: string[] = []
+    const found = await listPublishedPuzzles('2026-10-16', async (url) => {
+      requests.push(url)
+      const data = fixtures.find(fixture => url.endsWith(`/${fixture.id}.json`))
+      return data ? jsonResponse(data) : spaShellResponse()
+    })
+    expect(found.map(puzzle => puzzle.id)).toEqual([
+      '2026-10-16-tracks-small', '2026-10-16-tracks-medium',
+      '2026-10-16-tracks-large', '2026-10-16-tracks',
+    ])
+    expect(new Set(requests).size).toBe(requests.length)
     expect(groupPublishedPuzzles(found)).toHaveLength(1)
   })
   const published = ['2026-10-03', '2026-10-01', '2026-09-28']

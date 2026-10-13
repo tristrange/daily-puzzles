@@ -66,10 +66,13 @@ uv run python -m tools.verify --dir ../app/public/puzzles    # replay every comm
 
 `tools/publish.py` scans the archive for missing puzzles and fills them from the first
 missing day through today plus a `--lead` (default 3). Each rulebook owns its daily
-slots. Before October 17, 2026 a complete day carries Queens, Star Battle and one
+slots. Before October 14, 2026 a complete day carries Queens, Star Battle and one
 legacy 7x7 Train Tracks board. From that date it carries **five puzzles**: Queens,
 Star Battle, Small 8x8, Medium 10x10 and Large 12x12 Train Tracks. The shared ID
 manifest pins activation and dimensions; named variants stay in one puzzle family.
+Already committed legacy boards (including October 14–16) remain archive extras.
+The archive probes their original IDs as well as the current daily slots; the
+chooser and publisher use only the required slots.
 
 Each slot starts with a seed hashed from its full ID. Queens follows its weekday's
 ramp and logic-only gate; Star Battle retains its unique-solution and nearby-layout

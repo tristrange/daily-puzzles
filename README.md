@@ -44,7 +44,7 @@ pretend otherwise.)
 [Why Star Battle is not logic-gated →](docs/journal.md#the-second-puzzle-type)
 
 **Train Tracks** — connect two given edge endpoints with one continuous track, matching
-all row and column counts. No branches or closed loops. Starting October 17, 2026,
+all row and column counts. No branches or closed loops. Starting October 14, 2026,
 each day offers **Small 8×8**, **Medium 10×10**, and **Large 12×12**. These describe
 board size, not difficulty. New boards use every row and column, scatter extra
 givens, and have a proven unique solution; no logic-only guarantee is claimed.
@@ -133,7 +133,7 @@ uv run ruff check .  # lint
 uv run ruff format . # format
 uv run pyright       # strict type check
 uv run python -m tools.generate --date 2026-10-01   # one puzzle, plus an ASCII render
-uv run python -m tools.generate --date 2026-10-17-tracks-large --type train-tracks # 12x12
+uv run python -m tools.generate --date 2026-10-14-tracks-large --type train-tracks # 12x12
 uv run python -m tools.publish  --out ../app/public/puzzles   # fill the archive
 uv run python -m tools.verify   --dir ../app/public/puzzles   # replay every committed file
 uv run python -m tools.benchmark_tracks --out /tmp/tracks-probe.json # probe 8/10/12 boards

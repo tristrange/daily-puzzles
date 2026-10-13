@@ -8,7 +8,7 @@
  */
 
 import { PUZZLE_TYPES } from '../domain/board'
-import { isPuzzleId, previousPuzzleIds, puzzleIdsForDay } from '../domain/dates'
+import { isPuzzleId, previousPuzzleIds, puzzleIdFor, puzzleIdsForDay } from '../domain/dates'
 import { parsePuzzle, type Puzzle } from '../domain/puzzle'
 
 export const ARCHIVE_WINDOW_DAYS = 30
@@ -121,7 +121,10 @@ export async function listPublishedPuzzles(
   todayId: string,
   fetcher: Fetcher = fetch,
 ): Promise<readonly PublishedPuzzle[]> {
-  const candidates = previousPuzzleIds(todayId, ARCHIVE_WINDOW_DAYS).flatMap(puzzleIdsForDay)
+  // Queued legacy boards remain accessible even after the daily slots change.
+  const candidates = previousPuzzleIds(todayId, ARCHIVE_WINDOW_DAYS).flatMap((day) =>
+    [...new Set([...puzzleIdsForDay(day), puzzleIdFor(day, 'train-tracks')])],
+  )
   const results = await Promise.allSettled(
     candidates.map(async (id) => ({ id, puzzle: await fetchPuzzle(id, fetcher) })),
   )
