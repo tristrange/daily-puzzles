@@ -697,13 +697,9 @@
   background: var(--accent);
 }
 
-/* The tracks board acts on a tap, not on a drag, so it must not claim the
-   gesture. `.board.playable` sets `touch-action: none` for the marks board's
-   mark-painting strokes, and inheriting it here would mean a swipe starting over
-   this board could not scroll the page. `manipulation` keeps panning and drops
-   the double-tap-zoom delay, which is the whole cost of tapping a cell. */
+/* Single-finger strokes paint cells; retain native pinch zoom for small cells. */
 .tracks .board.playable {
-  touch-action: manipulation;
+  touch-action: pinch-zoom;
 }
 
 .hint-text {
