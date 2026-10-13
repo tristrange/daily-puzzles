@@ -639,3 +639,56 @@ viewport resizing; real phone touch testing remains useful.
 
 Screenshots: [light](images/redesign-light.jpg), [dark](images/redesign-dark.jpg),
 and [mobile Train Tracks](images/redesign-mobile-tracks.jpg).
+
+## Scattered Train Tracks givens and larger-board proof
+
+Version 3 reveals both endpoints, then splits the largest unknown sections of
+the route. Ties choose the earlier route position. Each extra given has at least
+one unrevealed cell between it and any other given along the route; pieces can
+still sit close geometrically when the route doubles back. The existing interior
+clue cap and whole-set `max_givens` cap remain. Every new row and column is nonzero.
+
+Generation uses deterministic work limits: 10,000 visited solver states per
+uniqueness check and 1,000,000 per seed. An incomplete check adds another eligible
+clue; aggregate exhaustion rejects the seed for publisher retry. A single solution
+found before exhaustion is never accepted as a uniqueness proof. Other solver
+callers remain exhaustive by default. Versions 1 and 2 keep their original prefix
+givens and unbounded replay; all 60 published files still replay without changes.
+Full fixtures pin versions 2 and 3 independently of the current-version constant.
+
+The initial 25,000-per-check/250,000-per-seed policy ran out before reaching useful
+clues on 12x12 seed 0. Raising the aggregate to one million recovered it. A partial
+probe with 25,000 per check still rejected large seeds 4, 15 and 21. Seed 4 passed
+in about four seconds with 10,000 per check, so the final full probe was restarted
+with that policy. Budgets are frozen as part of version 3's replay contract.
+
+`python -m tools.benchmark_tracks --out /tmp/tracks-probe.json` tested seeds 0–99
+for each size, in isolated workers with a ten-second deadline including validation.
+Generation timings exclude worker startup and validation. Every returned board
+passed a separate unbounded solution enumeration and direct counts, connections,
+endpoints, givens and connectivity checks. No generation errors, timeouts or
+validation failures occurred in the final 300-seed batch.
+
+| Board | Completed | Median generation | Maximum generation | Total givens |
+| --- | --- | --- | --- | --- |
+| 8x8 | 100/100 | 0.18s | 0.82s | 2–16 |
+| 10x10 | 100/100 | 0.78s | 2.83s | 2–23 |
+| 12x12 | 100/100 | 1.37s | 7.82s | 2–32 |
+
+Measured on macOS-27.0.1-arm64-arm-64bit-Mach-O / Python 3.13.15. These are sample results,
+not speed guarantees on other machines or a difficulty rating. Failed and timed-out
+seeds remain in the benchmark denominator; interrupted runs retain completed rows.
+The tool exits unsuccessfully if completion falls below 95% for any size or any
+returned board fails validation. Full local verification passed 462 engine tests,
+423 app tests, engine typing/lint/format, schema IDs, app typing/lint and production
+build. App lint retains its existing non-failing TracksStage effect warning.
+
+Daily publishing remains 7x7 in this PR. The follow-up enables Small 8x8, Medium
+10x10 and Large 12x12 every day, with separate IDs, progress and solve records.
+
+The independent whole-branch review found no actionable issues and reran 55 focused
+solver/benchmark tests. Daily variants, activation and mobile changes remain PR 2.
+
+GitHub review identified missing README command documentation and a stale version-2
+description. Both READMEs now document the benchmark and the engine guide describes
+version 3 and legacy replay. CLI help and all three replay fixture tests passed.

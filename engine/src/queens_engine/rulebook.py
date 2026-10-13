@@ -77,8 +77,9 @@ TRACKS_WIDTH: Final[int] = 7
 TRACKS_HEIGHT: Final[int] = 7
 
 #: Train Tracks versions are independent of other genres: 1 permits zero clues;
-#: 2 requires the route to use every row and column. Both remain replayable.
-TRACKS_GENERATOR_VERSION: Final[int] = 2
+#: 2 requires every row and column; 3 scatters givens and bounds search work.
+#: All three remain replayable through their original policies.
+TRACKS_GENERATOR_VERSION: Final[int] = 3
 
 
 class RulebookError(ValueError):
@@ -470,6 +471,8 @@ class TrackRulebook(Rulebook):
                 require_nonzero_clues = False
             case 2:
                 require_nonzero_clues = True
+            case 3:
+                require_nonzero_clues = True
             case _:
                 raise GenerationError(
                     f"unsupported train-tracks generator version {puzzle.generator_version}"
@@ -481,6 +484,7 @@ class TrackRulebook(Rulebook):
                 width=board.width,
                 height=board.height,
                 require_nonzero_clues=require_nonzero_clues,
+                generator_version=puzzle.generator_version,
             )
         except TrackGenerationError as error:
             raise GenerationError(str(error)) from error

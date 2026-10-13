@@ -16,6 +16,7 @@ import time
 
 import pytest
 
+import queens_engine.tracks as track_solver
 from queens_engine.tracks import (
     EAST,
     LINE_ENDS,
@@ -36,6 +37,45 @@ _BY_ENDS = {frozenset(ends): index for index, ends in enumerate(PIECE_ENDS) if e
 
 HORIZONTAL = _BY_ENDS[frozenset({EAST, WEST})]
 VERTICAL = _BY_ENDS[frozenset({NORTH, SOUTH})]
+
+
+class TestSearchBudgets:
+    def test_zero_states_reports_incomplete_search(self) -> None:
+        with pytest.raises(track_solver.TrackSearchLimitError):
+            count_solutions(solved(3, 3), max_states=0)
+
+    def test_bounded_count_agrees_with_exhaustive_count(self) -> None:
+        grid = solved(3, 3)
+        assert count_solutions(grid, max_states=1000) == count_solutions(grid) == 1
+
+    def test_one_found_solution_is_not_a_uniqueness_proof(self) -> None:
+        grid = TrackGrid(
+            4, 4, (3, 3, 4, 2), (1, 3, 4, 4), (0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 4, 0)
+        )
+        budget = track_solver.SearchBudget(10000)
+        answers = iter_solutions(grid, budget=budget)
+        next(answers)
+        first_answer_states = budget.spent
+        with pytest.raises(track_solver.TrackSearchLimitError):
+            count_solutions(grid, limit=2, max_states=first_answer_states)
+        assert count_solutions(grid) == 2
+
+    def test_aggregate_budget_does_not_overspend_or_poison_fresh_search(self) -> None:
+        grid = solved(3, 3)
+        budget = track_solver.SearchBudget(15)
+        assert count_solutions(grid, budget=budget) == 1
+        assert budget.spent == 10
+        with pytest.raises(track_solver.TrackSearchLimitError):
+            count_solutions(grid, budget=budget)
+        assert budget.spent == 15
+        assert budget.remaining == 0
+        assert count_solutions(grid) == 1
+
+    def test_negative_limits_are_rejected(self) -> None:
+        with pytest.raises(TrackGridError):
+            track_solver.SearchBudget(-1)
+        with pytest.raises(TrackGridError):
+            count_solutions(solved(3, 3), max_states=-1)
 
 
 def piece(assignment: dict[int, int], width: int, height: int) -> tuple[int, ...]:

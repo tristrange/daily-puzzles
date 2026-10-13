@@ -94,18 +94,40 @@ python -m tools.generate --date 2026-10-05 --type star-battle --size 8   # overr
 
 ## Train Tracks
 
-New Train Tracks puzzles use a 7x7 grid and `generatorVersion` 2. Every row and
-column clue is at least 1: the route must use every line of the board. The generator
-rejects routes with unused lines before checking that the puzzle has exactly one
-solution. Board sizes and difficulty tiers are unchanged.
+New Train Tracks puzzles use a 7x7 grid and `generatorVersion` 3. Every row and
+column clue is at least 1. Both endpoints are given; extra givens split unknown
+sections of the route, with at least one unrevealed cell between given pieces
+along the route. The existing clue caps remain.
 
-Version-1 puzzles may contain zero clues and still replay with their original
-algorithm. This is a generation policy rather than a new gameplay rule: existing
-archive files, including puzzles generated ahead of their date, are not rewritten.
+Version 3 limits each uniqueness check to 10,000 visited search states and each
+seed to 1,000,000. An incomplete check may add another eligible clue; exhausting
+the seed rejects it for publisher retry. Only fully proven unique boards are
+returned. Other solver callers remain exhaustive unless they request a budget.
+
+Versions 1 and 2 retain their original prefix givens and unbounded replay.
+Version 1 permits zero clues; version 2 requires every row and column to be used.
+Existing archive files, including prepublished puzzles, are not rewritten.
 
 ```sh
 python -m tools.generate --date 2026-10-16 --type train-tracks
 ```
+
+### Benchmarking larger boards
+
+From `engine/`, use the configured Python environment to run:
+
+```sh
+python -m tools.benchmark_tracks --out /tmp/tracks-probe.json
+python -m tools.benchmark_tracks --sizes 12 --count 20 --start-seed 100 --timeout 10
+```
+
+The default probe tests seeds 0–99 at 8x8, 10x10 and 12x12 in separate workers,
+with ten seconds per worker including independent validation. Generation timings
+exclude validation and startup. JSON reports retain failed and timed-out seeds
+in the denominator and preserve completed results on interruption. The command
+exits nonzero if any size completes fewer than 95% of seeds or any returned board
+fails validation. See [measured results](../docs/journal.md#scattered-train-tracks-givens-and-larger-board-proof).
+Daily publishing remains 7x7; three daily size variants belong to the follow-up PR.
 
 ## The rules are a public interface
 

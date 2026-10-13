@@ -73,6 +73,35 @@ class TrackGridError(ValueError):
     """A track grid violates one of the structural guarantees."""
 
 
+class TrackSearchLimitError(RuntimeError):
+    """The search stopped before it could prove a solution count."""
+
+
+class SearchBudget:
+    """A deterministic state allowance shared across fresh searches."""
+
+    __slots__ = ("_max_states", "_spent")
+
+    def __init__(self, max_states: int) -> None:
+        if max_states < 0:
+            raise TrackGridError("max_states must be nonnegative")
+        self._max_states = max_states
+        self._spent = 0
+
+    @property
+    def spent(self) -> int:
+        return self._spent
+
+    @property
+    def remaining(self) -> int:
+        return self._max_states - self._spent
+
+    def consume(self) -> None:
+        if self.remaining == 0:
+            raise TrackSearchLimitError("aggregate search-state budget exhausted")
+        self._spent += 1
+
+
 @dataclass(frozen=True, slots=True)
 class TrackGrid:
     """A rectangular grid of pieces with row and column counts.
@@ -223,9 +252,27 @@ class _Search:
     recurses and every level needs all of it.
     """
 
-    __slots__ = ("col_used", "grid", "open_ends", "parent", "piece", "row_used", "used")
+    __slots__ = (
+        "budget",
+        "col_used",
+        "grid",
+        "max_states",
+        "open_ends",
+        "parent",
+        "piece",
+        "row_used",
+        "states",
+        "used",
+    )
 
-    def __init__(self, grid: TrackGrid) -> None:
+    def __init__(
+        self, grid: TrackGrid, max_states: int | None = None, budget: SearchBudget | None = None
+    ) -> None:
+        if max_states is not None and max_states < 0:
+            raise TrackGridError("max_states must be nonnegative")
+        self.max_states = max_states
+        self.budget = budget
+        self.states = 0
         self.grid = grid
         self.piece: list[int] = [0] * grid.cell_count
         self.parent: list[int] = list(range(grid.cell_count))
@@ -370,6 +417,12 @@ def _one_path(search: _Search) -> bool:
 
 
 def _walk(search: _Search, cell: int) -> Iterator[Assignment]:
+    if search.max_states is not None or search.budget is not None:
+        if search.max_states is not None and search.states >= search.max_states:
+            raise TrackSearchLimitError("search-state limit exhausted")
+        if search.budget is not None:
+            search.budget.consume()
+        search.states += 1
     grid = search.grid
     if cell == grid.cell_count:
         if search.open_ends == LINE_ENDS and _one_path(search):
@@ -390,27 +443,36 @@ def _walk(search: _Search, cell: int) -> Iterator[Assignment]:
                 search.rollback(undo)
 
 
-def iter_solutions(grid: TrackGrid) -> Iterator[Assignment]:
+def iter_solutions(
+    grid: TrackGrid, *, max_states: int | None = None, budget: SearchBudget | None = None
+) -> Iterator[Assignment]:
     """Yield every solution, each as one piece number per cell.
 
-    Unbounded and uncached, for callers that need the solutions themselves. Use
-    `count_solutions` when only the number matters.
+    Unbounded by default. Optional state limits raise `TrackSearchLimitError` if
+    enumeration is incomplete. Use `count_solutions` when only the number matters.
     """
-    search = _Search(grid)
+    search = _Search(grid, max_states, budget)
     yield from _walk(search, 0)
 
 
-def count_solutions(grid: TrackGrid, *, limit: int = DEFAULT_LIMIT) -> int:
+def count_solutions(
+    grid: TrackGrid,
+    *,
+    limit: int = DEFAULT_LIMIT,
+    max_states: int | None = None,
+    budget: SearchBudget | None = None,
+) -> int:
     """Count solutions, stopping at `limit`.
 
     Returns `min(actual, limit)`, so the default limit of 2 distinguishes zero, one
     and many without paying to enumerate the many — the only question the generator
     asks. Proving a grid has *exactly* one solution means exhausting the search.
+    Optional state limits raise `TrackSearchLimitError`, never a partial count.
     """
     if limit < 1:
         raise TrackGridError(f"limit must be at least 1, got {limit}")
     total = 0
-    for _ in iter_solutions(grid):
+    for _ in iter_solutions(grid, max_states=max_states, budget=budget):
         total += 1
         if total >= limit:
             break
