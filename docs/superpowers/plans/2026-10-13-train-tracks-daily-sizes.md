@@ -66,18 +66,18 @@
 - Consume `book.daily_ids(day)` in `_ids_for_day` and the publishing loop. `_generate` still hashes the full ID and returns `(Puzzle, score)` with bounded seed retries.
 - Keep `verify`'s filename/type/replay checks; additionally require the envelope ID to equal its filename stem, preventing a valid small envelope hidden in a large-named file.
 
-- [ ] Write failing publication tests: one legacy tracks slot on October 16; all three on October 17; resume only a missing medium variant; idempotent reruns preserve bytes; exhaust all 32 seed retries without falling back to 7×7. Add filename/envelope mismatch verification.
-- [ ] Make existing window tests calendar-stable by freezing their clock before activation, while new transition tests set explicit dates on either side. Keep real generation integration tests alongside mocks for failure paths.
-- [ ] Run `pytest tests/test_tools.py -q` RED; expected: new schedule/resume assertions fail.
-- [ ] Implement slot iteration and verification. Keep Star Battle layout avoidance and Queens ramp unchanged. Update publishing docstrings and pipeline documentation to describe three/five slots rather than one per family.
-- [ ] Run `pytest tests/test_tools.py tests/test_rulebook.py -q` GREEN and engine static checks. Expected: all pass; generation preserves the selected ID/dimensions and failed seeds remain explicit.
-- [ ] Commit `feat(engine): publish all three Train Tracks sizes daily`.
+- [x] Write failing publication tests: one legacy tracks slot on October 16; all three on October 17; resume only a missing medium variant; idempotent reruns preserve bytes; exhaust all 32 seed retries without falling back to 7×7. Add filename/envelope mismatch verification.
+- [x] Make existing window tests calendar-stable by freezing their clock before activation, while new transition tests set explicit dates on either side. Keep real generation integration tests alongside mocks for failure paths.
+- [x] Run `pytest tests/test_tools.py -q` RED; expected: new schedule/resume assertions fail.
+- [x] Implement slot iteration and verification. Keep Star Battle layout avoidance and Queens ramp unchanged. Update publishing docstrings and pipeline documentation to describe three/five slots rather than one per family.
+- [x] Run `pytest tests/test_tools.py tests/test_rulebook.py -q` GREEN and engine static checks. Expected: all pass; generation preserves the selected ID/dimensions and failed seeds remain explicit.
+- [x] Commit `feat(engine): publish all three Train Tracks sizes daily`.
 
 ### Task 3: Preserve unfinished Train Tracks progress
 
 **Interfaces:**
-- Add `TrackProgress { game: TracksGame; elapsedMs: number }` and `readTrackProgress(id: string, grid: TrackGrid): TrackProgress | null`, `storeTrackProgress(id: string, game: TracksGame, elapsedMs: number): void`, `clearTrackProgress(id: string): void` in `app/src/lib/trackProgress.ts`.
-- Storage keys include the full puzzle ID. A versioned snapshot contains the board fingerprint, cell values (including Cross/Maybe) and nonnegative elapsed milliseconds. Invalid values, changed givens, wrong board fingerprints and completed boards do not restore. Storage failures remain non-fatal.
+- Add `TrackProgress { game: TracksGame; elapsedMs: number }` and `readTrackProgress(id: string, grid: TrackGrid): TrackProgress | null`, `storeTrackProgress(id: string, game: TracksGame, elapsedMs: number): boolean`, `clearTrackProgress(id: string): void` in `app/src/lib/trackProgress.ts`.
+- Storage keys include the full puzzle ID. A versioned snapshot contains the board fingerprint, cell values (including Cross/Maybe) and nonnegative elapsed milliseconds. Invalid values, changed givens, wrong board fingerprints and completed boards do not restore. Storage failures remain non-fatal; return saving success so the stage can warn only when an actual save fails.
 - `TracksStage` initializes from the saved snapshot; elapsed time resumes from that value and pauses between visits. Save on edits, periodic timer updates and page exit. Clear unfinished progress upon solving; retain first-solve statistics and the existing replay behavior. Undo remains bounded and visit-local.
 
 - [ ] Write `trackProgress.test.ts` RED: independent small/medium/large keys, pieces and notes round-trip, elapsed values differ, immutable givens preserved, corrupt/version-mismatched/stale snapshots rejected, unavailable storage handled, completed snapshots ignored/cleared.
