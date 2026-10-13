@@ -59,6 +59,17 @@ afterEach(() => {
 })
 
 describe('the family counts', () => {
+  it('distinguishes all three sizes in recent solves', () => {
+    const html = renderHistory([
+      solve('2026-10-17-tracks-small', 'train-tracks', 1),
+      solve('2026-10-17-tracks-medium', 'train-tracks', 2),
+      solve('2026-10-17-tracks-large', 'train-tracks', 3),
+    ])
+    expect(html).toContain('Train Tracks Small')
+    expect(html).toContain('Train Tracks Medium')
+    expect(html).toContain('Train Tracks Large')
+  })
+
   /**
    * Any status paragraph naming a family — which today means the split under
    * the grid, and nothing else. The names come from the registry so that a

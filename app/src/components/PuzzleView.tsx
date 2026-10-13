@@ -21,6 +21,7 @@ import { DIFFICULTY_LABEL, PUZZLE_PIECE, PUZZLE_TYPE_HAS_HINTS, PUZZLE_TYPE_LABE
 import { firstHint, type Hint } from '../domain/hints'
 import type { Board } from '../domain/board'
 import { isMarksPuzzle, isTracksPuzzle, type Puzzle } from '../domain/puzzle'
+import { trackVariantOf } from '../domain/trackSizes'
 import { TracksStage } from './TracksStage'
 import { PuzzleNotFoundError, loadPuzzle } from '../lib/puzzles'
 import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } from '../lib/stats'
@@ -270,6 +271,7 @@ function PuzzleStage({
   const share = async (variant: 'result' | 'solution') => {
     const counted = firstSolve ?? { elapsedMs: shownTime, hints: hintsUsed }
     const result = {
+      puzzleId: puzzle.id,
       width: board.width,
       height: board.height,
       puzzleType: puzzle.puzzleType,
@@ -462,6 +464,7 @@ export function PuzzleView({
         <p className="eyebrow">{formatPuzzleLabel(id, timeZone)}</p>
         <h1>{PUZZLE_TYPE_LABEL[state.puzzle.puzzleType]}</h1>
         <p className="puzzle-detail">
+          {isTracksPuzzle(state.puzzle) && trackVariantOf(id) && <>{trackVariantOf(id)!.label} · </>}
           {state.puzzle.board.width}&times;{state.puzzle.board.height} grid
           {state.puzzle.difficulty != null && <> · {DIFFICULTY_LABEL[state.puzzle.difficulty]}</>}
         </p>

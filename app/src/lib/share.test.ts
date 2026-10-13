@@ -83,6 +83,7 @@ describe('boardGrid', () => {
 })
 
 const result = {
+  puzzleId: '2026-09-30',
   width: 4,
   height: 4,
   puzzleType: 'queens' as const,
@@ -93,6 +94,13 @@ const result = {
 }
 
 describe('buildShareText', () => {
+  it('includes a named Train Tracks size, preserving the historical unlabelled form', () => {
+    expect(buildShareText({ ...result, puzzleId: '2026-10-17-tracks-large', puzzleType: 'train-tracks', width: 12, height: 12 }).split('\n')[0])
+      .toBe('Daily Puzzles — Train Tracks Large 12×12')
+    expect(buildShareText({ ...result, puzzleId: '2026-10-16-tracks', puzzleType: 'train-tracks', width: 7, height: 7 }).split('\n')[0])
+      .toBe('Daily Puzzles — Train Tracks 7×7')
+  })
+
   it('names the puzzle and its size', () => {
     expect(buildShareText(result).split('\n')[0]).toBe('Daily Puzzles — Queens 4×4')
   })

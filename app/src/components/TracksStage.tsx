@@ -29,6 +29,7 @@ import {
 } from '../domain/tracksGame'
 import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } from '../lib/stats'
 import { puzzleOfToday } from '../domain/dates'
+import { clearTrackProgress, readTrackProgress, storeTrackProgress } from '../lib/trackProgress'
 import {
   buildShareText,
   buildSolutionShareText,
@@ -49,12 +50,14 @@ export function TracksStage({
   grid: TrackGrid
   timeZone: string
 }) {
-  const [game, setGame] = useState<TracksGame>(() => createTracksGame(grid))
+  const [initialProgress] = useState(() => readTrackProgress(puzzle.id, grid))
+  const [game, setGame] = useState<TracksGame>(() => initialProgress?.game ?? createTracksGame(grid))
   const [history, setHistory] = useState<TracksGame[]>([])
   const [announcement, setAnnouncement] = useState('')
   const [solvedAt, setSolvedAt] = useState<number | null>(null)
-  const [startedAt] = useState(() => Date.now())
-  const [elapsed, setElapsed] = useState(0)
+  const [startedAt] = useState(() => Date.now() - (initialProgress?.elapsedMs ?? 0))
+  const [elapsed, setElapsed] = useState(initialProgress?.elapsedMs ?? 0)
+  const [savingAvailable, setSavingAvailable] = useState(true)
   const [stats, setStats] = useState<Stats | null>(null)
   const [firstSolve, setFirstSolve] = useState<SolveRecord | null>(null)
   const [copied, setCopied] = useState<'idle' | 'result' | 'solution' | 'failed'>('idle')
@@ -63,12 +66,28 @@ export function TracksStage({
   // the picker and the board are two controls over one choice, and neither owns it.
   const [brush, setBrush] = useState<TrackBrush>(1)
   const strokeStart = useRef<TracksGame | null>(null)
+  const currentGame = useRef(game)
+  const completed = useRef(false)
+
+  useEffect(() => { currentGame.current = game }, [game])
 
   useEffect(() => {
     if (solvedAt !== null) return
-    const timer = setInterval(() => setElapsed(Date.now() - startedAt), 500)
-    return () => clearInterval(timer)
-  }, [solvedAt, startedAt])
+    const save = () => storeTrackProgress(
+      puzzle.id, currentGame.current, Math.max(0, Date.now() - startedAt),
+    )
+    const timer = setInterval(() => {
+      setElapsed(Math.max(0, Date.now() - startedAt))
+      setSavingAvailable(save())
+    }, 500)
+    const onPageHide = () => { if (!completed.current) save() }
+    window.addEventListener('pagehide', onPageHide)
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener('pagehide', onPageHide)
+      if (!completed.current) save()
+    }
+  }, [puzzle.id, solvedAt, startedAt])
 
   // Nothing is flagged until the player has placed something. The givens are
   // pieces, and a given whose far end faces an empty cell is an unfinished board
@@ -89,6 +108,8 @@ export function TracksStage({
   // prevents is silent: the board renders locked, the clock runs on, and nothing
   // is ever stored.
   const recordSolve = useCallback((when: number) => {
+    completed.current = true
+    clearTrackProgress(puzzle.id)
     setSolvedAt(when)
     // Read before storing, so a replay can be told why its time was not kept.
     const earlier = readStoredStats().find((record) => record.id === puzzle.id)
@@ -127,7 +148,9 @@ export function TracksStage({
     // worse than no Undo at all. The marks board has the same rule in `endStroke`.
     if (next === before) return
     setHistory((past) => [...past.slice(1 - HISTORY_LIMIT), before])
+    currentGame.current = next
     setGame(next)
+    setSavingAvailable(storeTrackProgress(puzzle.id, next, Math.max(0, Date.now() - startedAt)))
     if (solvedAt !== null || !isTracksSolved(next)) return
     recordSolve(Date.now())
   }
@@ -165,7 +188,9 @@ export function TracksStage({
     const previous = history[history.length - 1]
     if (previous === undefined) return
     setHistory(history.slice(0, -1))
+    currentGame.current = previous
     setGame(previous)
+    setSavingAvailable(storeTrackProgress(puzzle.id, previous, Math.max(0, Date.now() - startedAt)))
     setAnnouncement('Undid the last move.')
   }
 
@@ -178,6 +203,7 @@ export function TracksStage({
   const share = async (variant: 'result' | 'solution') => {
     const counted = firstSolve ?? { elapsedMs: shownTime, hints: 0 }
     const result: ShareResult = {
+      puzzleId: puzzle.id,
       width: grid.width,
       height: grid.height,
       puzzleType: puzzle.puzzleType,
@@ -242,6 +268,11 @@ export function TracksStage({
           Reset
         </button>
       </div>
+      {!savingAvailable && !solved && (
+        <p className="status error" role="status">
+          Progress can&rsquo;t be saved in this browser. Keep this page open to retain it.
+        </p>
+      )}
       <TrackPicker brush={brush} onPick={setBrush} disabled={solved} />
       <TracksBoard
         grid={grid}

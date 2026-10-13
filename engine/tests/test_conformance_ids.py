@@ -15,8 +15,10 @@ from typing import Any
 import pytest
 from tools.schema_ids import current_pattern, expected_pattern
 
-from queens_engine.puzzle import CONFORMANCE_DIR
+from queens_engine.board import PuzzleType
+from queens_engine.puzzle import CONFORMANCE_DIR, PuzzleParseError, parse_puzzle
 from queens_engine.rulebook import puzzle_id, split_puzzle_id
+from queens_engine.track_sizes import TRACK_SIZES_START, TRACK_VARIANTS
 
 CASES_DIR = CONFORMANCE_DIR / "id-cases"
 
@@ -113,3 +115,32 @@ def test_id_case_splits_as_declared(case: dict[str, Any]) -> None:
 @pytest.mark.parametrize("value", UNPARSED_IDS, ids=UNPARSED_IDS)
 def test_unparsable_ids_are_rejected(value: str) -> None:
     assert split_puzzle_id(value) is None
+
+
+def test_variant_metadata_and_named_id_builders_agree() -> None:
+    assert date(2026, 10, 17) == TRACK_SIZES_START
+    assert [(v.name, v.side, v.label) for v in TRACK_VARIANTS] == [
+        ("small", 8, "Small"),
+        ("medium", 10, "Medium"),
+        ("large", 12, "Large"),
+    ]
+    for variant in TRACK_VARIANTS:
+        assert (
+            puzzle_id(date(2026, 10, 17), PuzzleType.TRAIN_TRACKS, track_size=variant.name)
+            == f"2026-10-17{variant.suffix}"
+        )
+    with pytest.raises(ValueError):
+        puzzle_id(date(2026, 10, 17), PuzzleType.QUEENS, track_size="small")
+
+
+@pytest.mark.parametrize("case", MANIFEST.get("boardCases", []))
+def test_sized_envelope_contract(case: dict[str, Any]) -> None:
+    data = json.loads((CASES_DIR / case["file"]).read_text(encoding="utf-8"))
+    data.update(case.get("overrides", {}))
+    if case["valid"]:
+        puzzle = parse_puzzle(data)
+        assert puzzle.id == data["id"]
+        assert puzzle.board.width == data["board"]["width"]
+    else:
+        with pytest.raises(PuzzleParseError):
+            parse_puzzle(data)

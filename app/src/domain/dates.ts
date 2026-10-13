@@ -18,6 +18,7 @@
  */
 
 import { PUZZLE_TYPES, type PuzzleType } from './board'
+import { TRACK_SIZES_START, TRACK_VARIANTS, type TrackSize } from './trackSizes'
 import {
   DEFAULT_PUZZLE_TYPE,
   PUZZLE_TYPE_PUBLISHED,
@@ -58,10 +59,14 @@ function isCalendarDay(text: string): boolean {
  */
 export function puzzleIdParts(value: string): PuzzleIdParts | null {
   for (const type of PUZZLE_TYPES) {
-    const suffix = PUZZLE_TYPE_SUFFIX[type]
-    if (suffix !== '' && !value.endsWith(suffix)) continue
-    const day = value.slice(0, value.length - suffix.length)
-    if (isCalendarDay(day)) return { day, type }
+    const suffixes = type === 'train-tracks'
+      ? [PUZZLE_TYPE_SUFFIX[type], ...TRACK_VARIANTS.map((v) => v.suffix)]
+      : [PUZZLE_TYPE_SUFFIX[type]]
+    for (const suffix of suffixes) {
+      if (suffix !== '' && !value.endsWith(suffix)) continue
+      const day = value.slice(0, value.length - suffix.length)
+      if (isCalendarDay(day)) return { day, type }
+    }
   }
   return null
 }
@@ -110,8 +115,15 @@ export function companionPuzzleId(id: string): string {
 }
 
 /** The id `type`'s puzzle carries for `day`, e.g. `2026-10-01-star`. */
-export function puzzleIdFor(day: string, type: PuzzleType): string {
+export function puzzleIdFor(day: string, type: PuzzleType, trackSize?: TrackSize): string {
   if (!isCalendarDay(day)) throw new RangeError(`${day} is not a YYYY-MM-DD date`)
+  if (trackSize !== undefined) {
+    const variant = TRACK_VARIANTS.find((v) => v.name === trackSize)
+    if (type !== 'train-tracks' || variant === undefined) {
+      throw new RangeError('only named Train Tracks sizes are supported')
+    }
+    return `${day}${variant.suffix}`
+  }
   return `${day}${PUZZLE_TYPE_SUFFIX[type]}`
 }
 
@@ -130,8 +142,10 @@ export function puzzleIdFor(day: string, type: PuzzleType): string {
  * "not published yet" card.
  */
 export function puzzleIdsForDay(day: string): string[] {
-  return PUZZLE_TYPES.filter((type) => PUZZLE_TYPE_PUBLISHED[type]).map((type) =>
-    puzzleIdFor(day, type),
+  return PUZZLE_TYPES.filter((type) => PUZZLE_TYPE_PUBLISHED[type]).flatMap((type) =>
+    type === 'train-tracks' && day >= TRACK_SIZES_START
+      ? TRACK_VARIANTS.map((v) => puzzleIdFor(day, type, v.name))
+      : [puzzleIdFor(day, type)],
   )
 }
 

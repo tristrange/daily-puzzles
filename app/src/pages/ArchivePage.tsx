@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatPuzzleLabel, puzzleOfToday } from '../domain/dates'
 import { DIFFICULTY_LABEL, PUZZLE_TYPE_LABEL } from '../domain/games'
+import { trackVariantOf } from '../domain/trackSizes'
 import {
   groupPublishedPuzzles,
   listPublishedPuzzles,
@@ -79,6 +80,12 @@ export function ArchiveGroups({
             {group.puzzles.map((puzzle) => (
               <li key={puzzle.id}>
                 <Link to={`/archive/${puzzle.id}`}>{formatPuzzleLabel(puzzle.id, timeZone)}</Link>{' '}
+                {puzzle.type === 'train-tracks' && puzzle.width != null && puzzle.height != null && (
+                  <span className="stat-detail">
+                    {trackVariantOf(puzzle.id) && `${trackVariantOf(puzzle.id)!.label} · `}
+                    {`${puzzle.width}×${puzzle.height}`}
+                  </span>
+                )}
                 {/* The heading already said which family this is, so the row is the
                     date and its band. A puzzle with no band shows nothing at all:
                     "Easy" would be a claim the file never made. */}

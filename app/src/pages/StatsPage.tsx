@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatPuzzleLabel, puzzleOfToday } from '../domain/dates'
+import { PUZZLE_TYPE_LABEL } from '../domain/games'
+import { trackVariantOf } from '../domain/trackSizes'
 import { formatTime } from '../domain/game'
 import {
   clearStats,
@@ -86,7 +88,9 @@ export function StatsPage() {
               <li key={record.id}>
                 <Link to={`/archive/${record.id}`}>{formatPuzzleLabel(record.id, timeZone)}</Link>{' '}
                 <span className="stat-detail">
-                  {formatTime(record.elapsedMs)}
+                  {PUZZLE_TYPE_LABEL[record.puzzleType ?? 'queens']}
+                  {record.puzzleType === 'train-tracks' && trackVariantOf(record.id) && ` ${trackVariantOf(record.id)!.label}`}
+                  {' · '}{formatTime(record.elapsedMs)}
                   {record.hints > 0 && ` · ${record.hints} hint${record.hints === 1 ? '' : 's'}`}
                 </span>
               </li>

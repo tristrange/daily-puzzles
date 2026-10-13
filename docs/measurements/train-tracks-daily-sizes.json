@@ -1,0 +1,397 @@
+{
+  "machine": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "python": "3.13.15",
+  "days": [
+    {
+      "day": "2026-10-17",
+      "seconds": 1.3211739160469733,
+      "boards": [
+        {
+          "id": "2026-10-17-tracks-small",
+          "attempts": [
+            {
+              "seed": 165711268,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.38366025005234405,
+          "total_seconds": 0.3975177080137655
+        },
+        {
+          "id": "2026-10-17-tracks-medium",
+          "attempts": [
+            {
+              "seed": 580227508,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.3485525419819169,
+          "total_seconds": 0.4024675419786945
+        },
+        {
+          "id": "2026-10-17-tracks-large",
+          "attempts": [
+            {
+              "seed": 3484093670,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.5067272500018589,
+          "total_seconds": 0.5211680000065826
+        }
+      ]
+    },
+    {
+      "day": "2026-10-18",
+      "seconds": 1.2878767919610254,
+      "boards": [
+        {
+          "id": "2026-10-18-tracks-small",
+          "attempts": [
+            {
+              "seed": 1655622558,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.007765082991681993,
+          "total_seconds": 0.01636524999048561
+        },
+        {
+          "id": "2026-10-18-tracks-medium",
+          "attempts": [
+            {
+              "seed": 3901964314,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.5629708750057034,
+          "total_seconds": 0.5892334160162136
+        },
+        {
+          "id": "2026-10-18-tracks-large",
+          "attempts": [
+            {
+              "seed": 3794966402,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.6433547080378048,
+          "total_seconds": 0.6822708330000751
+        }
+      ]
+    },
+    {
+      "day": "2026-10-19",
+      "seconds": 0.9936857499997132,
+      "boards": [
+        {
+          "id": "2026-10-19-tracks-small",
+          "attempts": [
+            {
+              "seed": 3803988835,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.08427437499631196,
+          "total_seconds": 0.1604285829816945
+        },
+        {
+          "id": "2026-10-19-tracks-medium",
+          "attempts": [
+            {
+              "seed": 101656976,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.42541316599817947,
+          "total_seconds": 0.44764383300207555
+        },
+        {
+          "id": "2026-10-19-tracks-large",
+          "attempts": [
+            {
+              "seed": 4250520740,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.3684116249787621,
+          "total_seconds": 0.3856028749723919
+        }
+      ]
+    },
+    {
+      "day": "2026-10-20",
+      "seconds": 3.626093042024877,
+      "boards": [
+        {
+          "id": "2026-10-20-tracks-small",
+          "attempts": [
+            {
+              "seed": 1753289881,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.5240771660464816,
+          "total_seconds": 0.562589833047241
+        },
+        {
+          "id": "2026-10-20-tracks-medium",
+          "attempts": [
+            {
+              "seed": 1355426145,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.8501414159545675,
+          "total_seconds": 0.891521040990483
+        },
+        {
+          "id": "2026-10-20-tracks-large",
+          "attempts": [
+            {
+              "seed": 3131735686,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 2.0518913329578936,
+          "total_seconds": 2.1719715829822235
+        }
+      ]
+    },
+    {
+      "day": "2026-10-21",
+      "seconds": 0.7210689589846879,
+      "boards": [
+        {
+          "id": "2026-10-21-tracks-small",
+          "attempts": [
+            {
+              "seed": 2162892994,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.006464499980211258,
+          "total_seconds": 0.00964041700353846
+        },
+        {
+          "id": "2026-10-21-tracks-medium",
+          "attempts": [
+            {
+              "seed": 3617674215,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.16238008299842477,
+          "total_seconds": 0.20118204201571643
+        },
+        {
+          "id": "2026-10-21-tracks-large",
+          "attempts": [
+            {
+              "seed": 3391000817,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.40707633300917223,
+          "total_seconds": 0.5102373750414699
+        }
+      ]
+    },
+    {
+      "day": "2026-10-22",
+      "seconds": 0.5222844580421224,
+      "boards": [
+        {
+          "id": "2026-10-22-tracks-small",
+          "attempts": [
+            {
+              "seed": 3405133535,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.002073416020721197,
+          "total_seconds": 0.003636375011410564
+        },
+        {
+          "id": "2026-10-22-tracks-medium",
+          "attempts": [
+            {
+              "seed": 4127768283,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.37025512498803437,
+          "total_seconds": 0.38018570898566395
+        },
+        {
+          "id": "2026-10-22-tracks-large",
+          "attempts": [
+            {
+              "seed": 714746927,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.13397416699444875,
+          "total_seconds": 0.1384536669938825
+        }
+      ]
+    },
+    {
+      "day": "2026-10-23",
+      "seconds": 1.378334957989864,
+      "boards": [
+        {
+          "id": "2026-10-23-tracks-small",
+          "attempts": [
+            {
+              "seed": 701824402,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.44027379201725125,
+          "total_seconds": 0.4583083330071531
+        },
+        {
+          "id": "2026-10-23-tracks-medium",
+          "attempts": [
+            {
+              "seed": 3515119991,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.24388791696401313,
+          "total_seconds": 0.2847353749675676
+        },
+        {
+          "id": "2026-10-23-tracks-large",
+          "attempts": [
+            {
+              "seed": 2425672634,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.5891305829863995,
+          "total_seconds": 0.6352828749804758
+        }
+      ]
+    },
+    {
+      "day": "2026-10-24",
+      "seconds": 3.2491968339891173,
+      "boards": [
+        {
+          "id": "2026-10-24-tracks-small",
+          "attempts": [
+            {
+              "seed": 2576939831,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.4214694169932045,
+          "total_seconds": 0.44297891698079184
+        },
+        {
+          "id": "2026-10-24-tracks-medium",
+          "attempts": [
+            {
+              "seed": 3812351144,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 1.1570256249979138,
+          "total_seconds": 1.1697197089670226
+        },
+        {
+          "id": "2026-10-24-tracks-large",
+          "attempts": [
+            {
+              "seed": 2610064897,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 1.5163020000327379,
+          "total_seconds": 1.636490250006318
+        }
+      ]
+    },
+    {
+      "day": "2026-10-25",
+      "seconds": 0.749296540976502,
+      "boards": [
+        {
+          "id": "2026-10-25-tracks-small",
+          "attempts": [
+            {
+              "seed": 2842574167,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.05825170804746449,
+          "total_seconds": 0.07597345800604671
+        },
+        {
+          "id": "2026-10-25-tracks-medium",
+          "attempts": [
+            {
+              "seed": 1155270510,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.2868632919853553,
+          "total_seconds": 0.3111531669856049
+        },
+        {
+          "id": "2026-10-25-tracks-large",
+          "attempts": [
+            {
+              "seed": 467035649,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.3027214169851504,
+          "total_seconds": 0.36215870798332617
+        }
+      ]
+    },
+    {
+      "day": "2026-10-26",
+      "seconds": 1.5855128330294974,
+      "boards": [
+        {
+          "id": "2026-10-26-tracks-small",
+          "attempts": [
+            {
+              "seed": 781940227,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.0019399580196477473,
+          "total_seconds": 0.0028666669968515635
+        },
+        {
+          "id": "2026-10-26-tracks-medium",
+          "attempts": [
+            {
+              "seed": 3003150701,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 0.3748114589834586,
+          "total_seconds": 0.4135438749799505
+        },
+        {
+          "id": "2026-10-26-tracks-large",
+          "attempts": [
+            {
+              "seed": 516594988,
+              "outcome": "ok"
+            }
+          ],
+          "generation_seconds": 1.1407480409834534,
+          "total_seconds": 1.1690942909917794
+        }
+      ]
+    }
+  ],
+  "recipe": "publish._generate(TRAIN_TRACKS, id, seed_from_date(id)); daily_ids starting TRACK_SIZES_START; benchmark_tracks.validate independent unbounded enumeration and direct rule checks; tools.verify replay afterwards"
+}

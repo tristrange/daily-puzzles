@@ -10,6 +10,7 @@ from dataclasses import replace
 from datetime import date, timedelta
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Self
 from unittest.mock import patch
 
 import pytest
@@ -26,6 +27,7 @@ from queens_engine import (
     Board,
     DifficultyTarget,
     GenerationConfig,
+    GenerationError,
     Puzzle,
     PuzzleType,
     dumps_puzzle,
@@ -38,12 +40,14 @@ from queens_engine import (
     star_layout,
     target_for,
 )
+from queens_engine.track_sizes import TRACK_SIZES_START
 
 #: The board size windowing tests publish at. 5x5 is the fastest thing the
 #: generator makes and none of these tests care about the size. The companion
 #: keeps its real 9x9: Star Battle is only feasible at 8x8 and 9x9, so there is
 #: nothing smaller to pin it to.
 SMALL_SIZE = 5
+TEST_TODAY = date(2026, 10, 13)
 
 
 @contextmanager
@@ -66,7 +70,7 @@ def cheap_publish() -> Generator[None]:
 
 class TestPublishWindow:
     def test_existing_dates_are_skipped(self, tmp_path: Path) -> None:
-        today = date.today()
+        today = TEST_TODAY
         existing = today.isoformat()
         (tmp_path / f"{existing}.json").write_text("{}", encoding="utf-8")
 
@@ -77,7 +81,7 @@ class TestPublishWindow:
         assert sorted(p.name for p in tmp_path.glob("*.json")) == [f"{existing}.json"]
 
     def test_empty_directory_starts_today(self, tmp_path: Path) -> None:
-        today = date.today()
+        today = TEST_TODAY
 
         lines = "\n".join(_run_publish(tmp_path, None, 1))
 
@@ -92,7 +96,7 @@ class TestPublishWindow:
         """A committed Queens board must not stop its Star Battle companion
         from being filled in, which is what makes this safe to run against a
         directory that was published before companions existed."""
-        today = date.today()
+        today = TEST_TODAY
         queens = today.isoformat()
         (tmp_path / f"{queens}.json").write_text("{}", encoding="utf-8")
 
@@ -102,7 +106,7 @@ class TestPublishWindow:
         assert f"publish {queens}-star" in lines
 
     def test_publishes_both_puzzles_of_a_day(self, tmp_path: Path) -> None:
-        today = date.today()
+        today = TEST_TODAY
 
         _run_publish(tmp_path, today, 0, dry_run=False)
 
@@ -120,7 +124,7 @@ class TestPublishWindow:
         """A star board is unique but not logic-gated, so it has no score to
         report; printing one would mean something weaker than the same number on
         a Queens board."""
-        today = date.today()
+        today = TEST_TODAY
 
         lines = _run_publish(tmp_path, today, 0, dry_run=False)
 
@@ -135,7 +139,7 @@ class TestPublishWindow:
             assert "score" not in line
 
     def test_rerunning_publishes_nothing_new(self, tmp_path: Path) -> None:
-        today = date.today()
+        today = TEST_TODAY
 
         _run_publish(tmp_path, today, 0, dry_run=False)
         before = {p.name: p.read_text(encoding="utf-8") for p in tmp_path.glob("*.json")}
@@ -151,7 +155,7 @@ class TestPublishWindow:
         # The scheduled run passes no --start. If the newest committed day has
         # only one of its two puzzles, resuming after the newest day steps over
         # the gap and the missing companion is never filled in.
-        today = date.today()
+        today = TEST_TODAY
         yesterday = today - timedelta(days=1)
         _run_publish(tmp_path, yesterday, 0, dry_run=False)
         # A run that died between the day's two puzzles.
@@ -167,7 +171,7 @@ class TestPublishWindow:
         assert (tmp_path / f"{today.isoformat()}.json").exists()
 
     def test_rerun_resumes_from_the_last_committed_day(self, tmp_path: Path) -> None:
-        today = date.today()
+        today = TEST_TODAY
         _run_publish(tmp_path, today, 0, dry_run=False)
 
         lines = _run_publish(tmp_path, None, 3, dry_run=True)
@@ -199,6 +203,14 @@ def _write_queens(tmp_path: Path, day: str) -> Path:
 
 
 class TestVerify:
+    def test_rejects_a_valid_small_envelope_under_a_large_filename(self, tmp_path: Path) -> None:
+        fixture = (
+            Path(__file__).resolve().parents[2] / "conformance/id-cases/tracks-small.accept.json"
+        )
+        (tmp_path / "2026-10-17-tracks-large.json").write_bytes(fixture.read_bytes())
+        assert verify.main(["--dir", str(tmp_path)]) == 1
+        assert "filename" in _capture_verify(tmp_path)
+
     def test_flags_a_broken_puzzle_file(self, tmp_path: Path) -> None:
         (tmp_path / "2026-05-11.json").write_text("{not json", encoding="utf-8")
 
@@ -464,6 +476,13 @@ class TestVerifyRamp:
 
 
 class TestGenerateId:
+    def test_full_sized_id_selects_the_board_without_an_extra_flag(self) -> None:
+        for name in ("small", "medium", "large"):
+            identifier = f"2026-10-17-tracks-{name}"
+            assert id_for_day(identifier, PuzzleType.TRAIN_TRACKS) == identifier
+            with pytest.raises(ValueError):
+                id_for_day(identifier, PuzzleType.QUEENS)
+
     """`--date` names a day and `--type` names a suffix, so the id is derived.
 
     The bug: `--date 2026-10-04 --type star-battle --out app/public/puzzles`
@@ -511,7 +530,13 @@ PUBLISHED: tuple[str, ...] = tuple(book.id_suffix for book in rulebooks() if boo
 
 
 def _run_publish(
-    out_dir: Path, start: date | None, lead: int, *, dry_run: bool = True
+    out_dir: Path,
+    start: date | None,
+    lead: int,
+    *,
+    dry_run: bool = True,
+    clock: date = TEST_TODAY,
+    expected_exit: int = 0,
 ) -> list[str]:
 
     args = ["--out", str(out_dir), "--lead", str(lead)]
@@ -520,9 +545,15 @@ def _run_publish(
     if start is not None:
         args += ["--start", start.isoformat()]
     buffer = io.StringIO()
-    with cheap_publish(), redirect_stdout(buffer):
+
+    class FrozenDate(date):
+        @classmethod
+        def today(cls) -> Self:
+            return cls(clock.year, clock.month, clock.day)
+
+    with cheap_publish(), redirect_stdout(buffer), patch.object(publish, "date", FrozenDate):
         exit_code = publish.main(args)
-    assert exit_code == 0
+    assert exit_code == expected_exit
     return buffer.getvalue().splitlines()
 
 
@@ -531,6 +562,134 @@ def _capture_verify(out_dir: Path) -> str:
     with redirect_stdout(buffer):
         verify.main(["--dir", str(out_dir)])
     return buffer.getvalue()
+
+
+class TestDailyTrackSlots:
+    @pytest.mark.parametrize(
+        "day,names",
+        [
+            (date(2026, 10, 16), ("2026-10-16-tracks",)),
+            (
+                date(2026, 10, 17),
+                (
+                    "2026-10-17-tracks-small",
+                    "2026-10-17-tracks-medium",
+                    "2026-10-17-tracks-large",
+                ),
+            ),
+        ],
+    )
+    def test_publishes_the_required_slots_on_each_side_of_activation(
+        self, tmp_path: Path, day: date, names: tuple[str, ...]
+    ) -> None:
+        book = rulebook_for(PuzzleType.TRAIN_TRACKS)
+        with patch.object(publish, "rulebooks", return_value=(book,)):
+            _run_publish(tmp_path, day, 0, dry_run=False, clock=day)
+        assert {p.stem for p in tmp_path.glob("*.json")} == set(names)
+        for name in names:
+            data = json.loads((tmp_path / f"{name}.json").read_text())
+            assert data["id"] == name
+            assert data["generatorVersion"] == 3
+            assert all(c >= 1 for c in (*data["board"]["rowClues"], *data["board"]["colClues"]))
+        assert verify.main(["--dir", str(tmp_path)]) == 0
+
+    def test_interrupted_run_resumes_without_rewriting_small(self, tmp_path: Path) -> None:
+        book = rulebook_for(PuzzleType.TRAIN_TRACKS)
+        day = date(2026, 10, 17)
+        original = publish._generate  # pyright: ignore[reportPrivateUsage]
+
+        def interrupted(
+            puzzle_type: PuzzleType,
+            day_id: str,
+            seed: int,
+            avoid_layouts: set[tuple[tuple[int, ...], ...]] | None = None,
+        ) -> tuple[Puzzle, float | None]:
+            if day_id.endswith("-medium"):
+                raise RuntimeError("interrupted")
+            return original(puzzle_type, day_id, seed, avoid_layouts)
+
+        with patch.object(publish, "rulebooks", return_value=(book,)):
+            with patch.object(publish, "_generate", side_effect=interrupted):
+                _run_publish(tmp_path, day, 0, dry_run=False, clock=day, expected_exit=1)
+            small = tmp_path / "2026-10-17-tracks-small.json"
+            before = small.read_bytes()
+            lines = _run_publish(tmp_path, None, 0, dry_run=False, clock=day)
+            assert small.read_bytes() == before
+            assert [line for line in lines if line.startswith("publish ")] == [
+                "publish 2026-10-17-tracks-medium",
+                "publish 2026-10-17-tracks-large",
+            ]
+            all_bytes = {p.name: p.read_bytes() for p in tmp_path.glob("*.json")}
+            again = _run_publish(tmp_path, None, 0, dry_run=False, clock=day)
+            assert not any(line.startswith("publish ") for line in again)
+            assert {p.name: p.read_bytes() for p in tmp_path.glob("*.json")} == all_bytes
+
+    def test_interrupted_write_resumes_without_a_partial_published_slot(
+        self, tmp_path: Path
+    ) -> None:
+        book = rulebook_for(PuzzleType.TRAIN_TRACKS)
+        day = date(2026, 10, 17)
+        original = Path.write_text
+
+        def interrupted_write(
+            path: Path,
+            data: str,
+            encoding: str | None = None,
+            errors: str | None = None,
+            newline: str | None = None,
+        ) -> int:
+            if path.name.startswith("2026-10-17-tracks-medium"):
+                original(path, data[:10], encoding=encoding, errors=errors, newline=newline)
+                raise OSError("interrupted write")
+            return original(path, data, encoding=encoding, errors=errors, newline=newline)
+
+        with patch.object(publish, "rulebooks", return_value=(book,)):
+            with (
+                patch.object(Path, "write_text", new=interrupted_write),
+                pytest.raises(OSError, match="interrupted write"),
+            ):
+                _run_publish(tmp_path, day, 0, dry_run=False, clock=day)
+            small = tmp_path / "2026-10-17-tracks-small.json"
+            before = small.read_bytes()
+            assert not (tmp_path / "2026-10-17-tracks-medium.json").exists()
+            lines = _run_publish(tmp_path, None, 0, dry_run=False, clock=day)
+        assert small.read_bytes() == before
+        assert [line for line in lines if line.startswith("publish ")] == [
+            "publish 2026-10-17-tracks-medium",
+            "publish 2026-10-17-tracks-large",
+        ]
+        assert not list(tmp_path.glob("*.tmp"))
+        assert verify.main(["--dir", str(tmp_path)]) == 0
+
+    def test_resume_only_the_missing_medium_slot(self, tmp_path: Path) -> None:
+        book = rulebook_for(PuzzleType.TRAIN_TRACKS)
+        day = date(2026, 10, 17)
+        with patch.object(publish, "rulebooks", return_value=(book,)):
+            _run_publish(tmp_path, day, 0, dry_run=False, clock=day)
+            (tmp_path / "2026-10-17-tracks-medium.json").unlink()
+            before = {p.name: p.read_bytes() for p in tmp_path.glob("*.json")}
+            lines = _run_publish(tmp_path, None, 0, dry_run=False, clock=day)
+        assert [line for line in lines if line.startswith("publish ")] == [
+            "publish 2026-10-17-tracks-medium",
+        ]
+        assert all((tmp_path / name).read_bytes() == raw for name, raw in before.items())
+
+    def test_exhaustion_never_falls_back_to_another_size(self) -> None:
+        book = rulebook_for(PuzzleType.TRAIN_TRACKS)
+        identifier = "2026-10-17-tracks-large"
+        with (
+            patch.object(book, "generate", side_effect=GenerationError("budget")) as generate,
+            pytest.raises(RuntimeError, match="32 seed bumps"),
+        ):
+            publish._generate(PuzzleType.TRAIN_TRACKS, identifier, 2**32 - 2)  # pyright: ignore[reportPrivateUsage]
+        assert generate.call_count == 32
+        assert all(call.kwargs["puzzle_id"] == identifier for call in generate.call_args_list)
+        assert [call.kwargs["seed"] for call in generate.call_args_list[:4]] == [
+            2**32 - 2,
+            2**32 - 1,
+            0,
+            1,
+        ]
 
 
 class TestStarLayoutRepeat:
@@ -683,3 +842,10 @@ class TestStarLayoutRepeat:
             ),
         }
         assert recent == expected
+
+
+def test_track_activation_follows_committed_legacy_content() -> None:
+    corpus = Path(__file__).resolve().parents[2] / "app" / "public" / "puzzles"
+    legacy_days = [date.fromisoformat(path.stem[:10]) for path in corpus.glob("*-tracks.json")]
+    assert legacy_days
+    assert max(legacy_days) < TRACK_SIZES_START

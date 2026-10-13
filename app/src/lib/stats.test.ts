@@ -120,6 +120,22 @@ describe('addSolve', () => {
 })
 
 describe('currentStreak', () => {
+  it('counts three same-day Train Tracks sizes independently without extending the streak', () => {
+    let records: readonly SolveRecord[] = []
+    for (const [name, size] of [['small', 8], ['medium', 10], ['large', 12]] as const) {
+      records = addSolve(records, record({
+        id: `2026-10-17-tracks-${name}`, puzzleType: 'train-tracks', size,
+      }))
+    }
+    const firstSmall = records.find((r) => r.id.endsWith('-small'))!
+    records = addSolve(records, { ...firstSmall, elapsedMs: 1 })
+    const summary = summarise(records, '2026-10-17')
+    expect(summary.solved).toBe(3)
+    expect(summary.byType['train-tracks']).toBe(3)
+    expect(summary.currentStreak).toBe(1)
+    expect(records.find((r) => r.id.endsWith('-small'))).toEqual(firstSmall)
+  })
+
   it('counts consecutive days ending today', () => {
     const records = [
       record({ id: '2026-09-30' }),
