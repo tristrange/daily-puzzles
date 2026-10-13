@@ -688,3 +688,7 @@ Daily publishing remains 7x7 in this PR. The follow-up enables Small 8x8, Medium
 
 The independent whole-branch review found no actionable issues and reran 55 focused
 solver/benchmark tests. Daily variants, activation and mobile changes remain PR 2.
+
+GitHub review identified missing README command documentation and a stale version-2
+description. Both READMEs now document the benchmark and the engine guide describes
+version 3 and legacy replay. CLI help and all three replay fixture tests passed.

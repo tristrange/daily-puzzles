@@ -123,6 +123,7 @@ uv run pyright       # strict type check
 uv run python -m tools.generate --date 2026-10-01   # one puzzle, plus an ASCII render
 uv run python -m tools.publish  --out ../app/public/puzzles   # fill the archive
 uv run python -m tools.verify   --dir ../app/public/puzzles   # replay every committed file
+uv run python -m tools.benchmark_tracks --out /tmp/tracks-probe.json # probe 8/10/12 boards
 ```
 
 App:
