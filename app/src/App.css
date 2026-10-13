@@ -1166,3 +1166,17 @@
   .game-card,
   .stat { border: 1px solid var(--text-h); }
 }
+
+/* Each daily size is its own board, with an independent publication/solve state. */
+.track-variants {
+  list-style: none;
+  padding: 0;
+  margin: auto 0 0;
+  width: 100%;
+  display: grid;
+  gap: .5rem;
+  grid-column: 1 / -1;
+}
+.track-choice { width: 100%; justify-content: space-between; }
+.track-choice .solved { color: var(--hint); }
+.track-unpublished { display: grid; gap: .25rem; padding: .65rem .9rem; }

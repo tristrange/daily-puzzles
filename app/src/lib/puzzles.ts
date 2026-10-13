@@ -41,7 +41,8 @@ async function fetchPuzzle(id: string, fetcher: Fetcher): Promise<Puzzle | null>
   const response = await fetcher(puzzleUrl(id))
   if (!response.ok) return null
   try {
-    return parsePuzzle(await response.json())
+    const puzzle = parsePuzzle(await response.json())
+    return puzzle.id === id ? puzzle : null
   } catch {
     // The SPA shell, a truncated write, or a file that no longer validates.
     return null
@@ -99,6 +100,8 @@ export type PublishedPuzzle = {
   readonly type: Puzzle['puzzleType']
   /** Null for files published before the weekly ramp, which record no band. */
   readonly difficulty: Puzzle['difficulty']
+  readonly width?: number
+  readonly height?: number
 }
 
 /**
@@ -129,6 +132,8 @@ export async function listPublishedPuzzles(
             id: result.value.id,
             type: result.value.puzzle.puzzleType,
             difficulty: result.value.puzzle.difficulty,
+            width: result.value.puzzle.board.width,
+            height: result.value.puzzle.board.height,
           },
         ]
       : [],

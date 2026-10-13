@@ -203,6 +203,7 @@ export function TracksStage({
   const share = async (variant: 'result' | 'solution') => {
     const counted = firstSolve ?? { elapsedMs: shownTime, hints: 0 }
     const result: ShareResult = {
+      puzzleId: puzzle.id,
       width: grid.width,
       height: grid.height,
       puzzleType: puzzle.puzzleType,

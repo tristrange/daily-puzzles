@@ -80,12 +80,12 @@
 - Storage keys include the full puzzle ID. A versioned snapshot contains the board fingerprint, cell values (including Cross/Maybe) and nonnegative elapsed milliseconds. Invalid values, changed givens, wrong board fingerprints and completed boards do not restore. Storage failures remain non-fatal; return saving success so the stage can warn only when an actual save fails.
 - `TracksStage` initializes from the saved snapshot; elapsed time resumes from that value and pauses between visits. Save on edits, periodic timer updates and page exit. Clear unfinished progress upon solving; retain first-solve statistics and the existing replay behavior. Undo remains bounded and visit-local.
 
-- [ ] Write `trackProgress.test.ts` RED: independent small/medium/large keys, pieces and notes round-trip, elapsed values differ, immutable givens preserved, corrupt/version-mismatched/stale snapshots rejected, unavailable storage handled, completed snapshots ignored/cleared.
-- [ ] Add `stats.test.ts` regressions: three same-day variants count as three Train Tracks solves but one streak day; replaying Small preserves its first solve without blocking Medium or Large.
-- [ ] Run `npm test -- src/lib/trackProgress.test.ts src/lib/stats.test.ts` RED; expected: missing progress functions/new expectations fail.
-- [ ] Implement the storage helper and wire TracksStage, preserving pure game transitions and solved detection. Do not introduce generic storage infrastructure or persist undo history.
-- [ ] Run focused tests GREEN, `npm run typecheck` and `npm run lint`. Expected: pass; browser integration proof follows in Task 5.
-- [ ] Commit `feat(app): save each Train Tracks board independently`.
+- [x] Write `trackProgress.test.ts` RED: independent small/medium/large keys, pieces and notes round-trip, elapsed values differ, immutable givens preserved, corrupt/version-mismatched/stale snapshots rejected, unavailable storage handled, completed snapshots ignored/cleared.
+- [x] Add `stats.test.ts` regressions: three same-day variants count as three Train Tracks solves but one streak day; replaying Small preserves its first solve without blocking Medium or Large.
+- [x] Run `npm test -- src/lib/trackProgress.test.ts src/lib/stats.test.ts` RED; expected: missing progress functions/new expectations fail.
+- [x] Implement the storage helper and wire TracksStage, preserving pure game transitions and solved detection. Do not introduce generic storage infrastructure or persist undo history.
+- [x] Run focused tests GREEN, `npm run typecheck` and `npm run lint`. Expected: pass; browser integration proof follows in Task 5.
+- [x] Commit `feat(app): save each Train Tracks board independently`.
 
 ### Task 4: Show sizes throughout the player interface
 
@@ -94,12 +94,12 @@
 - Reject a fetched envelope whose ID differs from the requested route, so a valid Small payload cannot be played or saved under a Large link. Add optional dimensions to `PublishedPuzzle`, populated from fetched boards; legacy fixtures remain compatible. Archive rows display named sizes and dimensions; historical 7×7 rows show dimensions without a size label.
 - Add `puzzleId: string` to internal `ShareResult`, used to obtain a named size from the ID. Update both stage callers and share test fixtures. Recent solves use the same variant labels, while all variants remain in the Train Tracks statistics family.
 
-- [ ] Write failing `HomePage.test.tsx` SSR tests with controlled probes: exactly one Train Tracks card, three correct links/labels, Small solved without marking the others, missing Medium shown independently, and unchanged legacy card. Follow the existing ArchiveGroups renderer pattern without new dependencies.
-- [ ] Extend archive, puzzle-list, share and StatsPage tests: all three IDs survive discovery/grouping, a different ID returned for a requested route is rejected, size labels/dimensions appear, legacy 7×7 is unlabelled, and recent solves distinguish sizes.
-- [ ] Run focused app tests RED; expected: new links/labels/dimensions fail.
-- [ ] Implement labels on Today, puzzle headings, archive, shares and recent solves. Reuse the existing typography, appearance tokens and 44px controls. Stack clear size links inside the single Train Tracks card; do not add a page selector that discards state or any difficulty labels.
-- [ ] Run the complete app suite, typing/lint and build GREEN. Expected: pass with no new dependencies or theme changes.
-- [ ] Commit `feat(app): offer Small Medium and Large Train Tracks`.
+- [x] Write failing `HomePage.test.tsx` SSR tests with controlled probes: exactly one Train Tracks card, three correct links/labels, Small solved without marking the others, missing Medium shown independently, and unchanged legacy card. Follow the existing ArchiveGroups renderer pattern without new dependencies.
+- [x] Extend archive, puzzle-list, share and StatsPage tests: all three IDs survive discovery/grouping, a different ID returned for a requested route is rejected, size labels/dimensions appear, legacy 7×7 is unlabelled, and recent solves distinguish sizes.
+- [x] Run focused app tests RED; expected: new links/labels/dimensions fail.
+- [x] Implement labels on Today, puzzle headings, archive, shares and recent solves. Reuse the existing typography, appearance tokens and 44px controls. Stack clear size links inside the single Train Tracks card; do not add a page selector that discards state or any difficulty labels.
+- [x] Run the complete app suite, typing/lint and build GREEN. Expected: pass with no new dependencies or theme changes.
+- [x] Commit `feat(app): offer Small Medium and Large Train Tracks`.
 
 ### Task 5: Content, browser proof and PR delivery
 

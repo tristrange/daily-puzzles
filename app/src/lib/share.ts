@@ -13,6 +13,7 @@
 
 import type { Board, PuzzleType } from '../domain/board'
 import { PUZZLE_TYPE_LABEL } from '../domain/games'
+import { trackVariantOf } from '../domain/trackSizes'
 import { formatTime } from '../domain/game'
 import { PIECE_GLYPHS, TrackGrid } from '../domain/tracks'
 
@@ -39,6 +40,7 @@ const EMPTY = '⬛'
  * was, and none of them give the puzzle away.
  */
 export type ShareResult = {
+  readonly puzzleId: string
   readonly width: number
   readonly height: number
   readonly puzzleType: PuzzleType
@@ -135,8 +137,9 @@ export function buildSolutionShareText(
 
 function headerLines(result: ShareResult): [string, string] {
   const hints = result.hints === 0 ? 'no hints' : `${result.hints} hint${result.hints === 1 ? '' : 's'}`
+  const variant = result.puzzleType === 'train-tracks' ? trackVariantOf(result.puzzleId) : null
   return [
-    `Daily Puzzles — ${PUZZLE_TYPE_LABEL[result.puzzleType]} ${result.width}×${result.height}`,
+    `Daily Puzzles — ${PUZZLE_TYPE_LABEL[result.puzzleType]}${variant ? ` ${variant.label}` : ''} ${result.width}×${result.height}`,
     `${formatTime(result.elapsedMs)} · ${hints}`,
   ]
 }

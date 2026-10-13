@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { PUZZLE_TYPES, type PuzzleType } from '../domain/board'
 import { PUZZLE_TYPE_LABEL, PUZZLE_TYPE_PUBLISHED } from '../domain/games'
 import { marksBoard } from '../domain/helpers'
+import small from '../../../conformance/id-cases/tracks-small.accept.json'
+import medium from '../../../conformance/id-cases/tracks-medium.accept.json'
+import large from '../../../conformance/id-cases/tracks-large.accept.json'
 
 const isPublished = (type: PuzzleType) => PUZZLE_TYPE_PUBLISHED[type]
 import type { DifficultyBand } from '../domain/puzzle'
@@ -73,6 +76,9 @@ describe('puzzleUrl', () => {
 })
 
 describe('loadPuzzle', () => {
+  it('rejects a valid Small response returned for a Large route', async () => {
+    await expect(loadPuzzle(large.id, async () => jsonResponse(small))).rejects.toBeInstanceOf(PuzzleNotFoundError)
+  })
   const starBattle = {
     id: '2026-10-04',
     type: 'star-battle',
@@ -137,8 +143,19 @@ describe('loadPuzzle', () => {
 })
 
 describe('listPublishedPuzzles', () => {
+  it('discovers all three daily boards with dimensions in one family', async () => {
+    const fixtures = [small, medium, large]
+    const found = await listPublishedPuzzles('2026-10-17', async (url) => {
+      const data = fixtures.find((fixture) => url.endsWith(`/${fixture.id}.json`))
+      return data ? jsonResponse(data) : spaShellResponse()
+    })
+    expect(found.map((puzzle) => [puzzle.id, puzzle.width, puzzle.height])).toEqual([
+      [small.id, 8, 8], [medium.id, 10, 10], [large.id, 12, 12],
+    ])
+    expect(groupPublishedPuzzles(found)).toHaveLength(1)
+  })
   const published = ['2026-10-03', '2026-10-01', '2026-09-28']
-  const queens = published.map((id) => ({ id, type: 'queens', difficulty: null }))
+  const queens = published.map((id) => ({ id, type: 'queens', difficulty: null, width: 3, height: 3 }))
 
   it('returns only days with a puzzle file, newest first', async () => {
     const found = await listPublishedPuzzles('2026-10-03', fetcherFor(published))
@@ -157,7 +174,7 @@ describe('listPublishedPuzzles', () => {
 
     const found = await listPublishedPuzzles('2026-10-03', mislabelled)
 
-    expect(found).toEqual([{ id: '2026-10-03-star', type: 'queens', difficulty: null }])
+    expect(found).toEqual([{ id: '2026-10-03-star', type: 'queens', difficulty: null, width: 3, height: 3 }])
   })
 
   it('probes a bounded recent window', async () => {
@@ -180,9 +197,9 @@ describe('listPublishedPuzzles', () => {
     const found = await listPublishedPuzzles('2026-10-03', fetcherFor(both))
 
     expect(found).toEqual([
-      { id: '2026-10-03', type: 'queens', difficulty: null },
-      { id: '2026-10-03-star', type: 'star-battle', difficulty: null },
-      { id: '2026-10-02', type: 'queens', difficulty: null },
+      { id: '2026-10-03', type: 'queens', difficulty: null, width: 3, height: 3 },
+      { id: '2026-10-03-star', type: 'star-battle', difficulty: null, width: 3, height: 3 },
+      { id: '2026-10-02', type: 'queens', difficulty: null, width: 3, height: 3 },
     ])
   })
 
@@ -191,7 +208,7 @@ describe('listPublishedPuzzles', () => {
     // one must be absent from the listing rather than listed as broken.
     const found = await listPublishedPuzzles('2026-10-03', fetcherFor(['2026-10-03']))
 
-    expect(found).toEqual([{ id: '2026-10-03', type: 'queens', difficulty: null }])
+    expect(found).toEqual([{ id: '2026-10-03', type: 'queens', difficulty: null, width: 3, height: 3 }])
   })
 
   it('ignores days that answer 200 with the SPA shell rather than a puzzle', async () => {
@@ -217,8 +234,8 @@ describe('listPublishedPuzzles', () => {
     }
     const found = await listPublishedPuzzles('2026-10-03', broken)
     expect(found).toEqual([
-      { id: '2026-10-03', type: 'queens', difficulty: null },
-      { id: '2026-09-28', type: 'queens', difficulty: null },
+      { id: '2026-10-03', type: 'queens', difficulty: null, width: 3, height: 3 },
+      { id: '2026-09-28', type: 'queens', difficulty: null, width: 3, height: 3 },
     ])
   })
 

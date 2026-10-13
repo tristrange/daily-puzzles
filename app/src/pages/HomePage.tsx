@@ -4,6 +4,7 @@ import type { PuzzleType } from '../domain/board'
 import { formatPuzzleLabel, puzzleIdsForDay, puzzleOfToday, puzzleTypeOf } from '../domain/dates'
 import { DEFAULT_PUZZLE_TYPE, DIFFICULTY_LABEL, PUZZLE_TYPE_LABEL, PUZZLE_PIECE } from '../domain/games'
 import { probePuzzles, type ProbedPuzzle } from '../lib/puzzles'
+import { trackVariantOf } from '../domain/trackSizes'
 import { readStoredStats } from '../lib/stats'
 
 type LoadState =
@@ -57,48 +58,7 @@ export function HomePage() {
       </div>
       {state.status === 'loading' && <p className="status">Checking what&rsquo;s out…</p>}
       {state.status === 'ready' && (
-        <ul className="game-cards">
-          {state.probes.map((probe) => {
-            const family = probe.puzzle?.puzzleType ?? familyOf(probe.id)
-            return (
-            <li key={probe.id} className={`game-card game-${family}`}>
-              <div className="game-motif" aria-hidden="true">
-                <div className="motif-grid">
-                  {Array.from({ length: 9 }, (_, cell) => (
-                    <span key={cell} className={cell === 4 ? 'motif-piece' : ''}>
-                      {cell === 4 && PUZZLE_PIECE[family].glyph}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <h2 className="game-card-title">{PUZZLE_TYPE_LABEL[family]}</h2>
-              <p className="game-card-description">{DESCRIPTION[family]}</p>
-              <p className="game-card-detail">
-                {probe.puzzle !== null && (
-                  <>{probe.puzzle.board.width}&times;{probe.puzzle.board.height} grid</>
-                )}
-                {probe.puzzle?.difficulty != null && (
-                  <> · {DIFFICULTY_LABEL[probe.puzzle.difficulty]}</>
-                )}
-              </p>
-              {probe.puzzle === null ? (
-                <p className="game-card-state">Not published yet.</p>
-              ) : solved.has(probe.id) ? (
-                <>
-                  <p className="game-card-state solved">Solved today.</p>
-                  <Link className="tool-button primary" to={`/archive/${probe.id}`} aria-label={`Play ${PUZZLE_TYPE_LABEL[family]} again`}>
-                    Play again <span aria-hidden="true">↗</span>
-                  </Link>
-                </>
-              ) : (
-                <Link className="tool-button primary" to={`/archive/${probe.id}`} aria-label={`Play ${PUZZLE_TYPE_LABEL[family]}`}>
-                  Play <span aria-hidden="true">↗</span>
-                </Link>
-              )}
-            </li>
-            )
-          })}
-        </ul>
+        <TodayCards probes={state.probes} solved={solved} />
       )}
       <div className="today-more">
         <p>Another round?</p>
@@ -106,6 +66,83 @@ export function HomePage() {
         <Link to="/stats">Your progress <span aria-hidden="true">→</span></Link>
       </div>
     </section>
+  )
+}
+
+/** Rendering is shared by the daily page and controlled publication-state tests. */
+export function TodayCards({ probes, solved }: {
+  readonly probes: readonly ProbedPuzzle[]
+  readonly solved: ReadonlySet<string>
+}) {
+  const groups = new Map<PuzzleType, ProbedPuzzle[]>()
+  for (const probe of probes) {
+    const family = probe.puzzle?.puzzleType ?? familyOf(probe.id)
+    const group = groups.get(family)
+    if (group) group.push(probe)
+    else groups.set(family, [probe])
+  }
+  return (
+    <ul className="game-cards">
+      {[...groups].map(([family, entries]) => {
+        const probe = entries[0]!
+        const sized = family === 'train-tracks' && trackVariantOf(probe.id) !== null
+        return (
+          <li key={family} className={`game-card game-${family}`}>
+            <div className="game-motif" aria-hidden="true">
+              <div className="motif-grid">
+                {Array.from({ length: 9 }, (_, cell) => (
+                  <span key={cell} className={cell === 4 ? 'motif-piece' : ''}>
+                    {cell === 4 && PUZZLE_PIECE[family].glyph}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <h2 className="game-card-title">{PUZZLE_TYPE_LABEL[family]}</h2>
+            <p className="game-card-description">{DESCRIPTION[family]}</p>
+            {sized ? (
+              <ul className="track-variants">
+                {entries.map((entry) => {
+                  const variant = trackVariantOf(entry.id)!
+                  const label = `${variant.label} · ${variant.side}×${variant.side}`
+                  const again = solved.has(entry.id)
+                  return (
+                    <li key={entry.id}>
+                      {entry.puzzle === null ? (
+                        <div className="track-unpublished">
+                          <span>{label}</span><span className="game-card-state">Not published yet.</span>
+                        </div>
+                      ) : (
+                        <Link className="tool-button track-choice" to={`/archive/${entry.id}`}
+                          aria-label={`Play Train Tracks ${variant.label}${again ? ' again' : ''}`}>
+                          <span>{label}</span>
+                          <span className={again ? 'solved' : ''}>{again ? 'Solved' : 'Play'} <span aria-hidden="true">↗</span></span>
+                        </Link>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            ) : (
+              <>
+                <p className="game-card-detail">
+                  {probe.puzzle !== null && <>{probe.puzzle.board.width}&times;{probe.puzzle.board.height} grid</>}
+                  {probe.puzzle?.difficulty != null && <> · {DIFFICULTY_LABEL[probe.puzzle.difficulty]}</>}
+                </p>
+                {probe.puzzle === null ? <p className="game-card-state">Not published yet.</p> : (
+                  <>
+                    {solved.has(probe.id) && <p className="game-card-state solved">Solved today.</p>}
+                    <Link className="tool-button primary" to={`/archive/${probe.id}`}
+                      aria-label={`Play ${PUZZLE_TYPE_LABEL[family]}${solved.has(probe.id) ? ' again' : ''}`}>
+                      {solved.has(probe.id) ? 'Play again' : 'Play'} <span aria-hidden="true">↗</span>
+                    </Link>
+                  </>
+                )}
+              </>
+            )}
+          </li>
+        )
+      })}
+    </ul>
   )
 }
 

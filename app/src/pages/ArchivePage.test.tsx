@@ -39,6 +39,21 @@ const starBattle = (id: string, difficulty: DifficultyBand | null = null): Publi
 })
 
 describe('ArchiveGroups', () => {
+  it('keeps sizes grouped under one family and labels legacy dimensions honestly', () => {
+    const html = render([
+      { id: '2026-10-17-tracks-small', type: 'train-tracks', difficulty: null, width: 8, height: 8 },
+      { id: '2026-10-17-tracks-medium', type: 'train-tracks', difficulty: null, width: 10, height: 10 },
+      { id: '2026-10-17-tracks-large', type: 'train-tracks', difficulty: null, width: 12, height: 12 },
+      { id: '2026-10-16-tracks', type: 'train-tracks', difficulty: null, width: 7, height: 7 },
+    ])
+    expect(html.match(/archive-group-title/g)).toHaveLength(1)
+    expect(html).toContain('Small · 8×8')
+    expect(html).toContain('Medium · 10×10')
+    expect(html).toContain('Large · 12×12')
+    expect(html).toContain('7×7')
+    expect(html).not.toContain('Small · 7×7')
+  })
+
   it('names each family in a heading and nests its puzzles underneath', () => {
     const html = render([
       queens('2026-10-03'),
