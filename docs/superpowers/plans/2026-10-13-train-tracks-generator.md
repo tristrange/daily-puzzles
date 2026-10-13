@@ -94,7 +94,7 @@
 - [x] **Run final required checks** from `engine`: `./.venv/bin/python -m pytest -q`, `./.venv/bin/pyright`, `./.venv/bin/ruff check .`, `./.venv/bin/ruff format --check .`, `./.venv/bin/python -m tools.verify --dir ../app/public/puzzles`, and `./.venv/bin/python -m tools.schema_ids --check`. From `app`, run `npm test` and `npm run build` to confirm corpus consumers still work.
 - [x] **Document measured results** in `docs/journal.md`, including final budgets, sample failure rates, given counts and the unchanged 7×7 publishing schedule. Update the benchmark's usage documentation in its module docstring.
 - [x] **Commit:** `test(engine): measure larger Train Tracks generation`.
-- [ ] **Request one independent whole-branch review**, fix actionable findings and rerun relevant checks. Open and attach PR 1 with the measured results and legacy-replay proof; wait for its checks and leave merging to the user. Do not activate the three daily variants in this PR.
+- [x] **Request one independent whole-branch review**, fix actionable findings and rerun relevant checks. Open and attach PR 1 with the measured results and legacy-replay proof; wait for its checks and leave merging to the user. Do not activate the three daily variants in this PR.
 
 ## PR 2 handoff
 
