@@ -775,3 +775,28 @@ provided the single review.
 The final main refresh added the newly published October 16 Queens, Star Battle
 and legacy Train Tracks files plus their hint baseline. They were merged intact;
 activation stays October 17 and the corpus boundary regression still passes.
+
+## Move the three-size rollout to October 14
+
+The rollout now starts October 14, 2026, superseding the original October 17
+activation above. The daily publisher generated all nine Small/Medium/Large
+boards for October 14–16 using the unchanged full-ID seed recipe and version-3
+budgets. October 17–20 boards remain intact. All nine new boards passed independent
+unique-solution/rule validation and replay; rerunning publication was a no-op.
+All 75 previously committed puzzle files were compared with main byte-for-byte
+and preserved, bringing the corpus to 84 files.
+
+Queued 7×7 boards for October 14–16 remain archive extras. Archive discovery now
+probes the legacy slot in addition to current daily slots, deduplicating requests
+before activation. This adds at most one probe per archive day after activation;
+it requires no retirement-date configuration. The daily chooser still receives
+only the three named sizes. Old links, progress, solves and board fingerprints
+remain valid.
+
+Regression tests observed tomorrow's three-size schedule failing before the
+cutover moved, and the queued legacy archive entry disappearing after moving
+only the date. Both now pass. The old latest-legacy-date gate is replaced by a
+check that all three boards for the first four rollout days are committed and
+valid. Window tests retain a fixed preactivation clock; transition tests explicitly
+cover October 13/14. App suite: 461 passed. Publisher/rulebook/ID conformance
+checks, typing/lint/format, schema pattern and app production build passed.

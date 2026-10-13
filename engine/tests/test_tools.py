@@ -33,6 +33,7 @@ from queens_engine import (
     dumps_puzzle,
     generate_puzzle,
     generate_ramped,
+    load_puzzle,
     parse_puzzle,
     rulebook_for,
     rulebooks,
@@ -47,7 +48,7 @@ from queens_engine.track_sizes import TRACK_SIZES_START
 #: keeps its real 9x9: Star Battle is only feasible at 8x8 and 9x9, so there is
 #: nothing smaller to pin it to.
 SMALL_SIZE = 5
-TEST_TODAY = date(2026, 10, 13)
+TEST_TODAY = date(2026, 10, 10)
 
 
 @contextmanager
@@ -568,13 +569,13 @@ class TestDailyTrackSlots:
     @pytest.mark.parametrize(
         "day,names",
         [
-            (date(2026, 10, 16), ("2026-10-16-tracks",)),
+            (date(2026, 10, 13), ("2026-10-13-tracks",)),
             (
-                date(2026, 10, 17),
+                date(2026, 10, 14),
                 (
-                    "2026-10-17-tracks-small",
-                    "2026-10-17-tracks-medium",
-                    "2026-10-17-tracks-large",
+                    "2026-10-14-tracks-small",
+                    "2026-10-14-tracks-medium",
+                    "2026-10-14-tracks-large",
                 ),
             ),
         ],
@@ -844,8 +845,12 @@ class TestStarLayoutRepeat:
         assert recent == expected
 
 
-def test_track_activation_follows_committed_legacy_content() -> None:
+def test_first_four_daily_track_batches_are_committed() -> None:
     corpus = Path(__file__).resolve().parents[2] / "app" / "public" / "puzzles"
-    legacy_days = [date.fromisoformat(path.stem[:10]) for path in corpus.glob("*-tracks.json")]
-    assert legacy_days
-    assert max(legacy_days) < TRACK_SIZES_START
+    book = rulebook_for(PuzzleType.TRAIN_TRACKS)
+    for offset in range(4):
+        day = TRACK_SIZES_START + timedelta(days=offset)
+        for identifier in book.daily_ids(day):
+            puzzle = load_puzzle(corpus / f"{identifier}.json")
+            assert puzzle.id == identifier
+            assert puzzle.puzzle_type is PuzzleType.TRAIN_TRACKS

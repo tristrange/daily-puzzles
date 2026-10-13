@@ -397,7 +397,7 @@ most cells; that is the cost of the guarantee, and the × glyph still carries th
 
 ## Daily Train Tracks sizes and saved boards
 
-From October 17, 2026 the daily chooser groups Small 8×8, Medium 10×10 and Large
+From October 14, 2026 the daily chooser groups Small 8×8, Medium 10×10 and Large
 12×12 under one Train Tracks card. Each link has its own published/solved state.
 The full ID names the route, archive entry, result share and first solve; the
 family remains `train-tracks`. A response carrying another ID is rejected.

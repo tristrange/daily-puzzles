@@ -110,8 +110,8 @@ Version 1 permits zero clues; version 2 requires every row and column to be used
 Existing archive files, including prepublished puzzles, are not rewritten.
 
 ```sh
-python -m tools.generate --date 2026-10-16 --type train-tracks   # legacy 7x7
-python -m tools.generate --date 2026-10-17-tracks-large --type train-tracks
+python -m tools.generate --date 2026-10-13 --type train-tracks   # legacy 7x7
+python -m tools.generate --date 2026-10-14-tracks-large --type train-tracks
 ```
 
 ### Benchmarking larger boards
@@ -129,7 +129,7 @@ exclude validation and startup. JSON reports retain failed and timed-out seeds
 in the denominator and preserve completed results on interruption. The command
 exits nonzero if any size completes fewer than 95% of seeds or any returned board
 fails validation. See [measured results](../docs/journal.md#scattered-train-tracks-givens-and-larger-board-proof).
-Daily publishing switches to all three named variants on October 17, 2026.
+Daily publishing switches to all three named variants on October 14, 2026.
 The shared ID manifest pins this date; existing legacy files remain unchanged.
 
 ## The rules are a public interface

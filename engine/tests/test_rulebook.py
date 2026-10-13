@@ -267,13 +267,13 @@ class TestTracks:
 
     def test_daily_slots_change_without_renaming_legacy_ids(self) -> None:
         book = rulebook_for(PuzzleType.TRAIN_TRACKS)
-        assert book.daily_ids(date(2026, 10, 16)) == ("2026-10-16-tracks",)
-        assert book.daily_ids(date(2026, 10, 17)) == (
-            "2026-10-17-tracks-small",
-            "2026-10-17-tracks-medium",
-            "2026-10-17-tracks-large",
+        assert book.daily_ids(date(2026, 10, 13)) == ("2026-10-13-tracks",)
+        assert book.daily_ids(date(2026, 10, 14)) == (
+            "2026-10-14-tracks-small",
+            "2026-10-14-tracks-medium",
+            "2026-10-14-tracks-large",
         )
-        assert puzzle_id(date(2026, 10, 17), PuzzleType.TRAIN_TRACKS) == "2026-10-17-tracks"
+        assert puzzle_id(date(2026, 10, 14), PuzzleType.TRAIN_TRACKS) == "2026-10-14-tracks"
 
     """The promises Train Tracks makes that the marks genres cannot make.
 
