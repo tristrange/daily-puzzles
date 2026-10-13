@@ -394,3 +394,18 @@ The two inks are now a near-black red and a pale one, and the choice is made by
 simply that the better of the two clears 3:1, which `colours.test.ts` asserts for every
 region in the palette. Worst case 4.08:1. The cross is therefore darker than it was on
 most cells; that is the cost of the guarantee, and the × glyph still carries the meaning.
+
+## Daily Train Tracks sizes and saved boards
+
+From October 17, 2026 the daily chooser groups Small 8×8, Medium 10×10 and Large
+12×12 under one Train Tracks card. Each link has its own published/solved state.
+The full ID names the route, archive entry, result share and first solve; the
+family remains `train-tracks`. A response carrying another ID is rejected.
+
+`lib/trackProgress.ts` saves unfinished pieces, Cross/Maybe notes and elapsed
+milliseconds under the full ID. A version and board fingerprint protect against
+stale or malformed snapshots; givens cannot change. Saves occur on edits, timer
+updates and page exit. Revisiting resumes only active play time. Undo remains
+visit-local. Solving clears the unfinished snapshot; replay starts fresh and
+never replaces the first-solve record. Storage failures leave play usable and
+show a warning after an actual failed save.

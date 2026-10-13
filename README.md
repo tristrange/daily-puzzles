@@ -7,8 +7,8 @@ app that plays them.
 **Live site → [tristrange.github.io/daily-puzzles](https://tristrange.github.io/daily-puzzles/)**
 
 No server, no database and no account. The entire product is a static site and a directory
-of committed puzzle files. Two games ship, each with its own solve of the day: **Queens**
-and **Star Battle**.
+of committed puzzle files. Three games ship: **Queens**, **Star Battle**, and
+**Train Tracks**. Each board has its own first solve.
 
 ---
 
@@ -42,6 +42,18 @@ reason and rate the board from that. It is not formally decidable, and the proje
 pretend otherwise.)
 
 [Why Star Battle is not logic-gated →](docs/journal.md#the-second-puzzle-type)
+
+**Train Tracks** — connect two given edge endpoints with one continuous track, matching
+all row and column counts. No branches or closed loops. Starting October 17, 2026,
+each day offers **Small 8×8**, **Medium 10×10**, and **Large 12×12**. These describe
+board size, not difficulty. New boards use every row and column, scatter extra
+givens, and have a proven unique solution; no logic-only guarantee is claimed.
+Historical 7×7 boards remain playable with their original rules and contents.
+
+Unfinished Train Tracks boards and elapsed time save independently in this browser.
+Time pauses between page visits; undo belongs to the current visit. Finished boards
+start fresh for replay while the original solve stays in stats. Appearance defaults
+to Auto, following the system, with Light and Dark overrides.
 
 ---
 

@@ -40,6 +40,7 @@ from queens_engine import (
     star_layout,
     target_for,
 )
+from queens_engine.track_sizes import TRACK_SIZES_START
 
 #: The board size windowing tests publish at. 5x5 is the fastest thing the
 #: generator makes and none of these tests care about the size. The companion
@@ -804,3 +805,10 @@ class TestStarLayoutRepeat:
             ),
         }
         assert recent == expected
+
+
+def test_track_activation_follows_committed_legacy_content() -> None:
+    corpus = Path(__file__).resolve().parents[2] / "app" / "public" / "puzzles"
+    legacy_days = [date.fromisoformat(path.stem[:10]) for path in corpus.glob("*-tracks.json")]
+    assert legacy_days
+    assert max(legacy_days) < TRACK_SIZES_START

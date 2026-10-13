@@ -692,3 +692,71 @@ solver/benchmark tests. Daily variants, activation and mobile changes remain PR 
 GitHub review identified missing README command documentation and a stale version-2
 description. Both READMEs now document the benchmark and the engine guide describes
 version 3 and legacy replay. CLI help and all three replay fixture tests passed.
+
+## Three daily Train Tracks sizes
+
+Small 8×8, Medium 10×10 and Large 12×12 activate on October 17, 2026. These are
+size names, not difficulty ratings. The shared ID contract owns activation,
+suffixes, dimensions and labels. Named IDs must match the declared family and
+board dimensions in both parsers. Publication hashes each full ID, retains the
+version-3 budgets, and retries seeds without substituting smaller boards.
+Interrupted runs fill only missing slots. Every existing corpus byte is preserved.
+Main was checked before delivery: its latest legacy tracks date is October 15;
+October 17 also clears the current three-day publishing lead. A corpus test guards
+that activation follows the latest legacy date.
+
+The app groups three links in one card, including independent solved/unpublished
+states. Labels continue through puzzle pages, archive, recent solves and shares.
+Train Tracks-only snapshots preserve each unfinished board, notes and active time;
+givens and board fingerprints are validated. Undo stays visit-local. Completed
+boards replay fresh; first solves remain independent and immutable.
+
+The actual publishing recipe generated October 17–26, all three sizes each day.
+All 30 boards passed independent unbounded two-solution enumeration, direct rule
+checks and deterministic replay. No seed failed or required a retry. The first
+12 boards (October 17–20) are committed. Day timings include generation and
+independent validation; every day stayed below the 60-second acceptance limit:
+
+| Day | Three boards plus validation |
+| --- | --- |
+| 2026-10-17 | 1.321s |
+| 2026-10-18 | 1.288s |
+| 2026-10-19 | 0.994s |
+| 2026-10-20 | 3.626s |
+| 2026-10-21 | 0.721s |
+| 2026-10-22 | 0.522s |
+| 2026-10-23 | 1.378s |
+| 2026-10-24 | 3.249s |
+| 2026-10-25 | 0.749s |
+| 2026-10-26 | 1.586s |
+
+Measured on macOS-27.0.1-arm64 / Python 3.13.15. These are sample timings, not
+hardware guarantees. [Raw report](measurements/train-tracks-daily-sizes.json)
+retains each initial seed, attempt outcome and board timing. Generation policy
+uses state budgets, never measurement wall-clock deadlines.
+
+Browser checks used a separate local origin and a temporary future-day preview
+rendered by production TodayCards/ArchiveGroups/Shell components. The preview
+controlled Small's solved state and other families' unpublished state; it was
+removed after checking. Actual puzzle pages were played normally through the
+visible controls. Small, Medium and Large all solved independently; stats showed
+three solves, one streak day, and their original times. Large result sharing
+included its size and exact route. Reload restored unfinished Cross/Maybe notes;
+leaving Large at 0:25 and returning after playing another size resumed at 0:25.
+Reloading a completed board started a fresh replay without another solve.
+
+Light, Dark and Auto were checked; Auto remained selected after reload. Layouts
+fit at 320px, 390px and 1100px without horizontal overflow. Size links and all
+picker faces measured 44px high (picker faces also 44px wide). Large-board cells
+measured 18.73px at 320px and 24.56px at 390px. The board remains usable with
+keyboard input, but precise touch targets are small on narrow phones; a zoom
+interaction is a future improvement, not part of this PR.
+
+[Chooser and archive preview](images/tracks-sizes-chooser.png) ·
+[Large board in mobile dark mode](images/tracks-large-mobile.png).
+
+Verification: 490 engine tests and 460 app tests passed, plus engine typing,
+lint/format, schema IDs, all 72 committed puzzle replays, app typing/lint and
+production build. Regenerating the hint baseline produced the same 1,644 positions
+over 40 marks puzzles; Train Tracks retains its existing separate genre gate.
+App lint retains the existing non-failing TracksStage effect warning.
