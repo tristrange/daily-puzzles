@@ -185,10 +185,7 @@ class Puzzle:
     puzzle_type: PuzzleType
     seed: int
     generator_version: int
-    #: The board this type plays. `Board` for the two marks genres, `TrackGrid` for
-    #: Train Tracks — a grid that is not made of regions, is not square, and obeys
-    #: reciprocity rather than a capacity. Callers that need the geometry ask the
-    #: rulebook's `dimensions`, which answers for both.
+    #: Family-specific grid. Shared readers ask the rulebook for dimensions.
     board: Board | TrackGrid | WordGrid
     #: Band index, 1-based into `LEVEL_NAMES`. `None` for boards published
     #: before the weekly ramp, and for anything generated outside a target.

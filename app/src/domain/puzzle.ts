@@ -36,16 +36,7 @@ export interface Puzzle {
   readonly puzzleType: PuzzleType
   readonly seed: number
   readonly generatorVersion: number
-  /**
-   * The board this type plays.
-   *
-   * `Board` for the two marks genres, `TrackGrid` for Train Tracks — a grid that
-   * is not made of regions, is not square, and obeys reciprocity rather than a
-   * capacity. There is no `size` on a puzzle: a grid that need not be square has
-   * none, and reading one off the board instead is what keeps that honest. Both
-   * board classes answer `width`, `height`, `cellCount`, `index` and `coords`, so
-   * a caller that only needs geometry asks for those and does not branch.
-   */
+  /** Family-specific grid. Shared readers use width, height and cellCount. */
   readonly board: Board | TrackGrid | WordGrid
   readonly difficulty: DifficultyBand | null
 }
