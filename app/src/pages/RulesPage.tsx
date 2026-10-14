@@ -260,6 +260,17 @@ export function RulesPage() {
         need, and what is wrong with it if anything is.
       </p>
 
+      <h2>Word Paths preview</h2>
+      <p>Find words by tracing adjoining letters up, down, left or right. Use every
+        letter once, with one word of each shown length. Blocked cells and letters
+        already used by a word cannot be selected. Drag and release to submit, or
+        tap letters and use Submit. Space selects a focused letter; Enter submits.
+        Backspace removes the last letter, Escape clears selection, and Undo removes
+        the last accepted word. Accepted words can lead to dead ends. The game uses
+        a finite English word list; it does not recognize every English word.</p>
+      <p><Link to="/preview/word-paths">Try the Word Paths preview</Link>. Preview
+        progress is saved separately and does not affect daily stats.</p>
+
       <h2>Hints</h2>
       <p>
         In Queens, <strong>H</strong> or the <strong>Hint</strong> button names a cell and says
