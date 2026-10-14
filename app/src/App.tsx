@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { HashRouter, Route, Routes } from 'react-router-dom'
 import './App.css'
 import { Shell } from './components/Shell'
@@ -8,7 +9,7 @@ import { PuzzlePage } from './pages/PuzzlePage'
 import { RulesPage } from './pages/RulesPage'
 import { StarBattlePage } from './pages/StarBattlePage'
 import { StatsPage } from './pages/StatsPage'
-import { WordPathsPreviewPage } from './pages/WordPathsPreviewPage'
+const WordPathsPreviewPage = lazy(() => import('./pages/WordPathsPreviewPage').then((module) => ({ default: module.WordPathsPreviewPage })))
 
 function App() {
   return (
@@ -19,7 +20,7 @@ function App() {
           <Route path="archive" element={<ArchivePage />} />
           <Route path="archive/:id" element={<PuzzlePage />} />
           <Route path="star-battle" element={<StarBattlePage />} />
-          <Route path="preview/word-paths" element={<WordPathsPreviewPage />} />
+          <Route path="preview/word-paths" element={<Suspense fallback={<p className="status">Loading preview…</p>}><WordPathsPreviewPage /></Suspense>} />
           <Route path="stats" element={<StatsPage />} />
           <Route path="how-to-play" element={<RulesPage />} />
           <Route path="*" element={<NotFoundPage />} />

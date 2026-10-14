@@ -23,9 +23,11 @@ board class, which is why #31 left `Board` square instead of widening it.
 
 from __future__ import annotations
 
+import json
 from abc import ABC, abstractmethod
 from dataclasses import replace
 from datetime import date
+from pathlib import Path
 from typing import Any, Final
 
 from .board import (
@@ -54,9 +56,16 @@ from .track_sizes import TRACK_SIZES_START, TRACK_VARIANTS, TrackSize, track_var
 from .tracks import TrackGrid
 from .tracks import count_solutions as count_track_solutions
 from .tracks_gen import TrackGenerationError, generate_grid
-from .word_paths import SearchBudget, WordGrid, WordSearchLimitError, v1_vocabulary
+from .word_paths import (
+    SearchBudget,
+    WordGrid,
+    WordSearchLimitError,
+    v1_vocabulary,
+    vocabulary_for_version,
+)
 from .word_paths import count_solutions as count_word_solutions
 from .word_paths_gen import generate_grid as generate_word_grid
+from .word_paths_gen_v2 import generate_grid as generate_word_grid_v2
 
 #: Star Battle stays at one size until the deduction engine can rate a star board,
 #: so there is nothing to ramp towards and the size is pinned rather than tuned.
@@ -224,7 +233,9 @@ class Rulebook(ABC):
         """
 
     @abstractmethod
-    def parse_board(self, record: dict[str, Any]) -> Board | TrackGrid | WordGrid:
+    def parse_board(
+        self, record: dict[str, Any], *, generator_version: int = 1
+    ) -> Board | TrackGrid | WordGrid:
         """The board a file's `board` object describes.
 
         The schema has already refused the shapes it can express, so this reads the
@@ -349,7 +360,8 @@ class MarkRulebook(Rulebook):
             return f"{header}\n{render_board(board, best)}"
         return f"{header}\n{render_board(board)}"
 
-    def parse_board(self, record: dict[str, Any]) -> Board:
+    def parse_board(self, record: dict[str, Any], *, generator_version: int = 1) -> Board:
+        del generator_version
         size = require_int(record.get("size"), "board.size")
         regions = tuple(
             require_int(value, "board.regions[]")
@@ -524,7 +536,8 @@ class TrackRulebook(Rulebook):
             raise GenerationError(f"{puzzle.id} carries a {type(board).__name__}, not a track grid")
         return board
 
-    def parse_board(self, record: dict[str, Any]) -> TrackGrid:
+    def parse_board(self, record: dict[str, Any], *, generator_version: int = 1) -> TrackGrid:
+        del generator_version
         width = require_int(record.get("width"), "board.width")
         height = require_int(record.get("height"), "board.height")
         row_clues = tuple(
@@ -556,15 +569,27 @@ class TrackRulebook(Rulebook):
         }
 
 
+WORD_PATHS_START: Final = date.fromisoformat(
+    json.loads(
+        (Path(__file__).resolve().parents[3] / "conformance/id-cases/manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )["wordPaths"]["activationDay"]
+)
+
+
 class WordPathRulebook(Rulebook):
-    """Frozen English recipe; file support precedes the playing screen."""
+    """Frozen English recipe with a dated daily launch."""
 
     puzzle_type = PuzzleType.WORD_PATHS
     id_suffix = "-words"
-    published = False
+    published = True
     rated = False
     on_ramp = False
     logic_only = False
+
+    def daily_ids(self, day: date) -> tuple[str, ...]:
+        return super().daily_ids(day) if day >= WORD_PATHS_START else ()
 
     def generate(
         self,
@@ -576,36 +601,46 @@ class WordPathRulebook(Rulebook):
         max_attempts: int | None = None,
     ) -> Puzzle:
         if any(value is not None for value in (size, stars_per_row, max_attempts)):
-            raise GenerationError("word-paths version 1 uses a fixed recipe, without overrides")
-        parsed = split_puzzle_id(puzzle_id)
+            raise GenerationError("word-paths uses fixed versioned recipes, without overrides")
+        return self._generate(seed, puzzle_id, 2)
+
+    def _generate(self, seed: int, identifier: str, version: int) -> Puzzle:
+        parsed = split_puzzle_id(identifier)
         if parsed is None or parsed[1] is not self.puzzle_type:
             raise GenerationError("word-paths requires a canonical date-words id")
         try:
-            grid = generate_word_grid(
-                seed=seed,
-                vocabulary=v1_vocabulary(),
-                budget=SearchBudget(250_000),
-                max_attempts=50,
+            grid = (
+                generate_word_grid(
+                    seed=seed,
+                    vocabulary=v1_vocabulary(),
+                    budget=SearchBudget(250_000),
+                    max_attempts=50,
+                )
+                if version == 1
+                else generate_word_grid_v2(seed=seed, budget=SearchBudget(500_000))
             )
         except (ValueError, WordSearchLimitError) as error:
             raise GenerationError(str(error)) from error
-        return Puzzle(puzzle_id, self.puzzle_type, seed, 1, grid)
+        return Puzzle(identifier, self.puzzle_type, seed, version, grid)
 
     def count_solutions(
         self, board: Board | TrackGrid | WordGrid, *, limit: int = DEFAULT_LIMIT
     ) -> int:
-        return count_word_solutions(self._grid(board), v1_vocabulary(), limit=limit)
+        grid = self._grid(board)
+        return count_word_solutions(
+            grid, vocabulary_for_version(grid.vocabulary_version), limit=limit
+        )
 
     def deduce(self, board: Board | TrackGrid | WordGrid, *, allow_guesses: bool = True) -> None:
         del board, allow_guesses
 
     def replay(self, puzzle: Puzzle) -> Puzzle:
-        if puzzle.generator_version != 1:
+        if puzzle.generator_version not in (1, 2):
             raise GenerationError(
                 f"unsupported word-paths generator version {puzzle.generator_version}"
             )
         self._grid(puzzle.board)
-        return self.generate(seed=puzzle.seed, puzzle_id=puzzle.id)
+        return self._generate(puzzle.seed, puzzle.id, puzzle.generator_version)
 
     def dimensions(self, puzzle: Puzzle) -> tuple[int, int]:
         grid = self._grid(puzzle.board)
@@ -625,7 +660,7 @@ class WordPathRulebook(Rulebook):
             raise GenerationError("word-paths needs a word grid")
         return board
 
-    def parse_board(self, record: dict[str, Any]) -> WordGrid:
+    def parse_board(self, record: dict[str, Any], *, generator_version: int = 1) -> WordGrid:
         letters: list[str | None] = []
         for letter in require_list(record.get("letters"), "board.letters"):
             if letter is not None and not isinstance(letter, str):
@@ -639,6 +674,7 @@ class WordPathRulebook(Rulebook):
                 require_int(n, "board.wordLengths[]")
                 for n in require_list(record.get("wordLengths"), "board.wordLengths")
             ),
+            vocabulary_version=generator_version,
         )
 
     def board_to_dict(self, board: Board | TrackGrid | WordGrid) -> dict[str, JsonValue]:

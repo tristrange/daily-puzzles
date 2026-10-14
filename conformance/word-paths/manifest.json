@@ -327,9 +327,9 @@
     {
       "name": "unknown version",
       "envelope": {
-        "generatorVersion": 2
+        "generatorVersion": 3
       },
-      "error": "const:generatorVersion"
+      "error": "enum:generatorVersion"
     },
     {
       "name": "difficulty",
@@ -385,5 +385,17 @@
       },
       "error": "maxLength:board/letters/0"
     }
+  ],
+  "v2Samples": [
+    "2026-10-14-words.json",
+    "2026-10-15-words.json",
+    "2026-10-16-words.json",
+    "2026-10-17-words.json",
+    "2026-10-18-words.json",
+    "2026-10-19-words.json",
+    "2026-10-20-words.json",
+    "2026-10-21-words.json",
+    "2026-10-22-words.json",
+    "2026-10-23-words.json"
   ]
 }

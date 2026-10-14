@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { formatPuzzleLabel, puzzleOfToday } from '../domain/dates'
 import {
   clearCell,
@@ -23,13 +23,14 @@ import type { Board } from '../domain/board'
 import { isMarksPuzzle, isTracksPuzzle, type Puzzle } from '../domain/puzzle'
 import { trackVariantOf } from '../domain/trackSizes'
 import { TracksStage } from './TracksStage'
-import { WordPathsStage } from './WordPathsStage'
 import { WordGrid } from '../domain/wordPaths'
 import { PuzzleNotFoundError, loadPuzzle } from '../lib/puzzles'
 import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } from '../lib/stats'
 import { readStoredAutoMark, storeAutoMark } from '../lib/autoMark'
 import { buildShareText, buildSolutionShareText, copyText, puzzleShareLink } from '../lib/share'
 import { InteractiveBoard } from './InteractiveBoard'
+
+const WordPathsStage = lazy(() => import('./WordPathsStage').then((module) => ({ default: module.WordPathsStage })))
 
 type LoadState =
   | { status: 'loading' }
@@ -477,7 +478,9 @@ export function PuzzleView({
         ) : isMarksPuzzle(state.puzzle) ? (
           <PuzzleStage puzzle={state.puzzle} board={state.puzzle.board} timeZone={timeZone} />
         ) : state.puzzle.board instanceof WordGrid ? (
-          <WordPathsStage puzzle={state.puzzle} grid={state.puzzle.board} timeZone={timeZone} />
+          <Suspense fallback={<p className="status">Loading word board…</p>}>
+            <WordPathsStage puzzle={state.puzzle} grid={state.puzzle.board} timeZone={timeZone} />
+          </Suspense>
         ) : null}
       </div>
     </article>

@@ -133,7 +133,7 @@
       "then": {
         "not": { "properties": { "difficulty": {} }, "required": ["difficulty"] },
         "properties": {
-          "generatorVersion": { "const": 1 },
+          "generatorVersion": { "enum": [1, 2] },
           "board": {
             "type": "object",
             "additionalProperties": false,

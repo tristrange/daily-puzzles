@@ -78,13 +78,14 @@ whole grid being re-read.
 ## Word Paths preview
 
 Run the app normally, then open `#/preview/word-paths` (also linked from How to
-play). Choose one of ten original 5×5 boards. Drag and release to submit, or tap
+play). Choose one of ten version-2 5×5 boards. Drag and release to submit, or tap
 letters and press Submit. Keyboard: arrows/Home/End move focus, Space selects,
 Enter submits, Backspace removes a letter, Escape clears selection, Ctrl/Cmd+Z
 undoes. Backtracking truncates the selected path.
 
 Use each shown length and every letter once, with orthogonal paths and no overlap.
-Only the frozen English vocabulary is accepted. A locally accepted word may lead
+Version 2 accepts 16,781 frozen English words; version 1 retains its original
+748-word list. The grid chooses its list from the file’s generator version. A locally accepted word may lead
 to a dead end; Undo is available. No answers or client solver are bundled.
 
 Preview progress is saved separately from daily attempts and never affects stats
@@ -94,6 +95,13 @@ preview board; the separate spoiler share includes words and paths.
 
 The existing Auto/Light/Dark picker applies to the new board. Single-finger
 tracing reserves the board gesture, with pinch zoom allowed. Browser pointer and
-375px layout checks are recorded in `../docs/journal.md`; physical phone touch
-and pinch testing remain a release gate. Daily publication stays disabled until
-a later rollout PR.
+375px layout checks are recorded in `../docs/journal.md`. The maintainer has
+confirmed that the preview works on a physical iPhone.
+
+Daily Word Paths starts on 2026-10-15 with one English 5×5 board per day. It uses
+the ordinary Today card, archive links and solve history. The initial seven files
+cover October 15–21; earlier dates are not backfilled. Preview links and saved
+progress remain separate, so trying the preview does not consume a daily solve.
+Versioned progress keys preserve old attempts when previews change. Word-list
+provenance and redistribution notices are available through How to play.
+Installation polish and offline support are deferred until Word Paths is live.

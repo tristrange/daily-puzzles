@@ -5,11 +5,13 @@ import { describe, expect, it } from 'vitest'
 import { parsePuzzle } from './puzzle'
 import { puzzleIdsForDay, puzzleIdFor } from './dates'
 import { PUZZLE_TYPE_PUBLISHED } from './games'
+import { WORD_PATHS_V2_VOCABULARY } from './wordVocabulary'
 import { WordGrid, WORD_PATHS_VOCABULARY } from './wordPaths'
 
 const casesDir = join(new URL('../../..', import.meta.url).pathname, 'conformance/word-paths')
 const manifest = JSON.parse(readFileSync(join(casesDir, 'manifest.json'), 'utf8')) as {
   vocabularySha256: string
+  v2Samples: string[]
   samples: string[]
   rejects: { name: string; envelope?: Record<string, unknown>; board?: Record<string, unknown>; error: string }[]
 }
@@ -62,12 +64,42 @@ describe('Word Paths file contract', () => {
     expect(Object.isFrozen(grid)).toBe(true)
   })
 
-  it('registers identity but leaves existing daily slots unchanged', () => {
+  it('registers identity without changing pre-launch daily slots', () => {
     expect(puzzleIdFor('2026-10-14', 'word-paths')).toBe('2026-10-14-words')
-    expect(PUZZLE_TYPE_PUBLISHED['word-paths']).toBe(false)
+    expect(PUZZLE_TYPE_PUBLISHED['word-paths']).toBe(true)
     expect(puzzleIdsForDay('2026-10-14')).toEqual([
       '2026-10-14', '2026-10-14-star', '2026-10-14-tracks-small',
       '2026-10-14-tracks-medium', '2026-10-14-tracks-large',
     ])
   })
+})
+
+
+it('selects the grid vocabulary from the validated generator version', () => {
+  const raw = read('2026-10-15-words.json')
+  const old = parsePuzzle(raw)
+  const expanded = parsePuzzle({ ...raw, generatorVersion:2 })
+  expect(old.board).toBeInstanceOf(WordGrid)
+  expect(expanded.board).toBeInstanceOf(WordGrid)
+  if (!(old.board instanceof WordGrid) || !(expanded.board instanceof WordGrid)) throw new Error('word grid')
+  expect(old.board.vocabularyVersion).toBe(1)
+  expect(expanded.board.vocabularyVersion).toBe(2)
+  expect(() => parsePuzzle({ ...raw, generatorVersion:3 })).toThrow()
+})
+
+
+it('uses exactly the frozen Python v2 vocabulary', () => {
+  expect(WORD_PATHS_V2_VOCABULARY).toHaveLength(16781)
+  expect(createHash('sha256').update(WORD_PATHS_V2_VOCABULARY.join('\n')).digest('hex'))
+    .toBe('b5ffd19f0acf8e99fe2d2160ec86329e72bf6eeb6fe75f3786f013fc47da689a')
+})
+
+it.each(manifest.v2Samples)('parses v2 preview %s with the broad acceptance context', (file) => {
+  const raw = JSON.parse(readFileSync(join(casesDir, 'v2', file), 'utf8'))
+  const puzzle = parsePuzzle(raw)
+  expect(puzzle.generatorVersion).toBe(2)
+  expect(puzzle.board).toBeInstanceOf(WordGrid)
+  if (!(puzzle.board instanceof WordGrid)) throw new Error('word grid')
+  expect(puzzle.board.vocabularyVersion).toBe(2)
+  expect(puzzle.board.letters).toEqual(raw.board.letters)
 })

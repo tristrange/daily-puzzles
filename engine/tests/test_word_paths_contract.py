@@ -3,6 +3,7 @@
 import hashlib
 import json
 from dataclasses import replace
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +26,7 @@ from queens_engine.word_paths import (
     WordGridError,
     spell_path,
     v1_vocabulary,
+    v2_vocabulary,
     vocabulary_paths,
 )
 from test_word_paths import reference_covers
@@ -41,9 +43,10 @@ def test_frozen_vocabulary() -> None:
 
 def test_word_rulebook_roundtrip_and_metadata() -> None:
     book = rulebook_for(PuzzleType.WORD_PATHS)
-    assert not any((book.published, book.rated, book.on_ramp, book.logic_only))
+    assert book.published
+    assert not any((book.rated, book.on_ramp, book.logic_only))
     puzzle = book.generate(seed=7, puzzle_id="2026-10-14-words")
-    assert puzzle.generator_version == 1
+    assert puzzle.generator_version == 2
     assert puzzle.difficulty is None
     assert book.dimensions(puzzle) == (5, 5)
     assert book.deduce(puzzle.board) is None
@@ -58,7 +61,7 @@ def test_word_rulebook_roundtrip_and_metadata() -> None:
     }
     assert len(book.render(puzzle).splitlines()) == 6
     with pytest.raises(GenerationError, match="version"):
-        verify_replay(replace(puzzle, generator_version=2))
+        verify_replay(replace(puzzle, generator_version=3))
     with pytest.raises(GenerationError, match="word grid"):
         book.count_solutions(
             rulebook_for(PuzzleType.QUEENS).generate(seed=7, puzzle_id="2026-10-14").board
@@ -108,8 +111,8 @@ def test_one_hundred_seeds_match_the_independent_cover_solver() -> None:
     for seed in range(100):
         puzzle = book.generate(seed=seed, puzzle_id="2026-10-14-words")
         assert isinstance(puzzle.board, WordGrid)
-        assert len(reference_covers(puzzle.board, v1_vocabulary())) == 1
-        assert len(vocabulary_paths(puzzle.board, v1_vocabulary())) <= 6
+        assert len(reference_covers(puzzle.board, v2_vocabulary())) == 1
+        assert len(vocabulary_paths(puzzle.board, v2_vocabulary())) <= 12
         assert verify_replay(puzzle) == puzzle
 
 
@@ -131,3 +134,21 @@ def test_shared_path_geometry() -> None:
                 spell_path(grid, tuple(case["cells"]))
         else:
             assert spell_path(grid, tuple(case["cells"])) == case["word"]
+
+
+def test_first_week_of_daily_words_is_replayable_and_independently_unique() -> None:
+    corpus = CASES.parents[1] / "app/public/puzzles"
+    for offset in range(7):
+        day = date(2026, 10, 15) + timedelta(days=offset)
+        path = corpus / f"{day}-words.json"
+        raw: Any = json.loads(path.read_text())
+        puzzle = parse_puzzle(raw)
+        assert puzzle.generator_version == 2
+        assert isinstance(puzzle.board, WordGrid)
+        assert puzzle.board.word_lengths == (3, 4, 5, 6)
+        assert (puzzle.board.width, puzzle.board.height) == (5, 5)
+        assert set(raw["board"]) == {"width", "height", "letters", "wordLengths"}
+        assert len(reference_covers(puzzle.board, v2_vocabulary())) == 1
+        assert len(vocabulary_paths(puzzle.board, v2_vocabulary())) <= 12
+        assert verify_replay(puzzle) == puzzle
+        assert dumps_puzzle(puzzle) == path.read_text()

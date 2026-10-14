@@ -527,7 +527,9 @@ class TestGenerateId:
 
 
 #: The suffix of every family the nightly is allowed to write, in registry order.
-PUBLISHED: tuple[str, ...] = tuple(book.id_suffix for book in rulebooks() if book.published)
+PUBLISHED: tuple[str, ...] = tuple(
+    book.id_suffix for book in rulebooks() if book.published and book.daily_ids(TEST_TODAY)
+)
 
 
 def _run_publish(
@@ -854,3 +856,25 @@ def test_first_four_daily_track_batches_are_committed() -> None:
             puzzle = load_puzzle(corpus / f"{identifier}.json")
             assert puzzle.id == identifier
             assert puzzle.puzzle_type is PuzzleType.TRAIN_TRACKS
+
+
+class TestDailyWordSlots:
+    def test_activation_and_idempotent_resume(self, tmp_path: Path) -> None:
+        book = rulebook_for(PuzzleType.WORD_PATHS)
+        with patch.object(publish, "rulebooks", return_value=(book,)):
+            before = _run_publish(
+                tmp_path, date(2026, 10, 14), 0, dry_run=False, clock=date(2026, 10, 14)
+            )
+            assert not any(line.startswith("publish ") for line in before)
+            assert not list(tmp_path.glob("*.json"))
+            _run_publish(tmp_path, date(2026, 10, 15), 1, dry_run=False, clock=date(2026, 10, 15))
+            held = (tmp_path / "2026-10-15-words.json").read_bytes()
+            (tmp_path / "2026-10-16-words.json").unlink()
+            resumed = _run_publish(tmp_path, None, 0, dry_run=False, clock=date(2026, 10, 16))
+            assert [line for line in resumed if line.startswith("publish ")] == [
+                "publish 2026-10-16-words"
+            ]
+            assert (tmp_path / "2026-10-15-words.json").read_bytes() == held
+            again = _run_publish(tmp_path, None, 0, dry_run=False, clock=date(2026, 10, 16))
+            assert not any(line.startswith("publish ") for line in again)
+        assert verify.main(["--dir", str(tmp_path)]) == 0

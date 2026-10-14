@@ -30,10 +30,9 @@ export function RulesPage() {
     <section className="rules">
       <h1 className="page-title">How to play</h1>
       <p className="status">
-        Three puzzles are published every day, one of each game. The first two share a board,
-        a set of moves and a win condition &mdash; they differ only in how many pieces a row
-        and a region hold. The third is played on a board of its own. Every day so far is kept
-        in the <Link to="/archive">archive</Link>.
+        Fresh Queens, Star Battle and Train Tracks puzzles arrive every day, with
+        three Train Tracks sizes to choose from. Word Paths joins the daily lineup
+        on October 15. Published puzzles are kept in the <Link to="/archive">archive</Link>.
       </p>
 
       <h2>The board</h2>
@@ -260,14 +259,16 @@ export function RulesPage() {
         need, and what is wrong with it if anything is.
       </p>
 
-      <h2>Word Paths preview</h2>
+      <h2>Word Paths</h2>
       <p>Find words by tracing adjoining letters up, down, left or right. Use every
         letter once, with one word of each shown length. Blocked cells and letters
         already used by a word cannot be selected. Drag and release to submit, or
         tap letters and use Submit. Space selects a focused letter; Enter submits.
         Backspace removes the last letter, Escape clears selection, and Undo removes
         the last accepted word. Accepted words can lead to dead ends. The game uses
-        a finite English word list; it does not recognize every English word.</p>
+        a finite English word list; it does not recognize every English word. New boards
+        use a broader acceptance list while generated answers stay familiar.</p>
+      <p><a href={`${import.meta.env.BASE_URL}word-paths-vocabulary-notice.txt`}>Word list credits</a>.</p>
       <p><Link to="/preview/word-paths">Try the Word Paths preview</Link>. Preview
         progress is saved separately and does not affect daily stats.</p>
 

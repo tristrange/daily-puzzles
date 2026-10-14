@@ -1,38 +1,17 @@
 /** Pure Word Paths rules, independent of pointer input and storage. */
-import { WordGrid, WordGridError, WORD_PATHS_VOCABULARY } from './wordPaths'
+import { WORD_PATHS_V2_VOCABULARY } from './wordVocabulary'
+import { WordGrid, spellPath, adjacent, WORD_PATHS_VOCABULARY } from './wordPaths'
+export { spellPath } from './wordPaths'
 
 export type WordGame = {
   readonly grid: WordGrid
   readonly words: readonly (readonly number[])[]
   readonly trace: readonly number[]
 }
-const vocabulary = new Set(WORD_PATHS_VOCABULARY)
+const vocabularies = { 1: new Set(WORD_PATHS_VOCABULARY), 2: new Set(WORD_PATHS_V2_VOCABULARY) }
 
 export function createWordGame(grid: WordGrid): WordGame {
   return { grid, words: [], trace: [] }
-}
-
-export function spellPath(grid: WordGrid, cells: readonly number[]): string {
-  if (cells.length === 0 || new Set(cells).size !== cells.length) {
-    throw new WordGridError('A path must be nonempty and cannot reuse a cell.')
-  }
-  return cells.map((cell, index) => {
-    if (!Number.isInteger(cell) || cell < 0 || cell >= grid.cellCount) {
-      throw new WordGridError('Path cell is out of range.')
-    }
-    const letter = grid.letters[cell]
-    if (letter === null || letter === undefined) throw new WordGridError('A path cannot enter a blocked cell.')
-    const previous = cells[index - 1]
-    if (previous !== undefined && !adjacent(grid, previous, cell)) {
-      throw new WordGridError('Path steps must be orthogonally adjacent.')
-    }
-    return letter
-  }).join('')
-}
-
-function adjacent(grid: WordGrid, a: number, b: number): boolean {
-  return Math.abs(Math.floor(a / grid.width) - Math.floor(b / grid.width))
-    + Math.abs(a % grid.width - b % grid.width) === 1
 }
 
 export function traceCell(game: WordGame, cell: number): WordGame {
@@ -60,7 +39,7 @@ export function submitWord(game: WordGame): { game: WordGame; accepted: boolean;
   }
   if (!game.grid.wordLengths.includes(word.length)) return reject('That length has no word slot.')
   if (game.words.some((path) => path.length === word.length)) return reject('That word length is already filled.')
-  if (!vocabulary.has(word)) return reject('That spelling is not in this game’s English word list.')
+  if (!vocabularies[game.grid.vocabularyVersion].has(word)) return reject('That spelling is not in this game’s English word list.')
   const next = { ...game, words: [...game.words, [...game.trace]], trace: [] }
   return { game: next, accepted: true, message: `${word} accepted. You can undo it.` }
 }

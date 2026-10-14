@@ -16,7 +16,8 @@ import { PUZZLE_TYPE_LABEL } from '../domain/games'
 import { trackVariantOf } from '../domain/trackSizes'
 import { formatTime } from '../domain/game'
 import { PIECE_GLYPHS, TrackGrid } from '../domain/tracks'
-import { spellPath, type WordGame } from '../domain/wordGame'
+import type { WordGame } from '../domain/wordGame'
+import { spellPath } from '../domain/wordPaths'
 
 /**
  * Filled and empty cells.

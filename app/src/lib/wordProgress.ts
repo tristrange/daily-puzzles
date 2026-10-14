@@ -3,13 +3,13 @@ import { puzzleTypeOf } from '../domain/dates'
 import { createWordGame, isWordSolved, spellPath, submitWord, type WordGame } from '../domain/wordGame'
 import type { WordGrid } from '../domain/wordPaths'
 
-const key = (id: string, preview: boolean) => `daily-puzzles.word-progress.${preview ? 'preview.' : ''}${id}`
+const key = (id: string, preview: boolean, version: 1 | 2 = 1) => `daily-puzzles.word-progress.${preview ? 'preview.' : ''}${id}${version === 1 ? '' : '.v2'}`
 const fingerprint = (grid: WordGrid) => JSON.stringify([grid.width, grid.height, grid.letters, grid.wordLengths])
 
 export function readWordProgress(id: string, grid: WordGrid, preview = false): { game: WordGame; elapsedMs: number } | null {
   if (puzzleTypeOf(id) !== 'word-paths') return null
   try {
-    const raw: unknown = JSON.parse(localStorage.getItem(key(id, preview)) ?? 'null')
+    const raw: unknown = JSON.parse(localStorage.getItem(key(id, preview, grid.vocabularyVersion)) ?? 'null')
     if (raw === null || typeof raw !== 'object') return null
     const data = raw as Record<string, unknown>
     const elapsedMs = data['elapsedMs']
@@ -31,7 +31,7 @@ export function readWordProgress(id: string, grid: WordGrid, preview = false): {
     if (trace.length > 0) spellPath(grid, trace)
     if (game.words.some((path) => path.some((cell) => trace.includes(cell)))) return null
     if (isWordSolved(game)) {
-      clearWordProgress(id, preview)
+      clearWordProgress(id, preview, grid.vocabularyVersion)
       return null
     }
     return { game: { ...game, trace }, elapsedMs }
@@ -41,17 +41,17 @@ export function readWordProgress(id: string, grid: WordGrid, preview = false): {
 export function storeWordProgress(id: string, game: WordGame, elapsedMs: number, preview = false): boolean {
   if (puzzleTypeOf(id) !== 'word-paths' || !Number.isSafeInteger(elapsedMs) || elapsedMs < 0) return false
   if (isWordSolved(game)) {
-    clearWordProgress(id, preview)
+    clearWordProgress(id, preview, game.grid.vocabularyVersion)
     return true
   }
   try {
-    localStorage.setItem(key(id, preview), JSON.stringify({
+    localStorage.setItem(key(id, preview, game.grid.vocabularyVersion), JSON.stringify({
       version: 1, board: fingerprint(game.grid), words: game.words, trace: game.trace, elapsedMs,
     }))
     return true
   } catch { return false }
 }
 
-export function clearWordProgress(id: string, preview = false): void {
-  try { localStorage.removeItem(key(id, preview)) } catch { /* Play remains usable without storage. */ }
+export function clearWordProgress(id: string, preview = false, version: 1 | 2 = 1): void {
+  try { localStorage.removeItem(key(id, preview, version)) } catch { /* Play remains usable without storage. */ }
 }

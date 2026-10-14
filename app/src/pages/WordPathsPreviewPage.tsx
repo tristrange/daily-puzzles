@@ -3,7 +3,7 @@ import { parsePuzzle } from '../domain/puzzle'
 import { WordGrid } from '../domain/wordPaths'
 import { WordPathsStage } from '../components/WordPathsStage'
 
-const samples = import.meta.glob('@shared/conformance/word-paths/*-words.json', { eager: true, import: 'default' })
+const samples = import.meta.glob('@shared/conformance/word-paths/v2/*-words.json', { eager: true, import: 'default' })
 const WORD_PATHS_PREVIEWS = Object.entries(samples).sort(([a], [b]) => a.localeCompare(b)).map(([, raw]) => {
   const puzzle = parsePuzzle(raw)
   if (puzzle.puzzleType !== 'word-paths' || !(puzzle.board instanceof WordGrid)) throw new Error('Expected a Word Paths preview')

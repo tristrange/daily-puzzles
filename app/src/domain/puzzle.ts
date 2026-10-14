@@ -123,7 +123,7 @@ export function parsePuzzle(data: unknown): Puzzle {
   // puzzle type does not.
   let board: Board | TrackGrid | WordGrid
   try {
-    board = typeRaw === 'word-paths' ? parseWordGrid(boardRecord)
+    board = typeRaw === 'word-paths' ? parseWordGrid(boardRecord, Number(record['generatorVersion']))
       : typeRaw === 'train-tracks' ? parseTrackGrid(boardRecord) : parseMarksBoard(boardRecord, typeRaw)
   } catch (error) {
     if (error instanceof BoardError || error instanceof TrackGridError || error instanceof WordGridError) {
@@ -210,7 +210,7 @@ function parseTrackGrid(record: Record<string, unknown>): TrackGrid {
   )
 }
 
-function parseWordGrid(record: Record<string, unknown>): WordGrid {
+function parseWordGrid(record: Record<string, unknown>, version: number): WordGrid {
   const width = record['width']
   const height = record['height']
   const letters = record['letters']
@@ -223,5 +223,5 @@ function parseWordGrid(record: Record<string, unknown>): WordGrid {
     }
     return letter
   })
-  return new WordGrid(width, height, checked, numbers(record, 'wordLengths'))
+  return new WordGrid(width, height, checked, numbers(record, 'wordLengths'), version)
 }

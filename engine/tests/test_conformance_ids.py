@@ -17,7 +17,7 @@ from tools.schema_ids import current_pattern, expected_pattern
 
 from queens_engine.board import PuzzleType
 from queens_engine.puzzle import CONFORMANCE_DIR, PuzzleParseError, parse_puzzle
-from queens_engine.rulebook import puzzle_id, split_puzzle_id
+from queens_engine.rulebook import puzzle_id, rulebooks, split_puzzle_id
 from queens_engine.track_sizes import TRACK_SIZES_START, TRACK_VARIANTS
 
 CASES_DIR = CONFORMANCE_DIR / "id-cases"
@@ -144,3 +144,11 @@ def test_sized_envelope_contract(case: dict[str, Any]) -> None:
     else:
         with pytest.raises(PuzzleParseError):
             parse_puzzle(data)
+
+
+@pytest.mark.parametrize("case", MANIFEST["dailyCases"])
+def test_daily_slots_agree_with_shared_contract(case: dict[str, Any]) -> None:
+    day = date.fromisoformat(case["day"])
+    assert [
+        identifier for book in rulebooks() if book.published for identifier in book.daily_ids(day)
+    ] == case["ids"]

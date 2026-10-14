@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { PUZZLE_TYPES, type PuzzleType } from '../domain/board'
-import { PUZZLE_TYPE_LABEL, PUZZLE_TYPE_PUBLISHED } from '../domain/games'
+import { PUZZLE_TYPE_LABEL } from '../domain/games'
 import { marksBoard } from '../domain/helpers'
 import small from '../../../conformance/id-cases/tracks-small.accept.json'
 import medium from '../../../conformance/id-cases/tracks-medium.accept.json'
 import large from '../../../conformance/id-cases/tracks-large.accept.json'
+import words from '../../../conformance/word-paths/2026-10-14-words.json'
 import legacy from '../../public/puzzles/2026-10-16-tracks.json'
 
-const isPublished = (type: PuzzleType) => PUZZLE_TYPE_PUBLISHED[type]
 import type { DifficultyBand } from '../domain/puzzle'
 import {
   ARCHIVE_WINDOW_DAYS,
@@ -202,9 +202,9 @@ describe('listPublishedPuzzles', () => {
       return spaShellResponse()
     }
     await listPublishedPuzzles('2026-10-03', probeFetcher)
-    // Every published family's id of every day in the window: a family that is
-    // not published yet has to be asked for before it can be reported as absent.
-    expect(probes).toHaveLength(ARCHIVE_WINDOW_DAYS * PUZZLE_TYPES.filter(isPublished).length)
+    // This pre-launch window has three families and only legacy tracks slots.
+    // Missing companion files still need a probe before being reported absent.
+    expect(probes).toHaveLength(ARCHIVE_WINDOW_DAYS * 3)
     expect(probes).toContain('2026-10-03.json')
     expect(probes).toContain('2026-10-03-star.json')
   })
@@ -239,7 +239,7 @@ describe('listPublishedPuzzles', () => {
       return response
     }
     const found = await listPublishedPuzzles('2026-10-03', countingFetcher)
-    expect(answeredOk).toBe(ARCHIVE_WINDOW_DAYS * PUZZLE_TYPES.filter(isPublished).length)
+    expect(answeredOk).toBe(ARCHIVE_WINDOW_DAYS * 3)
     expect(found).toEqual(queens)
   })
 
@@ -389,4 +389,19 @@ describe('groupPublishedPuzzles', () => {
     }
     expect(Object.keys(PUZZLE_TYPE_LABEL).sort()).toEqual([...PUZZLE_TYPES].sort())
   })
+})
+
+
+it('discovers Word Paths only from launch onward and tolerates one missing daily file', async () => {
+  const requested: string[] = []
+  const fetcher = async (url: string) => {
+    const id = url.split('/').at(-1)?.replace('.json', '') ?? ''
+    requested.push(id)
+    return id === '2026-10-15-words'
+      ? jsonResponse({ ...words, id }) : spaShellResponse()
+  }
+  expect(await listPublishedPuzzles('2026-10-16', fetcher)).toEqual([
+    { id: '2026-10-15-words', type: 'word-paths', difficulty: null, width: 5, height: 5 },
+  ])
+  expect(requested.filter((id) => id.endsWith('-words'))).toEqual(['2026-10-16-words', '2026-10-15-words'])
 })

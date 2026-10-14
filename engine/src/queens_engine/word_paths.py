@@ -8,6 +8,7 @@ from __future__ import annotations
 import hashlib
 from collections.abc import Collection, Iterator
 from dataclasses import dataclass
+from functools import cache
 from itertools import islice
 from pathlib import Path
 from typing import Final
@@ -30,8 +31,11 @@ class WordGrid:
     height: int
     letters: tuple[str | None, ...]
     word_lengths: tuple[int, ...]
+    vocabulary_version: int = 1
 
     def __post_init__(self) -> None:
+        if type(self.vocabulary_version) is not int or self.vocabulary_version not in (1, 2):
+            raise WordGridError("unsupported vocabulary version")
         object.__setattr__(self, "letters", tuple(self.letters))
         object.__setattr__(self, "word_lengths", tuple(self.word_lengths))
         if any(
@@ -115,6 +119,29 @@ def v1_vocabulary() -> tuple[str, ...]:
     if digest != "e054967cc550e50a1f0d245fab7e18979870922f0c41e2d4cc7ff2010d93f0ce":
         raise WordGridError("version 1 vocabulary digest mismatch; introduce a new version")
     return words
+
+
+@cache
+def v2_vocabulary() -> tuple[str, ...]:
+    """Frozen SCOWL acceptance list, broader than the familiar answer pool."""
+    words = tuple(
+        line.strip()
+        for line in PILOT_VOCABULARY_PATH.with_name("word-paths-en-v2.txt")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line.strip() and not line.startswith("#")
+    )
+    validate_vocabulary(words)
+    digest = hashlib.sha256("\n".join(words).encode()).hexdigest()
+    if digest != "b5ffd19f0acf8e99fe2d2160ec86329e72bf6eeb6fe75f3786f013fc47da689a":
+        raise WordGridError("version 2 vocabulary digest mismatch; introduce a new version")
+    return words
+
+
+def vocabulary_for_version(version: int) -> tuple[str, ...]:
+    if type(version) is not int or version not in (1, 2):
+        raise WordGridError("unsupported vocabulary version")
+    return v1_vocabulary() if version == 1 else v2_vocabulary()
 
 
 class WordSearchLimitError(RuntimeError):

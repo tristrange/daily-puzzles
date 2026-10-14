@@ -7,8 +7,9 @@ app that plays them.
 **Live site → [tristrange.github.io/daily-puzzles](https://tristrange.github.io/daily-puzzles/)**
 
 No server, no database and no account. The entire product is a static site and a directory
-of committed puzzle files. Three games ship: **Queens**, **Star Battle**, and
-**Train Tracks**. Each board has its own first solve.
+of committed puzzle files. **Queens**, **Star Battle**, **Train Tracks**, and
+**Word Paths** each keep their own first solve. Word Paths daily slots start on
+October 15, 2026; its preview remains available independently.
 
 ---
 
@@ -55,14 +56,24 @@ Time pauses between page visits; undo belongs to the current visit. Finished boa
 start fresh for replay while the original solve stays in stats. Appearance defaults
 to Auto, following the system, with Light and Dark overrides.
 
+**Word Paths** — find four English words of lengths 3, 4, 5 and 6 on a 5×5
+letter grid. Trace orthogonally, use every letter once and never overlap words.
+A legal word can lead to a dead end; Undo lets you try another path. Each board
+has one complete cover against its versioned vocabulary. New boards accept
+16,781 words from SCOWL while answers use a familiar 748-word pool; original
+boards retain their frozen vocabulary. Uniqueness is not claimed across every
+English word. No difficulty rating or hints are claimed.
+Daily progress and results are separate from the [ten-board preview](https://tristrange.github.io/daily-puzzles/#/preview/word-paths).
+
 ---
 
 ## Why it is built this way
 
 ### One file, two languages
 
-The engine writes `app/public/puzzles/<date>.json`; the app reads it. **Neither imports
-the other.** That boundary is why the file format is owned by neither language:
+The engine writes `app/public/puzzles/<date>.json`; the app reads it. **Neither runs
+the other at runtime.** Schema fixtures and the frozen English vocabulary are
+shared reference data. That boundary is why the file format is owned by neither language:
 [`schema/puzzle.schema.json`](schema/puzzle.schema.json) is validated by `jsonschema` in
 Python and `ajv` in TypeScript, so the two parsers cannot drift apart.
 

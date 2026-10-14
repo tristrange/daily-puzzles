@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import small from '../../../conformance/id-cases/tracks-small.accept.json'
 import medium from '../../../conformance/id-cases/tracks-medium.accept.json'
+import words from '../../../conformance/word-paths/2026-10-14-words.json'
 import large from '../../../conformance/id-cases/tracks-large.accept.json'
 import { parsePuzzle } from '../domain/puzzle'
 import type { ProbedPuzzle } from '../lib/puzzles'
@@ -51,4 +52,14 @@ describe('daily Train Tracks choices', () => {
     expect(html).toContain('Not published yet.')
     expect(html).not.toContain('Small')
   })
+})
+
+
+it('offers Word Paths as its own daily game without disturbing the three track choices', () => {
+  const puzzle = parsePuzzle({ ...words, id: '2026-10-15-words' })
+  const html = render([...probes, { id: puzzle.id, puzzle }], new Set([puzzle.id]))
+  expect(html).toContain('game-word-paths')
+  expect(html).toContain('aria-label="Play Word Paths again"')
+  expect(html).toContain('href="/archive/2026-10-15-words"')
+  expect(html.match(/aria-label="Play Train Tracks/g)).toHaveLength(3)
 })

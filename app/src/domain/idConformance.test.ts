@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { PUZZLE_TYPES, type PuzzleType } from './board'
-import { isPuzzleId, puzzleIdFor, puzzleIdParts, puzzleTypeOf } from './dates'
+import { isPuzzleId, puzzleIdsForDay, puzzleIdFor, puzzleIdParts, puzzleTypeOf } from './dates'
 import { PUZZLE_TYPE_SUFFIX } from './games'
 import { parsePuzzle } from './puzzle'
 
@@ -29,6 +29,7 @@ interface Case {
 }
 
 const manifest = JSON.parse(readFileSync(join(CASES_DIR, 'manifest.json'), 'utf8')) as {
+  dailyCases: { day: string; ids: string[] }[]
   types: TypeEntry[]
   cases: Case[]
   unparsed: string[]
@@ -36,6 +37,10 @@ const manifest = JSON.parse(readFileSync(join(CASES_DIR, 'manifest.json'), 'utf8
 }
 
 describe('conformance: id-cases', () => {
+  it.each(manifest.dailyCases)('agrees with daily slots for $day', ({ day, ids }) => {
+    expect(puzzleIdsForDay(day)).toEqual(ids)
+  })
+
   it('agrees with the engine on every declared suffix', () => {
     for (const entry of manifest.types) {
       // The whole id, not just its tail: `endsWith` would pass for a suffix that is

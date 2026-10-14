@@ -81,7 +81,7 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
     if (!isWordSolved(result.game)) return
     const time = settle()
     completed.current = true
-    clearWordProgress(puzzle.id, preview)
+    clearWordProgress(puzzle.id, preview, grid.vocabularyVersion)
     setElapsed(time)
     if (!preview) {
       const when = Date.now()

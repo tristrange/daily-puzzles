@@ -118,7 +118,10 @@ def parse_puzzle(data: object) -> Puzzle:
     # parsed here at all without a branch on the enum appearing in this file.
     board_record = _require_object(record.get("board"), "board")
     try:
-        board = rulebook_for(puzzle_type).parse_board(board_record)
+        board = rulebook_for(puzzle_type).parse_board(
+            board_record,
+            generator_version=_require_int(record.get("generatorVersion"), "generatorVersion"),
+        )
     except (BoardError, ValueError) as error:
         raise PuzzleParseError(str(error)) from error
 

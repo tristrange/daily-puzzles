@@ -1,0 +1,614 @@
+{
+  "successes": 99,
+  "attempted": 100,
+  "results": [
+    {
+      "seed": 2636224866,
+      "ok": true,
+      "seconds": 0.2226505830185488,
+      "extra": 8
+    },
+    {
+      "seed": 4246264823,
+      "ok": true,
+      "seconds": 0.5655781250097789,
+      "extra": 7
+    },
+    {
+      "seed": 3075308453,
+      "ok": true,
+      "seconds": 0.07040662498911843,
+      "extra": 8
+    },
+    {
+      "seed": 1263997170,
+      "ok": true,
+      "seconds": 0.1075366250006482,
+      "extra": 8
+    },
+    {
+      "seed": 3701282204,
+      "ok": true,
+      "seconds": 0.22531116695608944,
+      "extra": 8
+    },
+    {
+      "seed": 2201868548,
+      "ok": true,
+      "seconds": 0.13257524999789894,
+      "extra": 7
+    },
+    {
+      "seed": 3743635468,
+      "ok": true,
+      "seconds": 0.16263350000372157,
+      "extra": 8
+    },
+    {
+      "seed": 588520357,
+      "ok": true,
+      "seconds": 0.13997545902384445,
+      "extra": 3
+    },
+    {
+      "seed": 4188258056,
+      "ok": true,
+      "seconds": 0.13642120803706348,
+      "extra": 6
+    },
+    {
+      "seed": 1106198923,
+      "ok": true,
+      "seconds": 0.06096716696629301,
+      "extra": 7
+    },
+    {
+      "seed": 87525652,
+      "ok": true,
+      "seconds": 0.19538387499051169,
+      "extra": 5
+    },
+    {
+      "seed": 2899186675,
+      "ok": true,
+      "seconds": 0.5386465420015156,
+      "extra": 6
+    },
+    {
+      "seed": 3840684947,
+      "ok": true,
+      "seconds": 0.30070991697721183,
+      "extra": 7
+    },
+    {
+      "seed": 3426707945,
+      "ok": true,
+      "seconds": 0.3969707499491051,
+      "extra": 7
+    },
+    {
+      "seed": 3300766119,
+      "ok": true,
+      "seconds": 0.3481524999951944,
+      "extra": 6
+    },
+    {
+      "seed": 3772314264,
+      "ok": true,
+      "seconds": 0.2986376660410315,
+      "extra": 7
+    },
+    {
+      "seed": 1147640031,
+      "ok": true,
+      "seconds": 0.5310839170124382,
+      "extra": 6
+    },
+    {
+      "seed": 913090469,
+      "ok": true,
+      "seconds": 0.2391132089542225,
+      "extra": 3
+    },
+    {
+      "seed": 55947810,
+      "ok": true,
+      "seconds": 0.2864869170007296,
+      "extra": 6
+    },
+    {
+      "seed": 3551099687,
+      "ok": true,
+      "seconds": 0.05773804197087884,
+      "extra": 3
+    },
+    {
+      "seed": 4146428832,
+      "ok": true,
+      "seconds": 0.16624125000089407,
+      "extra": 8
+    },
+    {
+      "seed": 3081726815,
+      "ok": true,
+      "seconds": 0.13426954200258479,
+      "extra": 7
+    },
+    {
+      "seed": 2628257972,
+      "ok": true,
+      "seconds": 0.06113916699541733,
+      "extra": 3
+    },
+    {
+      "seed": 1583109719,
+      "ok": true,
+      "seconds": 0.1158123750356026,
+      "extra": 8
+    },
+    {
+      "seed": 1823686523,
+      "ok": true,
+      "seconds": 0.14674787502735853,
+      "extra": 7
+    },
+    {
+      "seed": 1686818112,
+      "ok": true,
+      "seconds": 0.25439962500240654,
+      "extra": 5
+    },
+    {
+      "seed": 589762486,
+      "ok": true,
+      "seconds": 0.060984957963228226,
+      "extra": 6
+    },
+    {
+      "seed": 599811244,
+      "ok": true,
+      "seconds": 0.15890962502453476,
+      "extra": 8
+    },
+    {
+      "seed": 571060153,
+      "ok": true,
+      "seconds": 0.11133629101095721,
+      "extra": 8
+    },
+    {
+      "seed": 3386879525,
+      "ok": true,
+      "seconds": 0.0681404999922961,
+      "extra": 8
+    },
+    {
+      "seed": 2058739229,
+      "ok": true,
+      "seconds": 0.6455600829795003,
+      "extra": 5
+    },
+    {
+      "seed": 1313401346,
+      "ok": true,
+      "seconds": 0.18281687499256805,
+      "extra": 8
+    },
+    {
+      "seed": 1827780992,
+      "ok": true,
+      "seconds": 0.09042529202997684,
+      "extra": 7
+    },
+    {
+      "seed": 776706105,
+      "ok": true,
+      "seconds": 0.5539960419991985,
+      "extra": 8
+    },
+    {
+      "seed": 3216988804,
+      "ok": true,
+      "seconds": 0.12678512500133365,
+      "extra": 7
+    },
+    {
+      "seed": 3275603787,
+      "ok": true,
+      "seconds": 0.21653458301443607,
+      "extra": 8
+    },
+    {
+      "seed": 587143429,
+      "ok": true,
+      "seconds": 0.3513324169907719,
+      "extra": 7
+    },
+    {
+      "seed": 98310595,
+      "ok": true,
+      "seconds": 0.20483783399686217,
+      "extra": 7
+    },
+    {
+      "seed": 3335676235,
+      "ok": true,
+      "seconds": 0.06304754194570705,
+      "extra": 8
+    },
+    {
+      "seed": 4112359648,
+      "ok": true,
+      "seconds": 0.06068024999694899,
+      "extra": 5
+    },
+    {
+      "seed": 596621504,
+      "ok": true,
+      "seconds": 0.05833941698074341,
+      "extra": 6
+    },
+    {
+      "seed": 3000303563,
+      "ok": true,
+      "seconds": 0.4437846249784343,
+      "extra": 5
+    },
+    {
+      "seed": 1138084732,
+      "ok": true,
+      "seconds": 0.09940329199889675,
+      "extra": 7
+    },
+    {
+      "seed": 315571003,
+      "ok": true,
+      "seconds": 0.17274008400272578,
+      "extra": 6
+    },
+    {
+      "seed": 3795270549,
+      "ok": true,
+      "seconds": 0.09711745800450444,
+      "extra": 8
+    },
+    {
+      "seed": 2968955908,
+      "ok": true,
+      "seconds": 0.3554022499592975,
+      "extra": 8
+    },
+    {
+      "seed": 3213040124,
+      "ok": true,
+      "seconds": 0.11518370796693489,
+      "extra": 8
+    },
+    {
+      "seed": 2382318063,
+      "ok": true,
+      "seconds": 0.05723629199201241,
+      "extra": 8
+    },
+    {
+      "seed": 3430939576,
+      "ok": true,
+      "seconds": 0.38310112501494586,
+      "extra": 7
+    },
+    {
+      "seed": 731701435,
+      "ok": true,
+      "seconds": 0.502515833999496,
+      "extra": 4
+    },
+    {
+      "seed": 3485572922,
+      "ok": true,
+      "seconds": 0.07776870799716562,
+      "extra": 8
+    },
+    {
+      "seed": 2777539929,
+      "ok": true,
+      "seconds": 0.1025899579981342,
+      "extra": 7
+    },
+    {
+      "seed": 2155936428,
+      "ok": true,
+      "seconds": 0.24114895798265934,
+      "extra": 5
+    },
+    {
+      "seed": 4238376633,
+      "ok": true,
+      "seconds": 0.08682216703891754,
+      "extra": 7
+    },
+    {
+      "seed": 1065595118,
+      "ok": true,
+      "seconds": 0.40293050004402176,
+      "extra": 7
+    },
+    {
+      "seed": 3937174411,
+      "ok": true,
+      "seconds": 0.3336922919843346,
+      "extra": 7
+    },
+    {
+      "seed": 1597013673,
+      "ok": true,
+      "seconds": 0.21241191698936746,
+      "extra": 8
+    },
+    {
+      "seed": 3214967746,
+      "ok": true,
+      "seconds": 0.08492774999467656,
+      "extra": 6
+    },
+    {
+      "seed": 2166432327,
+      "ok": true,
+      "seconds": 0.29410229198401794,
+      "extra": 8
+    },
+    {
+      "seed": 4163602393,
+      "ok": true,
+      "seconds": 0.1129744999925606,
+      "extra": 7
+    },
+    {
+      "seed": 3426277001,
+      "ok": false,
+      "seconds": 0.7157510829856619,
+      "error": "no broad-dictionary unique board within 50 candidates"
+    },
+    {
+      "seed": 3154766391,
+      "ok": true,
+      "seconds": 0.3379569170065224,
+      "extra": 5
+    },
+    {
+      "seed": 3728854006,
+      "ok": true,
+      "seconds": 0.20573941699694842,
+      "extra": 7
+    },
+    {
+      "seed": 225865542,
+      "ok": true,
+      "seconds": 0.1850709579885006,
+      "extra": 7
+    },
+    {
+      "seed": 2169884379,
+      "ok": true,
+      "seconds": 0.561081167019438,
+      "extra": 7
+    },
+    {
+      "seed": 1447904113,
+      "ok": true,
+      "seconds": 0.09284170798491687,
+      "extra": 8
+    },
+    {
+      "seed": 2132852725,
+      "ok": true,
+      "seconds": 0.22137458401266485,
+      "extra": 8
+    },
+    {
+      "seed": 467525127,
+      "ok": true,
+      "seconds": 0.3058389159850776,
+      "extra": 7
+    },
+    {
+      "seed": 2043786351,
+      "ok": true,
+      "seconds": 0.24206608399981633,
+      "extra": 7
+    },
+    {
+      "seed": 3359664243,
+      "ok": true,
+      "seconds": 0.4758672080351971,
+      "extra": 6
+    },
+    {
+      "seed": 1210297188,
+      "ok": true,
+      "seconds": 0.5527735839714296,
+      "extra": 8
+    },
+    {
+      "seed": 1025490001,
+      "ok": true,
+      "seconds": 0.4323828750057146,
+      "extra": 8
+    },
+    {
+      "seed": 16883,
+      "ok": true,
+      "seconds": 0.07402837497647852,
+      "extra": 7
+    },
+    {
+      "seed": 139406074,
+      "ok": true,
+      "seconds": 0.07934962498256937,
+      "extra": 6
+    },
+    {
+      "seed": 3949892838,
+      "ok": true,
+      "seconds": 0.17917458299780264,
+      "extra": 6
+    },
+    {
+      "seed": 1489318815,
+      "ok": true,
+      "seconds": 0.06314225000096485,
+      "extra": 8
+    },
+    {
+      "seed": 2072132212,
+      "ok": true,
+      "seconds": 0.35193308297311887,
+      "extra": 8
+    },
+    {
+      "seed": 2906186182,
+      "ok": true,
+      "seconds": 0.3055013329721987,
+      "extra": 8
+    },
+    {
+      "seed": 2624382107,
+      "ok": true,
+      "seconds": 0.15323208400513977,
+      "extra": 4
+    },
+    {
+      "seed": 3313187384,
+      "ok": true,
+      "seconds": 0.4093472909880802,
+      "extra": 6
+    },
+    {
+      "seed": 1677936283,
+      "ok": true,
+      "seconds": 0.20162783400155604,
+      "extra": 6
+    },
+    {
+      "seed": 4292037734,
+      "ok": true,
+      "seconds": 0.11010487499879673,
+      "extra": 7
+    },
+    {
+      "seed": 4282852009,
+      "ok": true,
+      "seconds": 0.06065870798192918,
+      "extra": 6
+    },
+    {
+      "seed": 2455278731,
+      "ok": true,
+      "seconds": 0.14157816697843373,
+      "extra": 7
+    },
+    {
+      "seed": 3634538186,
+      "ok": true,
+      "seconds": 0.542867208016105,
+      "extra": 8
+    },
+    {
+      "seed": 4112534862,
+      "ok": true,
+      "seconds": 0.37750995898386464,
+      "extra": 5
+    },
+    {
+      "seed": 2507744504,
+      "ok": true,
+      "seconds": 0.2623292080243118,
+      "extra": 8
+    },
+    {
+      "seed": 2029662728,
+      "ok": true,
+      "seconds": 0.11613458301872015,
+      "extra": 5
+    },
+    {
+      "seed": 3576301318,
+      "ok": true,
+      "seconds": 0.2370219579897821,
+      "extra": 7
+    },
+    {
+      "seed": 243414414,
+      "ok": true,
+      "seconds": 0.06334004196105525,
+      "extra": 7
+    },
+    {
+      "seed": 3715024553,
+      "ok": true,
+      "seconds": 0.12275395798496902,
+      "extra": 5
+    },
+    {
+      "seed": 3429433672,
+      "ok": true,
+      "seconds": 0.10987258300883695,
+      "extra": 6
+    },
+    {
+      "seed": 2389873090,
+      "ok": true,
+      "seconds": 0.10271574999205768,
+      "extra": 4
+    },
+    {
+      "seed": 2578372363,
+      "ok": true,
+      "seconds": 0.07575041597010568,
+      "extra": 8
+    },
+    {
+      "seed": 3282007264,
+      "ok": true,
+      "seconds": 0.5127676249830984,
+      "extra": 8
+    },
+    {
+      "seed": 398239041,
+      "ok": true,
+      "seconds": 0.09331470896722749,
+      "extra": 5
+    },
+    {
+      "seed": 2270785843,
+      "ok": true,
+      "seconds": 0.07325604098150507,
+      "extra": 6
+    },
+    {
+      "seed": 3648982190,
+      "ok": true,
+      "seconds": 0.3612010829965584,
+      "extra": 8
+    },
+    {
+      "seed": 2968616787,
+      "ok": true,
+      "seconds": 0.16640075005125254,
+      "extra": 7
+    },
+    {
+      "seed": 3066202195,
+      "ok": true,
+      "seconds": 0.06334449996938929,
+      "extra": 8
+    }
+  ],
+  "recipeVersion": 2,
+  "vocabularyCount": 16781,
+  "answerCount": 748,
+  "vocabularySha256": "b5ffd19f0acf8e99fe2d2160ec86329e72bf6eeb6fe75f3786f013fc47da689a",
+  "maxCandidates": 50,
+  "maxSearchStates": 500000,
+  "maxExtraPaths": 8,
+  "proof": "Each success checked by the independent direct-letter cover solver; failures retained in denominator."
+}
