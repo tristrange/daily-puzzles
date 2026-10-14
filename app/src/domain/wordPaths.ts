@@ -14,13 +14,16 @@ export class WordGridError extends Error {
 }
 
 export class WordGrid {
+  readonly vocabularyVersion: 1 | 2
   readonly width: number
   readonly height: number
   readonly letters: readonly (string | null)[]
   readonly wordLengths: readonly number[]
   readonly cellCount: number
 
-  constructor(width: number, height: number, letters: readonly (string | null)[], wordLengths: readonly number[]) {
+  constructor(width: number, height: number, letters: readonly (string | null)[], wordLengths: readonly number[], vocabularyVersion = 1) {
+    if (vocabularyVersion !== 1 && vocabularyVersion !== 2) throw new WordGridError('unsupported vocabulary version')
+    this.vocabularyVersion = vocabularyVersion
     if ([width, height].some((n) => !Number.isInteger(n) || n < 1 || n > 7)) {
       throw new WordGridError('dimensions must be integers from 1 to 7')
     }

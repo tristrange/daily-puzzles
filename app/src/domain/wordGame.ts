@@ -1,4 +1,5 @@
 /** Pure Word Paths rules, independent of pointer input and storage. */
+import { WORD_PATHS_V2_VOCABULARY } from './wordVocabulary'
 import { WordGrid, WordGridError, WORD_PATHS_VOCABULARY } from './wordPaths'
 
 export type WordGame = {
@@ -6,7 +7,7 @@ export type WordGame = {
   readonly words: readonly (readonly number[])[]
   readonly trace: readonly number[]
 }
-const vocabulary = new Set(WORD_PATHS_VOCABULARY)
+const vocabularies = { 1: new Set(WORD_PATHS_VOCABULARY), 2: new Set(WORD_PATHS_V2_VOCABULARY) }
 
 export function createWordGame(grid: WordGrid): WordGame {
   return { grid, words: [], trace: [] }
@@ -60,7 +61,7 @@ export function submitWord(game: WordGame): { game: WordGame; accepted: boolean;
   }
   if (!game.grid.wordLengths.includes(word.length)) return reject('That length has no word slot.')
   if (game.words.some((path) => path.length === word.length)) return reject('That word length is already filled.')
-  if (!vocabulary.has(word)) return reject('That spelling is not in this game’s English word list.')
+  if (!vocabularies[game.grid.vocabularyVersion].has(word)) return reject('That spelling is not in this game’s English word list.')
   const next = { ...game, words: [...game.words, [...game.trace]], trace: [] }
   return { game: next, accepted: true, message: `${word} accepted. You can undo it.` }
 }

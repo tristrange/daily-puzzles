@@ -62,3 +62,19 @@ describe('Word Paths progress', () => {
     expect(storeWordProgress('2026-10-14-tracks', partial(), 1000)).toBe(false)
   })
 })
+
+
+it('preserves v1 attempts when the same board receives v2 acceptance', () => {
+  const values = memory()
+  storeWordProgress(id, partial(), 4321, true)
+  const original = values.get(`daily-puzzles.word-progress.preview.${id}`)
+  const expanded = new WordGrid(grid.width, grid.height, grid.letters, grid.wordLengths, 2)
+  expect(readWordProgress(id, expanded, true)).toBeNull()
+  storeWordProgress(id, createWordGame(expanded), 2000, true)
+  expect(readWordProgress(id, grid, true)?.elapsedMs).toBe(4321)
+  expect(readWordProgress(id, expanded, true)?.elapsedMs).toBe(2000)
+  expect(values.get(`daily-puzzles.word-progress.preview.${id}`)).toBe(original)
+  clearWordProgress(id, true, 2)
+  expect(readWordProgress(id, grid, true)?.elapsedMs).toBe(4321)
+  expect(readWordProgress(id, expanded, true)).toBeNull()
+})

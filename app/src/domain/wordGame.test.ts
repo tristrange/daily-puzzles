@@ -53,3 +53,23 @@ describe('word path rules', () => {
     expect(resetWordGame(game)).toEqual(createWordGame(grid))
   })
 })
+
+
+describe('versioned word acceptance', () => {
+  const letters = [null,null,'A','M','E','N','K','C',null,'R','A','B',null,'G','A','I','R','M','E',null,'A','H','C',null,null]
+  it.each([
+    ['CAME', [7,2,3,4]], ['MEGA', [17,18,13,14]], ['ERA', [4,9,14]],
+  ] as const)('accepts %s in v2 without requiring a constructor answer', (word, trace) => {
+    const grid = new WordGrid(5, 5, letters, [3,4,5,6], 2)
+    const result = submitWord({ ...createWordGame(grid), trace })
+    expect(result.accepted).toBe(true)
+    expect(result.message).toContain(word)
+  })
+  it('keeps v1 acceptance unchanged', () => {
+    const grid = new WordGrid(5, 5, letters, [3,4,5,6])
+    expect(submitWord({ ...createWordGame(grid), trace:[7,2,3,4] }).accepted).toBe(false)
+  })
+  it('rejects unknown vocabulary versions at the grid boundary', () => {
+    expect(() => new WordGrid(5, 5, letters, [3,4,5,6], 3)).toThrow('vocabulary version')
+  })
+})

@@ -36,10 +36,10 @@
 
 **Files:** wordPaths.ts, puzzle.ts, wordGame.ts, wordProgress.ts, WordPathsStage.tsx and tests.
 **Consumes:** v2 contract and vocabulary from Task1.
-- [ ] Write failing legal-path acceptance, old-board rejection, unsupported-version and v1/v2 progress-isolation tests.
-- [ ] Run focused app tests; expect rejection of v2/new words.
-- [ ] Select acceptance by grid version and preserve v1 progress keys.
-- [ ] Run app test/type/lint/build gates and commit.
+- [x] Write failing legal-path acceptance, old-board rejection, unsupported-version and v1/v2 progress-isolation tests.
+- [x] Run focused app tests; expect rejection of v2/new words.
+- [x] Select acceptance by grid version and preserve v1 progress keys.
+- [x] Run app test/type/lint/build gates and commit.
 
 ## Task 3 — Preview and daily batch
 
