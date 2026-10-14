@@ -872,6 +872,11 @@
   --motif-wash: light-dark(#f7f0e5, #403528);
 }
 
+.game-word-paths {
+  --motif-color: light-dark(#496ca7, #aac7ff);
+  --motif-wash: light-dark(#eaf0fb, #29364c);
+}
+
 .game-motif {
   display: grid;
   place-items: center;

@@ -18,7 +18,7 @@ from typing import Any, cast
 
 from tools.hint_baseline import ARCHIVE, BASELINE_PATH, build_baseline, differences, main
 
-from queens_engine import PuzzleType, canonical_dumps, split_puzzle_id
+from queens_engine import Board, canonical_dumps, load_puzzle
 
 
 @contextmanager
@@ -42,13 +42,12 @@ def test_the_baseline_covers_every_committed_puzzle() -> None:
     hint engine is a marks thing. A family with no hint engine has no forced moves
     to record, so its absence is not a gap here — `build_baseline` skips it and
     this skips it for the same reason. Comparing the raw archive instead would
-    fail every day a track board is published.
+    fail whenever a track or word board is published.
     """
     committed = cast("dict[str, Any]", json.loads(BASELINE_PATH.read_text(encoding="utf-8")))
     on_disk: set[str] = set()
     for path in ARCHIVE.glob("*.json"):
-        split = split_puzzle_id(path.stem)
-        if split is not None and split[1] is PuzzleType.TRAIN_TRACKS:
+        if not isinstance(load_puzzle(path).board, Board):
             continue
         on_disk.add(path.stem)
     assert set(committed) == on_disk

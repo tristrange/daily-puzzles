@@ -132,10 +132,11 @@ fails validation. See [measured results](../docs/journal.md#scattered-train-trac
 Daily publishing switches to all three named variants on October 14, 2026.
 The shared ID manifest pins this date; existing legacy files remain unchanged.
 
-## English word-path pilot
+## English Word Paths
 
 The Wend-inspired constructor lives in `word_paths_gen.py` and is wrapped by
-the unpublished Word Paths rulebook. It is **not a fourth published game yet**. Its 5×5 board
+the Word Paths rulebook. Daily slots start on **2026-10-15**, as defined in
+`conformance/id-cases/manifest.json` and read by both the engine and app. Its 5×5 board
 has four word lengths (3, 4, 5, 6), 18 letters and seven blocked cells.
 
 ```sh
@@ -163,11 +164,14 @@ Reports include answer paths for editorial inspection; they are not puzzle files
 and must not go in `app/public/puzzles`. The [100-seed report](../docs/measurements/word-paths-pilot.json)
 and [design](../docs/superpowers/specs/2026-10-14-word-paths-design.md) record what is
 proven and what still needs vocabulary review and human playtesting. The file
-contract is now implemented; UI and daily rollout remain separate milestones.
+contract and playable UI are implemented. The daily rollout adds seven answer-free
+files for October 15–21; the usual publisher fills subsequent dates and never
+backfills Word Paths before activation. Physical phone testing and human playtesting
+must finish before merging the rollout PR.
 
 ## Word Paths version 1 files
 
-The unpublished `word-paths` family uses `YYYY-MM-DD-words` IDs and a 5×5
+The `word-paths` family uses `YYYY-MM-DD-words` IDs and a 5×5
 recipe with lengths 3,4,5,6. Generate and replay a local sample without changing
 the public archive (commands from `engine/`):
 

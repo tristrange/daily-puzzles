@@ -23,6 +23,7 @@ import {
   DEFAULT_PUZZLE_TYPE,
   PUZZLE_TYPE_PUBLISHED,
   PUZZLE_TYPE_SUFFIX,
+  WORD_PATHS_START,
   isDefaultPuzzleType,
 } from './games'
 
@@ -139,7 +140,8 @@ export function puzzleIdFor(day: string, type: PuzzleType, trackSize?: TrackSize
  * "not published yet" card.
  */
 export function puzzleIdsForDay(day: string): string[] {
-  return PUZZLE_TYPES.filter((type) => PUZZLE_TYPE_PUBLISHED[type]).flatMap((type) =>
+  return PUZZLE_TYPES.filter((type) => PUZZLE_TYPE_PUBLISHED[type] &&
+    (type !== 'word-paths' || day >= WORD_PATHS_START)).flatMap((type) =>
     type === 'train-tracks' && day >= TRACK_SIZES_START
       ? TRACK_VARIANTS.map((v) => puzzleIdFor(day, type, v.name))
       : [puzzleIdFor(day, type)],

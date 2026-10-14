@@ -3,13 +3,12 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { expect, it } from 'vitest'
 import { PuzzlePage } from './PuzzlePage'
 
-it('keeps an unpublished Word Paths URL out of the marks playing screen', () => {
+it('allows daily Word Paths to load through the ordinary puzzle route', () => {
   const html = renderToStaticMarkup(
-    <MemoryRouter initialEntries={['/puzzle/2026-10-14-words']}>
+    <MemoryRouter initialEntries={['/puzzle/2026-10-15-words']}>
       <Routes><Route path="/puzzle/:id" element={<PuzzlePage />} /></Routes>
     </MemoryRouter>,
   )
-  expect(html).toContain('Word Paths')
-  expect(html).toContain('playing screen is not ready yet')
-  expect(html).not.toContain('Loading puzzle')
+  expect(html).not.toContain('playing screen is not ready yet')
+  expect(html).toContain('Loading puzzle')
 })

@@ -899,3 +899,40 @@ existing appearance preferences or AGENTS.md modifications.
 
 Vocabulary familiarity and enjoyment still need human playtesting. Hints, new
 sizes/languages and daily activation are deliberately outside this PR.
+
+
+## 2026-10-14 — Word Paths daily rollout prepared
+
+Branch `feat/word-paths-daily` prepares one English 5×5 puzzle per day starting
+October 15. A shared activation date and explicit daily-slot fixtures keep the
+publisher and browser aligned. Before activation, no Word Paths slots are required
+or probed; existing archives are not backfilled. Afterward, the normal nightly
+publisher resumes missing word slots without rewriting files. Seven initial boards
+cover October 15–21 using the unchanged frozen v1 recipe and vocabulary.
+
+All seven boards replay exactly and agree with the separate direct-letter cover
+solver. Each has one complete cover and zero to two extra legal word paths. An
+inspection of all 28 answer words found familiar vocabulary; this is an editorial
+inspection, not a claim of human playtesting or whole-English uniqueness.
+
+The ordinary route loads the daily word stage. Browser checks completed October
+15 and recorded one Word Paths solve at 1:02. A faster replay at 0:18 retained the
+first record and the stats page still counted one solve. A fresh October 16 board
+fits 375px without horizontal overflow and retains `pinch-zoom`. Auto appearance
+was preserved. [Phone screenshot](measurements/word-paths-daily-phone.png).
+
+Publishing word files exposed a stale hint-corpus test that excluded only Train
+Tracks. The production baseline already filters marks boards; its coverage test
+now does the same and still pins all 1,845 positions across 44 marks puzzles.
+The reproduced failure passes after that correction; no baseline data changed.
+
+The rollout remains a draft until the maintainer tries tracing/pinch and sharing
+on a physical iPhone and confirms the words feel reasonable. Screen-reader and
+native clipboard validation are still outstanding. Home Screen/offline support,
+hints, extra sizes and languages remain later milestones.
+
+Final local checks passed: 547 app tests, 583 engine tests, both type checks,
+lint/format/build, shared schema-ID checks and replay verification for all 93
+published files. The existing TracksStage lint warning is unchanged. The original
+86 puzzle files, hint baseline, theme implementation and AGENTS.md have no diff.
+The live preview route was also checked successfully on GitHub Pages.

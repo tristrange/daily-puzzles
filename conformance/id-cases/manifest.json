@@ -153,5 +153,42 @@
       },
       "valid": false
     }
+  ],
+  "wordPaths": {
+    "activationDay": "2026-10-15"
+  },
+  "dailyCases": [
+    {
+      "day": "2026-10-14",
+      "ids": [
+        "2026-10-14",
+        "2026-10-14-star",
+        "2026-10-14-tracks-small",
+        "2026-10-14-tracks-medium",
+        "2026-10-14-tracks-large"
+      ]
+    },
+    {
+      "day": "2026-10-15",
+      "ids": [
+        "2026-10-15",
+        "2026-10-15-star",
+        "2026-10-15-tracks-small",
+        "2026-10-15-tracks-medium",
+        "2026-10-15-tracks-large",
+        "2026-10-15-words"
+      ]
+    },
+    {
+      "day": "2026-10-16",
+      "ids": [
+        "2026-10-16",
+        "2026-10-16-star",
+        "2026-10-16-tracks-small",
+        "2026-10-16-tracks-medium",
+        "2026-10-16-tracks-large",
+        "2026-10-16-words"
+      ]
+    }
   ]
 }

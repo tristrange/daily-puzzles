@@ -95,5 +95,10 @@ preview board; the separate spoiler share includes words and paths.
 The existing Auto/Light/Dark picker applies to the new board. Single-finger
 tracing reserves the board gesture, with pinch zoom allowed. Browser pointer and
 375px layout checks are recorded in `../docs/journal.md`; physical phone touch
-and pinch testing remain a release gate. Daily publication stays disabled until
-a later rollout PR.
+and pinch testing remain a release gate before merging the daily rollout PR.
+
+Daily Word Paths starts on 2026-10-15 with one English 5×5 board per day. It uses
+the ordinary Today card, archive links and solve history. The initial seven files
+cover October 15–21; earlier dates are not backfilled. Preview links and saved
+progress remain separate, so trying the preview does not consume a daily solve.
+Installation polish and offline support are deferred until Word Paths is live.

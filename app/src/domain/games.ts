@@ -12,6 +12,7 @@
  * the archive and the share text, with nothing to say so.
  */
 
+import { wordPaths } from '../../../conformance/id-cases/manifest.json'
 import type { PuzzleType } from './board'
 import type { DifficultyBand } from './puzzle'
 
@@ -47,8 +48,10 @@ export const PUZZLE_TYPE_PUBLISHED: Record<PuzzleType, boolean> = {
   queens: true,
   'star-battle': true,
   'train-tracks': true,
-  'word-paths': false,
+  'word-paths': true,
 }
+
+export const WORD_PATHS_START = wordPaths.activationDay
 
 /** The family whose id carries no suffix: the day's default puzzle. */
 export const DEFAULT_PUZZLE_TYPE: PuzzleType = 'queens'

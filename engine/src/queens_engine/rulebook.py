@@ -23,9 +23,11 @@ board class, which is why #31 left `Board` square instead of widening it.
 
 from __future__ import annotations
 
+import json
 from abc import ABC, abstractmethod
 from dataclasses import replace
 from datetime import date
+from pathlib import Path
 from typing import Any, Final
 
 from .board import (
@@ -556,15 +558,27 @@ class TrackRulebook(Rulebook):
         }
 
 
+WORD_PATHS_START: Final = date.fromisoformat(
+    json.loads(
+        (Path(__file__).resolve().parents[3] / "conformance/id-cases/manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )["wordPaths"]["activationDay"]
+)
+
+
 class WordPathRulebook(Rulebook):
-    """Frozen English recipe; file support precedes the playing screen."""
+    """Frozen English recipe with a dated daily launch."""
 
     puzzle_type = PuzzleType.WORD_PATHS
     id_suffix = "-words"
-    published = False
+    published = True
     rated = False
     on_ramp = False
     logic_only = False
+
+    def daily_ids(self, day: date) -> tuple[str, ...]:
+        return super().daily_ids(day) if day >= WORD_PATHS_START else ()
 
     def generate(
         self,

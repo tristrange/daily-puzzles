@@ -107,3 +107,14 @@ describe('ArchiveGroups', () => {
     expect(render([])).toContain('No puzzles have been published yet.')
   })
 })
+
+
+it('lists published Word Paths under its own archive heading', () => {
+  const html = render([
+    queens('2026-10-15'),
+    { id: '2026-10-15-words', type: 'word-paths', difficulty: null, width: 5, height: 5 },
+  ])
+  expect(html).toContain('<h2 class="archive-group-title">Word Paths</h2>')
+  expect(html).toContain('href="/archive/2026-10-15-words"')
+  expect(html).not.toContain('Easy')
+})

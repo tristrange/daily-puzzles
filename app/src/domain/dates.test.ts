@@ -114,8 +114,8 @@ describe('puzzleIdsForDay', () => {
     ])
   })
 
-  it('drops a family that is registered but not published', () => {
-    expect(PUZZLE_TYPE_PUBLISHED['word-paths']).toBe(false)
+  it('does not backfill Word Paths before activation', () => {
+    expect(PUZZLE_TYPE_PUBLISHED['word-paths']).toBe(true)
     expect(puzzleIdsForDay('2026-09-30')).toEqual([
       '2026-09-30', '2026-09-30-star', '2026-09-30-tracks',
     ])
