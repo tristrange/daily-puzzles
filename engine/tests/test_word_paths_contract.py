@@ -20,7 +20,13 @@ from queens_engine import (
 from queens_engine.board import PuzzleType
 from queens_engine.puzzle import CONFORMANCE_DIR
 from queens_engine.rulebook import verify_replay
-from queens_engine.word_paths import WordGrid, v1_vocabulary, vocabulary_paths
+from queens_engine.word_paths import (
+    WordGrid,
+    WordGridError,
+    spell_path,
+    v1_vocabulary,
+    vocabulary_paths,
+)
 from test_word_paths import reference_covers
 
 CASES = CONFORMANCE_DIR / "word-paths"
@@ -75,7 +81,11 @@ def test_generation_requires_matching_canonical_id(identifier: str) -> None:
 
 def test_shared_samples_and_rejections() -> None:
     manifest: Any = json.loads((CASES / "manifest.json").read_text())
-    assert {p.name for p in CASES.glob("*.json")} == {"manifest.json", *manifest["samples"]}
+    assert {p.name for p in CASES.glob("*.json")} == {
+        "manifest.json",
+        "path-cases.json",
+        *manifest["samples"],
+    }
     book = rulebook_for(PuzzleType.WORD_PATHS)
     for filename in manifest["samples"]:
         raw = (CASES / filename).read_text()
@@ -109,3 +119,15 @@ def test_existing_cli_generates_and_verifies_word_files(tmp_path: Path) -> None:
     )
     assert verify_main(["--dir", str(tmp_path)]) == 0
     assert [p.name for p in tmp_path.glob("*.json")] == ["2026-10-14-words.json"]
+
+
+def test_shared_path_geometry() -> None:
+    cases: Any = json.loads((CASES / "path-cases.json").read_text())
+    for case in cases:
+        b = case["board"]
+        grid = WordGrid(b["width"], b["height"], tuple(b["letters"]), tuple(b["wordLengths"]))
+        if case["word"] is None:
+            with pytest.raises(WordGridError):
+                spell_path(grid, tuple(case["cells"]))
+        else:
+            assert spell_path(grid, tuple(case["cells"])) == case["word"]

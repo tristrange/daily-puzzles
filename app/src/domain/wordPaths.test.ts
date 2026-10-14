@@ -25,7 +25,7 @@ describe('Word Paths file contract', () => {
 
   it('lists every shared sample', () => {
     expect(readdirSync(casesDir).filter((name) => name.endsWith('.json')).sort())
-      .toEqual(['manifest.json', ...manifest.samples].sort())
+      .toEqual(['manifest.json', 'path-cases.json', ...manifest.samples].sort())
   })
 
   it.each(manifest.samples)('parses %s exactly', (file) => {
