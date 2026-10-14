@@ -26,6 +26,7 @@ from queens_engine.word_paths import (
     WordGridError,
     spell_path,
     v1_vocabulary,
+    v2_vocabulary,
     vocabulary_paths,
 )
 from test_word_paths import reference_covers
@@ -45,7 +46,7 @@ def test_word_rulebook_roundtrip_and_metadata() -> None:
     assert book.published
     assert not any((book.rated, book.on_ramp, book.logic_only))
     puzzle = book.generate(seed=7, puzzle_id="2026-10-14-words")
-    assert puzzle.generator_version == 1
+    assert puzzle.generator_version == 2
     assert puzzle.difficulty is None
     assert book.dimensions(puzzle) == (5, 5)
     assert book.deduce(puzzle.board) is None
@@ -60,7 +61,7 @@ def test_word_rulebook_roundtrip_and_metadata() -> None:
     }
     assert len(book.render(puzzle).splitlines()) == 6
     with pytest.raises(GenerationError, match="version"):
-        verify_replay(replace(puzzle, generator_version=2))
+        verify_replay(replace(puzzle, generator_version=3))
     with pytest.raises(GenerationError, match="word grid"):
         book.count_solutions(
             rulebook_for(PuzzleType.QUEENS).generate(seed=7, puzzle_id="2026-10-14").board
@@ -110,8 +111,8 @@ def test_one_hundred_seeds_match_the_independent_cover_solver() -> None:
     for seed in range(100):
         puzzle = book.generate(seed=seed, puzzle_id="2026-10-14-words")
         assert isinstance(puzzle.board, WordGrid)
-        assert len(reference_covers(puzzle.board, v1_vocabulary())) == 1
-        assert len(vocabulary_paths(puzzle.board, v1_vocabulary())) <= 6
+        assert len(reference_covers(puzzle.board, v2_vocabulary())) == 1
+        assert len(vocabulary_paths(puzzle.board, v2_vocabulary())) <= 12
         assert verify_replay(puzzle) == puzzle
 
 

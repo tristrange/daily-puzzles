@@ -327,9 +327,9 @@
     {
       "name": "unknown version",
       "envelope": {
-        "generatorVersion": 2
+        "generatorVersion": 3
       },
-      "error": "const:generatorVersion"
+      "error": "enum:generatorVersion"
     },
     {
       "name": "difficulty",
