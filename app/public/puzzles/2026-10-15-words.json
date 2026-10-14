@@ -2,6 +2,6 @@
   "id": "2026-10-15-words",
   "type": "word-paths",
   "seed": 2636224866,
-  "generatorVersion": 1,
-  "board": {"width": 5, "height": 5, "letters": ["I", "H", "A", "P", null, "C", "T", "N", "Y", "A", "K", null, "R", "O", "L", null, null, "A", null, "C", null, null, "N", "G", "E"], "wordLengths": [3, 4, 5, 6]}
+  "generatorVersion": 2,
+  "board": {"width": 5, "height": 5, "letters": ["O", "U", "P", "F", "L", "S", "H", "C", "A", "Y", null, null, "P", "E", "N", null, null, "R", null, "U", null, null, "E", "B", "M"], "wordLengths": [3, 4, 5, 6]}
 }

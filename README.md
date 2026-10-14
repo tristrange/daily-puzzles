@@ -59,8 +59,10 @@ to Auto, following the system, with Light and Dark overrides.
 **Word Paths** — find four English words of lengths 3, 4, 5 and 6 on a 5×5
 letter grid. Trace orthogonally, use every letter once and never overlap words.
 A legal word can lead to a dead end; Undo lets you try another path. Each board
-has one complete cover against the frozen 748-word vocabulary, not a promise
-of uniqueness across every English word. No difficulty rating or hints are claimed.
+has one complete cover against its versioned vocabulary. New boards accept
+16,781 words from SCOWL while answers use a familiar 748-word pool; original
+boards retain their frozen vocabulary. Uniqueness is not claimed across every
+English word. No difficulty rating or hints are claimed.
 Daily progress and results are separate from the [ten-board preview](https://tristrange.github.io/daily-puzzles/#/preview/word-paths).
 
 ---

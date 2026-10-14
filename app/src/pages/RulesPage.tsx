@@ -266,7 +266,9 @@ export function RulesPage() {
         tap letters and use Submit. Space selects a focused letter; Enter submits.
         Backspace removes the last letter, Escape clears selection, and Undo removes
         the last accepted word. Accepted words can lead to dead ends. The game uses
-        a finite English word list; it does not recognize every English word.</p>
+        a finite English word list; it does not recognize every English word. New boards
+        use a broader acceptance list while generated answers stay familiar.</p>
+      <p><a href={`${import.meta.env.BASE_URL}word-paths-vocabulary-notice.txt`}>Word list credits</a>.</p>
       <p><Link to="/preview/word-paths">Try the Word Paths preview</Link>. Preview
         progress is saved separately and does not affect daily stats.</p>
 

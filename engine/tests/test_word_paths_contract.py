@@ -143,11 +143,12 @@ def test_first_week_of_daily_words_is_replayable_and_independently_unique() -> N
         path = corpus / f"{day}-words.json"
         raw: Any = json.loads(path.read_text())
         puzzle = parse_puzzle(raw)
+        assert puzzle.generator_version == 2
         assert isinstance(puzzle.board, WordGrid)
         assert puzzle.board.word_lengths == (3, 4, 5, 6)
         assert (puzzle.board.width, puzzle.board.height) == (5, 5)
         assert set(raw["board"]) == {"width", "height", "letters", "wordLengths"}
-        assert len(reference_covers(puzzle.board, v1_vocabulary())) == 1
-        assert len(vocabulary_paths(puzzle.board, v1_vocabulary())) <= 6
+        assert len(reference_covers(puzzle.board, v2_vocabulary())) == 1
+        assert len(vocabulary_paths(puzzle.board, v2_vocabulary())) <= 12
         assert verify_replay(puzzle) == puzzle
         assert dumps_puzzle(puzzle) == path.read_text()

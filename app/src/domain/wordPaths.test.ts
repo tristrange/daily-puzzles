@@ -11,6 +11,7 @@ import { WordGrid, WORD_PATHS_VOCABULARY } from './wordPaths'
 const casesDir = join(new URL('../../..', import.meta.url).pathname, 'conformance/word-paths')
 const manifest = JSON.parse(readFileSync(join(casesDir, 'manifest.json'), 'utf8')) as {
   vocabularySha256: string
+  v2Samples: string[]
   samples: string[]
   rejects: { name: string; envelope?: Record<string, unknown>; board?: Record<string, unknown>; error: string }[]
 }
@@ -91,4 +92,14 @@ it('uses exactly the frozen Python v2 vocabulary', () => {
   expect(WORD_PATHS_V2_VOCABULARY).toHaveLength(16781)
   expect(createHash('sha256').update(WORD_PATHS_V2_VOCABULARY.join('\n')).digest('hex'))
     .toBe('b5ffd19f0acf8e99fe2d2160ec86329e72bf6eeb6fe75f3786f013fc47da689a')
+})
+
+it.each(manifest.v2Samples)('parses v2 preview %s with the broad acceptance context', (file) => {
+  const raw = JSON.parse(readFileSync(join(casesDir, 'v2', file), 'utf8'))
+  const puzzle = parsePuzzle(raw)
+  expect(puzzle.generatorVersion).toBe(2)
+  expect(puzzle.board).toBeInstanceOf(WordGrid)
+  if (!(puzzle.board instanceof WordGrid)) throw new Error('word grid')
+  expect(puzzle.board.vocabularyVersion).toBe(2)
+  expect(puzzle.board.letters).toEqual(raw.board.letters)
 })

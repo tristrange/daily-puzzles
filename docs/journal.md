@@ -936,3 +936,44 @@ lint/format/build, shared schema-ID checks and replay verification for all 93
 published files. The existing TracksStage lint warning is unchanged. The original
 86 puzzle files, hint baseline, theme implementation and AGENTS.md have no diff.
 The live preview route was also checked successfully on GitHub Pages.
+
+
+## 2026-10-15 — Broader Word Paths vocabulary
+
+The daily rollout now uses version 2: 16,781 frozen 3–6-letter words selected
+from SCOWL 2020.12.07 level 60, including CAME, MEGA and ERA. Generated answers
+still come from the familiar 748-word pilot pool. Full source notices ship with
+the app and are linked from How to play; archive hash and selection are documented.
+
+Broader acceptance makes some old boards ambiguous: preview Board 2 has two
+covers under v2. V1 vocabulary, recipe, golden files and progress keys therefore
+remain unchanged. V2 uses separate progress keys and rejects unknown versions.
+Only the unpublished seven-board daily batch was replaced; ten new preview
+boards use separate hashed seeds to avoid repeated layouts. Each new board is
+independently unique and replays exactly. The 100-date-seed probe succeeded for
+99 seeds; its one bounded failure is retained in the report. No weaker-list
+fallback was added. Its known failed seed recovered after eleven seed bumps
+through the existing publisher and independently verified. Missing-slot recovery
+continues through that publisher.
+
+Production-build browser checks at 375px accepted EWE on a non-answer path,
+restored it after reload and allowed Undo. A daily solve at 0:34 entered history;
+a replay at 0:15 retained the first record. Preview progress stays separate.
+There was no horizontal overflow; `pinch-zoom` and Auto appearance remained.
+[New-word phone screenshot](measurements/word-paths-vocabulary-phone.png).
+The maintainer independently confirmed the earlier preview works on an iPhone.
+
+Word Paths is loaded separately so the broader dictionary is only fetched when
+playing it. Unchanged geometry was moved out of the game checker to prevent the
+shared result formatter from importing the dictionary into other games. No new
+runtime dependencies or gesture changes were introduced.
+
+Screen-reader and native clipboard validation remain outstanding. Home Screen
+and offline support, hints, languages and additional Word Paths sizes are deferred.
+
+Final local gates passed: 596 engine tests, 565 app tests, both type checks,
+engine lint/format, app lint/build, schema-ID consistency, all 93 archive replays
+and all 1,845 hint-baseline positions. The existing TracksStage lint warning
+remains; the broader dictionary introduces no build-size warning. The original
+86 published puzzle files, ten v1 golden files, v1 recipe/list and AGENTS.md are
+byte-identical to the branch base.

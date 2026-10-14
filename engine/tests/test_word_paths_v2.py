@@ -88,3 +88,19 @@ def test_replay_still_refuses_a_noncanonical_word_id() -> None:
     puzzle = replace(parse_puzzle(raw), id="not-a-date")
     with pytest.raises(GenerationError, match="canonical"):
         verify_replay(puzzle)
+
+
+def test_v2_preview_batch_is_distinct_replayable_and_independently_unique() -> None:
+    directory = CONFORMANCE_DIR / "word-paths"
+    manifest = json.loads((directory / "manifest.json").read_text())
+    fingerprints: set[tuple[str | None, ...]] = set()
+    for filename in manifest["v2Samples"]:
+        raw = (directory / "v2" / filename).read_text()
+        puzzle = parse_puzzle(json.loads(raw))
+        assert puzzle.generator_version == 2
+        assert isinstance(puzzle.board, WordGrid)
+        assert puzzle.board.vocabulary_version == 2
+        assert len(reference_covers(puzzle.board, v2_vocabulary())) == 1
+        assert verify_replay(puzzle) == puzzle
+        fingerprints.add(puzzle.board.letters)
+    assert len(fingerprints) == 10

@@ -44,7 +44,7 @@
 ## Task 3 — Preview and daily batch
 
 **Files:** v2 conformance samples, preview page, unpublished seven daily files, documentation and screenshots.
-- [ ] Regenerate only unpublished Word Paths files and ten v2 preview files; retain original v1 fixtures.
-- [ ] Verify replay/independent uniqueness, missing-slot resume and preservation of old files.
-- [ ] Browser-check new word acceptance, preview isolation and daily results; capture evidence.
+- [x] Regenerate only unpublished Word Paths files and ten v2 preview files; retain original v1 fixtures.
+- [x] Verify replay/independent uniqueness, missing-slot resume and preservation of old files.
+- [x] Browser-check new word acceptance, preview isolation and daily results; capture evidence.
 - [ ] Run final full gates, update PR73, request one fresh-context final review, wait for CI and report ready for maintainer merge.
