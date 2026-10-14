@@ -982,10 +982,11 @@ byte-identical to the branch base.
 
 Branch `feat/home-screen-install` adds a standalone web app manifest, iPhone
 metadata and opaque 180/192/512px PNG icons matching the existing four-cell brand
-mark. The favicon SVG is the editable icon source. Manifest ID, scope, start URL
-and icon URLs are relative so both local root and the GitHub Pages project path
-work. The launch URL opens Today through the existing hash router. No runtime
-dependencies, install banner, service worker or cache policy were introduced.
+mark. The favicon SVG is the editable icon source. Scope, start URL and icon
+URLs are relative so both local root and the GitHub Pages project path work.
+Identity uses the launch URL fallback, without its fragment. The launch URL
+opens Today through the existing hash router. No runtime dependencies, install
+banner, service worker or cache policy were introduced.
 
 How to play and both READMEs explain Safari’s Add to Home Screen flow, the
 Open as Web App option, online requirements and separate iPhone app/Safari saved
@@ -1004,3 +1005,10 @@ The preview must use the same BASE_PATH as its build.
 Actual iPhone installation/relaunch has not been tested by this desktop session.
 Offline support and progress transfer remain separate work; this PR promises
 online installation only. Engine and puzzle content have no diff.
+
+The focused review caught the initial explicit `id: "./"`: unlike scope and
+icons, an explicit ID resolves against the launch URL’s origin and would identify
+the app as the shared host root. The asset check had used the wrong base for ID
+resolution. A regression test reproduced the project-path collision; removing
+the optional ID uses the stable launch-path identity and passes both hosting
+paths. The corrected real-build assertion agrees. Final app suite: 567 passed.

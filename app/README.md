@@ -110,7 +110,8 @@ Offline support remains a separate milestone.
 ## Home Screen installation
 
 `public/manifest.webmanifest` declares a standalone app with a stable relative
-ID, launch URL and scope. `index.html` links the manifest and 180px Apple touch
+launch URL and scope. Identity defaults to the launch URL without its fragment,
+so each hosting path remains a distinct app. Keep that launch path stable. `index.html` links the manifest and 180px Apple touch
 icon through Vite’s `%BASE_URL%` replacement. Icons at 192px and 512px reuse the
 four-cell brand mark in `public/favicon.svg`; all PNGs are opaque and the 512px
 mark fits the maskable safe zone. No service worker or install prompt is added.
