@@ -351,6 +351,39 @@
         "id": "2026-02-30-words"
       },
       "error": "canonical date-words id"
+    },
+    {
+      "name": "trailing newline is not a letter",
+      "board": {
+        "letters": [
+          "A\n",
+          "L",
+          "B",
+          null,
+          null,
+          "I",
+          "W",
+          "O",
+          null,
+          "N",
+          "R",
+          null,
+          null,
+          "M",
+          "O",
+          "T",
+          "I",
+          "L",
+          "M",
+          null,
+          "H",
+          "O",
+          "C",
+          "O",
+          null
+        ]
+      },
+      "error": "maxLength:board/letters/0"
     }
   ]
 }

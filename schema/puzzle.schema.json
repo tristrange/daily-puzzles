@@ -144,7 +144,7 @@
               "letters": {
                 "description": "Row-major A-Z letters, null for a blocker; length exactly width * height.",
                 "type": "array", "maxItems": 49,
-                "items": { "type": ["string", "null"], "pattern": "^[A-Z]$" }
+                "items": { "type": ["string", "null"], "minLength": 1, "maxLength": 1, "pattern": "^[A-Z]$" }
               },
               "wordLengths": {
                 "type": "array", "minItems": 1, "maxItems": 4, "uniqueItems": true,

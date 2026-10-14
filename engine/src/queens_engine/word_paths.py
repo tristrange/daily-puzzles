@@ -1,4 +1,4 @@
-"""Experimental English word paths; not registered for daily publication.
+"""English Word Paths rules; not yet published daily.
 
 Uniqueness is relative to the supplied vocabulary, never to all English words.
 """

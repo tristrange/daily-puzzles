@@ -1,6 +1,6 @@
 # Word Paths: English Wend-inspired game
 
-Status: English confirmed; the first engine feasibility milestone is implemented.
+Status: English confirmed; engine feasibility and the generator/file contract are implemented.
 The release and interface design remains proposed. No daily publication or app
 registration accompanies this milestone. ScaleDown is excluded.
 
@@ -111,3 +111,8 @@ revise the construction policy before integrating it into daily publication.
 Defer multiple languages, board sizes, difficulty ratings, elaborate themes,
 hints and account features. Existing game content and saved results must remain
 unchanged throughout.
+
+
+The [v1 contract](2026-10-14-word-paths-contract-design.md) freezes the measured
+pilot recipe and finite vocabulary for replay. These are not a claim of editorial
+approval; vocabulary changes needed by playtesting will receive a new version.

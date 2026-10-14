@@ -631,3 +631,15 @@ anyone writes a Tango rule.
 4. **Three puzzles a day, or a rotation?** Cheapest to decide before step 4.
 5. **Name.** "Tango" is LinkedIn's product name for their branded puzzle. We ship
    generic genre names, and we should not adopt theirs.
+
+
+## 10. Word Paths file contract (2026-10-14)
+
+The fourth family reuses the envelope and rulebook, adding its own immutable
+`WordGrid` in each language. It has letters, null blockers and distinct word
+lengths; it has no regions or track clues. The schema and shared
+`conformance/word-paths/` suite pin structural parsing and semantic totals.
+The v1 recipe and English vocabulary are frozen for seed replay, without
+answer words or paths in files. Both publication gates remain off until a
+playing screen is ready; direct URLs explain that it is not ready yet.
+See the [contract design](superpowers/specs/2026-10-14-word-paths-contract-design.md).
