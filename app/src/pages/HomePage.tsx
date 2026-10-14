@@ -15,6 +15,7 @@ const DESCRIPTION: Record<PuzzleType, string> = {
   queens: 'One queen in each row, column and region. No touching.',
   'star-battle': 'Place stars to satisfy each row, column and region. Keep them apart.',
   'train-tracks': 'Connect the ends with one track. Match every row and column count.',
+  'word-paths': 'Find words along adjoining letters. Use every letter once.',
 }
 
 /**

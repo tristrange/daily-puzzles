@@ -131,7 +131,7 @@
     {
       "if": { "properties": { "type": { "const": "word-paths" } }, "required": ["type"] },
       "then": {
-        "not": { "required": ["difficulty"] },
+        "not": { "properties": { "difficulty": {} }, "required": ["difficulty"] },
         "properties": {
           "generatorVersion": { "const": 1 },
           "board": {

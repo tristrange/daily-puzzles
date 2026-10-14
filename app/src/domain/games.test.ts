@@ -124,7 +124,7 @@ describe('puzzle type registry', () => {
       // Train Tracks is that family today, and it cannot be handed a `Board` at
       // all — which is the stronger statement, and the reason this loop has to
       // narrow rather than pass every type to `makeBoard`.
-      if (!PUZZLE_TYPE_HAS_HINTS[type] && type !== 'train-tracks') {
+      if (!PUZZLE_TYPE_HAS_HINTS[type] && (type === 'queens' || type === 'star-battle')) {
         expect(firstHint(makeBoard(type))).toBeNull()
       }
     }

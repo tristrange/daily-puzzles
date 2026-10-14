@@ -31,6 +31,7 @@ export const PUZZLE_TYPE_SUFFIX: Record<PuzzleType, string> = {
   queens: '',
   'star-battle': '-star',
   'train-tracks': '-tracks',
+  'word-paths': '-words',
 }
 
 /**
@@ -46,6 +47,7 @@ export const PUZZLE_TYPE_PUBLISHED: Record<PuzzleType, boolean> = {
   queens: true,
   'star-battle': true,
   'train-tracks': true,
+  'word-paths': false,
 }
 
 /** The family whose id carries no suffix: the day's default puzzle. */
@@ -73,12 +75,14 @@ export const PUZZLE_TYPE_HAS_HINTS: Record<PuzzleType, boolean> = {
   // button would be a claim about a board nothing can reason about. The two
   // tables are one fact: registering the family here is also deciding this.
   'train-tracks': false,
+  'word-paths': false,
 }
 
 export const PUZZLE_TYPE_LABEL: Record<PuzzleType, string> = {
   queens: 'Queens',
   'star-battle': 'Star Battle',
   'train-tracks': 'Train Tracks',
+  'word-paths': 'Word Paths',
 }
 
 /**
@@ -108,4 +112,5 @@ export const PUZZLE_PIECE: Record<PuzzleType, { noun: string; plural: string; gl
   queens: { noun: 'queen', plural: 'queens', glyph: '♛' },
   'star-battle': { noun: 'star', plural: 'stars', glyph: '★' },
   'train-tracks': { noun: 'track', plural: 'tracks', glyph: '─' },
+  'word-paths': { noun: 'word', plural: 'words', glyph: 'A' },
 }
