@@ -169,7 +169,9 @@ class TestGeneration:
         # code naming the type. Every registered type has to survive its own
         # round-trip, or a new family would publish files that fail verification.
         for book in rulebooks():
-            puzzle = book.generate(seed=7, puzzle_id="2026-10-12")
+            puzzle = book.generate(
+                seed=7, puzzle_id=puzzle_id(date(2026, 10, 12), book.puzzle_type)
+            )
             assert verify_replay(puzzle) == puzzle
 
     def test_replay_recovers_the_stars_per_row_from_the_board(self) -> None:
@@ -180,7 +182,7 @@ class TestGeneration:
         # is the same claim from the other side: a queens board replayed as a star
         # board would produce a different region capacity and be caught by it.
         book = rulebook_for(PuzzleType.STAR_BATTLE)
-        puzzle = book.generate(seed=7, puzzle_id="2026-10-12")
+        puzzle = book.generate(seed=7, puzzle_id=puzzle_id(date(2026, 10, 12), book.puzzle_type))
         replayed = book.replay(puzzle)
         assert marks_board(replayed).region_capacity[0] == STAR_BATTLE_STARS
         assert marks_board(replayed).region_capacity == marks_board(puzzle).region_capacity
@@ -226,7 +228,7 @@ class TestTheShapeOfAPuzzle:
 
     @pytest.mark.parametrize("book", rulebooks(), ids=lambda b: b.puzzle_type.value)
     def test_dimensions_agree_with_the_board(self, book: Rulebook) -> None:
-        puzzle = book.generate(seed=7, puzzle_id="2026-10-12")
+        puzzle = book.generate(seed=7, puzzle_id=puzzle_id(date(2026, 10, 12), book.puzzle_type))
         width, height = book.dimensions(puzzle)
         # Read off the board, not off the size the generator was asked for: the claim
         # is that the rulebook describes the board it was handed.
@@ -237,7 +239,7 @@ class TestTheShapeOfAPuzzle:
         # `tools.generate` calls this on every type without asking, so a type that
         # could not render would not fail at generation — it would fail afterwards,
         # pointing at the printer rather than at whatever made it unrenderable.
-        puzzle = book.generate(seed=7, puzzle_id="2026-10-12")
+        puzzle = book.generate(seed=7, puzzle_id=puzzle_id(date(2026, 10, 12), book.puzzle_type))
         lines = book.render(puzzle).splitlines()
         width, height = book.dimensions(puzzle)
         assert f"seed={puzzle.seed}" in lines[0]
@@ -308,7 +310,7 @@ class TestTracks:
 
     def test_it_generates_a_rectangular_grid_at_the_published_size(self) -> None:
         book = rulebook_for(PuzzleType.TRAIN_TRACKS)
-        puzzle = book.generate(seed=7, puzzle_id="2026-10-12")
+        puzzle = book.generate(seed=7, puzzle_id=puzzle_id(date(2026, 10, 12), book.puzzle_type))
         assert book.dimensions(puzzle) == (TRACKS_WIDTH, TRACKS_HEIGHT)
         assert TRACKS_WIDTH == TRACKS_HEIGHT, "the constants are two numbers, not a size"
 
@@ -357,7 +359,7 @@ class TestTracks:
 
     def test_replay_refuses_an_unsupported_tracks_generator_version(self) -> None:
         book = rulebook_for(PuzzleType.TRAIN_TRACKS)
-        puzzle = book.generate(seed=7, puzzle_id="2026-10-12")
+        puzzle = book.generate(seed=7, puzzle_id=puzzle_id(date(2026, 10, 12), book.puzzle_type))
         forged = replace(puzzle, generator_version=99)
         with pytest.raises(GenerationError, match="version"):
             verify_replay(forged)
@@ -388,7 +390,7 @@ class TestTracks:
         # published. The `None` is what the contract allows for a genre with no
         # engine: no hints rather than hints that could contradict the answer.
         book = rulebook_for(PuzzleType.TRAIN_TRACKS)
-        puzzle = book.generate(seed=7, puzzle_id="2026-10-12")
+        puzzle = book.generate(seed=7, puzzle_id=puzzle_id(date(2026, 10, 12), book.puzzle_type))
         assert book.count_solutions(puzzle.board) == 1
         assert book.deduce(puzzle.board) is None
 

@@ -134,8 +134,8 @@ The shared ID manifest pins this date; existing legacy files remain unchanged.
 
 ## English word-path pilot
 
-An experimental Wend-inspired constructor lives in `word_paths_gen.py`, separate
-from the daily rulebook. It is **not a fourth published game yet**. Its 5×5 board
+The Wend-inspired constructor lives in `word_paths_gen.py` and is wrapped by
+the unpublished Word Paths rulebook. It is **not a fourth published game yet**. Its 5×5 board
 has four word lengths (3, 4, 5, 6), 18 letters and seven blocked cells.
 
 ```sh
@@ -143,7 +143,7 @@ uv run python -m tools.benchmark_word_paths --count 100 --out /tmp/word-paths.js
 ```
 
 The pilot uses 748 common-word candidates authored with Codex and committed in
-`src/queens_engine/data/word-paths-en-pilot.txt`. It is provisional, not a complete
+`src/queens_engine/data/word-paths-en-v1.txt`. It is frozen for replay, not a complete
 English dictionary. No external AI service or runtime download is required.
 Uniqueness means exactly one complete cover **against that entire vocabulary**,
 not merely against the four words selected by the constructor. Every letter must
@@ -162,8 +162,32 @@ Exit zero means all requested seeds verified.
 Reports include answer paths for editorial inspection; they are not puzzle files
 and must not go in `app/public/puzzles`. The [100-seed report](../docs/measurements/word-paths-pilot.json)
 and [design](../docs/superpowers/specs/2026-10-14-word-paths-design.md) record what is
-proven and what still needs vocabulary review and human playtesting. Registration,
-the shared file contract, UI and daily rollout are separate milestones.
+proven and what still needs vocabulary review and human playtesting. The file
+contract is now implemented; UI and daily rollout remain separate milestones.
+
+## Word Paths version 1 files
+
+The unpublished `word-paths` family uses `YYYY-MM-DD-words` IDs and a 5×5
+recipe with lengths 3,4,5,6. Generate and replay a local sample without changing
+the public archive (commands from `engine/`):
+
+```sh
+uv run python -m tools.generate --date 2026-10-14 --type word-paths --out /tmp/word-paths-preview
+uv run python -m tools.verify --dir /tmp/word-paths-preview
+```
+
+`board` contains only `width`, `height`, `letters` (A–Z or null blockers) and
+`wordLengths`. The schema rejects answers, extra fields and difficulty bands.
+Parsing establishes a structurally valid grid; replay and the exact solver
+establish content validity. Generation uses 50 attempts and 250,000 work states;
+exhaustion fails explicitly, without a fallback. Marks-only knobs are refused.
+
+`generatorVersion: 1` freezes the recipe and the 748-word
+[`word-paths-en-v1.txt`](src/queens_engine/data/word-paths-en-v1.txt) list. The app
+imports that same source as public reference data. Runtime digest checks and ten
+shared golden files protect replay; changing vocabulary or output requires a new
+version while retaining the old one. Uniqueness is relative to this finite list.
+Human vocabulary review and playtesting are still required before publication.
 
 ## The rules are a public interface
 

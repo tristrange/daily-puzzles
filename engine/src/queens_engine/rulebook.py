@@ -54,6 +54,9 @@ from .track_sizes import TRACK_SIZES_START, TRACK_VARIANTS, TrackSize, track_var
 from .tracks import TrackGrid
 from .tracks import count_solutions as count_track_solutions
 from .tracks_gen import TrackGenerationError, generate_grid
+from .word_paths import SearchBudget, WordGrid, WordSearchLimitError, v1_vocabulary
+from .word_paths import count_solutions as count_word_solutions
+from .word_paths_gen import generate_grid as generate_word_grid
 
 #: Star Battle stays at one size until the deduction engine can rate a star board,
 #: so there is nothing to ramp towards and the size is pinned rather than tuned.
@@ -162,12 +165,14 @@ class Rulebook(ABC):
         """
 
     @abstractmethod
-    def count_solutions(self, board: Board | TrackGrid, *, limit: int = DEFAULT_LIMIT) -> int:
+    def count_solutions(
+        self, board: Board | TrackGrid | WordGrid, *, limit: int = DEFAULT_LIMIT
+    ) -> int:
         """Count this type's solutions on `board`, stopping at `limit`."""
 
     @abstractmethod
     def deduce(
-        self, board: Board | TrackGrid, *, allow_guesses: bool = True
+        self, board: Board | TrackGrid | WordGrid, *, allow_guesses: bool = True
     ) -> DeductionTrace | None:
         """Deduce what `board` forces, or `None` if this type has no such engine."""
 
@@ -219,7 +224,7 @@ class Rulebook(ABC):
         """
 
     @abstractmethod
-    def parse_board(self, record: dict[str, Any]) -> Board | TrackGrid:
+    def parse_board(self, record: dict[str, Any]) -> Board | TrackGrid | WordGrid:
         """The board a file's `board` object describes.
 
         The schema has already refused the shapes it can express, so this reads the
@@ -231,7 +236,7 @@ class Rulebook(ABC):
         """
 
     @abstractmethod
-    def board_to_dict(self, board: Board | TrackGrid) -> dict[str, JsonValue]:
+    def board_to_dict(self, board: Board | TrackGrid | WordGrid) -> dict[str, JsonValue]:
         """The schema-shaped `board` object for `board`.
 
         The counterpart to `parse_board`, and the other half of removing that branch
@@ -240,7 +245,7 @@ class Rulebook(ABC):
         """
 
 
-def as_marks_board(board: Board | TrackGrid) -> Board:
+def as_marks_board(board: Board | TrackGrid | WordGrid) -> Board:
     """`board`, if it is a marks board.
 
     A caller is handed whatever the file carried, so anything that reads marks
@@ -305,11 +310,13 @@ class MarkRulebook(Rulebook):
             ),
         )
 
-    def count_solutions(self, board: Board | TrackGrid, *, limit: int = DEFAULT_LIMIT) -> int:
+    def count_solutions(
+        self, board: Board | TrackGrid | WordGrid, *, limit: int = DEFAULT_LIMIT
+    ) -> int:
         return count_board_solutions(as_marks_board(board), limit=limit)
 
     def deduce(
-        self, board: Board | TrackGrid, *, allow_guesses: bool = True
+        self, board: Board | TrackGrid | WordGrid, *, allow_guesses: bool = True
     ) -> DeductionTrace | None:
         return deduce_board(as_marks_board(board), allow_guesses=allow_guesses)
 
@@ -374,7 +381,7 @@ class MarkRulebook(Rulebook):
             puzzle_type=self.puzzle_type,
         )
 
-    def board_to_dict(self, board: Board | TrackGrid) -> dict[str, JsonValue]:
+    def board_to_dict(self, board: Board | TrackGrid | WordGrid) -> dict[str, JsonValue]:
         marks = as_marks_board(board)
         data: dict[str, JsonValue] = {
             "size": marks.size,
@@ -454,13 +461,15 @@ class TrackRulebook(Rulebook):
             board=grid,
         )
 
-    def count_solutions(self, board: Board | TrackGrid, *, limit: int = DEFAULT_LIMIT) -> int:
+    def count_solutions(
+        self, board: Board | TrackGrid | WordGrid, *, limit: int = DEFAULT_LIMIT
+    ) -> int:
         if not isinstance(board, TrackGrid):
             raise GenerationError("train-tracks count needs a track grid")
         return count_track_solutions(board, limit=limit)
 
     def deduce(
-        self, board: Board | TrackGrid, *, allow_guesses: bool = True
+        self, board: Board | TrackGrid | WordGrid, *, allow_guesses: bool = True
     ) -> DeductionTrace | None:
         # No engine for this genre yet. `None` is the honest answer and is what the
         # contract allows: a family without one plays without hints rather than
@@ -535,7 +544,7 @@ class TrackRulebook(Rulebook):
         # and the two open ends — so there is nothing left to check here.
         return TrackGrid(width, height, row_clues, col_clues, givens)
 
-    def board_to_dict(self, board: Board | TrackGrid) -> dict[str, JsonValue]:
+    def board_to_dict(self, board: Board | TrackGrid | WordGrid) -> dict[str, JsonValue]:
         if not isinstance(board, TrackGrid):
             raise GenerationError("train-tracks writes a track grid, not a marks board")
         return {
@@ -544,6 +553,101 @@ class TrackRulebook(Rulebook):
             "rowClues": list(board.row_clues),
             "colClues": list(board.col_clues),
             "givens": list(board.givens),
+        }
+
+
+class WordPathRulebook(Rulebook):
+    """Frozen English recipe; file support precedes the playing screen."""
+
+    puzzle_type = PuzzleType.WORD_PATHS
+    id_suffix = "-words"
+    published = False
+    rated = False
+    on_ramp = False
+    logic_only = False
+
+    def generate(
+        self,
+        *,
+        seed: int,
+        puzzle_id: str,
+        size: int | None = None,
+        stars_per_row: int | None = None,
+        max_attempts: int | None = None,
+    ) -> Puzzle:
+        if any(value is not None for value in (size, stars_per_row, max_attempts)):
+            raise GenerationError("word-paths version 1 uses a fixed recipe, without overrides")
+        parsed = split_puzzle_id(puzzle_id)
+        if parsed is None or parsed[1] is not self.puzzle_type:
+            raise GenerationError("word-paths requires a canonical date-words id")
+        try:
+            grid = generate_word_grid(
+                seed=seed,
+                vocabulary=v1_vocabulary(),
+                budget=SearchBudget(250_000),
+                max_attempts=50,
+            )
+        except (ValueError, WordSearchLimitError) as error:
+            raise GenerationError(str(error)) from error
+        return Puzzle(puzzle_id, self.puzzle_type, seed, 1, grid)
+
+    def count_solutions(
+        self, board: Board | TrackGrid | WordGrid, *, limit: int = DEFAULT_LIMIT
+    ) -> int:
+        return count_word_solutions(self._grid(board), v1_vocabulary(), limit=limit)
+
+    def deduce(self, board: Board | TrackGrid | WordGrid, *, allow_guesses: bool = True) -> None:
+        del board, allow_guesses
+
+    def replay(self, puzzle: Puzzle) -> Puzzle:
+        if puzzle.generator_version != 1:
+            raise GenerationError(
+                f"unsupported word-paths generator version {puzzle.generator_version}"
+            )
+        self._grid(puzzle.board)
+        return self.generate(seed=puzzle.seed, puzzle_id=puzzle.id)
+
+    def dimensions(self, puzzle: Puzzle) -> tuple[int, int]:
+        grid = self._grid(puzzle.board)
+        return grid.width, grid.height
+
+    def render(self, puzzle: Puzzle) -> str:
+        grid = self._grid(puzzle.board)
+        rows = [
+            "".join((letter or "#") + " " for letter in grid.letters[r : r + grid.width])
+            for r in range(0, grid.cell_count, grid.width)
+        ]
+        return "\n".join([f"{puzzle.id} seed={puzzle.seed} size={grid.width}x{grid.height}", *rows])
+
+    @staticmethod
+    def _grid(board: Board | TrackGrid | WordGrid) -> WordGrid:
+        if not isinstance(board, WordGrid):
+            raise GenerationError("word-paths needs a word grid")
+        return board
+
+    def parse_board(self, record: dict[str, Any]) -> WordGrid:
+        letters: list[str | None] = []
+        for letter in require_list(record.get("letters"), "board.letters"):
+            if letter is not None and not isinstance(letter, str):
+                raise BoardError("board.letters[] must be a letter or null")
+            letters.append(letter)
+        return WordGrid(
+            require_int(record.get("width"), "board.width"),
+            require_int(record.get("height"), "board.height"),
+            tuple(letters),
+            tuple(
+                require_int(n, "board.wordLengths[]")
+                for n in require_list(record.get("wordLengths"), "board.wordLengths")
+            ),
+        )
+
+    def board_to_dict(self, board: Board | TrackGrid | WordGrid) -> dict[str, JsonValue]:
+        grid = self._grid(board)
+        return {
+            "width": grid.width,
+            "height": grid.height,
+            "letters": list(grid.letters),
+            "wordLengths": list(grid.word_lengths),
         }
 
 
@@ -559,6 +663,7 @@ _RULEBOOKS: Final[dict[PuzzleType, Rulebook]] = {
         default_stars_per_row=STAR_BATTLE_STARS,
     ),
     PuzzleType.TRAIN_TRACKS: TrackRulebook(),
+    PuzzleType.WORD_PATHS: WordPathRulebook(),
 }
 
 

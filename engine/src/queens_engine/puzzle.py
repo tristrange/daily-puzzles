@@ -123,6 +123,10 @@ def parse_puzzle(data: object) -> Puzzle:
         raise PuzzleParseError(str(error)) from error
 
     identifier = _require_str(record.get("id"), "id")
+    if puzzle_type is PuzzleType.WORD_PATHS:
+        parsed = split_puzzle_id(identifier)
+        if parsed is None or parsed[1] is not puzzle_type:
+            raise PuzzleParseError("word-paths requires a canonical date-words id")
     variant = track_variant(identifier)
     if variant is not None:
         if split_puzzle_id(identifier) is None:

@@ -1,0 +1,389 @@
+{
+  "vocabularySha256": "e054967cc550e50a1f0d245fab7e18979870922f0c41e2d4cc7ff2010d93f0ce",
+  "samples": [
+    "2026-10-14-words.json",
+    "2026-10-15-words.json",
+    "2026-10-16-words.json",
+    "2026-10-17-words.json",
+    "2026-10-18-words.json",
+    "2026-10-19-words.json",
+    "2026-10-20-words.json",
+    "2026-10-21-words.json",
+    "2026-10-22-words.json",
+    "2026-10-23-words.json"
+  ],
+  "rejects": [
+    {
+      "name": "too wide",
+      "board": {
+        "width": 8
+      },
+      "error": "maximum:board/width"
+    },
+    {
+      "name": "boolean dimension",
+      "board": {
+        "width": true
+      },
+      "error": "type:board/width"
+    },
+    {
+      "name": "zero height",
+      "board": {
+        "height": 0
+      },
+      "error": "minimum:board/height"
+    },
+    {
+      "name": "fractional dimension",
+      "board": {
+        "height": 5.5
+      },
+      "error": "type:board/height"
+    },
+    {
+      "name": "wrong cell count",
+      "board": {
+        "letters": [
+          "B",
+          "L",
+          "B",
+          null,
+          null,
+          "I",
+          "W",
+          "O",
+          null,
+          "N",
+          "R",
+          null,
+          null,
+          "M",
+          "O",
+          "T",
+          "I",
+          "L",
+          "M",
+          null,
+          "H",
+          "O",
+          "C",
+          "O"
+        ]
+      },
+      "error": "letter count"
+    },
+    {
+      "name": "lowercase",
+      "board": {
+        "letters": [
+          "a",
+          "L",
+          "B",
+          null,
+          null,
+          "I",
+          "W",
+          "O",
+          null,
+          "N",
+          "R",
+          null,
+          null,
+          "M",
+          "O",
+          "T",
+          "I",
+          "L",
+          "M",
+          null,
+          "H",
+          "O",
+          "C",
+          "O",
+          null
+        ]
+      },
+      "error": "pattern:board/letters/0"
+    },
+    {
+      "name": "two letters",
+      "board": {
+        "letters": [
+          "AB",
+          "L",
+          "B",
+          null,
+          null,
+          "I",
+          "W",
+          "O",
+          null,
+          "N",
+          "R",
+          null,
+          null,
+          "M",
+          "O",
+          "T",
+          "I",
+          "L",
+          "M",
+          null,
+          "H",
+          "O",
+          "C",
+          "O",
+          null
+        ]
+      },
+      "error": "pattern:board/letters/0"
+    },
+    {
+      "name": "unicode",
+      "board": {
+        "letters": [
+          "\u00c5",
+          "L",
+          "B",
+          null,
+          null,
+          "I",
+          "W",
+          "O",
+          null,
+          "N",
+          "R",
+          null,
+          null,
+          "M",
+          "O",
+          "T",
+          "I",
+          "L",
+          "M",
+          null,
+          "H",
+          "O",
+          "C",
+          "O",
+          null
+        ]
+      },
+      "error": "pattern:board/letters/0"
+    },
+    {
+      "name": "number",
+      "board": {
+        "letters": [
+          7,
+          "L",
+          "B",
+          null,
+          null,
+          "I",
+          "W",
+          "O",
+          null,
+          "N",
+          "R",
+          null,
+          null,
+          "M",
+          "O",
+          "T",
+          "I",
+          "L",
+          "M",
+          null,
+          "H",
+          "O",
+          "C",
+          "O",
+          null
+        ]
+      },
+      "error": "type:board/letters/0"
+    },
+    {
+      "name": "boolean",
+      "board": {
+        "letters": [
+          false,
+          "L",
+          "B",
+          null,
+          null,
+          "I",
+          "W",
+          "O",
+          null,
+          "N",
+          "R",
+          null,
+          null,
+          "M",
+          "O",
+          "T",
+          "I",
+          "L",
+          "M",
+          null,
+          "H",
+          "O",
+          "C",
+          "O",
+          null
+        ]
+      },
+      "error": "type:board/letters/0"
+    },
+    {
+      "name": "duplicate lengths",
+      "board": {
+        "wordLengths": [
+          3,
+          3,
+          6,
+          6
+        ]
+      },
+      "error": "uniqueItems:board/wordLengths"
+    },
+    {
+      "name": "empty lengths",
+      "board": {
+        "wordLengths": []
+      },
+      "error": "minItems:board/wordLengths"
+    },
+    {
+      "name": "short word",
+      "board": {
+        "wordLengths": [
+          2,
+          4,
+          5,
+          6
+        ]
+      },
+      "error": "minimum:board/wordLengths/0"
+    },
+    {
+      "name": "long word",
+      "board": {
+        "wordLengths": [
+          3,
+          4,
+          5,
+          7
+        ]
+      },
+      "error": "maximum:board/wordLengths/3"
+    },
+    {
+      "name": "boolean word length",
+      "board": {
+        "wordLengths": [
+          true,
+          4,
+          5,
+          6
+        ]
+      },
+      "error": "type:board/wordLengths/0"
+    },
+    {
+      "name": "wrong total",
+      "board": {
+        "wordLengths": [
+          3,
+          4,
+          5
+        ]
+      },
+      "error": "word lengths must cover"
+    },
+    {
+      "name": "answer field",
+      "board": {
+        "answers": [
+          "CAT"
+        ]
+      },
+      "error": "additionalProperties:board:answers"
+    },
+    {
+      "name": "solution field",
+      "envelope": {
+        "solution": [
+          1,
+          2,
+          3
+        ]
+      },
+      "error": "additionalProperties:<root>:solution"
+    },
+    {
+      "name": "unknown version",
+      "envelope": {
+        "generatorVersion": 2
+      },
+      "error": "const:generatorVersion"
+    },
+    {
+      "name": "difficulty",
+      "envelope": {
+        "difficulty": 1
+      },
+      "error": "not:<root>"
+    },
+    {
+      "name": "wrong family id",
+      "envelope": {
+        "id": "2026-10-14"
+      },
+      "error": "canonical date-words id"
+    },
+    {
+      "name": "invalid calendar day",
+      "envelope": {
+        "id": "2026-02-30-words"
+      },
+      "error": "canonical date-words id"
+    },
+    {
+      "name": "trailing newline is not a letter",
+      "board": {
+        "letters": [
+          "A\n",
+          "L",
+          "B",
+          null,
+          null,
+          "I",
+          "W",
+          "O",
+          null,
+          "N",
+          "R",
+          null,
+          null,
+          "M",
+          "O",
+          "T",
+          "I",
+          "L",
+          "M",
+          null,
+          "H",
+          "O",
+          "C",
+          "O",
+          null
+        ]
+      },
+      "error": "maxLength:board/letters/0"
+    }
+  ]
+}

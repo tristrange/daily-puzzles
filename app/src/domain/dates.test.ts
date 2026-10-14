@@ -115,16 +115,10 @@ describe('puzzleIdsForDay', () => {
   })
 
   it('drops a family that is registered but not published', () => {
-    // The gate that hides an unpublished family is the same one that would hide
-    // the next one, so it is worth a test that is not about any particular family
-    // being off. Nothing is off today, so what is asserted is that the filter
-    // still admits every id the registry has — a day with three puzzles for three
-    // registered families.
-    expect(PUZZLE_TYPES).toContain('train-tracks')
-    expect(puzzleIdsForDay('2026-09-30')).toHaveLength(PUZZLE_TYPES.length)
-    for (const type of PUZZLE_TYPES) {
-      expect(PUZZLE_TYPE_PUBLISHED[type]).toBe(true)
-    }
+    expect(PUZZLE_TYPE_PUBLISHED['word-paths']).toBe(false)
+    expect(puzzleIdsForDay('2026-09-30')).toEqual([
+      '2026-09-30', '2026-09-30-star', '2026-09-30-tracks',
+    ])
   })
 })
 

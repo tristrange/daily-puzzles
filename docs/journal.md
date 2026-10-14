@@ -837,3 +837,26 @@ honest local-word feedback remain important. No human playtest or whole-English
 uniqueness claim has been made. Vocabulary coverage, starting-point quality and
 acceptable traps must be settled before publication. The file contract, UI and
 daily activation are the later milestones in the design.
+
+
+## 2026-10-14 — Word Paths generator and file contract
+
+The engine prototype now has a frozen v1 recipe and a shared file contract.
+`word-paths` uses `-words` IDs; both registries leave publication off. Files
+carry letters, null blockers and word lengths, never answer words or paths.
+The browser imports exactly the same authored 748-word acceptance vocabulary;
+a digest protects it from silent edits. A future vocabulary or recipe change
+must retain v1 replay and introduce a new version.
+
+Ten canonical shared files cover low and high unsigned seeds. Both parsers
+assert their board values and malformed inputs. A 100-seed batch is checked by
+the independent direct-letter cover solver, and golden fixtures pin replay.
+Adding a trailing-newline case exposed a regex difference between validators:
+explicit one-character schema bounds make rejection agree in both languages.
+Existing daily slots stay unchanged, and all 84 published files still replay
+without any archive diff. The browser has a clear unpublished-route response.
+
+This freezes a finite game vocabulary for reproducibility, not publication
+quality. Human word-list review and playtesting remain release gates. UI,
+mobile tracing and daily activation are subsequent PRs; no ScaleDown or new
+runtime dependency was introduced.

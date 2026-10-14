@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
-import { isPuzzleId } from '../domain/dates'
+import { isPuzzleId, puzzleTypeOf } from '../domain/dates'
+import { PUZZLE_TYPE_PUBLISHED, PUZZLE_TYPE_LABEL } from '../domain/games'
 import { PuzzleView } from '../components/PuzzleView'
 
 export function PuzzlePage() {
@@ -10,6 +11,16 @@ export function PuzzlePage() {
       <section>
         <h1 className="page-title">Unknown puzzle</h1>
         <p className="status error">That doesn&rsquo;t look like a puzzle date.</p>
+      </section>
+    )
+  }
+  const type = puzzleTypeOf(id)!
+  if (!PUZZLE_TYPE_PUBLISHED[type]) {
+    return (
+      <section>
+        <h1 className="page-title">{PUZZLE_TYPE_LABEL[type]}</h1>
+        <p className="status">The playing screen is not ready yet.</p>
+        <Link to="/">Today&rsquo;s puzzles</Link>
       </section>
     )
   }

@@ -12,6 +12,10 @@
     {
       "type": "train-tracks",
       "suffix": "-tracks"
+    },
+    {
+      "type": "word-paths",
+      "suffix": "-words"
     }
   ],
   "cases": [
@@ -59,6 +63,11 @@
       "id": "2026-10-17-tracks-large",
       "day": "2026-10-17",
       "type": "train-tracks"
+    },
+    {
+      "id": "2026-10-14-words",
+      "day": "2026-10-14",
+      "type": "word-paths"
     }
   ],
   "unparsed": [
@@ -75,7 +84,10 @@
     "2026-9-30-tracks-large",
     "2026-10-17-tracks-tiny",
     "2026-10-17-tracks-Large",
-    "2026-10-17-tracks-medium-large"
+    "2026-10-17-tracks-medium-large",
+    "2026-02-30-words",
+    "2026-10-14-word",
+    "2026-10-14-words-words"
   ],
   "trainTracks": {
     "activationDay": "2026-10-14",

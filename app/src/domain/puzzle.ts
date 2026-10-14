@@ -6,12 +6,13 @@
  * express is mirrored from `engine/src/queens_engine/puzzle.py`.
  */
 
-import { isPuzzleId } from './dates'
+import { isPuzzleId, puzzleTypeOf } from './dates'
 import { trackVariantOf } from './trackSizes'
 import Ajv2020, { type ErrorObject, type ValidateFunction } from 'ajv/dist/2020.js'
 import puzzleSchema from '@shared/schema/puzzle.schema.json'
 import { Board, BoardError, PUZZLE_TYPES, type PuzzleType } from './board'
 import { TrackGrid, TrackGridError } from './tracks'
+import { WordGrid, WordGridError } from './wordPaths'
 
 export class PuzzleParseError extends Error {
   constructor(message: string) {
@@ -35,17 +36,8 @@ export interface Puzzle {
   readonly puzzleType: PuzzleType
   readonly seed: number
   readonly generatorVersion: number
-  /**
-   * The board this type plays.
-   *
-   * `Board` for the two marks genres, `TrackGrid` for Train Tracks — a grid that
-   * is not made of regions, is not square, and obeys reciprocity rather than a
-   * capacity. There is no `size` on a puzzle: a grid that need not be square has
-   * none, and reading one off the board instead is what keeps that honest. Both
-   * board classes answer `width`, `height`, `cellCount`, `index` and `coords`, so
-   * a caller that only needs geometry asks for those and does not branch.
-   */
-  readonly board: Board | TrackGrid
+  /** Family-specific grid. Shared readers use width, height and cellCount. */
+  readonly board: Board | TrackGrid | WordGrid
   readonly difficulty: DifficultyBand | null
 }
 
@@ -129,17 +121,21 @@ export function parsePuzzle(data: unknown): Puzzle {
   // The one place the file format branches. Everything downstream asks the board
   // what it is rather than the type, because a board knows its own geometry and a
   // puzzle type does not.
-  let board: Board | TrackGrid
+  let board: Board | TrackGrid | WordGrid
   try {
-    board = typeRaw === 'train-tracks' ? parseTrackGrid(boardRecord) : parseMarksBoard(boardRecord, typeRaw)
+    board = typeRaw === 'word-paths' ? parseWordGrid(boardRecord)
+      : typeRaw === 'train-tracks' ? parseTrackGrid(boardRecord) : parseMarksBoard(boardRecord, typeRaw)
   } catch (error) {
-    if (error instanceof BoardError || error instanceof TrackGridError) {
+    if (error instanceof BoardError || error instanceof TrackGridError || error instanceof WordGridError) {
       throw new PuzzleParseError(error.message)
     }
     throw error
   }
 
   const id = String(record['id'])
+  if (typeRaw === 'word-paths' && puzzleTypeOf(id) !== typeRaw) {
+    throw new PuzzleParseError('word-paths requires a canonical date-words id')
+  }
   const variant = trackVariantOf(id)
   if (variant !== null) {
     if (!isPuzzleId(id)) {
@@ -212,4 +208,20 @@ function parseTrackGrid(record: Record<string, unknown>): TrackGrid {
     numbers(record, 'colClues'),
     numbers(record, 'givens'),
   )
+}
+
+function parseWordGrid(record: Record<string, unknown>): WordGrid {
+  const width = record['width']
+  const height = record['height']
+  const letters = record['letters']
+  if (typeof width !== 'number' || typeof height !== 'number' || !Array.isArray(letters)) {
+    throw new PuzzleParseError('board requires width, height and letters')
+  }
+  const checked = letters.map((letter: unknown) => {
+    if (letter !== null && typeof letter !== 'string') {
+      throw new PuzzleParseError('board.letters[] must be a letter or null')
+    }
+    return letter
+  })
+  return new WordGrid(width, height, checked, numbers(record, 'wordLengths'))
 }
