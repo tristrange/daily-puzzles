@@ -74,3 +74,26 @@ Notifications (hint text, conflict warnings, the solve time) go through a
 visually hidden `aria-live` region so screen-reader users hear them without the
 whole grid being re-read.
 
+
+## Word Paths preview
+
+Run the app normally, then open `#/preview/word-paths` (also linked from How to
+play). Choose one of ten original 5×5 boards. Drag and release to submit, or tap
+letters and press Submit. Keyboard: arrows/Home/End move focus, Space selects,
+Enter submits, Backspace removes a letter, Escape clears selection, Ctrl/Cmd+Z
+undoes. Backtracking truncates the selected path.
+
+Use each shown length and every letter once, with orthogonal paths and no overlap.
+Only the frozen English vocabulary is accepted. A locally accepted word may lead
+to a dead end; Undo is available. No answers or client solver are bundled.
+
+Preview progress is saved separately from daily attempts and never affects stats
+or streaks. Accepted words, unfinished traces and visible active time survive
+reloads. Completed progress is cleared for replay. Result shares reopen the same
+preview board; the separate spoiler share includes words and paths.
+
+The existing Auto/Light/Dark picker applies to the new board. Single-finger
+tracing reserves the board gesture, with pinch zoom allowed. Browser pointer and
+375px layout checks are recorded in `../docs/journal.md`; physical phone touch
+and pinch testing remain a release gate. Daily publication stays disabled until
+a later rollout PR.

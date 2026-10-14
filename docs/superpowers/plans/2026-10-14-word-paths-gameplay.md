@@ -29,29 +29,29 @@
 **Files:** `app/src/domain/wordGame.ts`, `wordGame.test.ts`, `app/src/lib/wordProgress.ts`, `wordProgress.test.ts`, shared path fixture JSON and Python test.
 **Interfaces:** Consumes WordGrid and WORD_PATHS_VOCABULARY. Produces WordGame, createWordGame(grid), spellPath(grid,cells), traceCell(game,cell), clearTrace(game), submitWord(game):{game,accepted,message}, undoWord(game), resetWordGame(game), isWordSolved(game); read/store/clearWordProgress(id,grid/game,elapsedMs,preview=false).
 
-- [ ] Write tests for legal turns, diagonals/wrap/blockers/reuse, truncation, invalid words/lengths/overlap, reversed accepted spelling and full coverage. Share geometry cases with Python spell_path.
-- [ ] Write progress tests for traces/words/elapsed, corrupt/stale/overlapping/invalid snapshots, missing storage, completed cleanup and preview isolation.
-- [ ] Run new tests; expect missing modules/functions to fail.
-- [ ] Implement only the specified pure state transitions and validated persistence.
-- [ ] Run focused Vitest and Python path fixtures; expect pass; commit `feat: add Word Paths rules and saved progress`.
+- [x] Write tests for legal turns, diagonals/wrap/blockers/reuse, truncation, invalid words/lengths/overlap, reversed accepted spelling and full coverage. Share geometry cases with Python spell_path.
+- [x] Write progress tests for traces/words/elapsed, corrupt/stale/overlapping/invalid snapshots, missing storage, completed cleanup and preview isolation.
+- [x] Run new tests; expect missing modules/functions to fail.
+- [x] Implement only the specified pure state transitions and validated persistence.
+- [x] Run focused Vitest and Python path fixtures; expect pass; commit `feat: add Word Paths rules and saved progress`.
 
 ### Task 2: Tracing board, stage, results and preview route
 
 **Files:** `app/src/components/{WordPathsBoard,WordPathsStage}.tsx`, board markup tests, `app/src/lib/share.ts` and tests, `app/src/pages/WordPathsPreviewPage.tsx` and tests, `App.tsx`, `PuzzleView.tsx`, `RulesPage.tsx`, `App.css`.
-**Interfaces:** Consumes Task 1 game/progress functions. Board callbacks select(cell):readonly number[], restoreTrace(path), submit(), undo(); stage accepts puzzle, grid, timeZone and preview=false. Preview route owns Board 1–10 selection. Existing result/stats/clipboard APIs remain intact.
+**Interfaces:** Consumes Task 1 game/progress functions. Board callbacks select(cell):readonly number[], restoreTrace(path), submit(), undo(); stage accepts puzzle, grid, timeZone and previewBoard?:number. Preview route owns Board 1–10 selection. Existing result/stats/clipboard APIs remain intact.
 
-- [ ] Write markup, preview/route/isolation and spoiler-share tests; run them and expect missing behavior.
-- [ ] Implement immediate trace feedback, pointer capture/cancel/backtrack, roving focus/keyboard controls and named word slots.
-- [ ] Implement validated progress restoration, visible-only elapsed time, reversible reset, post-reload Undo, first-solve record handling and preview-specific shares without stats.
-- [ ] Add scoped theme-aware CSS, the ten-board preview route and How to play link; integrate daily Word Paths stage behind existing gate.
-- [ ] Run full app tests/typecheck/lint/build; expect pass; commit `feat: add playable Word Paths preview`.
+- [x] Write markup, preview/route/isolation and spoiler-share tests; run them and expect missing behavior.
+- [x] Implement immediate trace feedback, pointer capture/cancel/backtrack, roving focus/keyboard controls and named word slots.
+- [x] Implement validated progress restoration, visible-only elapsed time, reversible reset, post-reload Undo, first-solve record handling and preview-specific shares without stats.
+- [x] Add scoped theme-aware CSS, the ten-board preview route and How to play link; integrate daily Word Paths stage behind existing gate.
+- [x] Run full app tests/typecheck/lint/build; expect pass; commit `feat: add playable Word Paths preview`.
 
 ### Task 3: Browser proof and final verification
 
 **Files:** `docs/journal.md`, `app/README.md`, this plan, screenshots under `docs/measurements/`.
 **Interfaces:** Consumes the completed preview and game stage.
 
-- [ ] Start the app and inspect light/dark and phone-sized layout, pointer vertical/horizontal tracing, keyboard solving, cancellation, reload and Undo. Record actual limitations; never claim physical touch proof without it.
-- [ ] Run full app gates, Python suite/type/lint/format, archive replay and schema IDs; expect success and no archive diff.
-- [ ] Document preview and release gates, commit `docs: record Word Paths preview verification`.
+- [x] Start the app and inspect light/dark and phone-sized layout, pointer vertical/horizontal tracing, keyboard solving, cancellation, reload and Undo. Record actual limitations; never claim physical touch proof without it.
+- [x] Run full app gates, Python suite/type/lint/format, archive replay and schema IDs; expect success and no archive diff.
+- [x] Document preview and release gates, commit `docs: record Word Paths preview verification`.
 - [ ] Obtain one fresh whole-branch review; address important findings with regression proof; open/attach a `feat:` PR and wait for checks; maintainer merges.
