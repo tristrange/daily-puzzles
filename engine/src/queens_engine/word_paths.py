@@ -5,6 +5,7 @@ Uniqueness is relative to the supplied vocabulary, never to all English words.
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Collection, Iterator
 from dataclasses import dataclass
 from itertools import islice
@@ -16,7 +17,7 @@ from .solver import DEFAULT_LIMIT
 MAX_DIMENSION: Final = 7
 MIN_WORD_LENGTH: Final = 3
 MAX_WORD_LENGTH: Final = 6
-PILOT_VOCABULARY_PATH: Final = Path(__file__).with_name("data") / "word-paths-en-pilot.txt"
+PILOT_VOCABULARY_PATH: Final = Path(__file__).with_name("data") / "word-paths-en-v1.txt"
 
 
 class WordGridError(ValueError):
@@ -105,6 +106,15 @@ def pilot_vocabulary() -> tuple[str, ...]:
     )
     validate_vocabulary(words)
     return tuple(sorted(words))
+
+
+def v1_vocabulary() -> tuple[str, ...]:
+    """The immutable acceptance vocabulary bound to generator version 1."""
+    words = pilot_vocabulary()
+    digest = hashlib.sha256("\n".join(words).encode()).hexdigest()
+    if digest != "e054967cc550e50a1f0d245fab7e18979870922f0c41e2d4cc7ff2010d93f0ce":
+        raise WordGridError("version 1 vocabulary digest mismatch; introduce a new version")
+    return words
 
 
 class WordSearchLimitError(RuntimeError):

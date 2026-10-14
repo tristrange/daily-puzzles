@@ -1,8 +1,8 @@
-"""Experimental 5x5 construction, deliberately outside the daily rulebook.
+"""Frozen version 1 construction, not yet published daily.
 
 Place four words along a randomized self-avoiding walk, leaving seven blockers.
 Reject ambiguity against every pilot word, not just the constructor's answers.
-This recipe and vocabulary are provisional until editorial validation and rollout.
+Keep this recipe unchanged for replay; editorial changes need a new version.
 """
 
 from __future__ import annotations

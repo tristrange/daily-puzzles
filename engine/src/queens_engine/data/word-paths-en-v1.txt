@@ -1,7 +1,7 @@
-# Authored for this repository from ordinary English vocabulary, October 2026.
-# Created with Codex; not copied from a third-party word list. No ScaleDown calls.
-# Pilot only: not a dictionary of all English words or a published replay version.
-# Entries require editorial playtesting before use in daily puzzles.
+# English Word Paths version 1 acceptance vocabulary (748 words).
+# Authored with Codex; no external word list or runtime download.
+# Frozen for replay. Any word changes require a new generator version.
+# Finite game vocabulary; human editorial review remains a release gate.
 ANT
 ARM
 ART

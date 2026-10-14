@@ -10,11 +10,11 @@
     "id": {
       "description": "Puzzle date in UTC, YYYY-MM-DD, with an optional family suffix for a companion puzzle of that day. Also the filename stem. The suffix list is generated from `conformance/id-cases/manifest.json`, which also pins the engine's `Rulebook.id_suffix` and the app's `PUZZLE_TYPE_SUFFIX` to it. Escapes are kept to what both regex flavours accept: ajv compiles patterns with the `u` flag, which rejects a hyphen escaped the Python way.",
       "type": "string",
-      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(-tracks-medium|-tracks-small|-tracks-large|-tracks|-star)?$"
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(-tracks-medium|-tracks-small|-tracks-large|-tracks|-words|-star)?$"
     },
     "type": {
       "description": "Puzzle family. Selects the adapter in the app.",
-      "enum": ["queens", "star-battle", "train-tracks"]
+      "enum": ["queens", "star-battle", "train-tracks", "word-paths"]
     },
     "seed": {
       "description": "Seed for the deterministic PRNG, so any puzzle can be replayed exactly.",
@@ -122,6 +122,33 @@
                 "description": "Piece number per cell, row-major, length exactly width * height. 0 is an empty cell, and 1 to 6 are the six pieces: two straights and four turns. Exactly two givens face off the edge, because the line has two ends.",
                 "type": "array",
                 "items": { "type": "integer", "minimum": 0, "maximum": 6 }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "word-paths" } }, "required": ["type"] },
+      "then": {
+        "not": { "required": ["difficulty"] },
+        "properties": {
+          "generatorVersion": { "const": 1 },
+          "board": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["width", "height", "letters", "wordLengths"],
+            "properties": {
+              "width": { "type": "integer", "minimum": 1, "maximum": 7 },
+              "height": { "type": "integer", "minimum": 1, "maximum": 7 },
+              "letters": {
+                "description": "Row-major A-Z letters, null for a blocker; length exactly width * height.",
+                "type": "array", "maxItems": 49,
+                "items": { "type": ["string", "null"], "pattern": "^[A-Z]$" }
+              },
+              "wordLengths": {
+                "type": "array", "minItems": 1, "maxItems": 4, "uniqueItems": true,
+                "items": { "type": "integer", "minimum": 3, "maximum": 6 }
               }
             }
           }
