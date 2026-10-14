@@ -1,6 +1,7 @@
 /** Pure Word Paths rules, independent of pointer input and storage. */
 import { WORD_PATHS_V2_VOCABULARY } from './wordVocabulary'
-import { WordGrid, WordGridError, WORD_PATHS_VOCABULARY } from './wordPaths'
+import { WordGrid, spellPath, adjacent, WORD_PATHS_VOCABULARY } from './wordPaths'
+export { spellPath } from './wordPaths'
 
 export type WordGame = {
   readonly grid: WordGrid
@@ -11,29 +12,6 @@ const vocabularies = { 1: new Set(WORD_PATHS_VOCABULARY), 2: new Set(WORD_PATHS_
 
 export function createWordGame(grid: WordGrid): WordGame {
   return { grid, words: [], trace: [] }
-}
-
-export function spellPath(grid: WordGrid, cells: readonly number[]): string {
-  if (cells.length === 0 || new Set(cells).size !== cells.length) {
-    throw new WordGridError('A path must be nonempty and cannot reuse a cell.')
-  }
-  return cells.map((cell, index) => {
-    if (!Number.isInteger(cell) || cell < 0 || cell >= grid.cellCount) {
-      throw new WordGridError('Path cell is out of range.')
-    }
-    const letter = grid.letters[cell]
-    if (letter === null || letter === undefined) throw new WordGridError('A path cannot enter a blocked cell.')
-    const previous = cells[index - 1]
-    if (previous !== undefined && !adjacent(grid, previous, cell)) {
-      throw new WordGridError('Path steps must be orthogonally adjacent.')
-    }
-    return letter
-  }).join('')
-}
-
-function adjacent(grid: WordGrid, a: number, b: number): boolean {
-  return Math.abs(Math.floor(a / grid.width) - Math.floor(b / grid.width))
-    + Math.abs(a % grid.width - b % grid.width) === 1
 }
 
 export function traceCell(game: WordGame, cell: number): WordGame {

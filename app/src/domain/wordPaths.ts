@@ -50,3 +50,26 @@ export class WordGrid {
     Object.freeze(this)
   }
 }
+
+export function spellPath(grid: WordGrid, cells: readonly number[]): string {
+  if (cells.length === 0 || new Set(cells).size !== cells.length) {
+    throw new WordGridError('A path must be nonempty and cannot reuse a cell.')
+  }
+  return cells.map((cell, index) => {
+    if (!Number.isInteger(cell) || cell < 0 || cell >= grid.cellCount) {
+      throw new WordGridError('Path cell is out of range.')
+    }
+    const letter = grid.letters[cell]
+    if (letter === null || letter === undefined) throw new WordGridError('A path cannot enter a blocked cell.')
+    const previous = cells[index - 1]
+    if (previous !== undefined && !adjacent(grid, previous, cell)) {
+      throw new WordGridError('Path steps must be orthogonally adjacent.')
+    }
+    return letter
+  }).join('')
+}
+
+export function adjacent(grid: WordGrid, a: number, b: number): boolean {
+  return Math.abs(Math.floor(a / grid.width) - Math.floor(b / grid.width))
+    + Math.abs(a % grid.width - b % grid.width) === 1
+}
