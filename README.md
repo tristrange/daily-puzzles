@@ -67,6 +67,17 @@ Daily progress and results are separate from the [ten-board preview](https://tri
 
 ---
 
+## Add to your Home Screen
+
+On iPhone, open the site in Safari and choose **Share → Add to Home Screen**.
+Keep **Open as Web App** enabled if shown, then tap **Add**. The icon launches
+Daily Puzzles in its own window, with Auto appearance following your system.
+
+An internet connection is still required. Safari and the installed iPhone app
+keep separate local progress, stats and settings; existing Safari data stays
+there. Installation does not migrate it or add syncing. Offline support is a
+separate follow-up.
+
 ## Why it is built this way
 
 ### One file, two languages

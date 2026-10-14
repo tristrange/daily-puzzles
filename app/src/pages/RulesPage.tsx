@@ -35,6 +35,19 @@ export function RulesPage() {
         on October 15. Published puzzles are kept in the <Link to="/archive">archive</Link>.
       </p>
 
+      <h2>Add to your Home Screen</h2>
+      <p>Keep Daily Puzzles beside your other apps on iPhone:</p>
+      <ol>
+        <li>Open <Link to="/">Today&rsquo;s puzzles</Link> in Safari.</li>
+        <li>Tap Share, then Add to Home Screen.</li>
+        <li>Keep Open as Web App enabled if it appears, then tap Add.</li>
+      </ol>
+      <p>Launch it from the new icon to play in its own window. An internet
+        connection is still required. Auto appearance follows your phone&rsquo;s settings.</p>
+      <p>On iPhone, Safari and the Home Screen app keep separate saved data.
+        Your existing Safari progress stays in Safari; the app saves its own
+        progress and stats.</p>
+
       <h2>The board</h2>
       <p>
         The daily board varies in size from 7&times;7 to 9&times;9, depending on the day and
