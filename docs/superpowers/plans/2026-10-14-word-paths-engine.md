@@ -34,10 +34,10 @@
 
 **Interfaces:** `WordGrid(width: int, height: int, letters: tuple[str | None, ...], word_lengths: tuple[int, ...])`; `WordGridError`; `spell_path(grid, cells: tuple[int, ...]) -> str`; `pilot_vocabulary() -> tuple[str, ...]`.
 
-- [ ] Write tests for legal turns, wrong totals, dimensions/cells/lengths, diagonal steps, reused/blocked/out-of-range cells and malformed vocabulary. Use literal known answers.
-- [ ] Run the tests; expect missing feature failures.
-- [ ] Implement the immutable model, direct path validation, and a curated vocabulary with provenance and explicit pilot status. Model supports small rectangular fixtures, dimensions 1–7 and distinct word lengths 3–6.
-- [ ] Run focused tests; expect all pass. Commit the model and vocabulary.
+- [x] Write tests for legal turns, wrong totals, dimensions/cells/lengths, diagonal steps, reused/blocked/out-of-range cells and malformed vocabulary. Use literal known answers.
+- [x] Run the tests; expect missing feature failures.
+- [x] Implement the immutable model, direct path validation, and a curated vocabulary with provenance and explicit pilot status. Model supports small rectangular fixtures, dimensions 1–7 and distinct word lengths 3–6.
+- [x] Run focused tests; expect all pass. Commit the model and vocabulary.
 
 ### Task 2: Exhaustive cover counting
 
@@ -45,11 +45,11 @@
 
 **Interfaces:** `WordPath(word: str, cells: tuple[int, ...])`; `SearchBudget(max_states: int)` with `spent`/`step()`; `WordSearchLimitError`; `iter_solutions(grid, vocabulary, *, budget=None) -> Iterator[tuple[WordPath, ...]]`; `count_solutions(grid, vocabulary, *, limit=2, budget=None) -> int`.
 
-- [ ] Add failing zero/one/two-cover tests, unintended-word ambiguity, submission-order invariance, reversed palindrome equivalence and same-cells/different-path ambiguity.
-- [ ] Add budget regressions, including exhaustion after the first yielded cover. Add an independent tiny-board reference that enumerates letter paths directly without production helpers.
-- [ ] Run new tests; expect failures from missing solver behavior.
-- [ ] Implement vocabulary-prefix pruning and exhaustive nonoverlapping cover search. Select a remaining length, so word submission permutations cannot multiply counts. Normalize only palindrome reversal. Validate limits and vocabulary before searching.
-- [ ] Run focused tests and independent reference comparisons; expect agreement. Commit the solver.
+- [x] Add failing zero/one/two-cover tests, unintended-word ambiguity, submission-order invariance, reversed palindrome equivalence and same-cells/different-path ambiguity.
+- [x] Add budget regressions, including exhaustion after the first yielded cover. Add an independent tiny-board reference that enumerates letter paths directly without production helpers.
+- [x] Run new tests; expect failures from missing solver behavior.
+- [x] Implement vocabulary-prefix pruning and exhaustive nonoverlapping cover search. Select a remaining length, so word submission permutations cannot multiply counts. Normalize only palindrome reversal. Validate limits and vocabulary before searching.
+- [x] Run focused tests and independent reference comparisons; expect agreement. Commit the solver.
 
 ### Task 3: Deterministic construction probe and delivery
 
@@ -57,10 +57,10 @@
 
 **Interfaces:** `generate_grid(*, seed: int, vocabulary: tuple[str, ...], budget: SearchBudget, max_attempts: int = 50) -> WordGrid`; `WordGenerationError`; benchmark `main(argv: list[str] | None = None) -> int`.
 
-- [ ] Write failing construction and CLI tests for literal board shape, reproducibility, proven uniqueness, explicit bounded failure, invalid inputs and honest failure accounting.
-- [ ] Run tests; expect missing-feature failures.
-- [ ] Implement randomized self-avoiding letter placement using `Prng`, distinct word selection by length, and full-vocabulary uniqueness checks. Budget exhaustion raises, with no fallback. This remains an experimental constructor, not a published generator version.
-- [ ] Implement `python -m tools.benchmark_word_paths --count 100 --out PATH`, checking each returned board with fresh unbounded enumeration and direct path/coverage checks. Report every seed, proof work, candidate counts and answer words/paths for editorial review; reports are not playable puzzle files.
-- [ ] Run focused tests, then the 100-seed probe and a repeat for deterministic boards. Inspect at least ten rendered examples; record misleading partial words, disconnected components and vocabulary limitations. Set no publication date or difficulty band.
-- [ ] Run full engine tests, pyright, ruff lint/format, schema-ID check and published-corpus replay. Existing app checks are covered by PR CI. Expect all gates pass and existing corpus bytes unchanged.
+- [x] Write failing construction and CLI tests for literal board shape, reproducibility, proven uniqueness, explicit bounded failure, invalid inputs and honest failure accounting.
+- [x] Run tests; expect missing-feature failures.
+- [x] Implement randomized self-avoiding letter placement using `Prng`, distinct word selection by length, and full-vocabulary uniqueness checks. Budget exhaustion raises, with no fallback. This remains an experimental constructor, not a published generator version.
+- [x] Implement `python -m tools.benchmark_word_paths --count 100 --out PATH`, checking each returned board with fresh unbounded enumeration and direct path/coverage checks. Report every seed, proof work, candidate counts and answer words/paths for editorial review; reports are not playable puzzle files.
+- [x] Run focused tests, then the 100-seed probe and a repeat for deterministic boards. Inspect at least ten rendered examples; record misleading partial words, disconnected components and vocabulary limitations. Set no publication date or difficulty band.
+- [x] Run full engine tests, pyright, ruff lint/format, schema-ID check and published-corpus replay. Existing app checks are covered by PR CI. Expect all gates pass and existing corpus bytes unchanged.
 - [ ] Commit results/docs, request one independent whole-branch review, fix material findings with regression proof, open/attach the PR and wait for checks. Leave merging to the maintainer.
