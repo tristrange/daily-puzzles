@@ -5,10 +5,13 @@ Uniqueness is relative to the supplied vocabulary, never to all English words.
 
 from __future__ import annotations
 
-from collections.abc import Collection
+from collections.abc import Collection, Iterator
 from dataclasses import dataclass
+from itertools import islice
 from pathlib import Path
 from typing import Final
+
+from .solver import DEFAULT_LIMIT
 
 MAX_DIMENSION: Final = 7
 MIN_WORD_LENGTH: Final = 3
@@ -59,7 +62,7 @@ class WordGrid:
         )
 
 
-def _is_letter(letter: str) -> bool:
+def _is_letter(letter: object) -> bool:
     return isinstance(letter, str) and len(letter) == 1 and "A" <= letter <= "Z"
 
 
@@ -100,3 +103,113 @@ def pilot_vocabulary() -> tuple[str, ...]:
     )
     _validate_vocabulary(words)
     return tuple(sorted(words))
+
+
+class WordSearchLimitError(RuntimeError):
+    """The proof is incomplete; callers must not interpret it as a solution count."""
+
+
+class SearchBudget:
+    """A shared deterministic work limit for construction, paths and covers."""
+
+    def __init__(self, max_states: int) -> None:
+        if type(max_states) is not int or max_states < 0:
+            raise WordGridError("max_states must be a nonnegative integer")
+        self._max_states = max_states
+        self._spent = 0
+
+    @property
+    def spent(self) -> int:
+        return self._spent
+
+    def step(self) -> None:
+        if self._spent >= self._max_states:
+            raise WordSearchLimitError(f"word-path search exhausted {self._max_states} states")
+        self._spent += 1
+
+
+@dataclass(frozen=True)
+class WordPath:
+    word: str
+    cells: tuple[int, ...]
+
+    @property
+    def mask(self) -> int:
+        return sum(1 << cell for cell in self.cells)
+
+
+def vocabulary_paths(
+    grid: WordGrid, vocabulary: Collection[str], *, budget: SearchBudget | None = None
+) -> tuple[WordPath, ...]:
+    """Enumerate all legal words, preserving distinct paths with the same cell set."""
+    _validate_vocabulary(vocabulary)
+    allowed = {word for word in vocabulary if len(word) in grid.word_lengths}
+    prefixes = {word[:length] for word in allowed for length in range(1, len(word) + 1)}
+    found: set[WordPath] = set()
+
+    def walk(cell: int, prefix: str, path: tuple[int, ...], used: int) -> None:
+        if budget is not None:
+            budget.step()
+        letter = grid.letters[cell]
+        if letter is None:
+            return
+        word = prefix + letter
+        if word not in prefixes:
+            return
+        path = (*path, cell)
+        used |= 1 << cell
+        if word in allowed:
+            canonical = min(path, path[::-1]) if word == word[::-1] else path
+            found.add(WordPath(word, canonical))
+        if len(word) < max(grid.word_lengths):
+            for other in grid.neighbours(cell):
+                if not used & (1 << other) and grid.letters[other] is not None:
+                    walk(other, word, path, used)
+
+    for cell, letter in enumerate(grid.letters):
+        if letter is not None:
+            walk(cell, "", (), 0)
+    return tuple(sorted(found, key=lambda path: (len(path.word), path.word, path.cells)))
+
+
+def iter_solutions(
+    grid: WordGrid, vocabulary: Collection[str], *, budget: SearchBudget | None = None
+) -> Iterator[tuple[WordPath, ...]]:
+    """Exhaustive covers; an early yielded answer alone is not proof of uniqueness."""
+    paths = vocabulary_paths(grid, vocabulary, budget=budget)
+    by_length = {
+        length: tuple(path for path in paths if len(path.word) == length)
+        for length in grid.word_lengths
+    }
+    lengths = sorted(grid.word_lengths, key=lambda length: (len(by_length[length]), length))
+    all_letters = sum(1 << cell for cell, letter in enumerate(grid.letters) if letter is not None)
+
+    def cover(
+        index: int, used: int, chosen: tuple[WordPath, ...]
+    ) -> Iterator[tuple[WordPath, ...]]:
+        if budget is not None:
+            budget.step()
+        if index == len(lengths):
+            if used == all_letters:
+                yield tuple(sorted(chosen, key=lambda path: len(path.word)))
+            return
+        # Fix one length per search depth: submission order cannot multiply covers.
+        for path in by_length[lengths[index]]:
+            mask = path.mask
+            if not used & mask:
+                yield from cover(index + 1, used | mask, (*chosen, path))
+
+    yield from cover(0, 0, ())
+
+
+def count_solutions(
+    grid: WordGrid,
+    vocabulary: Collection[str],
+    *,
+    limit: int = DEFAULT_LIMIT,
+    budget: SearchBudget | None = None,
+) -> int:
+    """Count up to `limit`; limit=2 distinguishes impossible, unique and ambiguous."""
+    if type(limit) is not int or limit <= 0:
+        raise WordGridError("solution limit must be a positive integer")
+    return sum(1 for _ in islice(iter_solutions(grid, vocabulary, budget=budget), limit))

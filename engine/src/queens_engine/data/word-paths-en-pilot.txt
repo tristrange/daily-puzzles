@@ -1,5 +1,5 @@
 # Authored for this repository from ordinary English vocabulary, October 2026.
-# Not copied from a third-party word list; no AI service was used.
+# Created with Codex; not copied from a third-party word list. No ScaleDown calls.
 # Pilot only: not a dictionary of all English words or a published replay version.
 # Entries require editorial playtesting before use in daily puzzles.
 ANT
@@ -295,7 +295,6 @@ CHEEK
 CHEST
 CHILD
 CHIME
-CHINA
 CHOIR
 CLEAN
 CLEAR
