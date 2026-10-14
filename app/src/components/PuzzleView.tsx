@@ -23,6 +23,8 @@ import type { Board } from '../domain/board'
 import { isMarksPuzzle, isTracksPuzzle, type Puzzle } from '../domain/puzzle'
 import { trackVariantOf } from '../domain/trackSizes'
 import { TracksStage } from './TracksStage'
+import { WordPathsStage } from './WordPathsStage'
+import { WordGrid } from '../domain/wordPaths'
 import { PuzzleNotFoundError, loadPuzzle } from '../lib/puzzles'
 import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } from '../lib/stats'
 import { readStoredAutoMark, storeAutoMark } from '../lib/autoMark'
@@ -474,6 +476,8 @@ export function PuzzleView({
           <TracksStage puzzle={state.puzzle} grid={state.puzzle.board} timeZone={timeZone} />
         ) : isMarksPuzzle(state.puzzle) ? (
           <PuzzleStage puzzle={state.puzzle} board={state.puzzle.board} timeZone={timeZone} />
+        ) : state.puzzle.board instanceof WordGrid ? (
+          <WordPathsStage puzzle={state.puzzle} grid={state.puzzle.board} timeZone={timeZone} />
         ) : null}
       </div>
     </article>

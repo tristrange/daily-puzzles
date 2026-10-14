@@ -208,3 +208,10 @@ which is what the board-level conformance suite is for.
 - Every puzzle file is committed. Puzzle history is visible in `git log`.
 - No databases, auth, ORMs or task-runner monorepo. If a change needs one of those, the
   scope has crept and the plan needs revisiting.
+
+
+## Contribution naming
+
+Use purpose-based branch prefixes such as `feat/word-paths-gameplay` and
+`fix/mobile-tracing`. Pull request titles use the matching `feat:` or `fix:`
+prefix. Feature PRs are reviewed and merged by the maintainer.

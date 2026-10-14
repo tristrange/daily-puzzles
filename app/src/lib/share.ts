@@ -16,6 +16,7 @@ import { PUZZLE_TYPE_LABEL } from '../domain/games'
 import { trackVariantOf } from '../domain/trackSizes'
 import { formatTime } from '../domain/game'
 import { PIECE_GLYPHS, TrackGrid } from '../domain/tracks'
+import { spellPath, type WordGame } from '../domain/wordGame'
 
 /**
  * Filled and empty cells.
@@ -50,6 +51,7 @@ export type ShareResult = {
   readonly streak: number
   /** Where the recipient can play the same puzzle. */
   readonly link: string
+  readonly previewBoard?: number
 }
 
 
@@ -139,7 +141,7 @@ function headerLines(result: ShareResult): [string, string] {
   const hints = result.hints === 0 ? 'no hints' : `${result.hints} hint${result.hints === 1 ? '' : 's'}`
   const variant = result.puzzleType === 'train-tracks' ? trackVariantOf(result.puzzleId) : null
   return [
-    `Daily Puzzles — ${PUZZLE_TYPE_LABEL[result.puzzleType]}${variant ? ` ${variant.label}` : ''} ${result.width}×${result.height}`,
+    `Daily Puzzles — ${PUZZLE_TYPE_LABEL[result.puzzleType]}${result.previewBoard === undefined ? '' : ` preview · Board ${result.previewBoard}`}${variant ? ` ${variant.label}` : ''} ${result.width}×${result.height}`,
     `${formatTime(result.elapsedMs)} · ${hints}`,
   ]
 }
@@ -175,9 +177,11 @@ export function appBase(origin: string, basePath: string): string {
  * than the daily route, because a share is most often read later, when "today"
  * is a different puzzle.
  */
-export function puzzleShareLink(id: string): string {
+export function puzzleShareLink(id: string, previewBoard?: number): string {
   const base = appBase(window.location.origin, import.meta.env.BASE_URL)
-  return `${base.replace(/\/$/, '')}/#/archive/${id}`
+  return previewBoard === undefined
+    ? `${base.replace(/\/$/, '')}/#/archive/${id}`
+    : `${base.replace(/\/$/, '')}/#/preview/word-paths?board=${previewBoard}`
 }
 
 /**
@@ -218,4 +222,14 @@ function legacyCopy(text: string): boolean {
   } finally {
     holder.remove()
   }
+}
+
+
+/** Explicit spoiler share: words and their ordered paths. */
+export function buildWordSolutionShareText(result: ShareResult, game: WordGame): string {
+  const words = [...game.words].sort((a, b) => a.length - b.length).map((path) => {
+    const coordinates = path.map((cell) => `r${Math.floor(cell / game.grid.width) + 1}c${cell % game.grid.width + 1}`)
+    return `${spellPath(game.grid, path)}: ${coordinates.join(' → ')}`
+  })
+  return [...headerLines(result), '', ...words, '', ...(result.streak > 1 ? [`${result.streak}-day streak`] : []), result.link].join('\n')
 }

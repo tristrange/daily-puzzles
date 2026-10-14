@@ -860,3 +860,42 @@ This freezes a finite game vocabulary for reproducibility, not publication
 quality. Human word-list review and playtesting remain release gates. UI,
 mobile tracing and daily activation are subsequent PRs; no ScaleDown or new
 runtime dependency was introduced.
+
+
+## 2026-10-14 — Playable Word Paths preview
+
+Branch `feat/word-paths-gameplay` adds ten playable previews through How to play,
+without publishing daily Word Paths files. English v1 paths have their own pure
+state transitions, and shared geometry fixtures agree with Python. Saved paths
+are validated against the frozen vocabulary, lengths, adjacency and overlap;
+preview keys and results are isolated from daily records. Active time uses a
+monotonic clock and pauses while hidden/unmounted. Reset is reversible and Undo
+can remove a restored accepted word.
+
+Browser checks completed a full board with keyboard input; vertical dragging
+accepted BIRTH, and a tap followed by horizontal dragging accepted GEM. Releasing
+outside the board canceled a trace without submission. Reload preserved accepted
+words, unfinished CA and elapsed time; post-reload Undo and Reset/Undo worked.
+Daily stats were empty before and after a complete preview solve. Normal share
+text, spoiler paths and the selected-board link are unit tested. The copy button
+acknowledged success, but the browser clipboard bridge returned old unrelated
+text, so native clipboard contents were not independently confirmed.
+
+At 375×812, there was no horizontal overflow and cells were about 62px wide.
+The computed touch policy caught an inherited `none` rule overriding the first
+Word Paths selector; raising its specificity restored `pinch-zoom`. Light and
+dark screenshots are committed below. Auto was restored after testing and the
+viewport override cleared. Physical phone touch/pinch and assistive-technology
+calibration were not available and remain release checks; pointer/keyboard and
+semantic accessibility were checked here.
+
+Local verification: 541 app tests, 578 engine tests, both type checks, lint,
+format/build and shared schema-ID checks passed. The existing TracksStage lint
+warning remains unchanged. All 86 published puzzles replayed, with no archive,
+existing appearance preferences or AGENTS.md modifications.
+
+- [Light phone preview](measurements/word-paths-preview-phone-light.png)
+- [Dark phone preview](measurements/word-paths-preview-phone-dark.png)
+
+Vocabulary familiarity and enjoyment still need human playtesting. Hints, new
+sizes/languages and daily activation are deliberately outside this PR.

@@ -8,6 +8,7 @@ import { PuzzlePage } from './pages/PuzzlePage'
 import { RulesPage } from './pages/RulesPage'
 import { StarBattlePage } from './pages/StarBattlePage'
 import { StatsPage } from './pages/StatsPage'
+import { WordPathsPreviewPage } from './pages/WordPathsPreviewPage'
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Route path="archive" element={<ArchivePage />} />
           <Route path="archive/:id" element={<PuzzlePage />} />
           <Route path="star-battle" element={<StarBattlePage />} />
+          <Route path="preview/word-paths" element={<WordPathsPreviewPage />} />
           <Route path="stats" element={<StatsPage />} />
           <Route path="how-to-play" element={<RulesPage />} />
           <Route path="*" element={<NotFoundPage />} />
