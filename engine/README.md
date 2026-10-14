@@ -132,6 +132,39 @@ fails validation. See [measured results](../docs/journal.md#scattered-train-trac
 Daily publishing switches to all three named variants on October 14, 2026.
 The shared ID manifest pins this date; existing legacy files remain unchanged.
 
+## English word-path pilot
+
+An experimental Wend-inspired constructor lives in `word_paths_gen.py`, separate
+from the daily rulebook. It is **not a fourth published game yet**. Its 5×5 board
+has four word lengths (3, 4, 5, 6), 18 letters and seven blocked cells.
+
+```sh
+uv run python -m tools.benchmark_word_paths --count 100 --out /tmp/word-paths.json
+```
+
+The pilot uses 748 common-word candidates authored with Codex and committed in
+`src/queens_engine/data/word-paths-en-pilot.txt`. It is provisional, not a complete
+English dictionary. No external AI service or runtime download is required.
+Uniqueness means exactly one complete cover **against that entire vocabulary**,
+not merely against the four words selected by the constructor. Every letter must
+be used once, with orthogonal paths, no overlap and each required length once.
+Submission order and palindrome reversal do not multiply solutions; other
+distinct paths do. Locally valid words may still lead to dead ends.
+
+The constructor rejects boards with more than two other legal vocabulary paths.
+This is a content-quality heuristic, not a difficulty rating. Its shared
+250,000-state default probe budget covers route construction, word-path enumeration
+and cover search, with at most 50 candidates. Exhaustion is inconclusive, never
+proof of uniqueness. The CLI rechecks each returned board with fresh unbounded
+enumeration and direct rule validation, and reports failures alongside successes.
+Exit zero means all requested seeds verified.
+
+Reports include answer paths for editorial inspection; they are not puzzle files
+and must not go in `app/public/puzzles`. The [100-seed report](../docs/measurements/word-paths-pilot.json)
+and [design](../docs/superpowers/specs/2026-10-14-word-paths-design.md) record what is
+proven and what still needs vocabulary review and human playtesting. Registration,
+the shared file contract, UI and daily rollout are separate milestones.
+
 ## The rules are a public interface
 
 Since M6, [`deduce.py`](src/queens_engine/deduce.py)'s pure rule passes (singles,

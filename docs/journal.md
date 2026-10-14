@@ -800,3 +800,40 @@ check that all three boards for the first four rollout days are committed and
 valid. Window tests retain a fixed preactivation clock; transition tests explicitly
 cover October 13/14. App suite: 461 passed. Publisher/rulebook/ID conformance
 checks, typing/lint/format, schema pattern and app production build passed.
+
+## English word-path engine feasibility
+
+The first Wend-inspired milestone is engine-only. No fourth game is registered,
+no puzzle files are published and no existing game changes. The prototype uses
+an authored 748-word English pilot vocabulary and 5×5 boards with lengths 3, 4,
+5 and 6: eighteen letters and seven blockers. There is no ScaleDown dependency,
+API call or model-generated daily content.
+
+The exact counter enumerates every legal pilot-vocabulary path and complete cover.
+It disregards submission order and reversed palindrome direction, but preserves
+distinct traces through the same cells. Its search budget includes placement,
+word enumeration and cover search; a found answer followed by exhaustion is not
+a uniqueness proof. The seed-7 replay also agrees when vocabulary order reverses.
+
+Uniqueness was not enough. The first 100 seeds all verified, but 95 had extra
+legal paths, with up to ten alternatives. After rejecting candidates with more
+than two extras, seeds 0–99 still produced 100 unique boards. A separate
+direct-letter reference (no production neighbours, prefix pruning or cover search)
+confirmed all 100 answer sets. A second run reproduced every board, answer path
+and work count. Fresh unbounded enumeration and direct rule checks are also part
+of the probe CLI, with failures retained in its denominator.
+
+The accepted sample had four to six candidate paths, spent 215–1,799 search
+states, and took a median 0.0020s / maximum 0.0061s to construct on the recorded
+local machine. These are measurements, not deadlines or performance guarantees.
+The [raw report](measurements/word-paths-pilot.json) retains all boards, answer
+paths, vocabulary fingerprint and failure outcomes. It is review material, not
+client puzzle data.
+
+An editorial inspection of the first ten layouts found all letter cells connected
+(the placement walk ensures that), recognizable answers and some remaining traps:
+HAIR inside CHAIR, FLY inside FLYING, and ICE/EIGHT inside JUICE/WEIGHT. Undo and
+honest local-word feedback remain important. No human playtest or whole-English
+uniqueness claim has been made. Vocabulary coverage, starting-point quality and
+acceptable traps must be settled before publication. The file contract, UI and
+daily activation are the later milestones in the design.
