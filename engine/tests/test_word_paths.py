@@ -2,6 +2,7 @@
 
 from itertools import product
 from pathlib import Path
+from typing import cast
 
 import pytest
 from hypothesis import given
@@ -14,6 +15,13 @@ from queens_engine.word_paths import WordGrid, WordGridError, pilot_vocabulary, 
 def test_turning_path_spells_letters_in_order() -> None:
     grid = WordGrid(2, 2, ("C", "A", None, "T"), (3,))
     assert spell_path(grid, (0, 1, 3)) == "CAT"
+
+
+def test_caller_mutation_cannot_change_an_accepted_grid() -> None:
+    letters, lengths = ["C", "A", "T"], [3]
+    grid = WordGrid(3, 1, cast("tuple[str | None, ...]", letters), cast("tuple[int, ...]", lengths))
+    letters[0], lengths[0] = "D", 4
+    assert words.count_solutions(grid, ("CAT",)) == 1
 
 
 @pytest.mark.parametrize(

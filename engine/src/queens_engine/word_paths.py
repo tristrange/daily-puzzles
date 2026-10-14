@@ -31,6 +31,8 @@ class WordGrid:
     word_lengths: tuple[int, ...]
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "letters", tuple(self.letters))
+        object.__setattr__(self, "word_lengths", tuple(self.word_lengths))
         if any(
             type(n) is not int or not 1 <= n <= MAX_DIMENSION for n in (self.width, self.height)
         ):
@@ -83,7 +85,7 @@ def spell_path(grid: WordGrid, cells: tuple[int, ...]) -> str:
     return "".join(letters)
 
 
-def _validate_vocabulary(words: Collection[str]) -> None:
+def validate_vocabulary(words: Collection[str]) -> None:
     if not words or len(set(words)) != len(words):
         raise WordGridError("vocabulary must be nonempty and contain no duplicates")
     if any(
@@ -101,7 +103,7 @@ def pilot_vocabulary() -> tuple[str, ...]:
         for line in PILOT_VOCABULARY_PATH.read_text(encoding="utf-8").splitlines()
         if line.strip() and not line.startswith("#")
     )
-    _validate_vocabulary(words)
+    validate_vocabulary(words)
     return tuple(sorted(words))
 
 
@@ -142,7 +144,7 @@ def vocabulary_paths(
     grid: WordGrid, vocabulary: Collection[str], *, budget: SearchBudget | None = None
 ) -> tuple[WordPath, ...]:
     """Enumerate all legal words, preserving distinct paths with the same cell set."""
-    _validate_vocabulary(vocabulary)
+    validate_vocabulary(vocabulary)
     allowed = {word for word in vocabulary if len(word) in grid.word_lengths}
     prefixes = {word[:length] for word in allowed for length in range(1, len(word) + 1)}
     found: set[WordPath] = set()

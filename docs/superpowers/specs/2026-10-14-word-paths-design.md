@@ -1,7 +1,8 @@
 # Word Paths: English Wend-inspired game
 
-Status: proposed design; English confirmed by the maintainer. No product code or
-publication change accompanies this document.
+Status: English confirmed; the first engine feasibility milestone is implemented.
+The release and interface design remains proposed. No daily publication or app
+registration accompanies this milestone. ScaleDown is excluded.
 
 ## Outcome
 
@@ -65,6 +66,12 @@ a publishing recipe.
 Review sample boards for familiar words, useful starting points, misleading
 partial words and overly obvious disconnected word corridors. Mathematical
 uniqueness does not establish enjoyable play or human difficulty.
+
+The first construction probe found 95 of 100 unique boards had other legal
+vocabulary paths. The measured pilot therefore caps those alternatives at two
+(including other placements of answer words). It counts all relevant paths before
+accepting a candidate. This is a provisional editorial heuristic, not a guarantee
+that the broader English language has no misleading words.
 
 ## Integration
 

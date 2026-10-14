@@ -1,0 +1,9025 @@
+{
+  "status": "experimental; not approved for daily publication",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "python": "3.13.15",
+  "max_states": 250000,
+  "max_attempts": 50,
+  "max_extra_paths": 2,
+  "vocabulary_sha256": "e054967cc550e50a1f0d245fab7e18979870922f0c41e2d4cc7ff2010d93f0ce",
+  "vocabulary_counts": {
+    "3": 96,
+    "4": 158,
+    "5": 267,
+    "6": 227
+  },
+  "attempted": 100,
+  "successes": 100,
+  "failed_seeds": [],
+  "median_generation_seconds": 0.002011291973758489,
+  "max_generation_seconds": 0.006084374967031181,
+  "results": [
+    {
+      "seed": 0,
+      "outcome": "ok",
+      "states": 797,
+      "generation_seconds": 0.0034353749942965806,
+      "validation_seconds": 0.001120166969485581,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "B",
+          "L",
+          "B",
+          null,
+          null,
+          "I",
+          "W",
+          "O",
+          null,
+          "N",
+          "R",
+          null,
+          null,
+          "M",
+          "O",
+          "T",
+          "I",
+          "L",
+          "M",
+          null,
+          "H",
+          "O",
+          "C",
+          "O",
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "OIL",
+          "cells": [
+            21,
+            16,
+            17
+          ]
+        },
+        {
+          "word": "BOWL",
+          "cells": [
+            2,
+            7,
+            6,
+            1
+          ]
+        },
+        {
+          "word": "BIRTH",
+          "cells": [
+            0,
+            5,
+            10,
+            15,
+            20
+          ]
+        },
+        {
+          "word": "COMMON",
+          "cells": [
+            22,
+            23,
+            18,
+            13,
+            14,
+            9
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "OWL"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 1,
+      "outcome": "ok",
+      "states": 781,
+      "generation_seconds": 0.003698375017847866,
+      "validation_seconds": 0.0010389580274932086,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          "A",
+          "M",
+          "E",
+          "N",
+          "K",
+          "C",
+          null,
+          "R",
+          "A",
+          "B",
+          null,
+          "G",
+          "A",
+          "I",
+          "R",
+          "M",
+          "E",
+          null,
+          "A",
+          "H",
+          "C",
+          null,
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "GEM",
+          "cells": [
+            13,
+            18,
+            17
+          ]
+        },
+        {
+          "word": "BANK",
+          "cells": [
+            11,
+            10,
+            5,
+            6
+          ]
+        },
+        {
+          "word": "CHAIR",
+          "cells": [
+            22,
+            21,
+            20,
+            15,
+            16
+          ]
+        },
+        {
+          "word": "CAMERA",
+          "cells": [
+            7,
+            2,
+            3,
+            4,
+            9,
+            14
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "HAIR"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 2,
+      "outcome": "ok",
+      "states": 257,
+      "generation_seconds": 0.0013973339810036123,
+      "validation_seconds": 0.0010458329925313592,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "S",
+          "L",
+          "O",
+          "W",
+          "O",
+          "X",
+          null,
+          "I",
+          "V",
+          "F",
+          null,
+          null,
+          "O",
+          "L",
+          "E",
+          null,
+          null,
+          "T",
+          "E",
+          "D",
+          "A",
+          "H",
+          "S",
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "FOX",
+          "cells": [
+            10,
+            5,
+            6
+          ]
+        },
+        {
+          "word": "SLOW",
+          "cells": [
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "word": "SHADE",
+          "cells": [
+            23,
+            22,
+            21,
+            20,
+            15
+          ]
+        },
+        {
+          "word": "VIOLET",
+          "cells": [
+            9,
+            8,
+            13,
+            14,
+            19,
+            18
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "LOW"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 3,
+      "outcome": "ok",
+      "states": 448,
+      "generation_seconds": 0.002017958031501621,
+      "validation_seconds": 0.0010512500302866101,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          "L",
+          "Y",
+          "I",
+          null,
+          null,
+          "F",
+          "G",
+          "N",
+          null,
+          null,
+          "A",
+          "P",
+          null,
+          "R",
+          "E",
+          "P",
+          "M",
+          "A",
+          "R",
+          "O",
+          "A",
+          "D",
+          "P"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "MAP",
+          "cells": [
+            18,
+            19,
+            24
+          ]
+        },
+        {
+          "word": "ROAD",
+          "cells": [
+            20,
+            21,
+            22,
+            23
+          ]
+        },
+        {
+          "word": "PAPER",
+          "cells": [
+            13,
+            12,
+            17,
+            16,
+            15
+          ]
+        },
+        {
+          "word": "FLYING",
+          "cells": [
+            7,
+            2,
+            3,
+            4,
+            9,
+            8
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "FLY"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 4,
+      "outcome": "ok",
+      "states": 669,
+      "generation_seconds": 0.0025920000043697655,
+      "validation_seconds": 0.001079707988537848,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "K",
+          "G",
+          "A",
+          "B",
+          null,
+          "C",
+          "W",
+          "H",
+          "I",
+          "T",
+          "U",
+          null,
+          null,
+          "B",
+          "E",
+          "D",
+          null,
+          null,
+          "A",
+          null,
+          "T",
+          "E",
+          "L",
+          "L",
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "BAG",
+          "cells": [
+            3,
+            2,
+            1
+          ]
+        },
+        {
+          "word": "DUCK",
+          "cells": [
+            15,
+            10,
+            5,
+            0
+          ]
+        },
+        {
+          "word": "WHITE",
+          "cells": [
+            6,
+            7,
+            8,
+            9,
+            14
+          ]
+        },
+        {
+          "word": "BALLET",
+          "cells": [
+            13,
+            18,
+            23,
+            22,
+            21,
+            20
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "BALL"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 5,
+      "outcome": "ok",
+      "states": 447,
+      "generation_seconds": 0.002813250001054257,
+      "validation_seconds": 0.0010647500166669488,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "C",
+          "P",
+          "C",
+          "E",
+          null,
+          "I",
+          "L",
+          "A",
+          null,
+          null,
+          "R",
+          null,
+          null,
+          "A",
+          "C",
+          "B",
+          "A",
+          null,
+          "P",
+          "M",
+          null,
+          "F",
+          "L",
+          "A",
+          "E"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "CAP",
+          "cells": [
+            14,
+            13,
+            18
+          ]
+        },
+        {
+          "word": "MEAL",
+          "cells": [
+            19,
+            24,
+            23,
+            22
+          ]
+        },
+        {
+          "word": "PLACE",
+          "cells": [
+            1,
+            6,
+            7,
+            2,
+            3
+          ]
+        },
+        {
+          "word": "FABRIC",
+          "cells": [
+            21,
+            16,
+            15,
+            10,
+            5,
+            0
+          ]
+        }
+      ],
+      "candidate_path_count": 4,
+      "other_path_count": 0,
+      "other_words": [],
+      "detail": ""
+    },
+    {
+      "seed": 6,
+      "outcome": "ok",
+      "states": 543,
+      "generation_seconds": 0.0020863329991698265,
+      "validation_seconds": 0.0011045829742215574,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "V",
+          "E",
+          null,
+          null,
+          null,
+          "E",
+          "L",
+          "D",
+          null,
+          "T",
+          "L",
+          "E",
+          "N",
+          "Y",
+          "R",
+          null,
+          "I",
+          "R",
+          "D",
+          "E",
+          null,
+          null,
+          "F",
+          "R",
+          "E"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "TRY",
+          "cells": [
+            9,
+            14,
+            13
+          ]
+        },
+        {
+          "word": "DEER",
+          "cells": [
+            18,
+            19,
+            24,
+            23
+          ]
+        },
+        {
+          "word": "LEVEL",
+          "cells": [
+            6,
+            1,
+            0,
+            5,
+            10
+          ]
+        },
+        {
+          "word": "FRIEND",
+          "cells": [
+            22,
+            17,
+            16,
+            11,
+            12,
+            7
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "RED",
+        "TREE"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 7,
+      "outcome": "ok",
+      "states": 235,
+      "generation_seconds": 0.0014224170008674264,
+      "validation_seconds": 0.0010582079994492233,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "E",
+          "D",
+          "D",
+          "A",
+          "L",
+          "R",
+          null,
+          null,
+          null,
+          "E",
+          "T",
+          "E",
+          "S",
+          null,
+          "C",
+          "R",
+          "E",
+          "K",
+          "Y",
+          "N",
+          null,
+          null,
+          null,
+          "F",
+          "E"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "SKY",
+          "cells": [
+            12,
+            17,
+            18
+          ]
+        },
+        {
+          "word": "TREE",
+          "cells": [
+            10,
+            15,
+            16,
+            11
+          ]
+        },
+        {
+          "word": "FENCE",
+          "cells": [
+            23,
+            24,
+            19,
+            14,
+            9
+          ]
+        },
+        {
+          "word": "LADDER",
+          "cells": [
+            4,
+            3,
+            2,
+            1,
+            0,
+            5
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "RED",
+        "SEE"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 8,
+      "outcome": "ok",
+      "states": 475,
+      "generation_seconds": 0.0020175419631414115,
+      "validation_seconds": 0.0010400419705547392,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          "R",
+          "I",
+          null,
+          "I",
+          "E",
+          "W",
+          "A",
+          null,
+          "G",
+          null,
+          null,
+          "H",
+          "E",
+          "H",
+          "A",
+          "Y",
+          "J",
+          "C",
+          "T",
+          "W",
+          null,
+          "U",
+          "I"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "WAY",
+          "cells": [
+            21,
+            16,
+            17
+          ]
+        },
+        {
+          "word": "HAIR",
+          "cells": [
+            13,
+            8,
+            3,
+            2
+          ]
+        },
+        {
+          "word": "JUICE",
+          "cells": [
+            18,
+            23,
+            24,
+            19,
+            14
+          ]
+        },
+        {
+          "word": "WEIGHT",
+          "cells": [
+            7,
+            6,
+            5,
+            10,
+            15,
+            20
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "EIGHT",
+        "ICE"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 9,
+      "outcome": "ok",
+      "states": 514,
+      "generation_seconds": 0.003152167017105967,
+      "validation_seconds": 0.0010385829955339432,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "U",
+          "N",
+          "S",
+          null,
+          "R",
+          "S",
+          null,
+          "O",
+          "U",
+          "A",
+          null,
+          null,
+          null,
+          "P",
+          "T",
+          "G",
+          "R",
+          null,
+          "E",
+          "I",
+          "U",
+          "E",
+          "T",
+          "N"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "SUN",
+          "cells": [
+            6,
+            1,
+            2
+          ]
+        },
+        {
+          "word": "SOUP",
+          "cells": [
+            3,
+            8,
+            9,
+            14
+          ]
+        },
+        {
+          "word": "ENTER",
+          "cells": [
+            19,
+            24,
+            23,
+            22,
+            17
+          ]
+        },
+        {
+          "word": "GUITAR",
+          "cells": [
+            16,
+            21,
+            20,
+            15,
+            10,
+            5
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "PEN"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 10,
+      "outcome": "ok",
+      "states": 300,
+      "generation_seconds": 0.0014538749819621444,
+      "validation_seconds": 0.0010829580132849514,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "L",
+          "E",
+          "E",
+          "R",
+          null,
+          "B",
+          "T",
+          "T",
+          null,
+          null,
+          "O",
+          "J",
+          "E",
+          "C",
+          "I",
+          null,
+          "L",
+          "I",
+          "J",
+          "U",
+          null,
+          null,
+          "N",
+          "E",
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "JOB",
+          "cells": [
+            11,
+            10,
+            5
+          ]
+        },
+        {
+          "word": "LINE",
+          "cells": [
+            16,
+            17,
+            22,
+            23
+          ]
+        },
+        {
+          "word": "JUICE",
+          "cells": [
+            18,
+            19,
+            14,
+            13,
+            12
+          ]
+        },
+        {
+          "word": "LETTER",
+          "cells": [
+            0,
+            1,
+            6,
+            7,
+            2,
+            3
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "ICE",
+        "JET"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 11,
+      "outcome": "ok",
+      "states": 732,
+      "generation_seconds": 0.003080999944359064,
+      "validation_seconds": 0.0010312499944120646,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "S",
+          "N",
+          "E",
+          null,
+          "L",
+          "T",
+          null,
+          "V",
+          "O",
+          "E",
+          "E",
+          null,
+          null,
+          "T",
+          "E",
+          "R",
+          null,
+          null,
+          "A",
+          "V",
+          "E",
+          "A",
+          "L",
+          "C"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "CAT",
+          "cells": [
+            24,
+            19,
+            14
+          ]
+        },
+        {
+          "word": "OVEN",
+          "cells": [
+            9,
+            8,
+            3,
+            2
+          ]
+        },
+        {
+          "word": "STEEL",
+          "cells": [
+            1,
+            6,
+            11,
+            10,
+            5
+          ]
+        },
+        {
+          "word": "REVEAL",
+          "cells": [
+            16,
+            15,
+            20,
+            21,
+            22,
+            23
+          ]
+        }
+      ],
+      "candidate_path_count": 4,
+      "other_path_count": 0,
+      "other_words": [],
+      "detail": ""
+    },
+    {
+      "seed": 12,
+      "outcome": "ok",
+      "states": 295,
+      "generation_seconds": 0.001419958018232137,
+      "validation_seconds": 0.0011095420341007411,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "K",
+          "O",
+          "O",
+          "B",
+          "K",
+          "U",
+          "E",
+          "U",
+          "I",
+          "N",
+          "N",
+          "I",
+          "Q",
+          "R",
+          "D",
+          null,
+          null,
+          null,
+          null,
+          "X",
+          null,
+          null,
+          null,
+          "M",
+          "I"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "MIX",
+          "cells": [
+            23,
+            24,
+            19
+          ]
+        },
+        {
+          "word": "BOOK",
+          "cells": [
+            3,
+            2,
+            1,
+            0
+          ]
+        },
+        {
+          "word": "DRINK",
+          "cells": [
+            14,
+            13,
+            8,
+            9,
+            4
+          ]
+        },
+        {
+          "word": "UNIQUE",
+          "cells": [
+            5,
+            10,
+            11,
+            12,
+            7,
+            6
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "BIRD",
+        "INK"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 13,
+      "outcome": "ok",
+      "states": 908,
+      "generation_seconds": 0.004239084024447948,
+      "validation_seconds": 0.001078583998605609,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "E",
+          "K",
+          null,
+          null,
+          "F",
+          "N",
+          "O",
+          null,
+          null,
+          "R",
+          "B",
+          "R",
+          null,
+          "M",
+          "A",
+          "E",
+          "T",
+          "O",
+          "E",
+          null,
+          "C",
+          "I",
+          "O",
+          "R",
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "ICE",
+          "cells": [
+            21,
+            20,
+            15
+          ]
+        },
+        {
+          "word": "ROOT",
+          "cells": [
+            23,
+            22,
+            17,
+            16
+          ]
+        },
+        {
+          "word": "FRAME",
+          "cells": [
+            4,
+            9,
+            14,
+            13,
+            18
+          ]
+        },
+        {
+          "word": "BROKEN",
+          "cells": [
+            10,
+            11,
+            6,
+            1,
+            0,
+            5
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "ONE"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 14,
+      "outcome": "ok",
+      "states": 421,
+      "generation_seconds": 0.0019660000107251108,
+      "validation_seconds": 0.0010157920187339187,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "K",
+          "A",
+          null,
+          "A",
+          "L",
+          "S",
+          "O",
+          "K",
+          "N",
+          "B",
+          "P",
+          "I",
+          null,
+          null,
+          "D",
+          null,
+          "R",
+          null,
+          "E",
+          "E",
+          null,
+          "I",
+          "T",
+          "S",
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "OAK",
+          "cells": [
+            6,
+            1,
+            0
+          ]
+        },
+        {
+          "word": "SEED",
+          "cells": [
+            23,
+            18,
+            19,
+            14
+          ]
+        },
+        {
+          "word": "BLANK",
+          "cells": [
+            9,
+            4,
+            3,
+            8,
+            7
+          ]
+        },
+        {
+          "word": "SPIRIT",
+          "cells": [
+            5,
+            10,
+            11,
+            16,
+            21,
+            22
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "SEE"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 15,
+      "outcome": "ok",
+      "states": 1709,
+      "generation_seconds": 0.005922915996052325,
+      "validation_seconds": 0.0011112079955637455,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          null,
+          "A",
+          "H",
+          "L",
+          null,
+          "E",
+          "P",
+          "S",
+          "A",
+          null,
+          "L",
+          "O",
+          "P",
+          "E",
+          "V",
+          "E",
+          "V",
+          "A",
+          null,
+          "E",
+          "R",
+          null,
+          "C"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "CAP",
+          "cells": [
+            24,
+            19,
+            14
+          ]
+        },
+        {
+          "word": "LOVE",
+          "cells": [
+            12,
+            13,
+            18,
+            17
+          ]
+        },
+        {
+          "word": "SHAPE",
+          "cells": [
+            9,
+            4,
+            3,
+            8,
+            7
+          ]
+        },
+        {
+          "word": "REVEAL",
+          "cells": [
+            22,
+            21,
+            16,
+            15,
+            10,
+            5
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "CAVE"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 16,
+      "outcome": "ok",
+      "states": 303,
+      "generation_seconds": 0.0014203329919837415,
+      "validation_seconds": 0.0010812500258907676,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          null,
+          "E",
+          "I",
+          null,
+          "O",
+          "O",
+          "S",
+          "R",
+          null,
+          "H",
+          "C",
+          null,
+          "O",
+          "E",
+          "W",
+          "T",
+          "A",
+          "N",
+          "S",
+          "W",
+          "H",
+          "E",
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "SEW",
+          "cells": [
+            20,
+            15,
+            16
+          ]
+        },
+        {
+          "word": "IRON",
+          "cells": [
+            4,
+            9,
+            14,
+            19
+          ]
+        },
+        {
+          "word": "WHEAT",
+          "cells": [
+            21,
+            22,
+            23,
+            18,
+            17
+          ]
+        },
+        {
+          "word": "CHOOSE",
+          "cells": [
+            12,
+            11,
+            6,
+            7,
+            8,
+            3
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "EAT"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 17,
+      "outcome": "ok",
+      "states": 283,
+      "generation_seconds": 0.0015364999999292195,
+      "validation_seconds": 0.001124541973695159,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "O",
+          "F",
+          null,
+          "J",
+          "T",
+          "R",
+          "F",
+          "R",
+          "A",
+          "R",
+          "O",
+          "E",
+          "S",
+          null,
+          "E",
+          null,
+          null,
+          "M",
+          null,
+          "Z",
+          "E",
+          "K",
+          "O",
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "JAR",
+          "cells": [
+            4,
+            9,
+            8
+          ]
+        },
+        {
+          "word": "ZERO",
+          "cells": [
+            20,
+            15,
+            10,
+            11
+          ]
+        },
+        {
+          "word": "SMOKE",
+          "cells": [
+            13,
+            18,
+            23,
+            22,
+            21
+          ]
+        },
+        {
+          "word": "EFFORT",
+          "cells": [
+            12,
+            7,
+            2,
+            1,
+            6,
+            5
+          ]
+        }
+      ],
+      "candidate_path_count": 4,
+      "other_path_count": 0,
+      "other_words": [],
+      "detail": ""
+    },
+    {
+      "seed": 18,
+      "outcome": "ok",
+      "states": 506,
+      "generation_seconds": 0.002261374960653484,
+      "validation_seconds": 0.002207125013228506,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          "R",
+          "T",
+          null,
+          "T",
+          null,
+          "A",
+          "H",
+          null,
+          "E",
+          "L",
+          "E",
+          "R",
+          "O",
+          "I",
+          "O",
+          null,
+          null,
+          "C",
+          "V",
+          "T",
+          "E",
+          "W",
+          "K"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "WET",
+          "cells": [
+            23,
+            22,
+            21
+          ]
+        },
+        {
+          "word": "ROCK",
+          "cells": [
+            13,
+            14,
+            19,
+            24
+          ]
+        },
+        {
+          "word": "EARTH",
+          "cells": [
+            12,
+            7,
+            2,
+            3,
+            8
+          ]
+        },
+        {
+          "word": "VIOLET",
+          "cells": [
+            20,
+            15,
+            16,
+            11,
+            10,
+            5
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "ART",
+        "EAR"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 19,
+      "outcome": "ok",
+      "states": 261,
+      "generation_seconds": 0.001442332984879613,
+      "validation_seconds": 0.00105254101799801,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "S",
+          "T",
+          "A",
+          "H",
+          "A",
+          "Y",
+          "L",
+          "Y",
+          "S",
+          "R",
+          null,
+          "F",
+          "W",
+          null,
+          "K",
+          null,
+          null,
+          "O",
+          "D",
+          "M",
+          null,
+          null,
+          null,
+          "A",
+          "E"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "FLY",
+          "cells": [
+            11,
+            6,
+            5
+          ]
+        },
+        {
+          "word": "STAY",
+          "cells": [
+            0,
+            1,
+            2,
+            7
+          ]
+        },
+        {
+          "word": "SHARK",
+          "cells": [
+            8,
+            3,
+            4,
+            9,
+            14
+          ]
+        },
+        {
+          "word": "MEADOW",
+          "cells": [
+            19,
+            24,
+            23,
+            18,
+            17,
+            12
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "HAT"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 20,
+      "outcome": "ok",
+      "states": 513,
+      "generation_seconds": 0.0020919169764965773,
+      "validation_seconds": 0.0010983750107698143,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "E",
+          "E",
+          "L",
+          "L",
+          null,
+          "B",
+          "F",
+          null,
+          "E",
+          null,
+          null,
+          "A",
+          "S",
+          "P",
+          null,
+          "T",
+          "S",
+          "L",
+          "E",
+          null,
+          "K",
+          "E",
+          "R",
+          "N"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "BEE",
+          "cells": [
+            6,
+            1,
+            2
+          ]
+        },
+        {
+          "word": "FAST",
+          "cells": [
+            7,
+            12,
+            17,
+            16
+          ]
+        },
+        {
+          "word": "SPELL",
+          "cells": [
+            13,
+            14,
+            9,
+            4,
+            3
+          ]
+        },
+        {
+          "word": "KERNEL",
+          "cells": [
+            21,
+            22,
+            23,
+            24,
+            19,
+            18
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "PEN"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 21,
+      "outcome": "ok",
+      "states": 622,
+      "generation_seconds": 0.00206566700944677,
+      "validation_seconds": 0.001099207962397486,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "O",
+          "C",
+          "O",
+          "L",
+          null,
+          "R",
+          "E",
+          null,
+          "D",
+          "R",
+          "A",
+          "C",
+          "I",
+          "D",
+          "O",
+          "N",
+          "G",
+          "E",
+          "N",
+          "U",
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "ICE",
+          "cells": [
+            12,
+            11,
+            6
+          ]
+        },
+        {
+          "word": "COLD",
+          "cells": [
+            1,
+            2,
+            3,
+            8
+          ]
+        },
+        {
+          "word": "ROUND",
+          "cells": [
+            9,
+            14,
+            19,
+            18,
+            13
+          ]
+        },
+        {
+          "word": "ORANGE",
+          "cells": [
+            0,
+            5,
+            10,
+            15,
+            16,
+            17
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "CAR",
+        "OLD"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 22,
+      "outcome": "ok",
+      "states": 249,
+      "generation_seconds": 0.001445207977667451,
+      "validation_seconds": 0.001073207997251302,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          "U",
+          "A",
+          "L",
+          null,
+          "H",
+          "G",
+          "R",
+          "Y",
+          null,
+          null,
+          null,
+          "D",
+          "N",
+          "I",
+          "T",
+          "E",
+          null,
+          "R",
+          "R",
+          "W",
+          "R",
+          "H",
+          "O"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "DRY",
+          "cells": [
+            13,
+            8,
+            9
+          ]
+        },
+        {
+          "word": "HORN",
+          "cells": [
+            23,
+            24,
+            19,
+            14
+          ]
+        },
+        {
+          "word": "LAUGH",
+          "cells": [
+            4,
+            3,
+            2,
+            7,
+            6
+          ]
+        },
+        {
+          "word": "WRITER",
+          "cells": [
+            21,
+            20,
+            15,
+            16,
+            17,
+            22
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "WRITE"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 23,
+      "outcome": "ok",
+      "states": 608,
+      "generation_seconds": 0.002535125007852912,
+      "validation_seconds": 0.0010549579747021198,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "A",
+          "M",
+          "E",
+          "M",
+          null,
+          "L",
+          null,
+          "P",
+          "A",
+          null,
+          "F",
+          null,
+          null,
+          null,
+          null,
+          "R",
+          "S",
+          "Y",
+          "O",
+          "N",
+          "E",
+          "T",
+          "T",
+          "O",
+          "W"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "MAP",
+          "cells": [
+            3,
+            8,
+            7
+          ]
+        },
+        {
+          "word": "TOWN",
+          "cells": [
+            22,
+            23,
+            24,
+            19
+          ]
+        },
+        {
+          "word": "FLAME",
+          "cells": [
+            10,
+            5,
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "word": "OYSTER",
+          "cells": [
+            18,
+            17,
+            16,
+            21,
+            20,
+            15
+          ]
+        }
+      ],
+      "candidate_path_count": 4,
+      "other_path_count": 0,
+      "other_words": [],
+      "detail": ""
+    },
+    {
+      "seed": 24,
+      "outcome": "ok",
+      "states": 303,
+      "generation_seconds": 0.0014537919778376818,
+      "validation_seconds": 0.001029832987114787,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "T",
+          "I",
+          "F",
+          "M",
+          null,
+          null,
+          null,
+          "C",
+          "U",
+          null,
+          null,
+          null,
+          "L",
+          "E",
+          "M",
+          "D",
+          "U",
+          "O",
+          "S",
+          "A",
+          "S",
+          "K",
+          "M",
+          "U"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "FIT",
+          "cells": [
+            3,
+            2,
+            1
+          ]
+        },
+        {
+          "word": "MASK",
+          "cells": [
+            15,
+            20,
+            21,
+            22
+          ]
+        },
+        {
+          "word": "CLOUD",
+          "cells": [
+            8,
+            13,
+            18,
+            17,
+            16
+          ]
+        },
+        {
+          "word": "MUSEUM",
+          "cells": [
+            23,
+            24,
+            19,
+            14,
+            9,
+            4
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "CLOSE",
+        "USE"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 25,
+      "outcome": "ok",
+      "states": 600,
+      "generation_seconds": 0.002599166997242719,
+      "validation_seconds": 0.0010789170046336949,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "T",
+          "N",
+          "E",
+          "S",
+          "R",
+          "T",
+          null,
+          "A",
+          "B",
+          "I",
+          null,
+          "S",
+          "N",
+          "O",
+          "C",
+          "K",
+          "M",
+          null,
+          "W",
+          null,
+          "J",
+          "A",
+          null,
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "JAM",
+          "cells": [
+            21,
+            22,
+            17
+          ]
+        },
+        {
+          "word": "SNOW",
+          "cells": [
+            12,
+            13,
+            14,
+            19
+          ]
+        },
+        {
+          "word": "TRICK",
+          "cells": [
+            6,
+            5,
+            10,
+            15,
+            16
+          ]
+        },
+        {
+          "word": "ABSENT",
+          "cells": [
+            8,
+            9,
+            4,
+            3,
+            2,
+            1
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "SEA"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 26,
+      "outcome": "ok",
+      "states": 302,
+      "generation_seconds": 0.0014664590125903487,
+      "validation_seconds": 0.001042791991494596,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "F",
+          "I",
+          "C",
+          "E",
+          null,
+          "F",
+          "O",
+          "T",
+          null,
+          null,
+          "U",
+          "R",
+          "S",
+          null,
+          "B",
+          "B",
+          "F",
+          null,
+          "S",
+          "U",
+          null,
+          "A",
+          "E",
+          "L",
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "BUS",
+          "cells": [
+            14,
+            19,
+            18
+          ]
+        },
+        {
+          "word": "LEAF",
+          "cells": [
+            23,
+            22,
+            21,
+            16
+          ]
+        },
+        {
+          "word": "BURST",
+          "cells": [
+            15,
+            10,
+            11,
+            12,
+            7
+          ]
+        },
+        {
+          "word": "OFFICE",
+          "cells": [
+            6,
+            5,
+            0,
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "ICE"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 27,
+      "outcome": "ok",
+      "states": 627,
+      "generation_seconds": 0.002170500054489821,
+      "validation_seconds": 0.0010932080331258476,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "R",
+          "P",
+          "R",
+          "O",
+          "U",
+          "A",
+          "T",
+          "T",
+          "R",
+          "D",
+          "F",
+          "A",
+          null,
+          "E",
+          null,
+          "L",
+          "I",
+          "E",
+          "S",
+          null,
+          null,
+          null,
+          "D",
+          null,
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "FAR",
+          "cells": [
+            10,
+            5,
+            0
+          ]
+        },
+        {
+          "word": "TAIL",
+          "cells": [
+            6,
+            11,
+            16,
+            15
+          ]
+        },
+        {
+          "word": "PROUD",
+          "cells": [
+            1,
+            2,
+            3,
+            4,
+            9
+          ]
+        },
+        {
+          "word": "DESERT",
+          "cells": [
+            22,
+            17,
+            18,
+            13,
+            8,
+            7
+          ]
+        }
+      ],
+      "candidate_path_count": 4,
+      "other_path_count": 0,
+      "other_words": [],
+      "detail": ""
+    },
+    {
+      "seed": 28,
+      "outcome": "ok",
+      "states": 609,
+      "generation_seconds": 0.002433291985653341,
+      "validation_seconds": 0.0009924579644575715,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "O",
+          "R",
+          "A",
+          "C",
+          null,
+          "N",
+          "N",
+          null,
+          "H",
+          "C",
+          "I",
+          "O",
+          "T",
+          "S",
+          "N",
+          null,
+          null,
+          "A",
+          null,
+          "U",
+          null,
+          null,
+          "R",
+          "L",
+          "A"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "CAR",
+          "cells": [
+            3,
+            2,
+            1
+          ]
+        },
+        {
+          "word": "STAR",
+          "cells": [
+            13,
+            12,
+            17,
+            22
+          ]
+        },
+        {
+          "word": "ONION",
+          "cells": [
+            0,
+            5,
+            10,
+            11,
+            6
+          ]
+        },
+        {
+          "word": "LAUNCH",
+          "cells": [
+            23,
+            24,
+            19,
+            14,
+            9,
+            8
+          ]
+        }
+      ],
+      "candidate_path_count": 4,
+      "other_path_count": 0,
+      "other_words": [],
+      "detail": ""
+    },
+    {
+      "seed": 29,
+      "outcome": "ok",
+      "states": 301,
+      "generation_seconds": 0.001369624980725348,
+      "validation_seconds": 0.0010667919996194541,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "G",
+          "U",
+          "N",
+          "D",
+          null,
+          "R",
+          "O",
+          null,
+          "E",
+          null,
+          null,
+          "N",
+          "O",
+          "G",
+          null,
+          "O",
+          "C",
+          "O",
+          "G",
+          null,
+          "A",
+          "T",
+          "P",
+          "S",
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "EGG",
+          "cells": [
+            8,
+            13,
+            18
+          ]
+        },
+        {
+          "word": "COAT",
+          "cells": [
+            16,
+            15,
+            20,
+            21
+          ]
+        },
+        {
+          "word": "SPOON",
+          "cells": [
+            23,
+            22,
+            17,
+            12,
+            11
+          ]
+        },
+        {
+          "word": "GROUND",
+          "cells": [
+            0,
+            5,
+            6,
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "ROUND"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 30,
+      "outcome": "ok",
+      "states": 1019,
+      "generation_seconds": 0.0033457079553045332,
+      "validation_seconds": 0.00103012501494959,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "Y",
+          "O",
+          "N",
+          "O",
+          null,
+          "C",
+          "J",
+          "D",
+          "P",
+          null,
+          "O",
+          "V",
+          null,
+          null,
+          null,
+          "R",
+          "E",
+          null,
+          null,
+          "L",
+          "P",
+          "E",
+          "N",
+          "C",
+          "I"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "JOY",
+          "cells": [
+            6,
+            1,
+            0
+          ]
+        },
+        {
+          "word": "POND",
+          "cells": [
+            8,
+            3,
+            2,
+            7
+          ]
+        },
+        {
+          "word": "COVER",
+          "cells": [
+            5,
+            10,
+            11,
+            16,
+            15
+          ]
+        },
+        {
+          "word": "PENCIL",
+          "cells": [
+            20,
+            21,
+            22,
+            23,
+            24,
+            19
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "PEN"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 31,
+      "outcome": "ok",
+      "states": 234,
+      "generation_seconds": 0.001446791982743889,
+      "validation_seconds": 0.0010575420456007123,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "B",
+          "R",
+          "O",
+          "A",
+          "O",
+          "W",
+          null,
+          null,
+          "D",
+          "C",
+          "D",
+          null,
+          "E",
+          "B",
+          null,
+          "N",
+          null,
+          "R",
+          "E",
+          "S",
+          "A",
+          null,
+          "O",
+          "F"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "COW",
+          "cells": [
+            10,
+            5,
+            6
+          ]
+        },
+        {
+          "word": "SAND",
+          "cells": [
+            20,
+            21,
+            16,
+            11
+          ]
+        },
+        {
+          "word": "BROAD",
+          "cells": [
+            1,
+            2,
+            3,
+            4,
+            9
+          ]
+        },
+        {
+          "word": "BEFORE",
+          "cells": [
+            14,
+            19,
+            24,
+            23,
+            18,
+            13
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "ROAD"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 32,
+      "outcome": "ok",
+      "states": 265,
+      "generation_seconds": 0.0014663750189356506,
+      "validation_seconds": 0.0010610419558361173,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "A",
+          "R",
+          "R",
+          "O",
+          null,
+          null,
+          null,
+          null,
+          "W",
+          "T",
+          null,
+          "N",
+          "I",
+          "F",
+          "O",
+          null,
+          "G",
+          "E",
+          "R",
+          "O",
+          "R",
+          "Y",
+          "A",
+          "D"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "DAY",
+          "cells": [
+            24,
+            23,
+            22
+          ]
+        },
+        {
+          "word": "ROOT",
+          "cells": [
+            21,
+            20,
+            15,
+            10
+          ]
+        },
+        {
+          "word": "ARROW",
+          "cells": [
+            1,
+            2,
+            3,
+            4,
+            9
+          ]
+        },
+        {
+          "word": "FINGER",
+          "cells": [
+            14,
+            13,
+            12,
+            17,
+            18,
+            19
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "READ",
+        "ROW"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 33,
+      "outcome": "ok",
+      "states": 311,
+      "generation_seconds": 0.0014824169920757413,
+      "validation_seconds": 0.0010908750118687749,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "C",
+          "L",
+          "E",
+          "T",
+          null,
+          "R",
+          "I",
+          null,
+          "O",
+          null,
+          null,
+          "C",
+          null,
+          "Y",
+          "K",
+          null,
+          "A",
+          "H",
+          "E",
+          "N",
+          null,
+          "I",
+          "R",
+          "F",
+          "I"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "TOY",
+          "cells": [
+            3,
+            8,
+            13
+          ]
+        },
+        {
+          "word": "HAIR",
+          "cells": [
+            17,
+            16,
+            21,
+            22
+          ]
+        },
+        {
+          "word": "KNIFE",
+          "cells": [
+            14,
+            19,
+            24,
+            23,
+            18
+          ]
+        },
+        {
+          "word": "CIRCLE",
+          "cells": [
+            11,
+            6,
+            5,
+            0,
+            1,
+            2
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "HEN",
+        "INK"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 34,
+      "outcome": "ok",
+      "states": 901,
+      "generation_seconds": 0.0027291669975966215,
+      "validation_seconds": 0.0011110409977845848,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "S",
+          "S",
+          "U",
+          "P",
+          null,
+          "A",
+          "Z",
+          "Z",
+          "A",
+          null,
+          "L",
+          "L",
+          "E",
+          "E",
+          "T",
+          "G",
+          "E",
+          "C",
+          null,
+          null,
+          null,
+          "K",
+          "A",
+          null,
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "TEA",
+          "cells": [
+            14,
+            13,
+            8
+          ]
+        },
+        {
+          "word": "CAKE",
+          "cells": [
+            17,
+            22,
+            21,
+            16
+          ]
+        },
+        {
+          "word": "GLASS",
+          "cells": [
+            15,
+            10,
+            5,
+            0,
+            1
+          ]
+        },
+        {
+          "word": "PUZZLE",
+          "cells": [
+            3,
+            2,
+            7,
+            6,
+            11,
+            12
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "LEG"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 35,
+      "outcome": "ok",
+      "states": 290,
+      "generation_seconds": 0.0014939170214347541,
+      "validation_seconds": 0.0010810420499183238,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          "A",
+          "G",
+          null,
+          "T",
+          "S",
+          "P",
+          "R",
+          "E",
+          "E",
+          "P",
+          "T",
+          "T",
+          "B",
+          null,
+          "G",
+          "H",
+          "I",
+          "M",
+          "L",
+          "I",
+          null,
+          null,
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "GAP",
+          "cells": [
+            3,
+            2,
+            7
+          ]
+        },
+        {
+          "word": "STEP",
+          "cells": [
+            6,
+            5,
+            10,
+            11
+          ]
+        },
+        {
+          "word": "LIGHT",
+          "cells": [
+            20,
+            21,
+            16,
+            17,
+            12
+          ]
+        },
+        {
+          "word": "TIMBER",
+          "cells": [
+            13,
+            18,
+            19,
+            14,
+            9,
+            8
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "PET"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 36,
+      "outcome": "ok",
+      "states": 385,
+      "generation_seconds": 0.0020484579727053642,
+      "validation_seconds": 0.0010149169829674065,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "G",
+          "I",
+          "C",
+          "H",
+          "A",
+          "A",
+          null,
+          null,
+          "F",
+          "T",
+          "M",
+          "E",
+          "I",
+          "R",
+          "S",
+          "D",
+          "N",
+          null,
+          null,
+          "H",
+          null,
+          null,
+          null,
+          "W",
+          "O"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "HAT",
+          "cells": [
+            3,
+            4,
+            9
+          ]
+        },
+        {
+          "word": "SHOW",
+          "cells": [
+            14,
+            19,
+            24,
+            23
+          ]
+        },
+        {
+          "word": "MAGIC",
+          "cells": [
+            10,
+            5,
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "word": "FRIEND",
+          "cells": [
+            8,
+            13,
+            12,
+            11,
+            16,
+            15
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "GAME"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 37,
+      "outcome": "ok",
+      "states": 514,
+      "generation_seconds": 0.0020050419843755662,
+      "validation_seconds": 0.0010704580345191061,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          null,
+          "N",
+          "E",
+          null,
+          null,
+          null,
+          "D",
+          "D",
+          "S",
+          "L",
+          "I",
+          "I",
+          null,
+          "T",
+          "A",
+          "C",
+          "H",
+          "P",
+          "G",
+          "O",
+          "E",
+          "M",
+          "A"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "MAP",
+          "cells": [
+            23,
+            24,
+            19
+          ]
+        },
+        {
+          "word": "GOAT",
+          "cells": [
+            20,
+            21,
+            16,
+            15
+          ]
+        },
+        {
+          "word": "SLICE",
+          "cells": [
+            10,
+            11,
+            12,
+            17,
+            22
+          ]
+        },
+        {
+          "word": "HIDDEN",
+          "cells": [
+            18,
+            13,
+            8,
+            9,
+            4,
+            3
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "CAT",
+        "ICE"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 38,
+      "outcome": "ok",
+      "states": 305,
+      "generation_seconds": 0.0014047500444576144,
+      "validation_seconds": 0.0010265839518979192,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          "S",
+          "I",
+          "D",
+          null,
+          null,
+          "N",
+          "F",
+          "E",
+          null,
+          null,
+          "I",
+          "A",
+          "N",
+          "N",
+          "R",
+          "G",
+          "K",
+          "M",
+          "E",
+          "E",
+          null,
+          "L",
+          "I"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "FAN",
+          "cells": [
+            8,
+            13,
+            14
+          ]
+        },
+        {
+          "word": "MILK",
+          "cells": [
+            19,
+            24,
+            23,
+            18
+          ]
+        },
+        {
+          "word": "GREEN",
+          "cells": [
+            17,
+            16,
+            21,
+            20,
+            15
+          ]
+        },
+        {
+          "word": "INSIDE",
+          "cells": [
+            12,
+            7,
+            2,
+            3,
+            4,
+            9
+          ]
+        }
+      ],
+      "candidate_path_count": 4,
+      "other_path_count": 0,
+      "other_words": [],
+      "detail": ""
+    },
+    {
+      "seed": 39,
+      "outcome": "ok",
+      "states": 215,
+      "generation_seconds": 0.001375459018163383,
+      "validation_seconds": 0.001011334010399878,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "H",
+          "T",
+          "L",
+          "I",
+          null,
+          "G",
+          null,
+          "N",
+          "O",
+          "L",
+          "I",
+          null,
+          null,
+          null,
+          "E",
+          null,
+          "E",
+          "T",
+          "V",
+          "L",
+          "P",
+          "M",
+          "N",
+          "A"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "VAN",
+          "cells": [
+            19,
+            24,
+            23
+          ]
+        },
+        {
+          "word": "LION",
+          "cells": [
+            3,
+            4,
+            9,
+            8
+          ]
+        },
+        {
+          "word": "LIGHT",
+          "cells": [
+            10,
+            11,
+            6,
+            1,
+            2
+          ]
+        },
+        {
+          "word": "TEMPLE",
+          "cells": [
+            18,
+            17,
+            22,
+            21,
+            20,
+            15
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "ANT",
+        "OIL"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 40,
+      "outcome": "ok",
+      "states": 408,
+      "generation_seconds": 0.001938958012033254,
+      "validation_seconds": 0.0010179579840041697,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "O",
+          "Y",
+          "R",
+          null,
+          null,
+          "J",
+          null,
+          "O",
+          "O",
+          "N",
+          "T",
+          null,
+          null,
+          "T",
+          "A",
+          "L",
+          "M",
+          "U",
+          "N",
+          null,
+          "P",
+          "B",
+          "E",
+          "R"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "JOY",
+          "cells": [
+            6,
+            1,
+            2
+          ]
+        },
+        {
+          "word": "ROOT",
+          "cells": [
+            3,
+            8,
+            9,
+            14
+          ]
+        },
+        {
+          "word": "PLANT",
+          "cells": [
+            21,
+            16,
+            15,
+            10,
+            11
+          ]
+        },
+        {
+          "word": "NUMBER",
+          "cells": [
+            19,
+            18,
+            17,
+            22,
+            23,
+            24
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "ANT",
+        "PLAN"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 41,
+      "outcome": "ok",
+      "states": 402,
+      "generation_seconds": 0.002125290979165584,
+      "validation_seconds": 0.0010900000343099236,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "R",
+          "B",
+          "O",
+          null,
+          null,
+          "E",
+          null,
+          "X",
+          "B",
+          "E",
+          "M",
+          "H",
+          null,
+          "T",
+          "A",
+          "M",
+          "A",
+          null,
+          "R",
+          "A",
+          null,
+          null,
+          "O",
+          "I",
+          "D"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "BOX",
+          "cells": [
+            1,
+            2,
+            7
+          ]
+        },
+        {
+          "word": "BEAT",
+          "cells": [
+            8,
+            9,
+            14,
+            13
+          ]
+        },
+        {
+          "word": "RADIO",
+          "cells": [
+            18,
+            19,
+            24,
+            23,
+            22
+          ]
+        },
+        {
+          "word": "HAMMER",
+          "cells": [
+            11,
+            16,
+            15,
+            10,
+            5,
+            0
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "ART",
+        "EAT"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 42,
+      "outcome": "ok",
+      "states": 315,
+      "generation_seconds": 0.0014624999603256583,
+      "validation_seconds": 0.0010679590050131083,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          "U",
+          "S",
+          null,
+          null,
+          "E",
+          "R",
+          "E",
+          null,
+          "D",
+          "E",
+          null,
+          "G",
+          "E",
+          "H",
+          "E",
+          "B",
+          "T",
+          "N",
+          "C",
+          "A",
+          "E",
+          "L",
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "USE",
+          "cells": [
+            2,
+            3,
+            8
+          ]
+        },
+        {
+          "word": "DEER",
+          "cells": [
+            10,
+            11,
+            6,
+            7
+          ]
+        },
+        {
+          "word": "BEACH",
+          "cells": [
+            17,
+            16,
+            21,
+            20,
+            15
+          ]
+        },
+        {
+          "word": "GENTLE",
+          "cells": [
+            13,
+            14,
+            19,
+            18,
+            23,
+            22
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "BEE"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 43,
+      "outcome": "ok",
+      "states": 239,
+      "generation_seconds": 0.0014277919544838369,
+      "validation_seconds": 0.0010378329898230731,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "N",
+          "G",
+          "E",
+          null,
+          null,
+          "I",
+          null,
+          "R",
+          null,
+          "G",
+          "S",
+          null,
+          "H",
+          null,
+          "E",
+          "D",
+          "N",
+          "A",
+          "Y",
+          "L",
+          "H",
+          "E",
+          "A",
+          "V",
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "LEG",
+          "cells": [
+            19,
+            14,
+            9
+          ]
+        },
+        {
+          "word": "HAND",
+          "cells": [
+            12,
+            17,
+            16,
+            15
+          ]
+        },
+        {
+          "word": "HEAVY",
+          "cells": [
+            20,
+            21,
+            22,
+            23,
+            18
+          ]
+        },
+        {
+          "word": "SINGER",
+          "cells": [
+            10,
+            5,
+            0,
+            1,
+            2,
+            7
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "HEN"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 44,
+      "outcome": "ok",
+      "states": 964,
+      "generation_seconds": 0.0038063329993747175,
+      "validation_seconds": 0.0010562919778749347,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          "I",
+          "R",
+          "R",
+          null,
+          null,
+          "M",
+          null,
+          "O",
+          "F",
+          "O",
+          "X",
+          null,
+          "R",
+          "I",
+          "A",
+          "P",
+          null,
+          "W",
+          "N",
+          "T",
+          "T",
+          "S",
+          "E"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "FOX",
+          "cells": [
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "word": "WEST",
+          "cells": [
+            19,
+            24,
+            23,
+            22
+          ]
+        },
+        {
+          "word": "PAINT",
+          "cells": [
+            17,
+            16,
+            15,
+            20,
+            21
+          ]
+        },
+        {
+          "word": "MIRROR",
+          "cells": [
+            7,
+            2,
+            3,
+            4,
+            9,
+            14
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "SEW"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 45,
+      "outcome": "ok",
+      "states": 264,
+      "generation_seconds": 0.0014065420255064964,
+      "validation_seconds": 0.000991458015050739,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "P",
+          "I",
+          null,
+          null,
+          null,
+          null,
+          "N",
+          "L",
+          "O",
+          "R",
+          "L",
+          "R",
+          null,
+          "V",
+          "E",
+          "E",
+          "E",
+          "W",
+          "E",
+          "D",
+          "A",
+          null,
+          "O",
+          "P"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "PIN",
+          "cells": [
+            1,
+            2,
+            7
+          ]
+        },
+        {
+          "word": "LOVE",
+          "cells": [
+            8,
+            9,
+            14,
+            19
+          ]
+        },
+        {
+          "word": "POWER",
+          "cells": [
+            24,
+            23,
+            18,
+            17,
+            12
+          ]
+        },
+        {
+          "word": "LEADER",
+          "cells": [
+            11,
+            16,
+            21,
+            20,
+            15,
+            10
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "RED"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 46,
+      "outcome": "ok",
+      "states": 338,
+      "generation_seconds": 0.0015200000489130616,
+      "validation_seconds": 0.0010680410196073353,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          "A",
+          "N",
+          null,
+          null,
+          "T",
+          "B",
+          "K",
+          "L",
+          "U",
+          "S",
+          "P",
+          "E",
+          "O",
+          "R",
+          null,
+          "A",
+          "R",
+          "G",
+          "T",
+          "R",
+          "I",
+          null,
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "LOG",
+          "cells": [
+            9,
+            14,
+            19
+          ]
+        },
+        {
+          "word": "BANK",
+          "cells": [
+            7,
+            2,
+            3,
+            8
+          ]
+        },
+        {
+          "word": "TRUST",
+          "cells": [
+            20,
+            15,
+            10,
+            11,
+            6
+          ]
+        },
+        {
+          "word": "REPAIR",
+          "cells": [
+            18,
+            13,
+            12,
+            17,
+            22,
+            21
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "GRAPE"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 47,
+      "outcome": "ok",
+      "states": 1029,
+      "generation_seconds": 0.0036911669885739684,
+      "validation_seconds": 0.0010101250372827053,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "N",
+          "U",
+          "O",
+          null,
+          null,
+          "T",
+          "B",
+          "C",
+          "X",
+          "T",
+          null,
+          "O",
+          "M",
+          "I",
+          "H",
+          null,
+          "O",
+          "K",
+          null,
+          "G",
+          null,
+          null,
+          "W",
+          "E",
+          "I"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "MIX",
+          "cells": [
+            12,
+            13,
+            8
+          ]
+        },
+        {
+          "word": "BOOK",
+          "cells": [
+            6,
+            11,
+            16,
+            17
+          ]
+        },
+        {
+          "word": "COUNT",
+          "cells": [
+            7,
+            2,
+            1,
+            0,
+            5
+          ]
+        },
+        {
+          "word": "WEIGHT",
+          "cells": [
+            22,
+            23,
+            24,
+            19,
+            14,
+            9
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "EIGHT"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 48,
+      "outcome": "ok",
+      "states": 335,
+      "generation_seconds": 0.0014596669934689999,
+      "validation_seconds": 0.0010625409777276218,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          "R",
+          "S",
+          null,
+          null,
+          "G",
+          "E",
+          "I",
+          null,
+          null,
+          "N",
+          "I",
+          "T",
+          null,
+          "L",
+          "E",
+          "F",
+          "T",
+          "A",
+          "F",
+          "H",
+          "S",
+          "L",
+          "L"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "SIT",
+          "cells": [
+            3,
+            8,
+            13
+          ]
+        },
+        {
+          "word": "TALL",
+          "cells": [
+            18,
+            19,
+            24,
+            23
+          ]
+        },
+        {
+          "word": "SHELF",
+          "cells": [
+            22,
+            21,
+            16,
+            15,
+            20
+          ]
+        },
+        {
+          "word": "FINGER",
+          "cells": [
+            17,
+            12,
+            11,
+            6,
+            7,
+            2
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "FIT",
+        "HEN"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 49,
+      "outcome": "ok",
+      "states": 798,
+      "generation_seconds": 0.002608208975289017,
+      "validation_seconds": 0.001093542028684169,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "Y",
+          "S",
+          "T",
+          "E",
+          null,
+          "O",
+          "K",
+          "N",
+          "R",
+          "A",
+          "L",
+          "G",
+          "I",
+          null,
+          "S",
+          "S",
+          "A",
+          "N",
+          null,
+          null,
+          "P",
+          "L",
+          null,
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "INK",
+          "cells": [
+            13,
+            8,
+            7
+          ]
+        },
+        {
+          "word": "PLAN",
+          "cells": [
+            21,
+            22,
+            17,
+            18
+          ]
+        },
+        {
+          "word": "GLASS",
+          "cells": [
+            12,
+            11,
+            10,
+            15,
+            16
+          ]
+        },
+        {
+          "word": "OYSTER",
+          "cells": [
+            6,
+            1,
+            2,
+            3,
+            4,
+            9
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "GAS"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 50,
+      "outcome": "ok",
+      "states": 521,
+      "generation_seconds": 0.0019219170208089054,
+      "validation_seconds": 0.0009785420261323452,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "G",
+          "A",
+          null,
+          "A",
+          "H",
+          "W",
+          "T",
+          "E",
+          "M",
+          null,
+          "O",
+          "C",
+          "H",
+          "M",
+          null,
+          null,
+          null,
+          "G",
+          "E",
+          "R",
+          null,
+          null,
+          "U",
+          "A",
+          "L"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "COW",
+          "cells": [
+            11,
+            10,
+            5
+          ]
+        },
+        {
+          "word": "GATE",
+          "cells": [
+            0,
+            1,
+            6,
+            7
+          ]
+        },
+        {
+          "word": "LAUGH",
+          "cells": [
+            24,
+            23,
+            22,
+            17,
+            12
+          ]
+        },
+        {
+          "word": "HAMMER",
+          "cells": [
+            4,
+            3,
+            8,
+            13,
+            18,
+            19
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "GEM",
+        "MEAL"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 51,
+      "outcome": "ok",
+      "states": 676,
+      "generation_seconds": 0.0026169579941779375,
+      "validation_seconds": 0.0011053330381400883,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "F",
+          "E",
+          null,
+          "R",
+          "E",
+          "O",
+          "T",
+          "A",
+          "G",
+          "P",
+          "X",
+          "H",
+          "O",
+          "R",
+          "P",
+          null,
+          null,
+          "E",
+          "S",
+          "E",
+          null,
+          null,
+          null,
+          null,
+          "P"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "FOX",
+          "cells": [
+            0,
+            5,
+            10
+          ]
+        },
+        {
+          "word": "GATE",
+          "cells": [
+            8,
+            7,
+            6,
+            1
+          ]
+        },
+        {
+          "word": "HORSE",
+          "cells": [
+            11,
+            12,
+            13,
+            18,
+            17
+          ]
+        },
+        {
+          "word": "PEPPER",
+          "cells": [
+            24,
+            19,
+            14,
+            9,
+            4,
+            3
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [],
+      "detail": ""
+    },
+    {
+      "seed": 52,
+      "outcome": "ok",
+      "states": 271,
+      "generation_seconds": 0.001473542011808604,
+      "validation_seconds": 0.0010248749749734998,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "A",
+          "B",
+          "D",
+          null,
+          null,
+          "R",
+          "H",
+          "E",
+          null,
+          null,
+          "N",
+          "T",
+          "P",
+          "B",
+          "A",
+          "E",
+          null,
+          "C",
+          "T",
+          "T",
+          "F",
+          "F",
+          "E",
+          null,
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "BAT",
+          "cells": [
+            13,
+            14,
+            19
+          ]
+        },
+        {
+          "word": "BARN",
+          "cells": [
+            1,
+            0,
+            5,
+            10
+          ]
+        },
+        {
+          "word": "DEPTH",
+          "cells": [
+            2,
+            7,
+            12,
+            11,
+            6
+          ]
+        },
+        {
+          "word": "EFFECT",
+          "cells": [
+            15,
+            20,
+            21,
+            22,
+            17,
+            18
+          ]
+        }
+      ],
+      "candidate_path_count": 4,
+      "other_path_count": 0,
+      "other_words": [],
+      "detail": ""
+    },
+    {
+      "seed": 53,
+      "outcome": "ok",
+      "states": 505,
+      "generation_seconds": 0.001989041978958994,
+      "validation_seconds": 0.0010449999826960266,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          "F",
+          "M",
+          "D",
+          "Y",
+          "L",
+          "O",
+          "U",
+          "R",
+          null,
+          "N",
+          "G",
+          "B",
+          "N",
+          "K",
+          "E",
+          null,
+          "L",
+          "A",
+          "E",
+          "V"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "FOG",
+          "cells": [
+            5,
+            10,
+            15
+          ]
+        },
+        {
+          "word": "DRUM",
+          "cells": [
+            7,
+            12,
+            11,
+            6
+          ]
+        },
+        {
+          "word": "BLANK",
+          "cells": [
+            16,
+            21,
+            22,
+            17,
+            18
+          ]
+        },
+        {
+          "word": "EVENLY",
+          "cells": [
+            23,
+            24,
+            19,
+            14,
+            9,
+            8
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "EVEN"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 54,
+      "outcome": "ok",
+      "states": 741,
+      "generation_seconds": 0.0025383749743923545,
+      "validation_seconds": 0.0010177919757552445,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "A",
+          "C",
+          "C",
+          "K",
+          "S",
+          "P",
+          "F",
+          "O",
+          "E",
+          "L",
+          null,
+          "L",
+          "R",
+          "E",
+          null,
+          null,
+          "Y",
+          "G",
+          "P",
+          null,
+          null,
+          "I",
+          "N",
+          null,
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "CAP",
+          "cells": [
+            1,
+            0,
+            5
+          ]
+        },
+        {
+          "word": "ROCK",
+          "cells": [
+            12,
+            7,
+            2,
+            3
+          ]
+        },
+        {
+          "word": "SLEEP",
+          "cells": [
+            4,
+            9,
+            8,
+            13,
+            18
+          ]
+        },
+        {
+          "word": "FLYING",
+          "cells": [
+            6,
+            11,
+            16,
+            21,
+            22,
+            17
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "FLY"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 55,
+      "outcome": "ok",
+      "states": 323,
+      "generation_seconds": 0.0014181669685058296,
+      "validation_seconds": 0.00104674999602139,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "E",
+          "R",
+          "P",
+          "I",
+          "E",
+          "B",
+          "M",
+          "I",
+          "D",
+          "G",
+          null,
+          null,
+          "T",
+          "O",
+          "I",
+          null,
+          null,
+          "R",
+          "O",
+          "A",
+          null,
+          null,
+          null,
+          "T",
+          "N"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "PIE",
+          "cells": [
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "word": "DOOR",
+          "cells": [
+            8,
+            13,
+            18,
+            17
+          ]
+        },
+        {
+          "word": "GIANT",
+          "cells": [
+            9,
+            14,
+            19,
+            24,
+            23
+          ]
+        },
+        {
+          "word": "TIMBER",
+          "cells": [
+            12,
+            7,
+            6,
+            5,
+            0,
+            1
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "ANT",
+        "ROOT"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 56,
+      "outcome": "ok",
+      "states": 705,
+      "generation_seconds": 0.002603916043881327,
+      "validation_seconds": 0.0010604170383885503,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "O",
+          "N",
+          "A",
+          "R",
+          null,
+          "I",
+          "A",
+          "E",
+          "E",
+          "A",
+          "T",
+          "C",
+          "D",
+          "I",
+          "U",
+          null,
+          null,
+          null,
+          "B",
+          "G",
+          null,
+          null,
+          null,
+          "A",
+          "T"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "BAT",
+          "cells": [
+            18,
+            23,
+            24
+          ]
+        },
+        {
+          "word": "AREA",
+          "cells": [
+            2,
+            3,
+            8,
+            9
+          ]
+        },
+        {
+          "word": "GUIDE",
+          "cells": [
+            19,
+            14,
+            13,
+            12,
+            7
+          ]
+        },
+        {
+          "word": "ACTION",
+          "cells": [
+            6,
+            11,
+            10,
+            5,
+            0,
+            1
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "DEER",
+        "EAR"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 57,
+      "outcome": "ok",
+      "states": 488,
+      "generation_seconds": 0.0020668329671025276,
+      "validation_seconds": 0.001027541991788894,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "E",
+          "P",
+          "I",
+          "H",
+          "G",
+          "G",
+          null,
+          null,
+          "S",
+          "W",
+          "H",
+          "D",
+          "L",
+          "E",
+          "R",
+          "E",
+          "N",
+          "A",
+          null,
+          "E",
+          null,
+          null,
+          "C",
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "EGG",
+          "cells": [
+            1,
+            6,
+            5
+          ]
+        },
+        {
+          "word": "SHIP",
+          "cells": [
+            9,
+            4,
+            3,
+            2
+          ]
+        },
+        {
+          "word": "WHERE",
+          "cells": [
+            10,
+            11,
+            16,
+            15,
+            20
+          ]
+        },
+        {
+          "word": "CANDLE",
+          "cells": [
+            23,
+            18,
+            17,
+            12,
+            13,
+            14
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "HEN",
+        "LAND"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 58,
+      "outcome": "ok",
+      "states": 744,
+      "generation_seconds": 0.002592833014205098,
+      "validation_seconds": 0.0010560829541645944,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "L",
+          "A",
+          "U",
+          "N",
+          "T",
+          "P",
+          "I",
+          "H",
+          "C",
+          "U",
+          null,
+          null,
+          "S",
+          "H",
+          "N",
+          null,
+          null,
+          "T",
+          "I",
+          "E",
+          null,
+          null,
+          "H",
+          "G",
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "NUT",
+          "cells": [
+            14,
+            9,
+            4
+          ]
+        },
+        {
+          "word": "SHIP",
+          "cells": [
+            12,
+            7,
+            6,
+            5
+          ]
+        },
+        {
+          "word": "EIGHT",
+          "cells": [
+            19,
+            18,
+            23,
+            22,
+            17
+          ]
+        },
+        {
+          "word": "LAUNCH",
+          "cells": [
+            0,
+            1,
+            2,
+            3,
+            8,
+            13
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "CUT"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 59,
+      "outcome": "ok",
+      "states": 319,
+      "generation_seconds": 0.0014256659778766334,
+      "validation_seconds": 0.0010457499884068966,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "G",
+          "R",
+          "E",
+          null,
+          null,
+          null,
+          null,
+          "Y",
+          null,
+          "I",
+          "O",
+          "H",
+          "C",
+          "O",
+          "R",
+          "Z",
+          "C",
+          "S",
+          "U",
+          "O",
+          "O",
+          "N",
+          "I",
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "ZOO",
+          "cells": [
+            16,
+            21,
+            20
+          ]
+        },
+        {
+          "word": "GREY",
+          "cells": [
+            1,
+            2,
+            3,
+            8
+          ]
+        },
+        {
+          "word": "CHOIR",
+          "cells": [
+            17,
+            12,
+            11,
+            10,
+            15
+          ]
+        },
+        {
+          "word": "COUSIN",
+          "cells": [
+            13,
+            14,
+            19,
+            18,
+            23,
+            22
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [],
+      "detail": ""
+    },
+    {
+      "seed": 60,
+      "outcome": "ok",
+      "states": 229,
+      "generation_seconds": 0.0014361249632202089,
+      "validation_seconds": 0.0010608750162646174,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "U",
+          "R",
+          null,
+          null,
+          "A",
+          "T",
+          "K",
+          "E",
+          null,
+          "E",
+          null,
+          "D",
+          "Y",
+          null,
+          "T",
+          "U",
+          "R",
+          "V",
+          "E",
+          "R",
+          "M",
+          "R",
+          "I",
+          null,
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "TEA",
+          "cells": [
+            14,
+            9,
+            4
+          ]
+        },
+        {
+          "word": "DRUM",
+          "cells": [
+            11,
+            16,
+            15,
+            20
+          ]
+        },
+        {
+          "word": "RIVER",
+          "cells": [
+            21,
+            22,
+            17,
+            18,
+            19
+          ]
+        },
+        {
+          "word": "TURKEY",
+          "cells": [
+            5,
+            0,
+            1,
+            6,
+            7,
+            12
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "KEY"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 61,
+      "outcome": "ok",
+      "states": 670,
+      "generation_seconds": 0.0025968750123865902,
+      "validation_seconds": 0.0010364999761804938,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "G",
+          "O",
+          null,
+          null,
+          null,
+          "T",
+          "A",
+          null,
+          null,
+          null,
+          "F",
+          "U",
+          "I",
+          "N",
+          "G",
+          "K",
+          "N",
+          "F",
+          null,
+          "E",
+          "C",
+          "I",
+          "H",
+          "T",
+          "R"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "FUN",
+          "cells": [
+            10,
+            11,
+            16
+          ]
+        },
+        {
+          "word": "GOAT",
+          "cells": [
+            0,
+            1,
+            6,
+            5
+          ]
+        },
+        {
+          "word": "THICK",
+          "cells": [
+            23,
+            22,
+            21,
+            20,
+            15
+          ]
+        },
+        {
+          "word": "FINGER",
+          "cells": [
+            17,
+            12,
+            13,
+            14,
+            19,
+            24
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "INK",
+        "THINK"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 62,
+      "outcome": "ok",
+      "states": 534,
+      "generation_seconds": 0.0020395410247147083,
+      "validation_seconds": 0.001152459008153528,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "K",
+          "E",
+          "Y",
+          null,
+          null,
+          null,
+          null,
+          "T",
+          "R",
+          null,
+          "V",
+          "K",
+          "C",
+          "U",
+          "S",
+          "I",
+          "R",
+          "O",
+          null,
+          "I",
+          "O",
+          "N",
+          "A",
+          "D"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "KEY",
+          "cells": [
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "word": "ROAD",
+          "cells": [
+            17,
+            18,
+            23,
+            24
+          ]
+        },
+        {
+          "word": "TRUCK",
+          "cells": [
+            8,
+            9,
+            14,
+            13,
+            12
+          ]
+        },
+        {
+          "word": "VISION",
+          "cells": [
+            11,
+            16,
+            15,
+            20,
+            21,
+            22
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "CORN",
+        "ROCK"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 63,
+      "outcome": "ok",
+      "states": 281,
+      "generation_seconds": 0.0014462910476140678,
+      "validation_seconds": 0.0010273749940097332,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          null,
+          "A",
+          "M",
+          null,
+          null,
+          "L",
+          "L",
+          "S",
+          "A",
+          "T",
+          "G",
+          "T",
+          "D",
+          "O",
+          "R",
+          "U",
+          "H",
+          "A",
+          "G",
+          null,
+          null,
+          "R",
+          "E"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "RUG",
+          "cells": [
+            16,
+            17,
+            12
+          ]
+        },
+        {
+          "word": "GOAT",
+          "cells": [
+            20,
+            15,
+            10,
+            11
+          ]
+        },
+        {
+          "word": "SMALL",
+          "cells": [
+            9,
+            4,
+            3,
+            8,
+            7
+          ]
+        },
+        {
+          "word": "THREAD",
+          "cells": [
+            13,
+            18,
+            23,
+            24,
+            19,
+            14
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "READ"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 64,
+      "outcome": "ok",
+      "states": 692,
+      "generation_seconds": 0.0024962080060504377,
+      "validation_seconds": 0.0010230420157313347,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "S",
+          "H",
+          "A",
+          "P",
+          null,
+          "H",
+          "C",
+          null,
+          "E",
+          null,
+          null,
+          "E",
+          null,
+          "S",
+          "S",
+          "P",
+          "E",
+          "E",
+          "T",
+          "N",
+          "U",
+          "R",
+          "P",
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "RUN",
+          "cells": [
+            22,
+            21,
+            20
+          ]
+        },
+        {
+          "word": "STEP",
+          "cells": [
+            14,
+            19,
+            18,
+            23
+          ]
+        },
+        {
+          "word": "SHAPE",
+          "cells": [
+            1,
+            2,
+            3,
+            4,
+            9
+          ]
+        },
+        {
+          "word": "SPEECH",
+          "cells": [
+            15,
+            16,
+            17,
+            12,
+            7,
+            6
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "PET"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 65,
+      "outcome": "ok",
+      "states": 242,
+      "generation_seconds": 0.0014325830270536244,
+      "validation_seconds": 0.0010651670163497329,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "L",
+          "L",
+          "I",
+          "T",
+          "S",
+          "C",
+          "E",
+          null,
+          null,
+          "N",
+          null,
+          "N",
+          null,
+          null,
+          "A",
+          "E",
+          "T",
+          null,
+          null,
+          "F",
+          "R",
+          "W",
+          "O",
+          "R",
+          "K"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "FAN",
+          "cells": [
+            19,
+            14,
+            9
+          ]
+        },
+        {
+          "word": "WORK",
+          "cells": [
+            21,
+            22,
+            23,
+            24
+          ]
+        },
+        {
+          "word": "STILL",
+          "cells": [
+            4,
+            3,
+            2,
+            1,
+            0
+          ]
+        },
+        {
+          "word": "CENTER",
+          "cells": [
+            5,
+            6,
+            11,
+            16,
+            15,
+            20
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "ENTER",
+        "ROW"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 66,
+      "outcome": "ok",
+      "states": 349,
+      "generation_seconds": 0.0015024999738670886,
+      "validation_seconds": 0.001098875014577061,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "E",
+          "Y",
+          "E",
+          "C",
+          "H",
+          "M",
+          "P",
+          "R",
+          "S",
+          "A",
+          "U",
+          "L",
+          "E",
+          "E",
+          null,
+          null,
+          null,
+          "H",
+          "F",
+          null,
+          null,
+          null,
+          "T",
+          "A",
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "EYE",
+          "cells": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "word": "PLUM",
+          "cells": [
+            6,
+            11,
+            10,
+            5
+          ]
+        },
+        {
+          "word": "CHASE",
+          "cells": [
+            3,
+            4,
+            9,
+            8,
+            13
+          ]
+        },
+        {
+          "word": "FATHER",
+          "cells": [
+            18,
+            23,
+            22,
+            17,
+            12,
+            7
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "SEE"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 67,
+      "outcome": "ok",
+      "states": 253,
+      "generation_seconds": 0.0014315000153146684,
+      "validation_seconds": 0.001040249946527183,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "P",
+          "D",
+          "L",
+          "O",
+          null,
+          "O",
+          null,
+          null,
+          null,
+          null,
+          "I",
+          "R",
+          "E",
+          null,
+          "L",
+          "N",
+          "C",
+          "E",
+          "N",
+          "L",
+          "T",
+          "S",
+          null,
+          "B",
+          "A"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "OLD",
+          "cells": [
+            3,
+            2,
+            1
+          ]
+        },
+        {
+          "word": "BALL",
+          "cells": [
+            23,
+            24,
+            19,
+            14
+          ]
+        },
+        {
+          "word": "POINT",
+          "cells": [
+            0,
+            5,
+            10,
+            15,
+            20
+          ]
+        },
+        {
+          "word": "SCREEN",
+          "cells": [
+            21,
+            16,
+            11,
+            12,
+            17,
+            18
+          ]
+        }
+      ],
+      "candidate_path_count": 4,
+      "other_path_count": 0,
+      "other_words": [],
+      "detail": ""
+    },
+    {
+      "seed": 68,
+      "outcome": "ok",
+      "states": 524,
+      "generation_seconds": 0.002083708008285612,
+      "validation_seconds": 0.0010687920148484409,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "A",
+          "N",
+          "T",
+          "R",
+          "K",
+          "W",
+          "S",
+          "T",
+          "I",
+          "C",
+          null,
+          null,
+          "A",
+          "C",
+          null,
+          null,
+          null,
+          null,
+          "R",
+          "E",
+          null,
+          "S",
+          "I",
+          "N",
+          "G"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "CAT",
+          "cells": [
+            13,
+            12,
+            7
+          ]
+        },
+        {
+          "word": "SWAN",
+          "cells": [
+            6,
+            5,
+            0,
+            1
+          ]
+        },
+        {
+          "word": "TRICK",
+          "cells": [
+            2,
+            3,
+            8,
+            9,
+            4
+          ]
+        },
+        {
+          "word": "SINGER",
+          "cells": [
+            21,
+            22,
+            23,
+            24,
+            19,
+            18
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "ANT",
+        "STICK"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 69,
+      "outcome": "ok",
+      "states": 1221,
+      "generation_seconds": 0.004280291963368654,
+      "validation_seconds": 0.0010367080103605986,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          null,
+          "A",
+          "E",
+          "N",
+          "R",
+          "E",
+          "D",
+          "L",
+          "I",
+          "W",
+          null,
+          "S",
+          "T",
+          null,
+          "B",
+          "A",
+          "A",
+          "O",
+          null,
+          null,
+          "R",
+          "N",
+          "C"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "WIN",
+          "cells": [
+            11,
+            10,
+            5
+          ]
+        },
+        {
+          "word": "BARN",
+          "cells": [
+            16,
+            17,
+            22,
+            23
+          ]
+        },
+        {
+          "word": "COAST",
+          "cells": [
+            24,
+            19,
+            18,
+            13,
+            14
+          ]
+        },
+        {
+          "word": "LEADER",
+          "cells": [
+            9,
+            4,
+            3,
+            8,
+            7,
+            6
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "RED"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 70,
+      "outcome": "ok",
+      "states": 326,
+      "generation_seconds": 0.001453916949685663,
+      "validation_seconds": 0.0010680830455385149,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "M",
+          "L",
+          "E",
+          "Y",
+          "B",
+          "S",
+          "O",
+          "L",
+          "I",
+          "A",
+          null,
+          null,
+          null,
+          "D",
+          "B",
+          null,
+          null,
+          "D",
+          "G",
+          "R",
+          null,
+          null,
+          "N",
+          "U",
+          "O"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "ELM",
+          "cells": [
+            2,
+            1,
+            0
+          ]
+        },
+        {
+          "word": "BABY",
+          "cells": [
+            14,
+            9,
+            4,
+            3
+          ]
+        },
+        {
+          "word": "SOLID",
+          "cells": [
+            5,
+            6,
+            7,
+            8,
+            13
+          ]
+        },
+        {
+          "word": "GROUND",
+          "cells": [
+            18,
+            19,
+            24,
+            23,
+            22,
+            17
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "LID",
+        "ROUND"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 71,
+      "outcome": "ok",
+      "states": 307,
+      "generation_seconds": 0.0013871249975636601,
+      "validation_seconds": 0.0010017920285463333,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "C",
+          "H",
+          "G",
+          null,
+          "A",
+          "N",
+          "S",
+          "A",
+          null,
+          "R",
+          "P",
+          "L",
+          "I",
+          "T",
+          "B",
+          "I",
+          null,
+          "U",
+          "N",
+          "K",
+          "N",
+          null,
+          null,
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "GAS",
+          "cells": [
+            3,
+            8,
+            7
+          ]
+        },
+        {
+          "word": "PINK",
+          "cells": [
+            11,
+            16,
+            21,
+            20
+          ]
+        },
+        {
+          "word": "UNTIL",
+          "cells": [
+            18,
+            19,
+            14,
+            13,
+            12
+          ]
+        },
+        {
+          "word": "BRANCH",
+          "cells": [
+            15,
+            10,
+            5,
+            6,
+            1,
+            2
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "INK",
+        "PIN"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 72,
+      "outcome": "ok",
+      "states": 586,
+      "generation_seconds": 0.0019400420133024454,
+      "validation_seconds": 0.0011074169888161123,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          "W",
+          "O",
+          null,
+          null,
+          null,
+          "S",
+          "C",
+          null,
+          "C",
+          "I",
+          "H",
+          "E",
+          "C",
+          "K",
+          "R",
+          "O",
+          "E",
+          "O",
+          null,
+          "B",
+          "E",
+          "F",
+          "F"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "COW",
+          "cells": [
+            8,
+            3,
+            2
+          ]
+        },
+        {
+          "word": "SHOE",
+          "cells": [
+            7,
+            12,
+            17,
+            22
+          ]
+        },
+        {
+          "word": "BRICK",
+          "cells": [
+            21,
+            16,
+            11,
+            10,
+            15
+          ]
+        },
+        {
+          "word": "COFFEE",
+          "cells": [
+            14,
+            19,
+            24,
+            23,
+            18,
+            13
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [],
+      "detail": ""
+    },
+    {
+      "seed": 73,
+      "outcome": "ok",
+      "states": 280,
+      "generation_seconds": 0.0014944589929655194,
+      "validation_seconds": 0.001058999972883612,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "N",
+          "G",
+          "A",
+          "L",
+          null,
+          "I",
+          "W",
+          "M",
+          "L",
+          null,
+          null,
+          "P",
+          "S",
+          "A",
+          null,
+          "M",
+          "A",
+          null,
+          "U",
+          null,
+          "N",
+          "M",
+          "U",
+          "T"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "MAP",
+          "cells": [
+            16,
+            17,
+            12
+          ]
+        },
+        {
+          "word": "WING",
+          "cells": [
+            7,
+            6,
+            1,
+            2
+          ]
+        },
+        {
+          "word": "SMALL",
+          "cells": [
+            13,
+            8,
+            3,
+            4,
+            9
+          ]
+        },
+        {
+          "word": "AUTUMN",
+          "cells": [
+            14,
+            19,
+            24,
+            23,
+            22,
+            21
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "WIN"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 74,
+      "outcome": "ok",
+      "states": 436,
+      "generation_seconds": 0.0018984159687533975,
+      "validation_seconds": 0.0009545000502839684,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "H",
+          "H",
+          "C",
+          "N",
+          "U",
+          "A",
+          "N",
+          null,
+          null,
+          "L",
+          null,
+          "D",
+          null,
+          null,
+          "E",
+          null,
+          "S",
+          "R",
+          "I",
+          "Y",
+          null,
+          "P",
+          "I",
+          "T",
+          "E"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "EYE",
+          "cells": [
+            14,
+            19,
+            24
+          ]
+        },
+        {
+          "word": "HAND",
+          "cells": [
+            0,
+            5,
+            6,
+            11
+          ]
+        },
+        {
+          "word": "LUNCH",
+          "cells": [
+            9,
+            4,
+            3,
+            2,
+            1
+          ]
+        },
+        {
+          "word": "SPIRIT",
+          "cells": [
+            16,
+            21,
+            22,
+            17,
+            18,
+            23
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "YET"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 75,
+      "outcome": "ok",
+      "states": 287,
+      "generation_seconds": 0.001368583005387336,
+      "validation_seconds": 0.001109457982238382,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "S",
+          "R",
+          "M",
+          "S",
+          null,
+          "T",
+          "O",
+          null,
+          "H",
+          null,
+          null,
+          "I",
+          "W",
+          "O",
+          null,
+          "S",
+          "N",
+          "C",
+          "O",
+          "W",
+          "I",
+          "D",
+          "E",
+          null,
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "COW",
+          "cells": [
+            17,
+            18,
+            19
+          ]
+        },
+        {
+          "word": "SHOW",
+          "cells": [
+            3,
+            8,
+            13,
+            12
+          ]
+        },
+        {
+          "word": "STORM",
+          "cells": [
+            0,
+            5,
+            6,
+            1,
+            2
+          ]
+        },
+        {
+          "word": "INSIDE",
+          "cells": [
+            11,
+            16,
+            15,
+            20,
+            21,
+            22
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "WIN",
+        "WIND"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 76,
+      "outcome": "ok",
+      "states": 1235,
+      "generation_seconds": 0.0043807500042021275,
+      "validation_seconds": 0.001067749981302768,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "R",
+          "F",
+          null,
+          null,
+          "E",
+          "I",
+          "E",
+          "T",
+          "U",
+          "N",
+          "D",
+          null,
+          null,
+          "L",
+          "N",
+          "O",
+          "N",
+          "D",
+          "F",
+          "E",
+          "H",
+          "A",
+          null,
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "ONE",
+          "cells": [
+            16,
+            15,
+            20
+          ]
+        },
+        {
+          "word": "HAND",
+          "cells": [
+            21,
+            22,
+            17,
+            18
+          ]
+        },
+        {
+          "word": "FLUTE",
+          "cells": [
+            19,
+            14,
+            9,
+            8,
+            7
+          ]
+        },
+        {
+          "word": "FRIEND",
+          "cells": [
+            2,
+            1,
+            6,
+            5,
+            10,
+            11
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "HEN"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 77,
+      "outcome": "ok",
+      "states": 623,
+      "generation_seconds": 0.0026017919881269336,
+      "validation_seconds": 0.000999416981358081,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "R",
+          "R",
+          "C",
+          "N",
+          "E",
+          "Y",
+          "E",
+          "H",
+          "E",
+          "Q",
+          "U",
+          null,
+          "O",
+          "V",
+          "L",
+          "A",
+          null,
+          null,
+          null,
+          "D",
+          "R",
+          "Y",
+          null,
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "DRY",
+          "cells": [
+            20,
+            21,
+            22
+          ]
+        },
+        {
+          "word": "OVEN",
+          "cells": [
+            13,
+            14,
+            9,
+            4
+          ]
+        },
+        {
+          "word": "EQUAL",
+          "cells": [
+            5,
+            10,
+            11,
+            16,
+            15
+          ]
+        },
+        {
+          "word": "CHERRY",
+          "cells": [
+            3,
+            8,
+            7,
+            2,
+            1,
+            6
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "EYE",
+        "HEN"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 78,
+      "outcome": "ok",
+      "states": 1566,
+      "generation_seconds": 0.0058177500031888485,
+      "validation_seconds": 0.0010859579779207706,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          "N",
+          "D",
+          "O",
+          "V",
+          "A",
+          "I",
+          null,
+          "W",
+          null,
+          "N",
+          "W",
+          "R",
+          "T",
+          null,
+          null,
+          null,
+          "U",
+          "C",
+          "E",
+          "P",
+          "O",
+          "R",
+          "K"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "VAN",
+          "cells": [
+            5,
+            6,
+            11
+          ]
+        },
+        {
+          "word": "ROPE",
+          "cells": [
+            23,
+            22,
+            21,
+            20
+          ]
+        },
+        {
+          "word": "TRUCK",
+          "cells": [
+            14,
+            13,
+            18,
+            19,
+            24
+          ]
+        },
+        {
+          "word": "WINDOW",
+          "cells": [
+            12,
+            7,
+            2,
+            3,
+            4,
+            9
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "WIN",
+        "WIND"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 79,
+      "outcome": "ok",
+      "states": 287,
+      "generation_seconds": 0.0013267080066725612,
+      "validation_seconds": 0.0009547499939799309,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "O",
+          "F",
+          "B",
+          null,
+          null,
+          "O",
+          "G",
+          "A",
+          null,
+          "D",
+          "R",
+          "P",
+          "E",
+          "R",
+          "L",
+          null,
+          "N",
+          "O",
+          "S",
+          "I",
+          "U",
+          "B",
+          null,
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "BAG",
+          "cells": [
+            3,
+            8,
+            7
+          ]
+        },
+        {
+          "word": "ROOF",
+          "cells": [
+            11,
+            6,
+            1,
+            2
+          ]
+        },
+        {
+          "word": "BUILD",
+          "cells": [
+            22,
+            21,
+            20,
+            15,
+            10
+          ]
+        },
+        {
+          "word": "PERSON",
+          "cells": [
+            12,
+            13,
+            14,
+            19,
+            18,
+            17
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "PROOF",
+        "SON"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 80,
+      "outcome": "ok",
+      "states": 289,
+      "generation_seconds": 0.0014547089813277125,
+      "validation_seconds": 0.0010569170117378235,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "O",
+          "R",
+          "K",
+          "N",
+          null,
+          "W",
+          null,
+          "B",
+          "A",
+          null,
+          "S",
+          "I",
+          "E",
+          "C",
+          null,
+          "N",
+          "D",
+          null,
+          "N",
+          null,
+          "I",
+          "E",
+          "D",
+          "A",
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "ROW",
+          "cells": [
+            1,
+            0,
+            5
+          ]
+        },
+        {
+          "word": "BANK",
+          "cells": [
+            7,
+            8,
+            3,
+            2
+          ]
+        },
+        {
+          "word": "DANCE",
+          "cells": [
+            22,
+            23,
+            18,
+            13,
+            12
+          ]
+        },
+        {
+          "word": "INSIDE",
+          "cells": [
+            20,
+            15,
+            10,
+            11,
+            16,
+            21
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "WORK"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 81,
+      "outcome": "ok",
+      "states": 281,
+      "generation_seconds": 0.0014809169806540012,
+      "validation_seconds": 0.0010636670049279928,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          "I",
+          "R",
+          null,
+          "N",
+          "I",
+          "G",
+          "O",
+          "Y",
+          "B",
+          "R",
+          null,
+          null,
+          "O",
+          null,
+          "U",
+          "R",
+          "A",
+          "T",
+          "H",
+          "S",
+          null,
+          "I",
+          "N"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "TOY",
+          "cells": [
+            19,
+            14,
+            9
+          ]
+        },
+        {
+          "word": "RAIN",
+          "cells": [
+            17,
+            18,
+            23,
+            24
+          ]
+        },
+        {
+          "word": "BRUSH",
+          "cells": [
+            10,
+            11,
+            16,
+            21,
+            20
+          ]
+        },
+        {
+          "word": "ORIGIN",
+          "cells": [
+            8,
+            3,
+            2,
+            7,
+            6,
+            5
+          ]
+        }
+      ],
+      "candidate_path_count": 4,
+      "other_path_count": 0,
+      "other_words": [],
+      "detail": ""
+    },
+    {
+      "seed": 82,
+      "outcome": "ok",
+      "states": 1556,
+      "generation_seconds": 0.00531429098919034,
+      "validation_seconds": 0.0010281249997206032,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "R",
+          "T",
+          "O",
+          "B",
+          null,
+          "A",
+          "K",
+          "O",
+          "E",
+          null,
+          "H",
+          "C",
+          null,
+          "D",
+          null,
+          null,
+          "N",
+          "S",
+          "I",
+          null,
+          null,
+          "I",
+          "Y",
+          "A",
+          "W"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "WAY",
+          "cells": [
+            24,
+            23,
+            22
+          ]
+        },
+        {
+          "word": "BOOK",
+          "cells": [
+            3,
+            2,
+            7,
+            6
+          ]
+        },
+        {
+          "word": "CHART",
+          "cells": [
+            11,
+            10,
+            5,
+            0,
+            1
+          ]
+        },
+        {
+          "word": "INSIDE",
+          "cells": [
+            21,
+            16,
+            17,
+            18,
+            13,
+            8
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "ART",
+        "BED"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 83,
+      "outcome": "ok",
+      "states": 688,
+      "generation_seconds": 0.002594292047433555,
+      "validation_seconds": 0.0010689590126276016,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          null,
+          "L",
+          null,
+          null,
+          "N",
+          "G",
+          "E",
+          null,
+          "E",
+          "R",
+          "C",
+          "H",
+          "A",
+          "F",
+          "T",
+          "S",
+          "I",
+          "R",
+          "R",
+          "E",
+          null,
+          "S",
+          "M"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "LEG",
+          "cells": [
+            3,
+            8,
+            7
+          ]
+        },
+        {
+          "word": "FERN",
+          "cells": [
+            15,
+            10,
+            11,
+            6
+          ]
+        },
+        {
+          "word": "CHARM",
+          "cells": [
+            12,
+            13,
+            14,
+            19,
+            24
+          ]
+        },
+        {
+          "word": "SISTER",
+          "cells": [
+            23,
+            18,
+            17,
+            16,
+            21,
+            20
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "ARM"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 84,
+      "outcome": "ok",
+      "states": 853,
+      "generation_seconds": 0.003026958031114191,
+      "validation_seconds": 0.000981333025265485,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "R",
+          "A",
+          "G",
+          null,
+          "E",
+          "D",
+          null,
+          "P",
+          null,
+          "N",
+          "U",
+          null,
+          "E",
+          "T",
+          "P",
+          "P",
+          null,
+          null,
+          "S",
+          "E",
+          "R",
+          "A",
+          "N",
+          "T"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "ANT",
+          "cells": [
+            22,
+            23,
+            24
+          ]
+        },
+        {
+          "word": "STEP",
+          "cells": [
+            19,
+            14,
+            13,
+            8
+          ]
+        },
+        {
+          "word": "UPPER",
+          "cells": [
+            11,
+            16,
+            15,
+            20,
+            21
+          ]
+        },
+        {
+          "word": "GARDEN",
+          "cells": [
+            3,
+            2,
+            1,
+            6,
+            5,
+            10
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "PET"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 85,
+      "outcome": "ok",
+      "states": 327,
+      "generation_seconds": 0.0013689170009456575,
+      "validation_seconds": 0.0010529159917496145,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "I",
+          "T",
+          "B",
+          "R",
+          "I",
+          "M",
+          "M",
+          "R",
+          null,
+          "D",
+          "E",
+          "R",
+          "O",
+          "E",
+          "G",
+          "N",
+          "U",
+          "T",
+          "S",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "RUN",
+          "cells": [
+            11,
+            16,
+            15
+          ]
+        },
+        {
+          "word": "TIME",
+          "cells": [
+            1,
+            0,
+            5,
+            10
+          ]
+        },
+        {
+          "word": "STORM",
+          "cells": [
+            18,
+            17,
+            12,
+            7,
+            6
+          ]
+        },
+        {
+          "word": "BRIDGE",
+          "cells": [
+            2,
+            3,
+            4,
+            9,
+            14,
+            13
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "NUT"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 86,
+      "outcome": "ok",
+      "states": 737,
+      "generation_seconds": 0.002594500023405999,
+      "validation_seconds": 0.0010447090025991201,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "A",
+          "L",
+          "U",
+          "E",
+          null,
+          "V",
+          "D",
+          "A",
+          "O",
+          "R",
+          "D",
+          "U",
+          "B",
+          "L",
+          "E",
+          "I",
+          "O",
+          null,
+          null,
+          null,
+          "G",
+          "D",
+          null,
+          null,
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "DIG",
+          "cells": [
+            10,
+            15,
+            20
+          ]
+        },
+        {
+          "word": "ROAD",
+          "cells": [
+            9,
+            8,
+            7,
+            6
+          ]
+        },
+        {
+          "word": "VALUE",
+          "cells": [
+            5,
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "word": "DOUBLE",
+          "cells": [
+            21,
+            16,
+            11,
+            12,
+            13,
+            14
+          ]
+        }
+      ],
+      "candidate_path_count": 4,
+      "other_path_count": 0,
+      "other_words": [],
+      "detail": ""
+    },
+    {
+      "seed": 87,
+      "outcome": "ok",
+      "states": 273,
+      "generation_seconds": 0.0014383330126293004,
+      "validation_seconds": 0.0010348749929107726,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          null,
+          "K",
+          "L",
+          null,
+          "Y",
+          "O",
+          "T",
+          "I",
+          "G",
+          "L",
+          "E",
+          "B",
+          "M",
+          "N",
+          null,
+          null,
+          "R",
+          "G",
+          "U",
+          "J",
+          null,
+          "I",
+          "N"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "TOY",
+          "cells": [
+            8,
+            7,
+            6
+          ]
+        },
+        {
+          "word": "MILK",
+          "cells": [
+            14,
+            9,
+            4,
+            3
+          ]
+        },
+        {
+          "word": "BRING",
+          "cells": [
+            13,
+            18,
+            23,
+            24,
+            19
+          ]
+        },
+        {
+          "word": "JUNGLE",
+          "cells": [
+            21,
+            20,
+            15,
+            10,
+            11,
+            12
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "RING"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 88,
+      "outcome": "ok",
+      "states": 379,
+      "generation_seconds": 0.0014838339993730187,
+      "validation_seconds": 0.0010857920278795063,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          null,
+          "C",
+          "O",
+          null,
+          null,
+          "L",
+          "E",
+          "V",
+          null,
+          null,
+          "D",
+          "D",
+          "E",
+          "L",
+          "D",
+          "D",
+          "N",
+          "R",
+          "O",
+          "M",
+          "I",
+          "A",
+          "L"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "OLD",
+          "cells": [
+            20,
+            15,
+            16
+          ]
+        },
+        {
+          "word": "LAND",
+          "cells": [
+            24,
+            23,
+            18,
+            13
+          ]
+        },
+        {
+          "word": "COVER",
+          "cells": [
+            3,
+            4,
+            9,
+            14,
+            19
+          ]
+        },
+        {
+          "word": "MIDDLE",
+          "cells": [
+            21,
+            22,
+            17,
+            12,
+            7,
+            8
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "RED"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 89,
+      "outcome": "ok",
+      "states": 739,
+      "generation_seconds": 0.002622708969283849,
+      "validation_seconds": 0.0010548330028541386,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "S",
+          "H",
+          "O",
+          null,
+          null,
+          "Y",
+          null,
+          "E",
+          null,
+          null,
+          "O",
+          null,
+          "W",
+          "T",
+          "R",
+          "J",
+          null,
+          "A",
+          "Y",
+          "A",
+          "N",
+          "E",
+          "L",
+          "E",
+          "V"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "WAY",
+          "cells": [
+            12,
+            17,
+            18
+          ]
+        },
+        {
+          "word": "SHOE",
+          "cells": [
+            0,
+            1,
+            2,
+            7
+          ]
+        },
+        {
+          "word": "ENJOY",
+          "cells": [
+            21,
+            20,
+            15,
+            10,
+            5
+          ]
+        },
+        {
+          "word": "TRAVEL",
+          "cells": [
+            13,
+            14,
+            19,
+            24,
+            23,
+            22
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "ART",
+        "JOY"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 90,
+      "outcome": "ok",
+      "states": 392,
+      "generation_seconds": 0.0015174580039456487,
+      "validation_seconds": 0.0010892499703913927,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "S",
+          "N",
+          null,
+          null,
+          null,
+          "Q",
+          "O",
+          "R",
+          "G",
+          "A",
+          "U",
+          "S",
+          "A",
+          null,
+          "R",
+          "R",
+          "D",
+          "S",
+          null,
+          "E",
+          "A",
+          "Y",
+          "S",
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "SON",
+          "cells": [
+            12,
+            7,
+            2
+          ]
+        },
+        {
+          "word": "YARD",
+          "cells": [
+            22,
+            21,
+            16,
+            17
+          ]
+        },
+        {
+          "word": "GRASS",
+          "cells": [
+            9,
+            8,
+            13,
+            18,
+            23
+          ]
+        },
+        {
+          "word": "SQUARE",
+          "cells": [
+            1,
+            6,
+            11,
+            10,
+            15,
+            20
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "AREA",
+        "EAR"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 91,
+      "outcome": "ok",
+      "states": 373,
+      "generation_seconds": 0.001508291985373944,
+      "validation_seconds": 0.0010897080064751208,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "Y",
+          "E",
+          "A",
+          "V",
+          null,
+          "R",
+          "L",
+          "L",
+          "D",
+          null,
+          "U",
+          "L",
+          "A",
+          "O",
+          null,
+          "G",
+          "B",
+          "C",
+          "O",
+          null,
+          null,
+          null,
+          "K",
+          "W",
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "RUG",
+          "cells": [
+            5,
+            10,
+            15
+          ]
+        },
+        {
+          "word": "WOOD",
+          "cells": [
+            23,
+            18,
+            13,
+            8
+          ]
+        },
+        {
+          "word": "BLACK",
+          "cells": [
+            16,
+            11,
+            12,
+            17,
+            22
+          ]
+        },
+        {
+          "word": "VALLEY",
+          "cells": [
+            3,
+            2,
+            7,
+            6,
+            1,
+            0
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "COW"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 92,
+      "outcome": "ok",
+      "states": 374,
+      "generation_seconds": 0.0015312079922296107,
+      "validation_seconds": 0.0011147920158691704,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "C",
+          "T",
+          "O",
+          "R",
+          "N",
+          "A",
+          "S",
+          null,
+          "L",
+          "O",
+          "S",
+          "C",
+          "R",
+          "A",
+          null,
+          "N",
+          "E",
+          "E",
+          "N",
+          null,
+          null,
+          null,
+          null,
+          "D"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "SON",
+          "cells": [
+            11,
+            10,
+            5
+          ]
+        },
+        {
+          "word": "LAND",
+          "cells": [
+            9,
+            14,
+            19,
+            24
+          ]
+        },
+        {
+          "word": "ACTOR",
+          "cells": [
+            6,
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "word": "SCREEN",
+          "cells": [
+            7,
+            12,
+            13,
+            18,
+            17,
+            16
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "CRANE"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 93,
+      "outcome": "ok",
+      "states": 412,
+      "generation_seconds": 0.002035708981566131,
+      "validation_seconds": 0.0010971669689752162,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          null,
+          "N",
+          "S",
+          null,
+          null,
+          "K",
+          "A",
+          null,
+          "P",
+          "O",
+          "E",
+          "H",
+          "O",
+          "R",
+          "N",
+          "D",
+          null,
+          "T",
+          "E",
+          "M",
+          "M",
+          "U",
+          "S"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "HOT",
+          "cells": [
+            13,
+            14,
+            19
+          ]
+        },
+        {
+          "word": "POND",
+          "cells": [
+            10,
+            11,
+            16,
+            17
+          ]
+        },
+        {
+          "word": "SNAKE",
+          "cells": [
+            4,
+            3,
+            8,
+            7,
+            12
+          ]
+        },
+        {
+          "word": "SUMMER",
+          "cells": [
+            24,
+            23,
+            22,
+            21,
+            20,
+            15
+          ]
+        }
+      ],
+      "candidate_path_count": 4,
+      "other_path_count": 0,
+      "other_words": [],
+      "detail": ""
+    },
+    {
+      "seed": 94,
+      "outcome": "ok",
+      "states": 868,
+      "generation_seconds": 0.0030991670209914446,
+      "validation_seconds": 0.001045375014655292,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "C",
+          "I",
+          "I",
+          "T",
+          null,
+          "K",
+          "R",
+          "K",
+          "E",
+          null,
+          "E",
+          "B",
+          "E",
+          "O",
+          null,
+          "A",
+          "T",
+          "C",
+          "F",
+          null,
+          null,
+          null,
+          "I",
+          "F",
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "EAT",
+          "cells": [
+            10,
+            15,
+            16
+          ]
+        },
+        {
+          "word": "KITE",
+          "cells": [
+            7,
+            2,
+            3,
+            8
+          ]
+        },
+        {
+          "word": "BRICK",
+          "cells": [
+            11,
+            6,
+            1,
+            0,
+            5
+          ]
+        },
+        {
+          "word": "OFFICE",
+          "cells": [
+            13,
+            18,
+            23,
+            22,
+            17,
+            12
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "BEAT",
+        "ICE"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 95,
+      "outcome": "ok",
+      "states": 580,
+      "generation_seconds": 0.0025124999810941517,
+      "validation_seconds": 0.0010367499780841172,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "D",
+          "C",
+          "I",
+          null,
+          "O",
+          "O",
+          "A",
+          "G",
+          null,
+          "R",
+          "V",
+          "M",
+          null,
+          "G",
+          "I",
+          "E",
+          "G",
+          "N",
+          "I",
+          null,
+          null,
+          "U",
+          "R",
+          null,
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "RUG",
+          "cells": [
+            22,
+            21,
+            16
+          ]
+        },
+        {
+          "word": "DOVE",
+          "cells": [
+            0,
+            5,
+            10,
+            15
+          ]
+        },
+        {
+          "word": "MAGIC",
+          "cells": [
+            11,
+            6,
+            7,
+            2,
+            1
+          ]
+        },
+        {
+          "word": "ORIGIN",
+          "cells": [
+            4,
+            9,
+            14,
+            13,
+            18,
+            17
+          ]
+        }
+      ],
+      "candidate_path_count": 4,
+      "other_path_count": 0,
+      "other_words": [],
+      "detail": ""
+    },
+    {
+      "seed": 96,
+      "outcome": "ok",
+      "states": 502,
+      "generation_seconds": 0.0020762080093845725,
+      "validation_seconds": 0.0010422079940326512,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          null,
+          null,
+          "K",
+          null,
+          "E",
+          "N",
+          "D",
+          "R",
+          "A",
+          "I",
+          null,
+          "D",
+          "R",
+          "H",
+          "R",
+          "F",
+          "B",
+          "Y",
+          "S",
+          null,
+          null,
+          "O",
+          "A",
+          "T"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "DRY",
+          "cells": [
+            12,
+            13,
+            18
+          ]
+        },
+        {
+          "word": "BOAT",
+          "cells": [
+            17,
+            22,
+            23,
+            24
+          ]
+        },
+        {
+          "word": "SHARK",
+          "cells": [
+            19,
+            14,
+            9,
+            8,
+            3
+          ]
+        },
+        {
+          "word": "FRIEND",
+          "cells": [
+            16,
+            15,
+            10,
+            5,
+            6,
+            7
+          ]
+        }
+      ],
+      "candidate_path_count": 5,
+      "other_path_count": 1,
+      "other_words": [
+        "STAY"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 97,
+      "outcome": "ok",
+      "states": 1318,
+      "generation_seconds": 0.004907833994366229,
+      "validation_seconds": 0.0010560830123722553,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "C",
+          "E",
+          "N",
+          null,
+          null,
+          "P",
+          "I",
+          "T",
+          "E",
+          "R",
+          "D",
+          "G",
+          null,
+          null,
+          "B",
+          "N",
+          "O",
+          "P",
+          null,
+          "L",
+          null,
+          null,
+          "D",
+          "N",
+          "E"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "PIG",
+          "cells": [
+            5,
+            6,
+            11
+          ]
+        },
+        {
+          "word": "POND",
+          "cells": [
+            17,
+            16,
+            15,
+            10
+          ]
+        },
+        {
+          "word": "BLEND",
+          "cells": [
+            14,
+            19,
+            24,
+            23,
+            22
+          ]
+        },
+        {
+          "word": "CENTER",
+          "cells": [
+            0,
+            1,
+            2,
+            7,
+            8,
+            9
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "ENTER",
+        "PIE"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 98,
+      "outcome": "ok",
+      "states": 720,
+      "generation_seconds": 0.002628832997288555,
+      "validation_seconds": 0.0010002080234698951,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          "E",
+          "A",
+          null,
+          null,
+          null,
+          "T",
+          "S",
+          null,
+          null,
+          null,
+          "C",
+          "O",
+          "O",
+          "K",
+          "I",
+          "R",
+          "U",
+          "B",
+          "O",
+          "E",
+          "S",
+          "T",
+          "R",
+          "A",
+          null
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "OAR",
+          "cells": [
+            18,
+            23,
+            22
+          ]
+        },
+        {
+          "word": "EAST",
+          "cells": [
+            0,
+            1,
+            6,
+            5
+          ]
+        },
+        {
+          "word": "BURST",
+          "cells": [
+            17,
+            16,
+            15,
+            20,
+            21
+          ]
+        },
+        {
+          "word": "COOKIE",
+          "cells": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            19
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "ART",
+        "TEA"
+      ],
+      "detail": ""
+    },
+    {
+      "seed": 99,
+      "outcome": "ok",
+      "states": 1799,
+      "generation_seconds": 0.006084374967031181,
+      "validation_seconds": 0.001105082978028804,
+      "grid": {
+        "width": 5,
+        "height": 5,
+        "letters": [
+          null,
+          "E",
+          "M",
+          "A",
+          "R",
+          "E",
+          "M",
+          null,
+          "P",
+          "F",
+          "A",
+          "D",
+          "O",
+          "A",
+          "P",
+          null,
+          null,
+          "W",
+          "N",
+          "U",
+          null,
+          null,
+          null,
+          "S",
+          "O"
+        ],
+        "word_lengths": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "answers": [
+        {
+          "word": "PAN",
+          "cells": [
+            8,
+            13,
+            18
+          ]
+        },
+        {
+          "word": "SOUP",
+          "cells": [
+            23,
+            24,
+            19,
+            14
+          ]
+        },
+        {
+          "word": "FRAME",
+          "cells": [
+            9,
+            4,
+            3,
+            2,
+            1
+          ]
+        },
+        {
+          "word": "MEADOW",
+          "cells": [
+            6,
+            5,
+            10,
+            11,
+            12,
+            17
+          ]
+        }
+      ],
+      "candidate_path_count": 6,
+      "other_path_count": 2,
+      "other_words": [
+        "MAP"
+      ],
+      "detail": ""
+    }
+  ]
+}
