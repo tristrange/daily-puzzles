@@ -977,3 +977,38 @@ and all 1,845 hint-baseline positions. The existing TracksStage lint warning
 remains; the broader dictionary introduces no build-size warning. The original
 86 published puzzle files, ten v1 golden files, v1 recipe/list and AGENTS.md are
 byte-identical to the branch base.
+
+## 2026-10-15 — Home Screen installation
+
+Branch `feat/home-screen-install` adds a standalone web app manifest, iPhone
+metadata and opaque 180/192/512px PNG icons matching the existing four-cell brand
+mark. The favicon SVG is the editable icon source. Scope, start URL and icon
+URLs are relative so both local root and the GitHub Pages project path work.
+Identity uses the launch URL fallback, without its fragment. The launch URL
+opens Today through the existing hash router. No runtime dependencies, install
+banner, service worker or cache policy were introduced.
+
+How to play and both READMEs explain Safari’s Add to Home Screen flow, the
+Open as Web App option, online requirements and separate iPhone app/Safari saved
+data. Existing progress, stats and appearance implementations are unchanged.
+See [Apple’s installation instructions](https://support.apple.com/guide/iphone/iphea86e5236/ios)
+and [WebKit’s storage behavior](https://webkit.org/blog/14787/webkit-features-in-safari-17-2/).
+
+The existing 565 app tests, type check and lint passed (the existing TracksStage
+warning remains). Real production builds at `/` and `/daily-puzzles/` passed an
+assertion check resolving linked manifest/icon paths, PNG dimensions, stable ID,
+standalone mode and launch URL/scope. A matching-base production preview rendered
+installation instructions at 375px with no horizontal overflow; Auto remained
+selected and navigation reached Today. [Phone-width screenshot](measurements/home-screen-phone.png).
+The preview must use the same BASE_PATH as its build.
+
+Actual iPhone installation/relaunch has not been tested by this desktop session.
+Offline support and progress transfer remain separate work; this PR promises
+online installation only. Engine and puzzle content have no diff.
+
+The focused review caught the initial explicit `id: "./"`: unlike scope and
+icons, an explicit ID resolves against the launch URL’s origin and would identify
+the app as the shared host root. The asset check had used the wrong base for ID
+resolution. A regression test reproduced the project-path collision; removing
+the optional ID uses the stable launch-path identity and passes both hosting
+paths. The corrected real-build assertion agrees. Final app suite: 567 passed.

@@ -104,4 +104,24 @@ cover October 15–21; earlier dates are not backfilled. Preview links and saved
 progress remain separate, so trying the preview does not consume a daily solve.
 Versioned progress keys preserve old attempts when previews change. Word-list
 provenance and redistribution notices are available through How to play.
-Installation polish and offline support are deferred until Word Paths is live.
+Offline support remains a separate milestone.
+
+
+## Home Screen installation
+
+`public/manifest.webmanifest` declares a standalone app with a stable relative
+launch URL and scope. Identity defaults to the launch URL without its fragment,
+so each hosting path remains a distinct app. Keep that launch path stable. `index.html` links the manifest and 180px Apple touch
+icon through Vite’s `%BASE_URL%` replacement. Icons at 192px and 512px reuse the
+four-cell brand mark in `public/favicon.svg`; all PNGs are opaque and the 512px
+mark fits the maskable safe zone. No service worker or install prompt is added.
+
+Verify production builds at both `/` and `BASE_PATH=/daily-puzzles/`; manifest,
+Apple icon and favicon links must remain under the build base. Manifest icon
+URLs resolve relative to the manifest. All routes stay in the existing hash
+router. Installation instructions live in How to play.
+
+An internet connection is required. iPhone Home Screen storage is separate
+from Safari; no progress migration is claimed. Auto/Light/Dark behavior is
+unchanged. Validate actual Add to Home Screen and relaunch on an iPhone after
+merge; a desktop viewport check does not prove installation.
