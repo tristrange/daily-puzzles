@@ -348,46 +348,36 @@ class TestVerifyRamp:
     A mismatch that only prints a label lets the daily pipeline commit and deploy
     a board that breaks the week, which is exactly what the check is for.
 
-    Boards are generated rather than hand-written so `verify_replay` passes and
-    the ramp check is the only thing under test. `verify_replay` also compares the
-    recorded band against the board, so a relabelled file would fail there first
-    and prove nothing about the ramp.
+    Reuse committed boards with honest bands so replay still runs for real.
+    Searching for a new board per metadata assertion only repeats generator tests.
     """
 
-    # Two days inside the ramp whose targets are the cheapest to build: Monday
-    # wants 7x7 and Tuesday 8x8, both at Medium. A 9x9 day is avoided on purpose,
-    # since its band search is the slowest thing in the suite and none of these
-    # rules are size-specific.
     MONDAY = "2026-10-12"
     TUESDAY = "2026-10-13"
-
-    #: A band every supported size produces within a few attempts.
-    EASY = MIN_LEVEL
+    WEDNESDAY = "2026-10-14"
+    MEDIUM = 2
 
     def _write(self, tmp_path: Path, day: str, size: int, level: int) -> Path:
-        """A real, logic-only board of the requested size at the requested band."""
-        target = DifficultyTarget(size=size, level=level)
-        result = generate_ramped(
-            seed=seed_from_date(day),
-            puzzle_id=day,
-            target=target,
-            max_attempts=RAMP_ATTEMPTS[size],
-        )
-        assert result.achieved.level == level
+        archive = Path(__file__).resolve().parents[2] / "app" / "public" / "puzzles"
+        fixtures = {(7, 2): "2026-10-12", (8, 2): "2026-10-13", (8, 3): "2026-10-14"}
+        puzzle = load_puzzle(archive / f"{fixtures[size, level]}.json")
+        assert marks_board(puzzle).size == size and puzzle.difficulty == level
         path = tmp_path / f"{day}.json"
-        path.write_text(dumps_puzzle(replace(result.puzzle, difficulty=level)), encoding="utf-8")
+        path.write_text(dumps_puzzle(replace(puzzle, id=day)), encoding="utf-8")
         return path
 
     def test_accepts_a_published_ramp(self, tmp_path: Path) -> None:
-        self._write(tmp_path, self.MONDAY, 7, self.EASY)
-        self._write(tmp_path, self.TUESDAY, 8, self.EASY)
+        self._write(tmp_path, self.MONDAY, 7, self.MEDIUM)
+        self._write(tmp_path, self.TUESDAY, 8, self.MEDIUM)
 
         assert verify.main(["--dir", str(tmp_path)]) == 0
 
-    def test_rejects_a_post_ramp_day_with_no_band(self, tmp_path: Path) -> None:
+    def test_rejects_a_post_ramp_day_with_no_band(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         # The schema keeps `difficulty` optional so pre-ramp files still parse, so
         # nothing but this check stops a new file shipping without one.
-        path = self._write(tmp_path, self.MONDAY, 7, self.EASY)
+        path = self._write(tmp_path, self.MONDAY, 7, self.MEDIUM)
         data = json.loads(path.read_text(encoding="utf-8"))
         del data["difficulty"]
         path.write_text(json.dumps(data), encoding="utf-8")
@@ -395,18 +385,22 @@ class TestVerifyRamp:
         result = verify.main(["--dir", str(tmp_path)])
 
         assert result == 1
-        assert "no difficulty recorded" in _capture_verify(tmp_path)
+        assert "no difficulty recorded" in capsys.readouterr().out
 
-    def test_rejects_a_board_of_the_wrong_size(self, tmp_path: Path) -> None:
+    def test_rejects_a_board_of_the_wrong_size(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         # A Monday board that is 8x8, where the target is 7x7.
-        self._write(tmp_path, self.MONDAY, 8, self.EASY)
+        self._write(tmp_path, self.MONDAY, 8, self.MEDIUM)
 
         result = verify.main(["--dir", str(tmp_path)])
 
         assert result == 1
-        assert "expected 7x7" in _capture_verify(tmp_path)
+        assert "expected 7x7" in capsys.readouterr().out
 
-    def test_rejects_a_band_above_the_target(self, tmp_path: Path) -> None:
+    def test_rejects_a_band_above_the_target(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         # A Tuesday wants 8x8 Medium, so a Hard board of the right size is over the
         # target while its size still matches.
         self._write(tmp_path, self.TUESDAY, 8, 3)
@@ -414,12 +408,11 @@ class TestVerifyRamp:
         result = verify.main(["--dir", str(tmp_path)])
 
         assert result == 1
-        assert "above Medium" in _capture_verify(tmp_path)
+        assert "above Medium" in capsys.readouterr().out
 
     def test_accepts_a_band_below_the_target(self, tmp_path: Path) -> None:
-        # Falling short is legal: the search reports it and publishes the hardest
-        # board it found, so an Easy Tuesday must not fail the build.
-        self._write(tmp_path, self.TUESDAY, 8, self.EASY)
+        # Wednesday targets Hard; an honest Medium board is a valid fallback.
+        self._write(tmp_path, self.WEDNESDAY, 8, self.MEDIUM)
 
         assert verify.main(["--dir", str(tmp_path)]) == 0
 

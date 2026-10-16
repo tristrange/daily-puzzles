@@ -183,6 +183,18 @@ motivated it belong together.
 
 ---
 
+## CI feedback
+
+Frontend/documentation-only PRs run the app checks and skip the engine suite.
+Puzzle files, engine code, shared schema/conformance data, CI files and unknown
+paths still require engine tests and archive verification. Missing diff history
+falls back to full checks. Main pushes and manual/publisher dispatches always
+run full validation before deployment.
+
+New commits cancel older CI runs for that PR; main/deployment runs are preserved.
+The engine test output includes its slowest cases to guide further improvements.
+Check routing locally with `python3 -m unittest discover -s .github/scripts`.
+
 ## The file format
 
 ```json
