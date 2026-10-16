@@ -132,7 +132,8 @@ merge; a desktop viewport check does not prove installation.
 The production-only `OfflineStatus` registers `sw.js` within `BASE_URL` and
 announces app readiness after activation. Vite’s `build/offline.ts` emits the
 worker from `offline/sw.js`, hashing the template, emitted HTML/code/styles and
-explicit public shell files. Lazy Word Paths code and its dictionary are
+explicit public shell files. Install requests bypass the HTTP cache to avoid
+retaining an older HTML response in a new build cache. Lazy Word Paths code and its dictionary are
 precached too. Development mode does not register a worker.
 
 App caches are `daily-puzzles.app:<base>:<build hash>`. Navigation uses the
@@ -145,7 +146,7 @@ caches for this exact base; neighboring apps and player data are untouched.
 `daily-puzzles.puzzles:<base>:v1`. It validates schema and requested ID before
 saving; network failures, unsuccessful or invalid responses fall back to saved
 responses, which are validated again. A valid network response takes precedence.
-Storage denial/quota errors leave online play usable. Unfetched puzzles require
+Storage denial/quota errors leave online play usable and show a download warning. Unfetched puzzles require
 internet. Today fetches its slots; Archive fetches its recent window. There is
 no background archive crawl or guarantee against browser cache eviction.
 Player progress keys are unchanged: Tracks/Word Paths resume, while unfinished

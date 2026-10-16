@@ -1,3 +1,5 @@
+export const PUZZLE_DOWNLOAD_FAILED = 'puzzle-download-failed'
+
 /** Registration failure must never prevent ordinary online play. */
 export async function registerOfflineApp(): Promise<boolean> {
   if (!('serviceWorker' in navigator)) return false

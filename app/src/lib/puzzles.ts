@@ -8,6 +8,7 @@
  */
 
 import { PUZZLE_TYPES } from '../domain/board'
+import { PUZZLE_DOWNLOAD_FAILED } from './offline'
 import { isPuzzleId, previousPuzzleIds, puzzleIdFor, puzzleIdsForDay } from '../domain/dates'
 import { parsePuzzle, type Puzzle } from '../domain/puzzle'
 
@@ -63,10 +64,11 @@ async function fetchPuzzle(id: string, fetcher: Fetcher): Promise<Puzzle | null>
     const puzzle = await parsedResponse(id, response)
     if (puzzle !== null) {
       try {
-        if (typeof caches !== 'undefined') {
-          await (await caches.open(DOWNLOAD_CACHE)).put(url, response)
-        }
-      } catch { /* Downloads are optional; storage denial must not break online play. */ }
+        await (await caches.open(DOWNLOAD_CACHE)).put(url, response)
+      } catch {
+        // Keep online play usable, but do not promise this board is saved.
+        if (typeof window !== 'undefined') window.dispatchEvent(new Event(PUZZLE_DOWNLOAD_FAILED))
+      }
       return puzzle
     }
     unavailable = response.status >= 500

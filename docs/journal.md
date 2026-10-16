@@ -1032,7 +1032,7 @@ restart unfinished attempts on reload; Tracks/Word Paths retain existing resume
 behavior. READMEs and help explain cache eviction, separate iPhone app storage,
 waiting updates and the need for a retirement worker when rolling back.
 
-Local app suite: 601 tests passed, plus TypeScript and both root/project-path
+Local app suite: 603 tests passed, plus TypeScript and both root/project-path
 production builds. Lint passed with the existing TracksStage effect warning.
 Emitted-worker assertions confirmed all four emitted code/style assets, static
 shell files and base paths, without puzzle JSON in the worker cache.
@@ -1062,3 +1062,14 @@ Following PRs address the requested wide-board/sidebar layout, compact archive
 with a URL-backed game selector, per-game stats filtering and dedicated rules
 links. The board’s existing 480px/48svh cap must change with the sidebar; moving
 controls alone would leave the cells small.
+
+
+The final fresh-context review found two important issues, reproduced by failing
+regressions before correction: default HTTP caching could mix old HTML with new
+chunks during worker installation, and a failed puzzle save was silent after
+shell readiness. Installation now uses reload-mode Requests for every shell
+file. A two-build HTTP-cache simulation verifies build B’s HTML and lazy assets
+remain available after cache A is removed. Failed puzzle saves now announce a
+warning while keeping online play usable. Both regressions pass with the full
+603-test suite. The reviewer reported no minor findings. Existing marks-game
+reload behavior and the subsequent UI redesign remain intentionally separate.

@@ -5,7 +5,7 @@ const APP_PREFIX = `daily-puzzles.app:${BASE.pathname}:`
 const URLS = new Set(FILES.map((file) => new URL(file, BASE).href))
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(FILES)))
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(FILES.map((file) => new Request(new URL(file, BASE), { cache: 'reload' })))))
 })
 
 self.addEventListener('activate', (event) => {
