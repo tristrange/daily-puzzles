@@ -63,3 +63,10 @@ it('offers Word Paths as its own daily game without disturbing the three track c
   expect(html).toContain('href="/archive/2026-10-15-words"')
   expect(html.match(/aria-label="Play Train Tracks/g)).toHaveLength(3)
 })
+
+
+it.each([small.id, words.id])('distinguishes an unavailable download from an unpublished %s', (id) => {
+  const html = render([{ id, puzzle: null, unavailable: true }])
+  expect(html).toContain('Not saved — connect to load.')
+  expect(html).not.toContain('Not published yet.')
+})

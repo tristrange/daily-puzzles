@@ -73,10 +73,16 @@ On iPhone, open the site in Safari and choose **Share → Add to Home Screen**.
 Keep **Open as Web App** enabled if shown, then tap **Add**. The icon launches
 Daily Puzzles in its own window, with Auto appearance following your system.
 
-An internet connection is still required. Safari and the installed iPhone app
-keep separate local progress, stats and settings; existing Safari data stays
-there. Installation does not migrate it or add syncing. Offline support is a
-separate follow-up.
+After the first online visit, wait for **App ready offline**. Today saves its
+available boards; opening the archive saves the puzzles it loads. Those boards
+can then be played without a connection. New or unopened puzzles need internet.
+
+Safari and the installed iPhone app keep separate progress, stats, settings and
+downloads. Open the installed app online before relying on it offline.
+Train Tracks and Word Paths resume unfinished games; Queens and Star Battle
+restart unfinished attempts on reload. Browser cache eviction or clearing site
+data can remove downloads. Updates wait until all app windows close; finish
+your game, then close and reopen them. No account or syncing is added.
 
 ## Why it is built this way
 

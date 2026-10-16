@@ -43,10 +43,21 @@ export function RulesPage() {
         <li>Keep Open as Web App enabled if it appears, then tap Add.</li>
       </ol>
       <p>Launch it from the new icon to play in its own window. An internet
-        connection is still required. Auto appearance follows your phone&rsquo;s settings.</p>
+        connection is needed on the first visit. Auto appearance follows your phone&rsquo;s settings.</p>
       <p>On iPhone, Safari and the Home Screen app keep separate saved data.
         Your existing Safari progress stays in Safari; the app saves its own
         progress and stats.</p>
+
+      <h2>Playing offline</h2>
+      <p>Wait for “App ready offline”, then open the puzzles you want while online.
+        Today saves its available boards; browsing the archive saves the boards it loads.
+        You can reopen these without a connection. If a download warning appears, keep
+        a connection to play unsaved boards. New or unopened puzzles need internet.</p>
+      <p>Train Tracks and Word Paths keep unfinished progress. Unfinished Queens and
+        Star Battle attempts restart on reload. Clearing site data or browser cache
+        eviction can remove downloads. Saved data belongs to this browser or Home Screen app.</p>
+      <p>Updates wait until all Daily Puzzles windows are closed. Finish your game,
+        then close and reopen them to use an update.</p>
 
       <h2>The board</h2>
       <p>

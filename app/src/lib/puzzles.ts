@@ -8,6 +8,7 @@
  */
 
 import { PUZZLE_TYPES } from '../domain/board'
+import { PUZZLE_DOWNLOAD_FAILED } from './offline'
 import { isPuzzleId, previousPuzzleIds, puzzleIdFor, puzzleIdsForDay } from '../domain/dates'
 import { parsePuzzle, type Puzzle } from '../domain/puzzle'
 
@@ -37,22 +38,59 @@ export function puzzleUrl(id: string): string {
  * and `text/html`. Both of the caller's failure modes hinge on telling a real
  * puzzle from that shell, so the body itself has to be the evidence.
  */
-async function fetchPuzzle(id: string, fetcher: Fetcher): Promise<Puzzle | null> {
-  const response = await fetcher(puzzleUrl(id))
+export class PuzzleUnavailableError extends Error {
+  constructor() {
+    super('This puzzle is not saved on this device. Connect to the internet and try again.')
+    this.name = 'PuzzleUnavailableError'
+  }
+}
+
+const DOWNLOAD_CACHE = `daily-puzzles.puzzles:${import.meta.env.BASE_URL}:v1`
+
+async function parsedResponse(id: string, response: Response): Promise<Puzzle | null> {
   if (!response.ok) return null
   try {
-    const puzzle = parsePuzzle(await response.json())
+    const puzzle = parsePuzzle(await response.clone().json())
     return puzzle.id === id ? puzzle : null
-  } catch {
-    // The SPA shell, a truncated write, or a file that no longer validates.
-    return null
-  }
+  } catch { return null }
+}
+
+async function fetchPuzzle(id: string, fetcher: Fetcher): Promise<Puzzle | null> {
+  if (!isPuzzleId(id)) return null
+  const url = puzzleUrl(id)
+  let unavailable = false
+  try {
+    const response = await fetcher(url)
+    const puzzle = await parsedResponse(id, response)
+    if (puzzle !== null) {
+      try {
+        await (await caches.open(DOWNLOAD_CACHE)).put(url, response)
+      } catch {
+        // Keep online play usable, but do not promise this board is saved.
+        if (typeof window !== 'undefined') window.dispatchEvent(new Event(PUZZLE_DOWNLOAD_FAILED))
+      }
+      return puzzle
+    }
+    unavailable = !response.ok && response.status !== 404
+  } catch { unavailable = true }
+  try {
+    if (typeof caches !== 'undefined') {
+      const saved = await (await caches.open(DOWNLOAD_CACHE)).match(url)
+      if (saved) {
+        const puzzle = await parsedResponse(id, saved)
+        if (puzzle !== null) return puzzle
+      }
+    }
+  } catch { /* Missing or blocked storage is the same as no saved download. */ }
+  if (unavailable) throw new PuzzleUnavailableError()
+  return null
 }
 
 /** One id asked for, and the puzzle behind it if the day has one published. */
 export type ProbedPuzzle = {
   readonly id: string
   readonly puzzle: Puzzle | null
+  readonly unavailable?: boolean
 }
 
 /**
@@ -79,14 +117,14 @@ export async function probePuzzles(
     ids.map(async (id): Promise<ProbedPuzzle> => {
       try {
         return { id, puzzle: await fetchPuzzle(id, fetcher) }
-      } catch {
-        return { id, puzzle: null }
+      } catch (error) {
+        return { id, puzzle: null, ...(error instanceof PuzzleUnavailableError ? { unavailable: true } : {}) }
       }
     }),
   )
 }
 
-/** Fetch and fully validate one puzzle file; throws `PuzzleNotFoundError`. */
+/** Load a validated network/download response, distinguishing absence from an unavailable download. */
 export async function loadPuzzle(id: string, fetcher: Fetcher = fetch): Promise<Puzzle> {
   if (!isPuzzleId(id)) throw new PuzzleNotFoundError(id)
   const puzzle = await fetchPuzzle(id, fetcher)

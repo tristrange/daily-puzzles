@@ -24,7 +24,7 @@ import { isMarksPuzzle, isTracksPuzzle, type Puzzle } from '../domain/puzzle'
 import { trackVariantOf } from '../domain/trackSizes'
 import { TracksStage } from './TracksStage'
 import { WordGrid } from '../domain/wordPaths'
-import { PuzzleNotFoundError, loadPuzzle } from '../lib/puzzles'
+import { PuzzleNotFoundError, PuzzleUnavailableError, loadPuzzle } from '../lib/puzzles'
 import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } from '../lib/stats'
 import { readStoredAutoMark, storeAutoMark } from '../lib/autoMark'
 import { buildShareText, buildSolutionShareText, copyText, puzzleShareLink } from '../lib/share'
@@ -444,7 +444,9 @@ export function PuzzleView({
       (error: unknown) => {
         if (cancelled) return
         const message =
-          error instanceof PuzzleNotFoundError
+          error instanceof PuzzleUnavailableError
+            ? error.message
+            : error instanceof PuzzleNotFoundError
             ? (notFoundMessage ?? error.message)
             : 'Something went wrong loading that puzzle.'
         setState({ status: 'error', message })

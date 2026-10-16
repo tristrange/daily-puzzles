@@ -1012,3 +1012,72 @@ the app as the shared host root. The asset check had used the wrong base for ID
 resolution. A regression test reproduced the project-path collision; removing
 the optional ID uses the stable launch-path identity and passes both hosting
 paths. The corrected real-build assertion agrees. Final app suite: 567 passed.
+
+
+## 2026-10-17 — Offline play
+
+Branch `feat/offline-play` adds two cache owners without dependencies. The
+production build precaches versioned HTML, code (including lazy Word Paths),
+styles and public shell files. Navigation serves the installed build; updates
+wait for all controlled windows to close. Cleanup is scoped to this base’s old
+app caches. The puzzle loader saves only schema-validated responses with the
+requested ID, tries the network first and revalidates saved fallbacks. Missing
+storage and quota failure do not prevent online play. Existing progress/stat
+keys, puzzle content, rules and touch controls are unchanged.
+
+Readiness, offline and unavailable-download messages explain what is saved.
+Today fetches its available slots; browsing Archive saves the recent boards it
+loads. There is no background full-archive download. Queens/Star Battle still
+restart unfinished attempts on reload; Tracks/Word Paths retain existing resume
+behavior. READMEs and help explain cache eviction, separate iPhone app storage,
+waiting updates and the need for a retirement worker when rolling back.
+
+Local app suite: 603 tests passed, plus TypeScript and both root/project-path
+production builds. Lint passed with the existing TracksStage effect warning.
+Emitted-worker assertions confirmed all four emitted code/style assets, static
+shell files and base paths, without puzzle JSON in the worker cache.
+Worker tests cover both bases, failed installation, scoped cleanup, GET-only
+routing, lazy files and worker-only/asset-only cache version changes. Loader
+coverage includes all four families, words v1/v2, invalid responses/downloads,
+wrong IDs, unknown words versions, fresh precedence and denied/quota storage.
+
+Production-browser checks used local previews, stopping only our processes:
+- `/daily-puzzles/`: loaded Today and Oct 16 Word Paths online; stopped server;
+  reloaded, accepted JAM, reloaded again with JAM restored, then used Undo.
+  Offline archive discovery listed the seven downloaded boards. An unopened
+  Oct 15 board asked for a connection; restarting the server and reloading
+  recovered the full board. [Restored word screenshot](screenshots/offline-play/word-paths-server-stopped.png).
+- `/`: opened Today online, stopped the server, reloaded and opened Word Paths
+  for the first time in this build. Its lazy code and saved board loaded at
+  375px with no horizontal overflow and Auto selected.
+  [Phone-width screenshot](screenshots/offline-play/root-phone-server-stopped.png).
+
+The server-outage test leaves the browser’s `navigator.onLine` flag true; the
+actual offline-notice branch is covered separately by a rendered test. It does
+not claim a physical iPhone airplane-mode/Home Screen test. Cache eviction and
+multi-window update timing were not exercised on hardware. All temporary tabs
+and preview servers were closed, and viewport sizing was reset.
+
+Following PRs address the requested wide-board/sidebar layout, compact archive
+with a URL-backed game selector, per-game stats filtering and dedicated rules
+links. The board’s existing 480px/48svh cap must change with the sidebar; moving
+controls alone would leave the cells small.
+
+
+The final fresh-context review found two important issues, reproduced by failing
+regressions before correction: default HTTP caching could mix old HTML with new
+chunks during worker installation, and a failed puzzle save was silent after
+shell readiness. Installation now uses reload-mode Requests for every shell
+file. A two-build HTTP-cache simulation verifies build B’s HTML and lazy assets
+remain available after cache A is removed. Failed puzzle saves now announce a
+warning while keeping online play usable. Both regressions pass with the full
+603-test suite. The reviewer reported no minor findings. Existing marks-game
+reload behavior and the subsequent UI redesign remain intentionally separate.
+
+PR #76’s automated review identified another classification gap: uncached HTTP
+408/429 responses looked unpublished because only 5xx responses were marked
+unavailable. The shared loader now treats unsuccessful non-404 responses as
+unavailable, preserving missing-file behavior for 404 and validated cached
+fallbacks for every failure. Regressions reproduced 403/408/429 returning the
+wrong error before the one-line fix; all 611 app tests, TypeScript, lint and the
+production build passed afterward. The existing TracksStage lint warning remains.

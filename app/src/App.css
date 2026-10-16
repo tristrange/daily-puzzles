@@ -1230,3 +1230,11 @@
 }
 
 .word-actions .primary { background: var(--primary-bg); color: var(--primary-ink); border-color: var(--primary-bg); }
+
+.offline-status {
+  min-height: 1.4em;
+  margin: 0 0 1rem;
+  color: var(--text);
+  font-size: 0.8125rem;
+  text-align: center;
+}
