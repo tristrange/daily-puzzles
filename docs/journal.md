@@ -1012,3 +1012,53 @@ the app as the shared host root. The asset check had used the wrong base for ID
 resolution. A regression test reproduced the project-path collision; removing
 the optional ID uses the stable launch-path identity and passes both hosting
 paths. The corrected real-build assertion agrees. Final app suite: 567 passed.
+
+
+## 2026-10-17 — Offline play
+
+Branch `feat/offline-play` adds two cache owners without dependencies. The
+production build precaches versioned HTML, code (including lazy Word Paths),
+styles and public shell files. Navigation serves the installed build; updates
+wait for all controlled windows to close. Cleanup is scoped to this base’s old
+app caches. The puzzle loader saves only schema-validated responses with the
+requested ID, tries the network first and revalidates saved fallbacks. Missing
+storage and quota failure do not prevent online play. Existing progress/stat
+keys, puzzle content, rules and touch controls are unchanged.
+
+Readiness, offline and unavailable-download messages explain what is saved.
+Today fetches its available slots; browsing Archive saves the recent boards it
+loads. There is no background full-archive download. Queens/Star Battle still
+restart unfinished attempts on reload; Tracks/Word Paths retain existing resume
+behavior. READMEs and help explain cache eviction, separate iPhone app storage,
+waiting updates and the need for a retirement worker when rolling back.
+
+Local app suite: 601 tests passed, plus TypeScript and both root/project-path
+production builds. Lint passed with the existing TracksStage effect warning.
+Emitted-worker assertions confirmed all four emitted code/style assets, static
+shell files and base paths, without puzzle JSON in the worker cache.
+Worker tests cover both bases, failed installation, scoped cleanup, GET-only
+routing, lazy files and worker-only/asset-only cache version changes. Loader
+coverage includes all four families, words v1/v2, invalid responses/downloads,
+wrong IDs, unknown words versions, fresh precedence and denied/quota storage.
+
+Production-browser checks used local previews, stopping only our processes:
+- `/daily-puzzles/`: loaded Today and Oct 16 Word Paths online; stopped server;
+  reloaded, accepted JAM, reloaded again with JAM restored, then used Undo.
+  Offline archive discovery listed the seven downloaded boards. An unopened
+  Oct 15 board asked for a connection; restarting the server and reloading
+  recovered the full board. [Restored word screenshot](screenshots/offline-play/word-paths-server-stopped.png).
+- `/`: opened Today online, stopped the server, reloaded and opened Word Paths
+  for the first time in this build. Its lazy code and saved board loaded at
+  375px with no horizontal overflow and Auto selected.
+  [Phone-width screenshot](screenshots/offline-play/root-phone-server-stopped.png).
+
+The server-outage test leaves the browser’s `navigator.onLine` flag true; the
+actual offline-notice branch is covered separately by a rendered test. It does
+not claim a physical iPhone airplane-mode/Home Screen test. Cache eviction and
+multi-window update timing were not exercised on hardware. All temporary tabs
+and preview servers were closed, and viewport sizing was reset.
+
+Following PRs address the requested wide-board/sidebar layout, compact archive
+with a URL-backed game selector, per-game stats filtering and dedicated rules
+links. The board’s existing 480px/48svh cap must change with the sidebar; moving
+controls alone would leave the cells small.

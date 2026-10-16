@@ -104,7 +104,7 @@ cover October 15–21; earlier dates are not backfilled. Preview links and saved
 progress remain separate, so trying the preview does not consume a daily solve.
 Versioned progress keys preserve old attempts when previews change. Word-list
 provenance and redistribution notices are available through How to play.
-Offline support remains a separate milestone.
+Previously fetched daily boards can be played offline after app-shell setup.
 
 
 ## Home Screen installation
@@ -114,14 +114,56 @@ launch URL and scope. Identity defaults to the launch URL without its fragment,
 so each hosting path remains a distinct app. Keep that launch path stable. `index.html` links the manifest and 180px Apple touch
 icon through Vite’s `%BASE_URL%` replacement. Icons at 192px and 512px reuse the
 four-cell brand mark in `public/favicon.svg`; all PNGs are opaque and the 512px
-mark fits the maskable safe zone. No service worker or install prompt is added.
+mark fits the maskable safe zone. No install prompt is added.
 
 Verify production builds at both `/` and `BASE_PATH=/daily-puzzles/`; manifest,
 Apple icon and favicon links must remain under the build base. Manifest icon
 URLs resolve relative to the manifest. All routes stay in the existing hash
 router. Installation instructions live in How to play.
 
-An internet connection is required. iPhone Home Screen storage is separate
+The first visit requires internet. iPhone Home Screen storage is separate
 from Safari; no progress migration is claimed. Auto/Light/Dark behavior is
 unchanged. Validate actual Add to Home Screen and relaunch on an iPhone after
 merge; a desktop viewport check does not prove installation.
+
+
+## Offline support
+
+The production-only `OfflineStatus` registers `sw.js` within `BASE_URL` and
+announces app readiness after activation. Vite’s `build/offline.ts` emits the
+worker from `offline/sw.js`, hashing the template, emitted HTML/code/styles and
+explicit public shell files. Lazy Word Paths code and its dictionary are
+precached too. Development mode does not register a worker.
+
+App caches are `daily-puzzles.app:<base>:<build hash>`. Navigation uses the
+installed HTML to keep its chunk versions consistent. Updates use the normal
+waiting lifecycle: finish the game, then close all app windows and reopen.
+There is no forced activation or reload. Activation removes only older app
+caches for this exact base; neighboring apps and player data are untouched.
+
+`src/lib/puzzles.ts` owns downloads separately in
+`daily-puzzles.puzzles:<base>:v1`. It validates schema and requested ID before
+saving; network failures, unsuccessful or invalid responses fall back to saved
+responses, which are validated again. A valid network response takes precedence.
+Storage denial/quota errors leave online play usable. Unfetched puzzles require
+internet. Today fetches its slots; Archive fetches its recent window. There is
+no background archive crawl or guarantee against browser cache eviction.
+Player progress keys are unchanged: Tracks/Word Paths resume, while unfinished
+Queens/Star Battle attempts still restart on reload.
+
+To verify, build and preview using the same base (`BASE_PATH=/daily-puzzles/`
+for both commands, or omit for `/`). Visit online, wait for readiness, open a
+board, stop only that preview process, and reload/play. Check an unsaved board
+asks for internet, then restart the preview and reload to recover. Browser tests
+and their limits are recorded in [the journal](../docs/journal.md).
+
+### Retiring a deployed worker
+
+Removing registration or deleting `sw.js` alone does not remove an installed
+worker. Ship a network-only retirement worker at the same base-scoped `sw.js`
+URL; let it install and activate through the normal waiting lifecycle. On
+activation, delete only `daily-puzzles.app:<that exact base>:` caches, claim
+clients and unregister itself. Do not delete puzzle downloads or localStorage,
+force a reload, or delete other projects’ caches. Keep this retirement file
+available so returning devices can receive it. A rollback needs the usual PR,
+review and deployment, with compatible puzzle readers retained.

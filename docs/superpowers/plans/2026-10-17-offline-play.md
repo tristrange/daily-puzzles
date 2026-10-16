@@ -42,6 +42,6 @@
 ## Task 3 — Browser proof and delivery
 
 **Files:** README/app README, journal, screenshots, plan completion.
-- [ ] Test online loading, stop only the temporary server, reload app and a cached Word Paths board, submit/undo a word, visit archive and uncached puzzle.
-- [ ] Restart server and verify recovery; record actual results and physical-device limits.
+- [x] Test online loading, stop only the temporary server, reload app and a cached Word Paths board, submit/undo a word, visit archive and uncached puzzle.
+- [x] Restart server and verify recovery; record actual results and physical-device limits.
 - [ ] Run final gates and one fresh-context review, resolve important findings with a failing test first, update PR and wait for exact-head CI. Never merge.
