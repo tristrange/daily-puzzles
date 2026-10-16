@@ -110,7 +110,7 @@ export function TodayCards({ probes, solved }: {
                     <li key={entry.id}>
                       {entry.puzzle === null ? (
                         <div className="track-unpublished">
-                          <span>{label}</span><span className="game-card-state">Not published yet.</span>
+                          <span>{label}</span><span className="game-card-state">{entry.unavailable ? 'Not saved — connect to load.' : 'Not published yet.'}</span>
                         </div>
                       ) : (
                         <Link className="tool-button track-choice" to={`/archive/${entry.id}`}
@@ -129,7 +129,7 @@ export function TodayCards({ probes, solved }: {
                   {probe.puzzle !== null && <>{probe.puzzle.board.width}&times;{probe.puzzle.board.height} grid</>}
                   {probe.puzzle?.difficulty != null && <> · {DIFFICULTY_LABEL[probe.puzzle.difficulty]}</>}
                 </p>
-                {probe.puzzle === null ? <p className="game-card-state">Not published yet.</p> : (
+                {probe.puzzle === null ? <p className="game-card-state">{probe.unavailable ? 'Not saved — connect to load.' : 'Not published yet.'}</p> : (
                   <>
                     {solved.has(probe.id) && <p className="game-card-state solved">Solved today.</p>}
                     <Link className="tool-button primary" to={`/archive/${probe.id}`}

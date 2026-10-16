@@ -291,7 +291,7 @@ describe('probePuzzles', () => {
     }
     const probes = await probePuzzles(['2026-10-01', '2026-10-01-star'], flaky)
     expect(probes[0]?.puzzle?.puzzleType).toBe('queens')
-    expect(probes[1]).toEqual({ id: '2026-10-01-star', puzzle: null })
+    expect(probes[1]).toEqual({ id: '2026-10-01-star', puzzle: null, unavailable: true })
   })
 
   it('does not reject when every request fails', async () => {
