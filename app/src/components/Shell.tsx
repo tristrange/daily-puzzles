@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { ThemePicker } from './ThemePicker'
+import { OfflineStatus } from './OfflineStatus'
 
 function navClass({ isActive }: { isActive: boolean }): string {
   return isActive ? 'nav-link active' : 'nav-link'
@@ -36,6 +37,7 @@ export function Shell() {
         </nav>
         <ThemePicker />
       </header>
+      <OfflineStatus />
       <main ref={content} className="content" id="main-content" tabIndex={-1}>
         <Outlet />
       </main>

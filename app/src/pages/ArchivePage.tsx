@@ -69,7 +69,7 @@ export function ArchiveGroups({
   readonly timeZone: string
 }) {
   if (groups.length === 0) {
-    return <p className="status">No puzzles have been published yet.</p>
+    return <p className="status">No puzzles available in the recent archive. Connect to load puzzles that are not saved on this device.</p>
   }
   return (
     <>

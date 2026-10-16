@@ -35,9 +35,9 @@
 **Files:** app/build/offline.ts, app/offline/sw.js, app/vite.config.ts, app/src/components/OfflineStatus.tsx, Shell.tsx and focused worker/build tests.
 **Consumes:** Task1 owns puzzle data; worker must not intercept puzzle fetches.
 **Produces:** build emits sw.js; registration and status reside in OfflineStatus; precache includes lazy chunks and static shell files.
-- [ ] Write/run failing worker/build tests for both bases, failed install, cleanup scope, GET-only routing, lazy files and worker-only version changes.
-- [ ] Implement build plugin and worker with waiting updates; add readiness/offline status and help copy.
-- [ ] Run app tests, types/lint and root/project-path builds; commit. Expected: all pass, worker contains every emitted code asset.
+- [x] Write/run failing worker/build tests for both bases, failed install, cleanup scope, GET-only routing, lazy files and worker-only version changes.
+- [x] Implement build plugin and worker with waiting updates; add readiness/offline status and help copy.
+- [x] Run app tests, types/lint and root/project-path builds; commit. Expected: all pass, worker contains every emitted code asset.
 
 ## Task 3 — Browser proof and delivery
 
