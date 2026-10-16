@@ -44,4 +44,6 @@
 **Files:** README/app README, journal, screenshots, plan completion.
 - [x] Test online loading, stop only the temporary server, reload app and a cached Word Paths board, submit/undo a word, visit archive and uncached puzzle.
 - [x] Restart server and verify recovery; record actual results and physical-device limits.
-- [ ] Run final gates and one fresh-context review, resolve important findings with a failing test first, update PR and wait for exact-head CI. Never merge.
+- [x] Run local gates and one fresh-context review; resolve important findings with a failing test first.
+
+**Delivery gate:** PR #76 must pass CI on its final head before handoff. Never merge.
