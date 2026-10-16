@@ -71,7 +71,7 @@ async function fetchPuzzle(id: string, fetcher: Fetcher): Promise<Puzzle | null>
       }
       return puzzle
     }
-    unavailable = response.status >= 500
+    unavailable = !response.ok && response.status !== 404
   } catch { unavailable = true }
   try {
     if (typeof caches !== 'undefined') {

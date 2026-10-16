@@ -1073,3 +1073,11 @@ remain available after cache A is removed. Failed puzzle saves now announce a
 warning while keeping online play usable. Both regressions pass with the full
 603-test suite. The reviewer reported no minor findings. Existing marks-game
 reload behavior and the subsequent UI redesign remain intentionally separate.
+
+PR #76’s automated review identified another classification gap: uncached HTTP
+408/429 responses looked unpublished because only 5xx responses were marked
+unavailable. The shared loader now treats unsuccessful non-404 responses as
+unavailable, preserving missing-file behavior for 404 and validated cached
+fallbacks for every failure. Regressions reproduced 403/408/429 returning the
+wrong error before the one-line fix; all 611 app tests, TypeScript, lint and the
+production build passed afterward. The existing TracksStage lint warning remains.

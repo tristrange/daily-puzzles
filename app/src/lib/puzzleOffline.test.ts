@@ -4,7 +4,7 @@ import star from '../../public/puzzles/2026-10-15-star.json'
 import tracks from '../../../conformance/id-cases/tracks-large.accept.json'
 import wordsV1 from '../../../conformance/word-paths/2026-10-14-words.json'
 import wordsV2 from '../../public/puzzles/2026-10-15-words.json'
-import { loadPuzzle, probePuzzles, PuzzleUnavailableError, puzzleUrl } from './puzzles'
+import { loadPuzzle, probePuzzles, PuzzleNotFoundError, PuzzleUnavailableError, puzzleUrl } from './puzzles'
 
 const entries = new Map<string, Response>()
 const put = vi.fn(async (url: string, response: Response) => { entries.set(url, response.clone()) })
@@ -37,6 +37,9 @@ it('uses a fresh valid response before a saved response', async () => {
 it.each([
   () => new Response('<html>fallback</html>'),
   () => new Response('', { status: 503 }),
+  () => new Response('', { status: 404 }),
+  () => new Response('', { status: 408 }),
+  () => new Response('', { status: 429 }),
   () => json({ ...queens, id: '2026-10-01' }),
   () => json({ ...queens, board: {} }),
 ])('retains a validated download when the next response is unusable', async (response) => {
@@ -83,4 +86,19 @@ it('does not replace a saved Word Paths board with an unsupported version', asyn
 it('keeps online play working without the Cache API', async () => {
   vi.stubGlobal('caches', undefined)
   expect((await loadPuzzle(queens.id, async () => json(queens))).id).toBe(queens.id)
+})
+
+
+it.each([403, 408, 429, 503])('reports HTTP %s as unavailable when no saved puzzle exists', async (status) => {
+  const fetcher = async () => new Response('', { status })
+  await expect(loadPuzzle(queens.id, fetcher)).rejects.toBeInstanceOf(PuzzleUnavailableError)
+  expect(await probePuzzles([queens.id], fetcher)).toEqual([
+    { id: queens.id, puzzle: null, unavailable: true },
+  ])
+})
+
+it('keeps an uncached HTTP 404 absent rather than unavailable', async () => {
+  const fetcher = async () => new Response('', { status: 404 })
+  await expect(loadPuzzle(queens.id, fetcher)).rejects.toBeInstanceOf(PuzzleNotFoundError)
+  expect(await probePuzzles([queens.id], fetcher)).toEqual([{ id: queens.id, puzzle: null }])
 })
