@@ -1081,3 +1081,30 @@ unavailable, preserving missing-file behavior for 404 and validated cached
 fallbacks for every failure. Regressions reproduced 403/408/429 returning the
 wrong error before the one-line fix; all 611 app tests, TypeScript, lint and the
 production build passed afterward. The existing TracksStage lint warning remains.
+
+## 2026-10-17 — Faster CI feedback
+
+The preceding frontend-only fix spent 21 seconds in the app job but 17m53s in
+engine validation: 13m31s in tests and 4m08s replaying published puzzles. CI now
+skips the engine job on PRs containing only app/documentation changes, except
+puzzle JSON. Engine, schema, conformance, CI and unknown paths require full
+checks. Git diffs include removed/renamed inputs and the full tested PR merge;
+missing history defaults to full validation. Main pushes and publisher/manual
+dispatches always validate everything before deployment. This deliberately
+preserves the deployment guard if an earlier main run failed.
+
+Superseded PR CI runs are canceled; main runs remain independent. Routing has
+six small stdlib tests using real temporary Git repositories and no new dependency.
+Actionlint 1.7.12 checked the workflow, using a checksum-verified temporary tool.
+
+Profiling the unchanged engine suite locally identified repeated trace-corpus
+builds and unnecessary generation/replay inside verifier metadata tests. Reuse
+one genuinely generated trace corpus and existing replayable puzzle fixtures;
+assert error text from the first verifier call instead of replaying again.
+The same 596 tests passed before and after: 330.46s versus 218.10s, a 34% reduction
+in these single local runs. The 100-seed independent-solver check remains intact.
+Production rules and archive bytes are unchanged; all existing test cases and
+verifier checks remain. CI now reports
+its slowest tests to guide any further work. Frontend PR wall-clock savings will
+be confirmed by the next real frontend-only PR; this CI-changing PR runs the
+engine deliberately. Main/deployment validation still takes time.

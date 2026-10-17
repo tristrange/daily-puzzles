@@ -41,6 +41,12 @@ def baseline() -> dict[str, JsonValue]:
     return build_baseline()
 
 
+@pytest.fixture(autouse=True)
+def reuse_generated_trace(monkeypatch: pytest.MonkeyPatch, baseline: dict[str, JsonValue]) -> None:
+    # CLI/error cases reuse the real corpus; regeneration is already covered by the fixture.
+    monkeypatch.setattr("tools.trace_baseline.build_baseline", lambda: copy.deepcopy(baseline))
+
+
 @contextmanager
 def _capture_stderr() -> Generator[io.StringIO]:
     """The failure report goes to stderr, so that is where the assertions look."""
