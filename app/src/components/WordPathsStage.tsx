@@ -129,23 +129,27 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
         <button className="tool-button" type="button" onClick={reset} disabled={solved || (game.words.length === 0 && game.trace.length === 0)}>Reset</button>
       </div>
       {!saving && !solved && <p className="status error" role="status">Progress can&rsquo;t be saved in this browser. Keep this page open to retain it.</p>}
-      <WordPathsBoard game={game} locked={solved} instructionsId={instructionsId} onSelect={select}
-        onRestoreTrace={restoreTrace} onSubmit={submit} onUndo={undo} />
-      <div className="word-selection">
-        <output aria-live="polite" aria-label="Selected word">{traced || (solved ? 'All letters used' : 'Select letters')}</output>
-        <div className="word-actions">
-          <button type="button" className="tool-button" disabled={solved || !game.trace.length} onClick={() => { change(clearTrace(current.current)); setMessage('Selection cleared.') }}>Clear selection</button>
-          <button type="button" className="tool-button primary" disabled={solved || !game.trace.length} onClick={submit}>Submit word</button>
+      <div className="word-workspace">
+        <div className="word-play-area">
+          <WordPathsBoard game={game} locked={solved} instructionsId={instructionsId} onSelect={select}
+            onRestoreTrace={restoreTrace} onSubmit={submit} onUndo={undo} />
+          <div className="word-selection">
+            <output aria-live="polite" aria-label="Selected word">{traced || (solved ? 'All letters used' : 'Select letters')}</output>
+            <div className="word-actions">
+              <button type="button" className="tool-button" disabled={solved || !game.trace.length} onClick={() => { change(clearTrace(current.current)); setMessage('Selection cleared.') }} aria-label="Clear selection">Clear</button>
+              <button type="button" className="tool-button primary" disabled={solved || !game.trace.length} onClick={submit} aria-label="Submit word">Submit</button>
+            </div>
+          </div>
         </div>
+        <ol className="word-slots" aria-label="Words to find">
+          {[...grid.wordLengths].sort((a, b) => a - b).map((length) => {
+            const path = game.words.find((word) => word.length === length)
+            return <li key={length} data-length={path ? length : undefined} className={path ? 'filled' : ''}>
+              <span>{length} letters</span><strong>{path ? spellPath(grid, path) : '·'.repeat(length)}</strong>
+            </li>
+          })}
+        </ol>
       </div>
-      <ol className="word-slots" aria-label="Words to find">
-        {[...grid.wordLengths].sort((a, b) => a - b).map((length) => {
-          const path = game.words.find((word) => word.length === length)
-          return <li key={length} data-length={path ? length : undefined} className={path ? 'filled' : ''}>
-            <span>{length} letters</span><strong>{path ? spellPath(grid, path) : '·'.repeat(length)}</strong>
-          </li>
-        })}
-      </ol>
       <p className="word-feedback" role="status">{message || '\u00a0'}</p>
       <p className="word-instructions" id={instructionsId}>
         Drag adjoining letters and release to submit. Or tap letters, then Submit.

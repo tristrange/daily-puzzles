@@ -8,10 +8,7 @@
  * in your head. A picker turns "advance one step" into "put this one", which is
  * the same gesture either way and arrives at the same cell.
  *
- * One row, above the board. Not one above and one below: the board is as tall as
- * the viewport on a phone, so whichever copy sat below it would scroll off at
- * exactly the moment it was wanted, and the copy above is the one you reach for
- * while reading the board.
+ * Above the board on phones, in a compact side panel on wider screens.
  *
  * Real radio inputs rather than buttons with `aria-pressed`. A single-select set
  * that is not a radio group is a set the screen reader will not announce as one,

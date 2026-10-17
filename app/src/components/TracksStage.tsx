@@ -245,48 +245,52 @@ export function TracksStage({
 
   return (
     <>
-      <div className="puzzle-tools">
-        <span className="timer" role="timer" aria-label="Elapsed time">
-          {formatTime(shownTime)}
-        </span>
-        <button
-          type="button"
-          className="tool-button"
-          onClick={undo}
-          disabled={history.length === 0 || solved}
-          aria-label="Undo last move"
-        >
-          Undo
-        </button>
-        <button
-          type="button"
-          className="tool-button"
-          onClick={reset}
-          disabled={isEmpty(game) || solved}
-          title="Clears the board. The clock keeps running, and Undo brings it all back."
-        >
-          Reset
-        </button>
+      <div className="tracks-workspace">
+        <div className="tracks-controls">
+          <div className="puzzle-tools">
+            <span className="timer" role="timer" aria-label="Elapsed time">
+              {formatTime(shownTime)}
+            </span>
+            <button
+              type="button"
+              className="tool-button"
+              onClick={undo}
+              disabled={history.length === 0 || solved}
+              aria-label="Undo last move"
+            >
+              Undo
+            </button>
+            <button
+              type="button"
+              className="tool-button"
+              onClick={reset}
+              disabled={isEmpty(game) || solved}
+              title="Clears the board. The clock keeps running, and Undo brings it all back."
+            >
+              Reset
+            </button>
+          </div>
+          {!savingAvailable && !solved && (
+            <p className="status error" role="status">
+              Progress can&rsquo;t be saved in this browser. Keep this page open to retain it.
+            </p>
+          )}
+          <TrackPicker brush={brush} onPick={setBrush} disabled={solved} />
+        </div>
+        <TracksBoard
+          grid={grid}
+          game={game}
+          conflicts={conflictList}
+          locked={solved}
+          brush={brush}
+          onBrush={(cell, withBrush) => applyGame(applyBrush(game, cell, withBrush))}
+          onClear={(cell) => applyGame(clearCell(game, cell))}
+          onUndo={undo}
+          onGestureStart={beginStroke}
+          onPaint={paint}
+          onGestureEnd={endStroke}
+        />
       </div>
-      {!savingAvailable && !solved && (
-        <p className="status error" role="status">
-          Progress can&rsquo;t be saved in this browser. Keep this page open to retain it.
-        </p>
-      )}
-      <TrackPicker brush={brush} onPick={setBrush} disabled={solved} />
-      <TracksBoard
-        grid={grid}
-        game={game}
-        conflicts={conflictList}
-        locked={solved}
-        brush={brush}
-        onBrush={(cell, withBrush) => applyGame(applyBrush(game, cell, withBrush))}
-        onClear={(cell) => applyGame(clearCell(game, cell))}
-        onUndo={undo}
-        onGestureStart={beginStroke}
-        onPaint={paint}
-        onGestureEnd={endStroke}
-      />
       <p className="hint-text">
         {solved
           ? `Solved in ${formatTime(shownTime)}`
