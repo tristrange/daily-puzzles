@@ -7,9 +7,9 @@
  * probing the recent window and keeping whatever comes back as a puzzle.
  */
 
-import { PUZZLE_TYPES, type PuzzleType } from '../domain/board'
+import { PUZZLE_TYPES } from '../domain/board'
 import { PUZZLE_DOWNLOAD_FAILED } from './offline'
-import { isPuzzleId, previousPuzzleIds, puzzleIdFor, puzzleIdsForDay, puzzleTypeOf } from '../domain/dates'
+import { isPuzzleId, previousPuzzleIds, puzzleIdFor, puzzleIdsForDay } from '../domain/dates'
 import { parsePuzzle, type Puzzle } from '../domain/puzzle'
 
 export const ARCHIVE_WINDOW_DAYS = 30
@@ -143,18 +143,17 @@ export type PublishedPuzzle = {
 }
 
 /**
- * Discover a bounded recent window, newest first. A selected family probes only
- * its registered slots, including legacy tracks; omitted type scans every family.
- * Results retain the parsed file's type so callers never mislabel a puzzle.
+ * Discover a bounded recent window, newest first. Probe every family's slots:
+ * a valid file can declare a different family from its filename. The archive
+ * selects from parsed types after discovery and reuses the results on switching.
  */
 export async function listPublishedPuzzles(
   todayId: string,
   fetcher: Fetcher = fetch,
-  type?: PuzzleType,
 ): Promise<readonly PublishedPuzzle[]> {
   // Queued legacy boards remain accessible even after the daily slots change.
   const candidates = previousPuzzleIds(todayId, ARCHIVE_WINDOW_DAYS).flatMap((day) =>
-    [...new Set([...puzzleIdsForDay(day), puzzleIdFor(day, 'train-tracks')])].filter(id => type === undefined || puzzleTypeOf(id) === type),
+    [...new Set([...puzzleIdsForDay(day), puzzleIdFor(day, 'train-tracks')])],
   )
   const results = await Promise.allSettled(
     candidates.map(async (id) => ({ id, puzzle: await fetchPuzzle(id, fetcher) })),

@@ -30,7 +30,7 @@ export function ArchivePage() {
           </Link>
         ))}
       </nav>
-      <ArchiveGame key={type} type={type} />
+      <ArchiveGame type={type} />
     </section>
   )
 }
@@ -42,7 +42,7 @@ function ArchiveGame({ type }: { readonly type: PuzzleType }) {
 
   useEffect(() => {
     let cancelled = false
-    listPublishedPuzzles(todayId, fetch, type).then(
+    listPublishedPuzzles(todayId).then(
       (puzzles) => {
         if (!cancelled) setState({ status: 'ready', puzzles })
       },
@@ -53,7 +53,7 @@ function ArchiveGame({ type }: { readonly type: PuzzleType }) {
     return () => {
       cancelled = true
     }
-  }, [todayId, type])
+  }, [todayId])
 
   // Grouped while rendering rather than stored: it is a pure reshape of whatever
   // loaded, so deriving it on each pass keeps a second piece of state from ever

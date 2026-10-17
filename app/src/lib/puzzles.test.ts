@@ -145,18 +145,15 @@ describe('loadPuzzle', () => {
 
 describe('listPublishedPuzzles', () => {
   it('discovers all three daily boards with dimensions in one family', async () => {
-    const requested: string[] = []
     const fixtures = [small, medium, large]
     const found = await listPublishedPuzzles('2026-10-17', async (url) => {
-      requested.push(url)
       const data = fixtures.find((fixture) => url.endsWith(`/${fixture.id}.json`))
       return data ? jsonResponse(data) : spaShellResponse()
-    }, 'train-tracks')
+    })
     expect(found.map((puzzle) => [puzzle.id, puzzle.width, puzzle.height])).toEqual([
       [small.id, 8, 8], [medium.id, 10, 10], [large.id, 12, 12],
     ])
     expect(groupPublishedPuzzles(found)).toHaveLength(1)
-    expect(requested.every(url => url.includes('-tracks'))).toBe(true)
   })
   it('keeps queued legacy boards discoverable beside the three daily sizes', async () => {
     const fixtures = [legacy, ...[small, medium, large].map(data => ({
@@ -167,26 +164,20 @@ describe('listPublishedPuzzles', () => {
       requests.push(url)
       const data = fixtures.find(fixture => url.endsWith(`/${fixture.id}.json`))
       return data ? jsonResponse(data) : spaShellResponse()
-    }, 'train-tracks')
+    })
     expect(found.map(puzzle => puzzle.id)).toEqual([
       '2026-10-16-tracks-small', '2026-10-16-tracks-medium',
       '2026-10-16-tracks-large', '2026-10-16-tracks',
     ])
     expect(new Set(requests).size).toBe(requests.length)
-    expect(requests.every(url => url.includes('-tracks'))).toBe(true)
     expect(groupPublishedPuzzles(found)).toHaveLength(1)
   })
   const published = ['2026-10-03', '2026-10-01', '2026-09-28']
   const queens = published.map((id) => ({ id, type: 'queens', difficulty: null, width: 3, height: 3 }))
 
   it('returns only days with a puzzle file, newest first', async () => {
-    const requested: string[] = []
-    const found = await listPublishedPuzzles('2026-10-03', async url => {
-      requested.push(url)
-      return fetcherFor(published)(url)
-    }, 'queens')
+    const found = await listPublishedPuzzles('2026-10-03', fetcherFor(published))
     expect(found).toEqual(queens)
-    expect(requested).toHaveLength(ARCHIVE_WINDOW_DAYS)
   })
 
   it('reports the family the file declares, not the one its id suggests', async () => {
@@ -409,8 +400,8 @@ it('discovers Word Paths only from launch onward and tolerates one missing daily
     return id === '2026-10-15-words'
       ? jsonResponse({ ...words, id }) : spaShellResponse()
   }
-  expect(await listPublishedPuzzles('2026-10-16', fetcher, 'word-paths')).toEqual([
+  expect(await listPublishedPuzzles('2026-10-16', fetcher)).toEqual([
     { id: '2026-10-15-words', type: 'word-paths', difficulty: null, width: 5, height: 5 },
   ])
-  expect(requested).toEqual(['2026-10-16-words', '2026-10-15-words'])
+  expect(requested.filter((id) => id.endsWith('-words'))).toEqual(['2026-10-16-words', '2026-10-15-words'])
 })

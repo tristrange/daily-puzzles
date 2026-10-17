@@ -22,10 +22,10 @@ beforeEach(() => {
 })
 afterEach(() => vi.unstubAllGlobals())
 
-it('lists only the selected game from saved puzzles when offline', async () => {
+it('discovers saved puzzles across families when offline', async () => {
   for (const puzzle of [queens, star, wordsV2]) await loadPuzzle(puzzle.id, async () => json(puzzle))
-  const found = await listPublishedPuzzles('2026-10-15', offline, 'word-paths')
-  expect(found.map(puzzle => puzzle.id)).toEqual([wordsV2.id])
+  const found = await listPublishedPuzzles('2026-10-15', offline)
+  expect(found.map(puzzle => puzzle.id)).toEqual([queens.id, star.id, wordsV2.id])
 })
 
 it.each([queens, star, tracks, wordsV1, wordsV2])('saves and reopens $id offline with its original rules', async (raw) => {
