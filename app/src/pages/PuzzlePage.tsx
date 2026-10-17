@@ -26,7 +26,7 @@ export function PuzzlePage() {
   }
   return (
     <section className="puzzle-page">
-      <Link to="/archive" className="back-link" aria-label="All puzzles">
+      <Link to={`/archive?game=${type}`} className="back-link" aria-label="All puzzles">
         <span aria-hidden="true">←</span> <span className="back-label">All puzzles</span>
       </Link>
       <PuzzleView key={id} id={id} />

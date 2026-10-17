@@ -1144,3 +1144,47 @@ Physical iPhone/Safari touch, pinch zoom and increased text-size testing remain
 unverified. Very short viewports, preview-page selectors and longer error notices
 may still require scrolling. Puzzle rules, saved progress and engine inputs are
 unchanged; archive, stats and rules navigation remain the next separate slices.
+
+## 2026-10-18 — A compact archive for each game
+
+The archive now shows one game's recent dates, selected by ordinary links at the
+top. `#/archive?game=train-tracks` can be bookmarked and survives refresh and
+browser Back/Forward. Missing or invalid selections use Queens. Puzzle pages'
+All puzzles link returns to their own game's archive, including direct entries.
+One loader keeps the discovered archive while game selections change, and ignores
+late results after leaving the page.
+
+Date rows keep the difficulty beside the date. Train Tracks uses one row per day
+with only its published sizes; legacy boards retain their actual dimensions.
+On phones, size names fit in one row while full dates, names and dimensions stay
+in their accessible link labels. Links retain 44px targets. The content width is
+bounded, and the selector becomes two columns on narrow screens.
+
+Discovery scans all registered slots once per archive visit, then selects by the
+parsed file's declared type. A valid Queens file with a `-star` filename must
+remain visible under Queens. This restores the pre-existing discovery invariant;
+game switches reuse the loaded results instead of starting more requests. The
+legacy tracks slots, Word Paths launch gate and shared cache validation/fallback
+remain. Opening the archive saves available recent boards across all games, as
+stated in the Home Screen instructions.
+
+All 615 app tests, typecheck, lint and production build pass. Existing discovery
+and markup cases cover declared types, dates grouped once, legacy dimensions and
+return links; three URL cases and one cross-family offline-discovery case were
+added. Lint retains the existing warning in unchanged TracksStage effect code.
+
+Browser checks covered 320px/390px phones, a 1280px desktop, light/dark appearance,
+44px targets, no horizontal overflow, game switching, Back/Forward, refresh and
+the puzzle return link. Review reproduced the hidden Queens file with the existing
+mislabelled fixture. A temporary production-preview middleware then served a real
+Queens file under `2026-10-03-star`: it appeared only under Queens. The initial
+109 puzzle probes stayed at 109 after switching among three games. The archive
+files were unchanged. Cache tests verify discovery across saved families after
+failed requests; no physical iPhone airplane-mode test is claimed.
+
+[Desktop archive](images/compact-archive-desktop.jpg) ·
+[Phone archive](images/compact-archive-phone.jpg)
+
+Per-game stats and rules navigation remain separate follow-ups. The archive
+still uses the existing 30-day window; no search, pagination, index manifest or
+new dependency was introduced.

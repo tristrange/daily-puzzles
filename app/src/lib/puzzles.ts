@@ -143,17 +143,9 @@ export type PublishedPuzzle = {
 }
 
 /**
- * Published puzzles in the recent window, newest day first and each day's
- * Queens puzzle before its Star Battle companion.
- *
- * Both ids of a day are probed rather than assumed, because the companion is a
- * separate file that a day may not have: it did not exist before companions
- * were published, and a missing one has to be absent rather than an error.
- *
- * The family comes from the file's own `type` rather than from the id's suffix.
- * Every probe already parses the file it fetched, so reading the answer off it
- * costs nothing, and it means a mislabelled file shows up as what it is instead
- * of as what its name promised.
+ * Discover a bounded recent window, newest first. Probe every family's slots:
+ * a valid file can declare a different family from its filename. The archive
+ * selects from parsed types after discovery and reuses the results on switching.
  */
 export async function listPublishedPuzzles(
   todayId: string,

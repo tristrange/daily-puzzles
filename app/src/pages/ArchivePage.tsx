@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { formatPuzzleLabel, puzzleOfToday } from '../domain/dates'
-import { DIFFICULTY_LABEL, PUZZLE_TYPE_LABEL } from '../domain/games'
+import { Link, useSearchParams } from 'react-router-dom'
+import { PUZZLE_TYPES, type PuzzleType } from '../domain/board'
+import { formatPuzzleLabel, puzzleDay, puzzleOfToday } from '../domain/dates'
+import { DEFAULT_PUZZLE_TYPE, DIFFICULTY_LABEL, PUZZLE_TYPE_LABEL, PUZZLE_TYPE_PUBLISHED } from '../domain/games'
 import { trackVariantOf } from '../domain/trackSizes'
 import {
   groupPublishedPuzzles,
@@ -17,6 +18,24 @@ type LoadState =
   | { status: 'error' }
 
 export function ArchivePage() {
+  const [params] = useSearchParams()
+  const type = PUZZLE_TYPES.find(type => type === params.get('game') && PUZZLE_TYPE_PUBLISHED[type]) ?? DEFAULT_PUZZLE_TYPE
+  return (
+    <section className="archive-page">
+      <h1 className="page-title">Archive</h1>
+      <nav className="archive-games" aria-label="Archive game">
+        {PUZZLE_TYPES.filter(type => PUZZLE_TYPE_PUBLISHED[type]).map(game => (
+          <Link key={game} to={`/archive?game=${game}`} aria-current={game === type ? 'page' : undefined}>
+            {PUZZLE_TYPE_LABEL[game]}
+          </Link>
+        ))}
+      </nav>
+      <ArchiveGame type={type} />
+    </section>
+  )
+}
+
+function ArchiveGame({ type }: { readonly type: PuzzleType }) {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
   const [todayId] = useState(() => puzzleOfToday(new Date(), timeZone))
   const [state, setState] = useState<LoadState>({ status: 'loading' })
@@ -39,28 +58,20 @@ export function ArchivePage() {
   // Grouped while rendering rather than stored: it is a pure reshape of whatever
   // loaded, so deriving it on each pass keeps a second piece of state from ever
   // holding a stale arrangement of the first.
-  const groups = state.status === 'ready' ? groupPublishedPuzzles(state.puzzles) : []
+  const groups = state.status === 'ready' ? groupPublishedPuzzles(state.puzzles).filter(group => group.type === type) : []
 
   return (
-    <section>
-      <h1 className="page-title">Archive</h1>
-      {state.status === 'loading' && <p className="status">Scanning archive…</p>}
+    <div>
+      {state.status === 'loading' && <p className="status" role="status">Scanning archive…</p>}
       {state.status === 'error' && (
         <p className="status error">Could not read the archive.</p>
       )}
       {state.status === 'ready' && <ArchiveGroups groups={groups} timeZone={timeZone} />}
-    </section>
+    </div>
   )
 }
 
-/**
- * The archive itself: one named block per family, its puzzles underneath.
- *
- * Split out from the fetching so the markup can be rendered and asserted without a
- * browser or a network, which is the only way this part of the page gets covered
- * at all — the suite has no component renderer and pulling one in is a bigger
- * decision than this change.
- */
+/** Render the loaded archive separately from discovery, including partial offline results. */
 export function ArchiveGroups({
   groups,
   timeZone,
@@ -73,30 +84,44 @@ export function ArchiveGroups({
   }
   return (
     <>
-      {groups.map((group) => (
-        <section className="archive-group" key={group.type}>
-          <h2 className="archive-group-title">{PUZZLE_TYPE_LABEL[group.type]}</h2>
-          <ul className="archive">
-            {group.puzzles.map((puzzle) => (
-              <li key={puzzle.id}>
-                <Link to={`/archive/${puzzle.id}`}>{formatPuzzleLabel(puzzle.id, timeZone)}</Link>{' '}
-                {puzzle.type === 'train-tracks' && puzzle.width != null && puzzle.height != null && (
-                  <span className="stat-detail">
-                    {trackVariantOf(puzzle.id) && `${trackVariantOf(puzzle.id)!.label} · `}
-                    {`${puzzle.width}×${puzzle.height}`}
-                  </span>
-                )}
-                {/* The heading already said which family this is, so the row is the
-                    date and its band. A puzzle with no band shows nothing at all:
-                    "Easy" would be a claim the file never made. */}
-                {puzzle.difficulty != null && (
-                  <span className="stat-detail">{DIFFICULTY_LABEL[puzzle.difficulty]}</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
+      {groups.map((group) => {
+        const days = new Map<string, PublishedPuzzle[]>()
+        for (const puzzle of group.puzzles) {
+          const day = puzzleDay(puzzle.id)
+          const entries = days.get(day) ?? []
+          entries.push(puzzle)
+          days.set(day, entries)
+        }
+        return (
+          <section className="archive-group" key={group.type}>
+            <h2 className="archive-group-title">{PUZZLE_TYPE_LABEL[group.type]}</h2>
+            <ul className="archive">
+              {[...days].map(([day, puzzles]) => (
+                <li key={day}>
+                  {group.type === 'train-tracks' ? <>
+                    <time dateTime={day}>{formatPuzzleLabel(day, timeZone)}</time>
+                    <div className="archive-variants">
+                      {puzzles.map(puzzle => {
+                        const variant = trackVariantOf(puzzle.id)
+                        const dimensions = puzzle.width != null && puzzle.height != null ? `${puzzle.width}×${puzzle.height}` : ''
+                        const label = variant ? `${variant.label}${dimensions ? ` · ${dimensions}` : ''}` : dimensions || 'Original'
+                        return <Link key={puzzle.id} to={`/archive/${puzzle.id}`} aria-label={`${formatPuzzleLabel(day, timeZone)}, Train Tracks ${label}`}>
+                          {variant ? <>{variant.label}<span className="archive-dimensions">{dimensions && ` · ${dimensions}`}</span></> : label}
+                        </Link>
+                      })}
+                    </div>
+                  </> : puzzles.map(puzzle => (
+                    <Link key={puzzle.id} to={`/archive/${puzzle.id}`}>
+                      <time dateTime={day}>{formatPuzzleLabel(day, timeZone)}</time>
+                      {puzzle.difficulty != null && <span className="stat-detail">{DIFFICULTY_LABEL[puzzle.difficulty]}</span>}
+                    </Link>
+                  ))}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      })}
     </>
   )
 }

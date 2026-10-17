@@ -74,7 +74,7 @@ Keep **Open as Web App** enabled if shown, then tap **Add**. The icon launches
 Daily Puzzles in its own window, with Auto appearance following your system.
 
 After the first online visit, wait for **App ready offline**. Today saves its
-available boards; opening the archive saves the puzzles it loads. Those boards
+available boards; opening the archive saves recent puzzles across all games. Those boards
 can then be played without a connection. New or unopened puzzles need internet.
 
 Safari and the installed iPhone app keep separate progress, stats, settings and

@@ -735,13 +735,26 @@
   }
 }
 
-/* One block per family, each named. A flat list of dates mixed the families
-   together, so the date was the only thing distinguishing a Queens board from its
-   companion; the heading now carries that, which is also what lets a third family
-   appear without new markup. */
+.archive-page { max-width: 44rem; margin: 0 auto; }
+.archive-games { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 1.25rem; }
+.archive-games a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 0.8rem;
+  color: var(--text);
+  text-decoration: none;
+}
+.archive-games a:hover { background: var(--surface); color: var(--text-h); }
+.archive-games [aria-current='page'] { background: var(--accent-border); color: var(--accent); font-weight: 600; }
+.archive-variants { display: flex; flex-wrap: wrap; gap: 0.25rem 0.5rem; }
+.archive .archive-variants a { gap: 0; min-width: 2.75rem; justify-content: center; padding-inline: 0.6rem; border: 1px solid var(--border); border-radius: 0.6rem; font-size: 0.8125rem; }
+.archive > li > time { flex: 0 0 10rem; }
+
 .archive-group {
-  margin: 0 0 28px;
-  padding: 1.5rem;
+  margin: 0;
+  padding: 1rem 1.25rem;
   border: 1px solid var(--border);
   border-radius: 1.25rem;
   background: var(--surface);
@@ -766,11 +779,10 @@
 
   li {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    gap: 0.5rem 1rem;
+    gap: 0.25rem 1rem;
     flex-wrap: wrap;
-    padding: 0.35rem 0;
+    padding: 0.15rem 0;
     border-bottom: 1px solid var(--border);
   }
 
@@ -781,6 +793,7 @@
   a {
     display: inline-flex;
     align-items: center;
+    gap: 0.75rem;
     min-height: 2.75rem;
     color: var(--accent);
     text-decoration: none;
@@ -993,6 +1006,9 @@
 }
 
 @media (max-width: 480px) {
+  .archive-games { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .archive-games a { justify-content: center; }
+  .archive-dimensions { display: none; }
   .controls th,
   .controls td {
     display: block;
