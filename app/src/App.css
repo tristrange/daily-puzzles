@@ -570,12 +570,8 @@
    same pixels: an `auto` column is sized by its own content, and two grids sizing
    one independently is a promise neither of them keeps. */
 .tracks {
-  /* Capped by height as well as width, and not simply by `48svh`: every cell is
-     square, so a grid taller than it is wide is taller on screen than its column
-     count suggests, and a width-only cap would put a 2x16 board eight viewports
-     down the page. Dividing the height budget by the grid's own ratio is what
-     makes the cap mean what it says. */
-  width: min(100%, 480px, calc(48svh * var(--tracks-cols) / var(--tracks-rows)));
+  /* Keep tall legacy boards bounded without shrinking square boards to 48svh. */
+  width: min(100%, 40rem, calc(max(20rem, 100svh - 24rem) * var(--tracks-cols) / var(--tracks-rows)));
   margin: 0 auto;
   display: grid;
   gap: 3px;
@@ -1184,7 +1180,7 @@
 
 /* Word Paths follows the finger directly; no gesture animation or scroll pan. */
 .board.playable.word-board {
-  width: min(100%, 24rem);
+  width: min(100%, 24rem, max(16rem, 100svh - 27rem));
   grid-template-columns: repeat(var(--word-columns), 1fr);
   gap: 0.3rem;
   padding: 0.4rem;
@@ -1211,13 +1207,15 @@
 .word-cell[data-length='4'], .word-slots [data-length='4'] { --word-fill: light-dark(#d9ede5, #263f36); }
 .word-cell[data-length='5'], .word-slots [data-length='5'] { --word-fill: light-dark(#f7e7cb, #4a3a24); }
 .word-cell[data-length='6'], .word-slots [data-length='6'] { --word-fill: light-dark(#f3dfe4, #492d38); }
-.word-selection { max-width: 24rem; margin: 0.85rem auto 0; text-align: center; }
-.word-selection output { display: block; min-height: 2rem; color: var(--text-h); font-size: 1.2rem; font-weight: 600; letter-spacing: 0.08em; }
-.word-actions { display: flex; justify-content: center; gap: 0.5rem; margin-top: 0.5rem; }
-.word-slots { list-style: none; display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; max-width: 24rem; padding: 0; margin: 1rem auto 0; }
-.word-slots li { border: 1px solid var(--border); border-radius: 0.75rem; padding: 0.55rem 0.75rem; background: var(--surface); }
+.word-workspace { max-width: 24rem; margin: 0 auto; }
+.word-play-area { min-width: 0; }
+.word-selection { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem; align-items: center; margin: 0.5rem auto 0; }
+.word-selection output { display: block; color: var(--text-h); font-size: 1rem; font-weight: 600; letter-spacing: 0.04em; overflow-wrap: anywhere; }
+.word-actions { display: flex; gap: 0.5rem; }
+.word-slots { list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.4rem; padding: 0; margin: 0.5rem 0 0; }
+.word-slots li { min-width: 0; border: 1px solid var(--border); border-radius: 0.75rem; padding: 0.4rem; background: var(--surface); }
 .word-slots span { display: block; font-size: 0.75rem; }
-.word-slots strong { display: block; color: var(--text-h); letter-spacing: 0.1em; font-weight: 650; }
+.word-slots strong { display: block; overflow-wrap: anywhere; font-size: 0.8125rem; color: var(--text-h); letter-spacing: 0.1em; font-weight: 650; }
 .word-feedback { text-align: center; min-height: 1.5em; color: var(--text-h); margin: 0.85rem auto; }
 .word-instructions, .word-note { max-width: 36rem; margin: 0.75rem auto; font-size: 0.875rem; line-height: 1.6; }
 .word-instructions { color: var(--text-h); }
@@ -1237,4 +1235,33 @@
   color: var(--text);
   font-size: 0.8125rem;
   text-align: center;
+}
+
+/* Controls share the board's space rather than taking two rows above it. */
+@media (min-width: 48rem) {
+  .tracks-workspace { display: flex; align-items: flex-start; justify-content: center; gap: 2rem; }
+  .tracks-controls { flex: 0 0 10rem; }
+  .tracks-controls .puzzle-tools { width: 100%; }
+  .tracks-controls .timer { width: 100%; text-align: center; padding-block: 0.35rem; }
+  .tracks-controls .track-picker { display: grid; grid-template-columns: repeat(3, 2.75rem); }
+  .tracks-workspace .tracks {
+    min-width: 0;
+    width: min(100%, 48rem, calc(max(24rem, 100svh - 18rem) * var(--tracks-cols) / var(--tracks-rows)));
+    margin: 0;
+  }
+  .word-workspace { display: grid; grid-template-columns: minmax(0, 24rem) 12rem; align-items: start; gap: 1.5rem; max-width: 37.5rem; }
+  .word-slots { grid-template-columns: 1fr; margin: 0; gap: 0.75rem; }
+  .word-slots li { padding: 0.65rem 0.85rem; }
+  .word-slots strong { font-size: 1rem; }
+}
+
+@media (max-width: 47.999rem) {
+  .shell:has(.word-game) > .offline-status { margin-bottom: 0.25rem; }
+  .content:has(.word-game) { padding-top: 0.25rem; }
+  .puzzle:has(.word-game) .puzzle-heading { margin-bottom: 0.5rem; }
+  .puzzle:has(.word-game) .eyebrow { margin-bottom: 0.25rem; }
+  .puzzle:has(.word-game) .puzzle-detail { margin-top: 0.25rem; }
+  .word-game .puzzle-tools { margin-bottom: 0.5rem; padding: 0.2rem; }
+  /* Leave room for selection and every answer; keep five readable letter rows. */
+  .board.playable.word-board { width: min(100%, max(16rem, 100svh - 29rem), 24rem); }
 }

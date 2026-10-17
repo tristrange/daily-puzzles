@@ -1108,3 +1108,39 @@ verifier checks remain. CI now reports
 its slowest tests to guide any further work. Frontend PR wall-clock savings will
 be confirmed by the next real frontend-only PR; this CI-changing PR runs the
 engine deliberately. Main/deployment validation still takes time.
+
+## 2026-10-18 — Give the boards their space
+
+Train Tracks puts its timer, Undo/Reset and a compact three-column piece picker
+beside the board at widths of 48rem and above. Phones retain the controls above
+the board. The board's own 480px/48svh cap is replaced too: at 1280×900, a large
+board grows from 432px to 612px wide, with cells increasing from about 31px to
+46px. Tall rectangular boards still use their own aspect ratio to limit height.
+The native radio group, keyboard controls and gesture handlers are unchanged.
+
+Word Paths puts answer slots beside the board on wide screens and in one compact
+row on phones. A shorter Clear/Submit row keeps the selected word and actions
+together, with their full accessible names retained. Board sizing leaves room for
+the answers, with a 16rem preferred minimum so small screens scroll rather than
+squeezing five rows into tiny targets. Only this game's heading, toolbar and
+notice spacing tighten on narrow screens; help and feedback remain in normal flow.
+
+Browser checks against the production build confirmed the board, Submit and all
+four answer boxes fit without scrolling at 375×667 and 390×744, including the
+real offline-ready message. At 320×568 there is no horizontal overflow, letter
+cells remain about 44px and the page scrolls vertically. The desktop Word Paths
+layout also fits its answers and Submit at 1280×720. Tablet checks at 768×1024
+found neither layout overflowing. Light/dark appearance, all three track sizes,
+clue alignment, native vertical track dragging with one-step Undo, and Word Paths
+keyboard selection, drag submission and Undo were checked in the browser.
+
+[Large Train Tracks](images/tracks-sidebar-layout.jpg) ·
+[Word Paths on a phone](images/word-paths-phone-layout.jpg)
+
+All 611 app tests pass; app typecheck, lint and production build pass. Lint still
+reports the existing `set-state-in-effect` warning in unchanged TracksStage code.
+No new test dependency or markup-only tests were added for this layout change.
+Physical iPhone/Safari touch, pinch zoom and increased text-size testing remain
+unverified. Very short viewports, preview-page selectors and longer error notices
+may still require scrolling. Puzzle rules, saved progress and engine inputs are
+unchanged; archive, stats and rules navigation remain the next separate slices.
