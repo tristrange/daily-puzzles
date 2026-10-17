@@ -1,17 +1,4 @@
-/**
- * Markup tests for the stats page's per-family sentence.
- *
- * Same approach as the archive page's tests: no component renderer in the
- * suite, so the page is rendered to static markup with `react-dom/server`, and
- * `localStorage` is stubbed the way `stats.test.ts` stubs it, because reading
- * that is all the page does on the way in.
- *
- * The sentence under the grid is what is under test. It has to count every
- * family the history spans, and it has to stay quiet about the ones it does
- * not: the line it replaces gated on Star Battle alone, so a Queens-only
- * history saw no split while a Star Battle-only one read "0 Queens and 1 Star
- * Battle."
- */
+/** Stats rendering uses the existing server renderer and a local history fixture. */
 
 import { renderToStaticMarkup } from 'react-dom/server'
 import { MemoryRouter } from 'react-router-dom'
@@ -40,7 +27,7 @@ const solve = (id: string, puzzleType: string, solvedAt: number): Stored => ({
 })
 
 /** Render the page against a history written to a stubbed `localStorage`. */
-function renderHistory(records: readonly Stored[]): string {
+function renderHistory(records: readonly Stored[], url = '/stats'): string {
   const stored = new Map<string, string>([[STATS_STORAGE_KEY, JSON.stringify(records)]])
   vi.stubGlobal('localStorage', {
     getItem: (key: string) => stored.get(key) ?? null,
@@ -48,7 +35,7 @@ function renderHistory(records: readonly Stored[]): string {
     removeItem: (key: string) => void stored.delete(key),
   })
   return renderToStaticMarkup(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[url]}>
       <StatsPage />
     </MemoryRouter>,
   )
@@ -64,7 +51,7 @@ describe('the family counts', () => {
       solve('2026-10-17-tracks-small', 'train-tracks', 1),
       solve('2026-10-17-tracks-medium', 'train-tracks', 2),
       solve('2026-10-17-tracks-large', 'train-tracks', 3),
-    ])
+    ], '/stats?game=train-tracks')
     expect(html).toContain('Train Tracks Small')
     expect(html).toContain('Train Tracks Medium')
     expect(html).toContain('Train Tracks Large')
@@ -78,7 +65,7 @@ describe('the family counts', () => {
    */
   const familySentence = (html: string) => {
     const names = PUZZLE_TYPES.map((type) => PUZZLE_TYPE_LABEL[type]).join('|')
-    return html.match(new RegExp(`<p class="status">[^<]*(${names})[^<]*</p>`, 'g'))
+    return html.slice(0, html.indexOf('Recent solves')).match(new RegExp(`<p class="status">[^<]*(${names})[^<]*</p>`, 'g'))
   }
 
   it('counts both families when the history spans both', () => {
@@ -98,5 +85,43 @@ describe('the family counts', () => {
   it('says nothing for a Star Battle-only history, rather than padding it with a zero', () => {
     const html = renderHistory([solve('2026-10-05-star', 'star-battle', 1)])
     expect(familySentence(html)).toBeNull()
+  })
+})
+
+
+describe('recent solves by game', () => {
+  it('filters by the recorded game without changing the all-games overview', () => {
+    const html = renderHistory([
+      solve('2026-10-05-star', 'queens', 1),
+      solve('2026-10-04-star', 'star-battle', 2),
+    ], '/stats?game=queens')
+    const recent = html.slice(html.indexOf('Recent solves'))
+    expect(html).toContain('<dt>Solved</dt><dd>2</dd>')
+    expect(html).toContain('All games')
+    expect(recent).toContain('href="/archive/2026-10-05-star"')
+    expect(recent).not.toContain('href="/archive/2026-10-04-star"')
+    expect(html).toContain('Clear all stats')
+  })
+
+  it('filters before taking the ten most recently completed solves', () => {
+    const html = renderHistory([
+      solve('2026-10-01', 'queens', 1),
+      ...Array.from({ length: 11 }, (_, i) => solve(`2026-10-${String(i + 2).padStart(2, '0')}-star`, 'star-battle', i + 2)),
+    ], '/stats?game=queens')
+    expect(html).toContain('href="/archive/2026-10-01"')
+  })
+
+  it('shows an empty selected game without hiding history controls', () => {
+    const html = renderHistory([solve('2026-10-05', 'queens', 1)], '/stats?game=word-paths')
+    expect(html).toContain('No Word Paths solves yet.')
+    expect(html).toContain('Clear all stats')
+    expect(html.slice(html.indexOf('Recent solves'))).not.toContain('href="/archive/2026-10-05"')
+  })
+
+  it.each(['/stats', '/stats?game=unknown'])('defaults to Queens for %s', url => {
+    const html = renderHistory([solve('2026-10-05', 'queens', 1)], url)
+    const selected = html.match(/<a[^>]*aria-current="page"[^>]*>/g)
+    expect(selected).toHaveLength(1)
+    expect(selected![0]).toContain('href="/stats?game=queens"')
   })
 })

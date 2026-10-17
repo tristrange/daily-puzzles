@@ -23,7 +23,7 @@ export function ArchivePage() {
   return (
     <section className="archive-page">
       <h1 className="page-title">Archive</h1>
-      <nav className="archive-games" aria-label="Archive game">
+      <nav className="game-picker" aria-label="Archive game">
         {PUZZLE_TYPES.filter(type => PUZZLE_TYPE_PUBLISHED[type]).map(game => (
           <Link key={game} to={`/archive?game=${game}`} aria-current={game === type ? 'page' : undefined}>
             {PUZZLE_TYPE_LABEL[game]}
