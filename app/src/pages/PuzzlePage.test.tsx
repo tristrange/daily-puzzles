@@ -11,4 +11,5 @@ it('allows daily Word Paths to load through the ordinary puzzle route', () => {
   )
   expect(html).not.toContain('playing screen is not ready yet')
   expect(html).toContain('Loading puzzle')
+  expect(html).toContain('href="/archive?game=word-paths"')
 })

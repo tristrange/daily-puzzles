@@ -1,19 +1,11 @@
-/**
- * Markup tests for the archive page.
- *
- * The suite has no component renderer, so components are rendered to static markup
- * with `react-dom/server` instead: no browser, no DOM shim, no new dependency. That
- * covers the structure the grouping change is actually about -- a named block per
- * family, its puzzles nested underneath -- without standing up a full rendering
- * library, which is a larger decision than the feature warrants.
- */
+/** Archive rendering and URL selection use the existing server renderer. */
 
 import { renderToStaticMarkup } from 'react-dom/server'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import { groupPublishedPuzzles, type PublishedPuzzle } from '../lib/puzzles'
 import type { DifficultyBand } from '../domain/puzzle'
-import { ArchiveGroups } from './ArchivePage'
+import { ArchiveGroups, ArchivePage } from './ArchivePage'
 
 const UTC = 'UTC'
 
@@ -47,9 +39,10 @@ describe('ArchiveGroups', () => {
       { id: '2026-10-16-tracks', type: 'train-tracks', difficulty: null, width: 7, height: 7 },
     ])
     expect(html.match(/archive-group-title/g)).toHaveLength(1)
-    expect(html).toContain('Small · 8×8')
-    expect(html).toContain('Medium · 10×10')
-    expect(html).toContain('Large · 12×12')
+    expect(html.match(/<li>/g)).toHaveLength(2)
+    expect(html).toContain('Train Tracks Small · 8×8')
+    expect(html).toContain('Train Tracks Medium · 10×10')
+    expect(html).toContain('Train Tracks Large · 12×12')
     expect(html).toContain('7×7')
     expect(html).not.toContain('Small · 7×7')
   })
@@ -118,4 +111,16 @@ it('lists published Word Paths under its own archive heading', () => {
   expect(html).toContain('<h2 class="archive-group-title">Word Paths</h2>')
   expect(html).toContain('href="/archive/2026-10-15-words"')
   expect(html).not.toContain('Easy')
+})
+
+
+it.each([
+  ['/archive?game=word-paths', 'word-paths'],
+  ['/archive?game=unknown', 'queens'],
+  ['/archive', 'queens'],
+])('selects the archive game from %s', (url, selected) => {
+  const html = renderToStaticMarkup(<MemoryRouter initialEntries={[url]}><ArchivePage /></MemoryRouter>)
+  const selectedLinks = html.match(/<a[^>]*aria-current="page"[^>]*>/g)
+  expect(selectedLinks).toHaveLength(1)
+  expect(selectedLinks![0]).toContain(`href="/archive?game=${selected}"`)
 })

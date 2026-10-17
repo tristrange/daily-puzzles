@@ -4,7 +4,7 @@ import star from '../../public/puzzles/2026-10-15-star.json'
 import tracks from '../../../conformance/id-cases/tracks-large.accept.json'
 import wordsV1 from '../../../conformance/word-paths/2026-10-14-words.json'
 import wordsV2 from '../../public/puzzles/2026-10-15-words.json'
-import { loadPuzzle, probePuzzles, PuzzleNotFoundError, PuzzleUnavailableError, puzzleUrl } from './puzzles'
+import { listPublishedPuzzles, loadPuzzle, probePuzzles, PuzzleNotFoundError, PuzzleUnavailableError, puzzleUrl } from './puzzles'
 
 const entries = new Map<string, Response>()
 const put = vi.fn(async (url: string, response: Response) => { entries.set(url, response.clone()) })
@@ -21,6 +21,12 @@ beforeEach(() => {
   vi.stubGlobal('caches', { open })
 })
 afterEach(() => vi.unstubAllGlobals())
+
+it('lists only the selected game from saved puzzles when offline', async () => {
+  for (const puzzle of [queens, star, wordsV2]) await loadPuzzle(puzzle.id, async () => json(puzzle))
+  const found = await listPublishedPuzzles('2026-10-15', offline, 'word-paths')
+  expect(found.map(puzzle => puzzle.id)).toEqual([wordsV2.id])
+})
 
 it.each([queens, star, tracks, wordsV1, wordsV2])('saves and reopens $id offline with its original rules', async (raw) => {
   const online = await loadPuzzle(raw.id, async () => json(raw))

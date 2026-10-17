@@ -7,9 +7,9 @@
  * probing the recent window and keeping whatever comes back as a puzzle.
  */
 
-import { PUZZLE_TYPES } from '../domain/board'
+import { PUZZLE_TYPES, type PuzzleType } from '../domain/board'
 import { PUZZLE_DOWNLOAD_FAILED } from './offline'
-import { isPuzzleId, previousPuzzleIds, puzzleIdFor, puzzleIdsForDay } from '../domain/dates'
+import { isPuzzleId, previousPuzzleIds, puzzleIdFor, puzzleIdsForDay, puzzleTypeOf } from '../domain/dates'
 import { parsePuzzle, type Puzzle } from '../domain/puzzle'
 
 export const ARCHIVE_WINDOW_DAYS = 30
@@ -143,25 +143,18 @@ export type PublishedPuzzle = {
 }
 
 /**
- * Published puzzles in the recent window, newest day first and each day's
- * Queens puzzle before its Star Battle companion.
- *
- * Both ids of a day are probed rather than assumed, because the companion is a
- * separate file that a day may not have: it did not exist before companions
- * were published, and a missing one has to be absent rather than an error.
- *
- * The family comes from the file's own `type` rather than from the id's suffix.
- * Every probe already parses the file it fetched, so reading the answer off it
- * costs nothing, and it means a mislabelled file shows up as what it is instead
- * of as what its name promised.
+ * Discover a bounded recent window, newest first. A selected family probes only
+ * its registered slots, including legacy tracks; omitted type scans every family.
+ * Results retain the parsed file's type so callers never mislabel a puzzle.
  */
 export async function listPublishedPuzzles(
   todayId: string,
   fetcher: Fetcher = fetch,
+  type?: PuzzleType,
 ): Promise<readonly PublishedPuzzle[]> {
   // Queued legacy boards remain accessible even after the daily slots change.
   const candidates = previousPuzzleIds(todayId, ARCHIVE_WINDOW_DAYS).flatMap((day) =>
-    [...new Set([...puzzleIdsForDay(day), puzzleIdFor(day, 'train-tracks')])],
+    [...new Set([...puzzleIdsForDay(day), puzzleIdFor(day, 'train-tracks')])].filter(id => type === undefined || puzzleTypeOf(id) === type),
   )
   const results = await Promise.allSettled(
     candidates.map(async (id) => ({ id, puzzle: await fetchPuzzle(id, fetcher) })),

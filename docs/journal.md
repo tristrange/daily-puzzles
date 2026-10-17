@@ -1144,3 +1144,42 @@ Physical iPhone/Safari touch, pinch zoom and increased text-size testing remain
 unverified. Very short viewports, preview-page selectors and longer error notices
 may still require scrolling. Puzzle rules, saved progress and engine inputs are
 unchanged; archive, stats and rules navigation remain the next separate slices.
+
+## 2026-10-18 — A compact archive for each game
+
+The archive now shows one game's recent dates, selected by ordinary links at the
+top. `#/archive?game=train-tracks` can be bookmarked and survives refresh and
+browser Back/Forward. Missing or invalid selections use Queens. Puzzle pages'
+All puzzles link returns to their own game's archive, including direct entries.
+A keyed loader resets the list on game changes and ignores late previous results.
+
+Date rows keep the difficulty beside the date. Train Tracks uses one row per day
+with only its published sizes; legacy boards retain their actual dimensions.
+On phones, size names fit in one row while full dates, names and dimensions stay
+in their accessible link labels. Links retain 44px targets. The content width is
+bounded, and the selector becomes two columns on narrow screens.
+
+Discovery probes only the selected family's slots. Queens needs 30 probes rather
+than scanning every family; tracks still includes its legacy slots, and Word
+Paths retains the launch-date gate. Cache validation/fallback stays shared with
+normal puzzle loads. Choosing an archive downloads that game's recent puzzles,
+which is now stated in the Home Screen instructions.
+
+All 615 app tests, typecheck, lint and production build pass. Existing discovery
+and markup cases cover selected requests, dates grouped once, legacy dimensions
+and return links; three URL cases and one saved-offline archive case were added.
+Lint retains the existing warning in unchanged TracksStage effect code.
+
+Browser checks covered 320px/390px phones, a 1280px desktop, light/dark appearance,
+44px targets, no horizontal overflow, game switching, Back/Forward, refresh and
+the puzzle return link. On a fresh production origin, only Word Paths was saved;
+after stopping the server, its four boards remained available and an unopened
+Star Battle archive showed the existing empty/download message. This simulates
+failed requests, not a physical iPhone airplane-mode test.
+
+[Desktop archive](images/compact-archive-desktop.jpg) ·
+[Phone archive](images/compact-archive-phone.jpg)
+
+Per-game stats and rules navigation remain separate follow-ups. The archive
+still uses the existing 30-day window; no search, pagination, index manifest or
+new dependency was introduced.
