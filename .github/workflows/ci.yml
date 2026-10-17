@@ -15,8 +15,32 @@ on:
 permissions:
   contents: read
 
+# Superseded PR runs are disposable; main/publisher runs keep independent groups.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      engine: ${{ steps.scope.outputs.engine }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check CI routing
+        run: python3 -m unittest discover -s .github/scripts -p 'test_ci_scope.py'
+      - name: Select checks
+        id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: python3 .github/scripts/ci_scope.py >> "$GITHUB_OUTPUT"
+
   engine:
+    needs: changes
+    if: needs.changes.outputs.engine == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -29,7 +53,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
       - name: Test
-        run: uv run pytest -q
+        run: uv run pytest -q --durations=15
       - name: Typecheck
         run: uv run pyright
       - name: Lint
