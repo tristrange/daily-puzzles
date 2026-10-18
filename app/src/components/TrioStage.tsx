@@ -3,8 +3,10 @@ import { createTrioGame, editTrio, isTrioSolved, TRIO_NAMES, trioConflicts, type
 import { advanceWordClock } from '../domain/wordClock'
 import { formatTime } from '../domain/game'
 import { readTrioProgress, storeTrioProgress } from '../lib/trioProgress'
+import { applyTrioHint, findTrioHint, type TrioHint } from '../domain/trioHints'
 import { TrioBoard } from './TrioBoard'
 import { TrioSymbol } from './TrioSymbol'
+import { TrioHintPanel } from './TrioHintPanel'
 
 export function TrioStage({ board }: { board: Board }) {
   const [initial] = useState(() => readTrioProgress(board))
@@ -20,7 +22,10 @@ export function TrioStage({ board }: { board: Board }) {
   const clock = useRef({ elapsedMs: initial?.elapsedMs ?? 0, lastAt: 0, visible: false })
   const [saving, setSaving] = useState(true)
   const [message, setMessage] = useState('')
-  const instructionsId = useId(), pickerId = useId()
+  const [hint, setHint] = useState<TrioHint | null>(null)
+  const stage = useRef<HTMLDivElement>(null)
+  const hintButton = useRef<HTMLButtonElement>(null)
+  const instructionsId = useId(), pickerId = useId(), hintId = useId()
   const conflicts = trioConflicts(board, game.cells)
 
   const settle = useCallback(() => {
@@ -49,7 +54,7 @@ export function TrioStage({ board }: { board: Board }) {
 
   const change = (next: TrioGame) => { current.current = next; setGame(next) }
   const remember = (previous: TrioGame) => setHistory((past) => [...past.slice(-99), previous])
-  const begin = () => { before.current = current.current }
+  const begin = () => { before.current = current.current; setHint(null) }
   const apply = (cell: number, action: TrioAction) => {
     if (!completed.current) { change(editTrio(board, current.current, cell, action)); setMessage('') }
   }
@@ -72,6 +77,7 @@ export function TrioStage({ board }: { board: Board }) {
   const undo = () => {
     const previous = history.at(-1)
     if (completed.current || before.current || !previous) return
+    setHint(null)
     change(previous)
     setHistory(history.slice(0, -1))
     setMessage('Undid the last move.')
@@ -79,18 +85,44 @@ export function TrioStage({ board }: { board: Board }) {
   }
   const reset = () => {
     if (completed.current || before.current) return
+    setHint(null)
     remember(current.current)
     change(createTrioGame(board))
     setMessage('Board cleared. Undo brings it back; the clock keeps running.')
     save()
   }
+  const requestHint = () => {
+    if (completed.current || before.current) return
+    const result = findTrioHint(board, current.current)
+    setHint(result.kind === 'hint' ? result.hint : null)
+    setMessage(result.kind === 'contradiction' ? 'Your placed symbols lead to a contradiction. Check your entries or Undo before asking for a hint.'
+      : result.kind === 'none' ? 'These rules found no further deduction. This does not prove that guessing is necessary.' : '')
+  }
+  const dismissHint = () => { setHint(null); hintButton.current?.focus({ preventScroll: true }) }
+  const showHintCell = () => {
+    const cell = stage.current?.querySelector<HTMLButtonElement>('[data-hint="target"]')
+    cell?.focus({ preventScroll: true })
+    cell?.scrollIntoView({ block: 'center' })
+  }
+  const acceptHint = () => {
+    if (!hint || completed.current || before.current) return
+    const next = applyTrioHint(board, current.current, hint)
+    if (next === current.current) { dismissHint(); return }
+    begin()
+    change(next)
+    end(false)
+    setMessage('Hint applied. Undo brings back your previous symbols and notes.')
+    hintButton.current?.focus({ preventScroll: true })
+  }
 
-  return <div className="trio-game">
+  return <div className="trio-game" ref={stage}>
     <div className="puzzle-tools">
       <span className="timer" role="timer" aria-label="Elapsed active time">{formatTime(elapsed)}</span>
       <button className="tool-button" type="button" onClick={undo} disabled={solved || history.length === 0}>Undo</button>
       <button className="tool-button" type="button" onClick={reset} disabled={solved || game.cells.every((v, i) => v === board.givens[i] && game.notes[i] === 0)}>Reset</button>
       <button className="tool-button" type="button" aria-pressed={pencil} disabled={solved} onClick={() => setPencil(!pencil)}>Notes</button>
+      <button ref={hintButton} className="tool-button" type="button" aria-label="Get an explained hint" aria-expanded={hint !== null}
+        aria-controls={hint ? hintId : undefined} disabled={solved} onClick={requestHint}>Hint</button>
     </div>
     <div className="trio-picker" role="radiogroup" aria-label="Symbol to place">
       {([1, 2, 3, 0] as const).map((value) => <label key={value} className="trio-pick">
@@ -99,11 +131,12 @@ export function TrioStage({ board }: { board: Board }) {
       </label>)}
     </div>
     <p className="trio-mode">{solved ? `Solved in ${formatTime(elapsed)}!` : pencil && brush ? `Notes · tap to mark a possible ${TRIO_NAMES[brush].toLowerCase()}` : brush ? `Place ${TRIO_NAMES[brush].toLowerCase()} · tap again to clear` : 'Erase symbols and notes'}</p>
-    <TrioBoard board={board} game={game} brush={brush} pencil={pencil} locked={solved} conflicts={conflicts} instructionsId={instructionsId}
+    <TrioBoard board={board} game={game} brush={brush} pencil={pencil} locked={solved} conflicts={conflicts} instructionsId={hint ? `${instructionsId} ${hintId}` : instructionsId} hint={hint}
       onApply={apply} onBegin={begin} onEnd={end} onUndo={undo} onPencil={() => setPencil(!pencil)} />
     <p className={`trio-feedback${conflicts.size ? ' error' : ''}`} role="status">
       {solved ? `Solved in ${formatTime(elapsed)}! Choose another board to keep playing.` : conflicts.size ? `${conflicts.size} cells conflict with the rules. You can keep editing or Undo.` : message || '\u00a0'}
     </p>
+    {hint && <TrioHintPanel hint={hint} id={hintId} onApply={acceptHint} onDismiss={dismissHint} onShowCell={showHintCell} />}
     {!saving && !solved && <p className="status error" role="status">Progress can&rsquo;t be saved. Keep this page open to retain your attempt.</p>}
     <p className="word-note" id={instructionsId}>Three of each symbol in every row and column. No three identical symbols consecutively.
       = means same; × means different. Cells with a corner dot are fixed.</p>

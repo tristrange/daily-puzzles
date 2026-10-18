@@ -68,7 +68,9 @@ Daily progress and results are separate from the [ten-board preview](https://tri
 **Trio preview** — balance sun, moon and star on a 9×9 board: three of each per
 row and column, no three identical symbols consecutively, and adjacent same/different
 clues. [Try the five-board preview](https://tristrange.github.io/daily-puzzles/#/preview/trio).
-It includes pencil notes, undo/reset and separate saved attempts. Preview solves
+It includes pencil notes, undo/reset, explained hints and separate saved attempts.
+Hints highlight their target and supporting cells; Apply move places a forced
+symbol or updates one cell’s candidate notes, with Undo available. Preview solves
 never affect daily stats; daily publication and difficulty ratings are not enabled.
 
 ---

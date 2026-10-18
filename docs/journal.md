@@ -1332,3 +1332,33 @@ a held drag. Keyboard placement now waits until the stroke ends; Ctrl/Cmd+Z
 cancels it before Undo. External Undo/Reset also preserve the active transaction.
 A focused event-handler regression fails against the original code and passes
 with the fix; the reviewer confirmed the correction.
+
+## 2026-10-18 — Explained Trio hints
+
+The preview now offers a logical hint without changing the board until Apply
+move is pressed. A solid outline identifies the target; dashed outlines identify
+supporting cells. The panel explains the rule and includes prerequisite
+deductions when a move needs a chain of reasoning. Its location button returns
+to the highlighted target on small screens. Escape/Dismiss returns focus to Hint.
+
+A direct-rule TypeScript port reproduces all five committed Python pilot traces.
+It reasons from placed symbols, never treats pencil notes as evidence, and checks
+the full deduction pass for contradictions before offering a move. Applying an
+elimination updates only that cell's notes to the remaining candidates. A forced
+symbol uses the normal placement path. Both are one undoable move; existing
+progress storage needs no migration. Edits, Undo and Reset clear stale hints.
+
+Five focused domain cases cover elimination, equality chains, different clues,
+misleading notes, indirect contradictions, stale application and all five pilots.
+All 634 app tests pass; typecheck and the GitHub Pages build pass. Lint retains
+only the existing TracksStage effect warning. Browser checks covered candidate
+application and Undo, persistence, keyboard dismissal, target focus, stale-hint
+removal and completion through a forced-symbol hint. At 320×667 and 375×667 the
+initial board still fits without horizontal overflow; long explanations scroll.
+Physical iPhone and airplane-mode checks remain unverified.
+
+Queens/Star Battle explanation improvements and Train Tracks hints follow this
+Trio slice. Word Paths stays last. No daily publishing, stats, dependency, engine
+or CI changes are included.
+
+[Phone hint](images/trio-hint-phone.png) · [Desktop hint](images/trio-hint-desktop.png)

@@ -1,18 +1,21 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { relationBroken, TRIO_NAMES, trioAction, type TrioAction, type TrioBoard as Board, type TrioGame, type TrioSymbol as SymbolValue, type TrioValue } from '../domain/trio'
 import { TrioSymbol } from './TrioSymbol'
+import type { TrioHint } from '../domain/trioHints'
 
 interface Props {
   board: Board; game: TrioGame; brush: TrioValue; pencil: boolean; locked: boolean
   conflicts: ReadonlySet<number>; instructionsId: string
+  hint?: TrioHint | null
   onApply: (cell: number, action: TrioAction) => void
   onBegin: () => void; onEnd: (cancel: boolean) => void; onUndo: () => void; onPencil: () => void
 }
 
-export function TrioBoard({ board, game, brush, pencil, locked, conflicts, instructionsId, onApply, onBegin, onEnd, onUndo, onPencil }: Props) {
+export function TrioBoard({ board, game, brush, pencil, locked, conflicts, instructionsId, hint, onApply, onBegin, onEnd, onUndo, onPencil }: Props) {
   const grid = useRef<HTMLDivElement>(null)
   const [focus, setFocus] = useState(() => Math.max(0, board.givens.indexOf(0)))
   const stroke = useRef<{ id: number; action: TrioAction; visited: Set<number> } | null>(null)
+  const support = new Set(hint?.steps.flatMap((step) => [...step.group]))
   useEffect(() => {
     if (grid.current?.contains(document.activeElement)) grid.current.querySelector<HTMLElement>(`[data-cell="${focus}"]`)?.focus()
   }, [focus])
@@ -80,8 +83,9 @@ export function TrioBoard({ board, game, brush, pencil, locked, conflicts, instr
         const noteLabel = [1, 2, 3].filter((v) => notes & (1 << (v - 1))).map((v) => TRIO_NAMES[v as SymbolValue]).join(', ')
         return <div role="presentation" className="trio-cell-wrap" key={cell}>
           <button role="gridcell" type="button" className="trio-cell" data-cell={cell} data-given={given} data-conflict={conflicts.has(cell)}
+            data-hint={hint?.cell === cell ? 'target' : support.has(cell) ? 'support' : undefined}
             tabIndex={focus === cell ? 0 : -1} aria-readonly={given || locked}
-            aria-label={`Row ${row + 1}, column ${col + 1}, ${TRIO_NAMES[value]}${given ? ', given' : ''}${noteLabel ? `, notes ${noteLabel}` : ''}${conflicts.has(cell) ? ', conflict' : ''}${neighbours.length ? `; ${neighbours.join('; ')}` : ''}`}
+            aria-label={`Row ${row + 1}, column ${col + 1}, ${TRIO_NAMES[value]}${given ? ', given' : ''}${noteLabel ? `, notes ${noteLabel}` : ''}${conflicts.has(cell) ? ', conflict' : ''}${hint?.cell === cell ? ', hint target' : support.has(cell) ? ', supports hint' : ''}${neighbours.length ? `; ${neighbours.join('; ')}` : ''}`}
             onFocus={() => setFocus(cell)} onClick={(event) => { if (event.detail === 0) one(cell, brush) }}
             onContextMenu={(event) => { event.preventDefault(); one(cell, 0) }}>
             {value !== 0 ? <TrioSymbol value={value} /> : <span className="trio-notes" aria-hidden="true">{([1, 2, 3] as const).map((v) => <span key={v}>{notes & (1 << (v - 1)) ? <TrioSymbol value={v} /> : null}</span>)}</span>}
