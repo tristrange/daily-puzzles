@@ -1248,3 +1248,40 @@ code are unchanged; no dependency or routing framework was introduced.
 
 [Phone rules](images/game-rules-phone.jpg) ·
 [Desktop rules entry](images/game-rules-desktop.jpg)
+
+## 2026-10-18 — Trio three-symbol engine feasibility
+
+Started the agreed 9×9 Tango-inspired variant under the working title Trio. Sun,
+moon and star each appear three times per row and column; three identical symbols
+cannot be consecutive horizontally or vertically. Adjacent same/different clues
+apply literally: different leaves two alternatives. Diagonals and repeated rows
+are allowed. The icon direction is amber sun, blue crescent and purple five-point
+star; no interface or daily content is introduced in this engine milestone.
+
+The isolated model checks givens and relation geometry. A candidate-rule solver
+records direct count, no-three and relation deductions and stops when it stalls.
+A separate exact solver filters balanced no-three row/column patterns at crossings
+and branches on the smallest domain, counting at most two completions. Exhausting
+its explicit branch budget raises rather than certifying a unique solution.
+Sequential row search was too weak on some deduction-solvable boards, so pattern
+intersection replaced it without reusing the deduction implementation.
+
+The provisional SplitMix64 recipe creates a solution, selects 24 relations and
+removes givens only while deductions finish. Redundant relations are then removed
+and exact uniqueness is checked. Twenty seeds all succeeded: 22–30 givens and
+5–15 relations, mean 0.169 seconds and maximum 0.174 seconds locally. The five
+[stored samples](measurements/trio-pilot.json) include answers and readable traces.
+Exact searches rejected all 544 alternatives removed in these traces. This proves
+feasibility for the measured sample, not human difficulty or enjoyable play.
+
+All 610 engine tests pass (229 seconds locally), including 14 focused Trio tests
+that take approximately one second. Typecheck, lint and formatting pass. All 104
+published puzzles replay and verify; the schema-ID check passes. A single fresh
+review found no actionable issues and independently compared 24 seven-hole
+positions with exhaustive completions. The larger seed probe is manual, outside
+routine CI. No new dependency or CI, app, schema, published-content or saved-data
+change was made. Frontend checks were left to existing GitHub CI for this
+engine-only change; phone usability and difficulty remain for the playable preview.
+
+Next steps: freeze the file/ID contract and cross-language fixtures, build the
+preview with the agreed symbols, then playtest before enabling daily publication.
