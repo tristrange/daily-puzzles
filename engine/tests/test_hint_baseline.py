@@ -16,9 +16,21 @@ from contextlib import contextmanager, redirect_stderr
 from pathlib import Path
 from typing import Any, cast
 
+import pytest
 from tools.hint_baseline import ARCHIVE, BASELINE_PATH, build_baseline, differences, main
 
-from queens_engine import Board, canonical_dumps, load_puzzle
+from queens_engine import Board, JsonValue, canonical_dumps, load_puzzle
+
+
+@pytest.fixture(scope="module")
+def baseline() -> dict[str, JsonValue]:
+    return build_baseline()
+
+
+@pytest.fixture(autouse=True)
+def reuse_generated_hints(monkeypatch: pytest.MonkeyPatch, baseline: dict[str, JsonValue]) -> None:
+    # Build the real corpus once; CLI/error cases only exercise comparison and reporting.
+    monkeypatch.setattr("tools.hint_baseline.build_baseline", lambda: copy.deepcopy(baseline))
 
 
 @contextmanager
@@ -53,20 +65,22 @@ def test_the_baseline_covers_every_committed_puzzle() -> None:
     assert set(committed) == on_disk
 
 
-def test_every_position_records_a_move_or_the_absence_of_one() -> None:
+def test_every_position_records_a_move_or_the_absence_of_one(
+    baseline: dict[str, JsonValue],
+) -> None:
     """A position's expected answer is pinned either way.
 
     A generator that stopped emitting rows would otherwise shrink the corpus and
     the checker would pass on what was left.
     """
-    for key, positions in build_baseline().items():
+    for key, positions in baseline.items():
         rows = cast("list[list[Any]]", positions)
         assert rows, f"{key}: no positions recorded"
         for row in rows:
             assert len(row) == 3, f"{key}: malformed position {row}"
 
 
-def test_the_corpus_asks_for_a_cross_as_well_as_a_placement() -> None:
+def test_the_corpus_asks_for_a_cross_as_well_as_a_placement(baseline: dict[str, JsonValue]) -> None:
     """Guards the mistake a cheaper generator makes.
 
     Recording only the saturated position — every known cross already applied —
@@ -76,7 +90,7 @@ def test_the_corpus_asks_for_a_cross_as_well_as_a_placement() -> None:
     passed a port that could not produce one at all.
     """
     actions: set[str] = set()
-    for positions in build_baseline().values():
+    for positions in baseline.values():
         for row in cast("list[list[Any]]", positions):
             move = cast("list[Any] | None", row[2])
             if move is not None:
@@ -84,9 +98,9 @@ def test_the_corpus_asks_for_a_cross_as_well_as_a_placement() -> None:
     assert actions == {"queen", "x"}, f"only saw {sorted(actions)}"
 
 
-def test_a_changed_move_is_reported_with_its_position() -> None:
+def test_a_changed_move_is_reported_with_its_position(baseline: dict[str, JsonValue]) -> None:
     """A wrong hint must fail, and name the position that moved."""
-    expected = build_baseline()
+    expected = baseline
     altered = copy.deepcopy(expected)
     key = next(iter(altered))
     rows = cast("list[list[Any]]", altered[key])
@@ -98,9 +112,9 @@ def test_a_changed_move_is_reported_with_its_position() -> None:
     assert "positions [2]" in lines[0]
 
 
-def test_a_dropped_position_is_reported() -> None:
+def test_a_dropped_position_is_reported(baseline: dict[str, JsonValue]) -> None:
     """A shrunken corpus must fail rather than pass on the rows that remain."""
-    expected = build_baseline()
+    expected = baseline
     altered = copy.deepcopy(expected)
     key = next(iter(altered))
     before = len(cast("list[Any]", expected[key]))
@@ -111,14 +125,14 @@ def test_a_dropped_position_is_reported() -> None:
     assert f"{before} positions in the baseline, {before - 1} this run" in lines[0]
 
 
-def test_a_non_list_entry_is_a_difference_not_a_match() -> None:
+def test_a_non_list_entry_is_a_difference_not_a_match(baseline: dict[str, JsonValue]) -> None:
     """A puzzle pinned as `null` is unpinned, and must not report as matching.
 
     The keys are all still present, so a key-set check passes and the suite claims
     every position matches while one puzzle has none at all. The golden file is
     hand-editable, which is exactly how this state arises.
     """
-    expected = build_baseline()
+    expected = baseline
     key = next(iter(expected))
     altered = copy.deepcopy(expected)
     altered[key] = None
@@ -145,15 +159,15 @@ def test_main_rejects_a_non_object_baseline(tmp_path: Path) -> None:
     assert "not a JSON object" in captured.getvalue()
 
 
-def test_main_rejects_a_malformed_baseline(tmp_path: Path) -> None:
-    expected = build_baseline()
+def test_main_rejects_a_malformed_baseline(tmp_path: Path, baseline: dict[str, JsonValue]) -> None:
+    expected = copy.deepcopy(baseline)
     key = next(iter(expected))
     expected[key] = None
-    baseline = tmp_path / "baseline.json"
-    baseline.write_text(canonical_dumps(expected), encoding="utf-8")
+    baseline_path = tmp_path / "baseline.json"
+    baseline_path.write_text(canonical_dumps(expected), encoding="utf-8")
 
     with _capture_stderr() as captured:
-        result = main(["--baseline", str(baseline)])
+        result = main(["--baseline", str(baseline_path)])
 
     assert result == 1
     assert "is malformed" in captured.getvalue()

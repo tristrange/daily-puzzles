@@ -95,7 +95,7 @@ def validate_vocabulary(words: Collection[str]) -> None:
         raise WordGridError("vocabulary must be nonempty and contain no duplicates")
     if any(
         not MIN_WORD_LENGTH <= len(word) <= MAX_WORD_LENGTH
-        or not all(_is_letter(letter) for letter in word)
+        or not (word.isascii() and word.isalpha() and word.isupper())
         for word in words
     ):
         raise WordGridError("vocabulary words must contain 3 to 6 A-Z letters")

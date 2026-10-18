@@ -8,6 +8,7 @@ from collections.abc import Generator
 from contextlib import contextmanager, redirect_stdout
 from dataclasses import replace
 from datetime import date, timedelta
+from functools import cache
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Self
@@ -70,6 +71,14 @@ def cheap_publish() -> Generator[None]:
 
 
 class TestPublishWindow:
+    @pytest.fixture(scope="class", autouse=True)
+    @staticmethod
+    def reuse_star_generation() -> Generator[None]:
+        # Window tests reuse identical immutable boards; seed retries and file IO stay real.
+        book = rulebook_for(PuzzleType.STAR_BATTLE)
+        with patch.object(book, "generate", side_effect=cache(book.generate)):
+            yield
+
     def test_existing_dates_are_skipped(self, tmp_path: Path) -> None:
         today = TEST_TODAY
         existing = today.isoformat()

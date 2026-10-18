@@ -24,6 +24,7 @@ from queens_engine import (
     GenerationConfig,
     GenerationError,
     MarkRulebook,
+    Puzzle,
     PuzzleType,
     Rulebook,
     dumps_puzzle,
@@ -48,6 +49,17 @@ SMALL = 5
 #: A size every type can build. Two stars per row need at least 8x8, so a test that
 #: compares two types has to start higher than the cheap per-type ones do.
 SHARED_SIZE = 8
+
+
+@pytest.fixture(scope="module")
+def generated_puzzles() -> dict[PuzzleType, Puzzle]:
+    # Registry/shape checks share real samples; replay still regenerates independently.
+    return {
+        book.puzzle_type: book.generate(
+            seed=7, puzzle_id=puzzle_id(date(2026, 10, 12), book.puzzle_type)
+        )
+        for book in rulebooks()
+    }
 
 
 class TestCompleteness:
@@ -166,14 +178,14 @@ class TestGeneration:
         with pytest.raises(ValueError):
             book.generate(seed=7, puzzle_id="2026-10-12", size=SMALL, stars_per_row=2)
 
-    def test_every_type_can_replay_the_puzzles_it_generates(self) -> None:
+    def test_every_type_can_replay_the_puzzles_it_generates(
+        self, generated_puzzles: dict[PuzzleType, Puzzle]
+    ) -> None:
         # The point of `replay_config` is that CI replays a file without the replay
         # code naming the type. Every registered type has to survive its own
         # round-trip, or a new family would publish files that fail verification.
         for book in rulebooks():
-            puzzle = book.generate(
-                seed=7, puzzle_id=puzzle_id(date(2026, 10, 12), book.puzzle_type)
-            )
+            puzzle = generated_puzzles[book.puzzle_type]
             assert verify_replay(puzzle) == puzzle
 
     def test_replay_recovers_the_stars_per_row_from_the_board(self) -> None:
@@ -184,7 +196,9 @@ class TestGeneration:
         # is the same claim from the other side: a queens board replayed as a star
         # board would produce a different region capacity and be caught by it.
         book = rulebook_for(PuzzleType.STAR_BATTLE)
-        puzzle = book.generate(seed=7, puzzle_id=puzzle_id(date(2026, 10, 12), book.puzzle_type))
+        puzzle = book.generate(
+            seed=7, puzzle_id=puzzle_id(date(2026, 10, 12), book.puzzle_type), size=SHARED_SIZE
+        )
         replayed = book.replay(puzzle)
         assert marks_board(replayed).region_capacity[0] == STAR_BATTLE_STARS
         assert marks_board(replayed).region_capacity == marks_board(puzzle).region_capacity
@@ -229,8 +243,10 @@ class TestTheShapeOfAPuzzle:
     """
 
     @pytest.mark.parametrize("book", rulebooks(), ids=lambda b: b.puzzle_type.value)
-    def test_dimensions_agree_with_the_board(self, book: Rulebook) -> None:
-        puzzle = book.generate(seed=7, puzzle_id=puzzle_id(date(2026, 10, 12), book.puzzle_type))
+    def test_dimensions_agree_with_the_board(
+        self, book: Rulebook, generated_puzzles: dict[PuzzleType, Puzzle]
+    ) -> None:
+        puzzle = generated_puzzles[book.puzzle_type]
         width, height = book.dimensions(puzzle)
         # Read off the board, not off the size the generator was asked for: the claim
         # is that the rulebook describes the board it was handed.
@@ -241,11 +257,13 @@ class TestTheShapeOfAPuzzle:
             assert (width, height) == (puzzle.board.width, puzzle.board.height)
 
     @pytest.mark.parametrize("book", rulebooks(), ids=lambda b: b.puzzle_type.value)
-    def test_every_type_can_render_a_puzzle(self, book: Rulebook) -> None:
+    def test_every_type_can_render_a_puzzle(
+        self, book: Rulebook, generated_puzzles: dict[PuzzleType, Puzzle]
+    ) -> None:
         # `tools.generate` calls this on every type without asking, so a type that
         # could not render would not fail at generation — it would fail afterwards,
         # pointing at the printer rather than at whatever made it unrenderable.
-        puzzle = book.generate(seed=7, puzzle_id=puzzle_id(date(2026, 10, 12), book.puzzle_type))
+        puzzle = generated_puzzles[book.puzzle_type]
         lines = book.render(puzzle).splitlines()
         width, height = book.dimensions(puzzle)
         assert f"seed={puzzle.seed}" in lines[0]
