@@ -10,6 +10,7 @@ it('offers ten playable previews without publishing a daily slot', () => {
   expect(html.match(/<option /g)).toHaveLength(10)
   expect(html).toContain('Word Paths')
   expect(html).toContain('Board 2 of 10')
+  expect(html).toContain('href="/how-to-play#word-paths"')
   expect(html).toContain('role="grid"')
   expect(html).toContain('do not count toward daily stats')
   expect(puzzleIdsForDay('2026-10-14')).not.toContain('2026-10-14-words')

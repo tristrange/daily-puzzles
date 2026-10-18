@@ -1221,3 +1221,30 @@ shared selector were also checked. Physical iPhone testing remains unverified.
 
 Dedicated rules sections and links from each game are next. Per-game aggregate
 metrics and per-size comparisons are outside this recent-history change.
+
+## 2026-10-18 — Game rules and direct navigation
+
+How to play now starts with shared controls and a four-game jump list. Each game
+has its own rules and controls, with Queens hints, marking notes and the Train
+Tracks picker explained in their relevant sections. Install, offline and stats
+information remains available below the games. Outdated claims about Star Battle
+hints, filling every Train Tracks cell and cycling track pieces were corrected
+against the actual controls; all four daily games are now described as available.
+
+Loaded puzzle headings link to the parsed game's rules, including legacy Star
+Battle pages. Links open a labelled new tab so consulting instructions does not
+unmount unfinished Queens or Star Battle attempts. The Word Paths preview's
+existing return link now points to its rules. HashRouter section links scroll and
+focus the heading; the existing crosses and notes anchors remain valid.
+
+All 621 app tests, typecheck, lint and production build pass. One new small test
+covers every game's section link and the retained anchors; the preview test also
+checks its direct link. Lint retains the existing TracksStage effect warning.
+Browser checks covered all four in-game destinations, retained Queen/star moves,
+refreshing a deep link, legacy anchors, dark/light appearance and 320px layout.
+At 375×667, Word Paths answer slots end at 663px without horizontal overflow.
+No physical iPhone test is claimed. Gameplay, puzzle assets, storage and engine
+code are unchanged; no dependency or routing framework was introduced.
+
+[Phone rules](images/game-rules-phone.jpg) ·
+[Desktop rules entry](images/game-rules-desktop.jpg)

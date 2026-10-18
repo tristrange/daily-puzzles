@@ -1,328 +1,155 @@
 import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { PUZZLE_TYPES } from '../domain/board'
+import { PUZZLE_TYPE_LABEL } from '../domain/games'
 
-/**
- * How to play, for all three games.
- *
- * Written from the rules the engine enforces rather than from the genre's
- * conventions, because this app's Queens is not the same puzzle as the puzzle
- * most people meet under that name: every region holds exactly one piece, and no
- * two pieces touch, not even diagonally. A player arriving from elsewhere will
- * lose to that second rule unless it is written down here, and a tutorial that
- * only described the well-known version would be confidently wrong.
- */
 export function RulesPage() {
-  // The app routes on the URL fragment, so `#crosses` is a *route* here, not an
-  // anchor: a plain `href="#crosses"` replaces `/how-to-play` with it and the
-  // router renders the not-found page. Links carry the section as the router's
-  // hash instead, which leaves the route intact -- and the browser will not do
-  // the scrolling for us, because its fragment is now `/how-to-play#crosses`
-  // rather than `crosses`. So it is done here, which also makes a shared or
-  // reloaded link land on the section it names.
   const { hash } = useLocation()
 
   useEffect(() => {
-    const id = hash.replace(/^#/, '')
-    if (id !== '') document.getElementById(id)?.scrollIntoView()
+    // HashRouter keeps section anchors inside its route; the browser cannot scroll to them itself.
+    const target = document.getElementById(hash.replace(/^#/, ''))
+    target?.scrollIntoView()
+    target?.focus({ preventScroll: true })
   }, [hash])
 
   return (
     <section className="rules">
       <h1 className="page-title">How to play</h1>
       <p className="status">
-        Fresh Queens, Star Battle and Train Tracks puzzles arrive every day, with
-        three Train Tracks sizes to choose from. Word Paths joins the daily lineup
-        on October 15. Published puzzles are kept in the <Link to="/archive">archive</Link>.
+        Fresh Queens, Star Battle, Train Tracks and Word Paths puzzles arrive every day.
+        Past puzzles stay in the <Link to="/archive">archive</Link>.
       </p>
+      <nav className="game-picker" aria-label="Game rules">
+        {PUZZLE_TYPES.map((type) => (
+          <Link key={type} to={{ pathname: '/how-to-play', hash: `#${type}` }}>
+            {PUZZLE_TYPE_LABEL[type]}
+          </Link>
+        ))}
+      </nav>
+
+      <h2 id="controls" tabIndex={-1}>Shared controls</h2>
+      <p>Tap or click to play. Each game&rsquo;s gestures and shortcuts are listed below.
+        On a touch screen, drag on the board to play and scroll outside it to move the page.</p>
+      <table className="controls">
+        <thead><tr><th scope="col">Input</th><th scope="col">Action</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Tab, then arrow keys</th><td>Enter the board, then move between cells.</td></tr>
+          <tr><th scope="row">Home / End</th><td>Move to the first or last cell in the row.</td></tr>
+          <tr><th scope="row">Ctrl / Cmd + Z</th><td>Undo, just like the Undo button. A whole drag counts as one move.</td></tr>
+        </tbody>
+      </table>
+      <p>Reset clears your attempt; the timer keeps running. You can Undo a reset.
+        Rules links inside a game open a new tab so you can consult them without leaving your board.</p>
+
+      <h2 id="queens" tabIndex={-1}>Queens</h2>
+      <h3>Rules</h3>
+      <ul>
+        <li>Place exactly one queen in each row, each column and each coloured region.</li>
+        <li>Queens cannot touch, including diagonally. Distant diagonal queens are allowed.</li>
+        <li>Crosses are optional working notes and are not checked as part of the solution.</li>
+      </ul>
+      <h3>Controls</h3>
+      <p>Tap or click cycles a cell: empty → cross → queen → empty. Drag to add crosses;
+        start on a cross to erase crosses instead. Right-click toggles a cross.</p>
+      <p>Enter or Space places or removes a queen. X toggles a cross; Delete or Backspace
+        clears the cell. See <Link to={{ pathname: '/how-to-play', hash: '#crosses' }}>auto-mark</Link> for optional automatic crosses.</p>
+      <h3>Hints</h3>
+      <p>Use Hint or H to ask for a forced move and its explanation. Clear conflicts first.
+        If no move can be explained, the app says so rather than guessing.
+        Hints actually shown count in your result.</p>
+
+      <h2 id="star-battle" tabIndex={-1}>Star Battle</h2>
+      <h3>Rules</h3>
+      <ul>
+        <li>Fill each coloured region with exactly the number of stars printed in it.</li>
+        <li>Each row and column must contain the same number of stars. Daily boards require two.</li>
+        <li>Stars cannot touch, including diagonally. Crosses are optional notes.</li>
+      </ul>
+      <h3>Controls</h3>
+      <p>Use the same controls as Queens, with stars in place of queens:
+        tap cycles empty → cross → star → empty; drag adds or erases crosses;
+        right-click or X toggles a cross. Enter or Space toggles a star;
+        Delete or Backspace clears the cell. Star Battle has no hints.</p>
+      <h3 id="crosses" tabIndex={-1}>Crosses and auto-mark</h3>
+      <p>For Queens and Star Battle, a cross marks a cell you have ruled out. The app
+        does not validate crosses, so you can accidentally rule out a correct cell.</p>
+      <p>Auto-mark starts off and remembers your choice. In Queens, placing a queen
+        crosses the rest of its row, column and region, plus touching cells.
+        In Star Battle, placing a star crosses only touching cells.</p>
+
+      <h2 id="train-tracks" tabIndex={-1}>Train Tracks</h2>
+      <h3>Rules</h3>
+      <ul>
+        <li>Build one continuous track between the two fixed edge ends. Other cells may remain empty.</li>
+        <li>Every track arm must connect to a matching arm in the next cell.
+          All track pieces must belong to the same route, with no closed loops.</li>
+        <li>The numbers beside each row and column count the cells occupied by track.
+          Meet every count exactly.</li>
+        <li>Given pieces cannot be changed. They include both ends of the route.</li>
+      </ul>
+      <p>Choose Small (8×8), Medium (10×10) or Large (12×12). These are board sizes,
+        not difficulty ratings. Train Tracks has no hints.</p>
+      <h3 id="notes" tabIndex={-1}>Controls, notes and the picker</h3>
+      <p>Choose a straight, turn, note or eraser from the picker, then tap or drag across
+        cells to apply it. Tapping a cell that already holds your selection clears it.
+        Right-click erases a cell without changing your selection.</p>
+      <ul>
+        <li><strong>×</strong> means no track goes here.</li>
+        <li><strong>?</strong> means a track goes here, but you have not chosen its direction.</li>
+      </ul>
+      <p>Notes do not count as track pieces. The app does not validate them.</p>
+      <p>Keys 1–6 place the corresponding track piece in the focused cell.
+        X places ×; ? places an undecided note. Delete or Backspace clears the cell;
+        Enter or Space applies the selected picker entry.</p>
+
+      <h2 id="word-paths" tabIndex={-1}>Word Paths</h2>
+      <h3>Rules</h3>
+      <ul>
+        <li>Trace words through adjoining letters, moving up, down, left or right.</li>
+        <li>Use every available letter exactly once, with one word of each shown length.</li>
+        <li>Blocked cells and letters in accepted words cannot be selected.</li>
+        <li>Any word accepted by the board&rsquo;s English word list counts;
+          you do not have to find a particular set of answers. An accepted word can still lead to a dead end.</li>
+      </ul>
+      <h3>Controls</h3>
+      <p>Drag through letters and release to submit, or tap letters and press Submit.
+        Space selects the focused letter; Enter submits. Backspace removes the last
+        selected letter; Escape clears the selection. Undo removes the last accepted word.</p>
+      <p>The vocabulary is finite and does not recognize every English word.
+        Newer boards use a broader acceptance list while generated answers stay familiar.
+        See the <a href={`${import.meta.env.BASE_URL}word-paths-vocabulary-notice.txt`}>word list credits</a>.</p>
+      <p><Link to="/preview/word-paths">Try the Word Paths preview</Link>.
+        Preview progress is saved separately and does not affect daily stats.</p>
+
+      <h2>Finishing, sharing and stats</h2>
+      <p>A solved board locks and offers a result to share, optionally including the finished
+        board as a spoiler. Your first solve of each puzzle is recorded; replaying it does
+        not overwrite that time. Each Train Tracks size counts as its own puzzle.</p>
+      <p>Stats stay in this browser, with no account or uploads. Clearing site data removes
+        them. A streak counts each day once, however many puzzles you solve.</p>
 
       <h2>Add to your Home Screen</h2>
-      <p>Keep Daily Puzzles beside your other apps on iPhone:</p>
       <ol>
-        <li>Open <Link to="/">Today&rsquo;s puzzles</Link> in Safari.</li>
+        <li>Open <Link to="/">Today&rsquo;s puzzles</Link> in Safari on iPhone.</li>
         <li>Tap Share, then Add to Home Screen.</li>
         <li>Keep Open as Web App enabled if it appears, then tap Add.</li>
       </ol>
-      <p>Launch it from the new icon to play in its own window. An internet
-        connection is needed on the first visit. Auto appearance follows your phone&rsquo;s settings.</p>
-      <p>On iPhone, Safari and the Home Screen app keep separate saved data.
-        Your existing Safari progress stays in Safari; the app saves its own
-        progress and stats.</p>
+      <p>Open the new icon to play in its own window. The first visit needs internet.
+        Auto appearance follows your device settings. Safari and the Home Screen app
+        keep separate progress and stats.</p>
 
       <h2>Playing offline</h2>
       <p>Wait for “App ready offline”, then open the puzzles you want while online.
         Today saves its available boards; browsing the archive saves the boards it loads.
-        You can reopen these without a connection. If a download warning appears, keep
-        a connection to play unsaved boards. New or unopened puzzles need internet.</p>
-      <p>Train Tracks and Word Paths keep unfinished progress. Unfinished Queens and
-        Star Battle attempts restart on reload. Clearing site data or browser cache
-        eviction can remove downloads. Saved data belongs to this browser or Home Screen app.</p>
+        These boards can reopen without a connection. New or unsaved boards need internet;
+        if a download warning appears, keep a connection to play them.</p>
+      <p>Train Tracks and Word Paths keep unfinished progress. Queens and Star Battle
+        restart unfinished attempts on reload. Clearing site data or browser cache eviction
+        can remove downloads. Saved data belongs to this browser or Home Screen app.</p>
       <p>Updates wait until all Daily Puzzles windows are closed. Finish your game,
         then close and reopen them to use an update.</p>
-
-      <h2>The board</h2>
-      <p>
-        The daily board varies in size from 7&times;7 to 9&times;9, depending on the day and
-        the game. Cells that share a background colour form a{' '}
-        <strong>region</strong>. You fill cells with pieces; the pieces you place have to
-        satisfy every rule below at once, and the board lights up when they do.
-      </p>
-      <p>
-        A region holding more than one piece prints that number in its top-left cell. In
-        Queens every region holds exactly one, so nothing is printed &mdash; the number is
-        always one and drawing it in every top-left cell would only be noise.
-      </p>
-
-      <h2>Rules both games share</h2>
-      <ul>
-        <li>
-          <strong>Regions are filled exactly.</strong> Every region ends up holding precisely
-          the number of pieces it calls for, no more and no fewer.
-        </li>
-        <li>
-          <strong>No two pieces touch.</strong> Not side by side, not above and below, and not
-          diagonally. A piece rules out all eight cells around it.
-        </li>
-        <li>
-          <strong>Rows and columns are even.</strong> Every row and every column ends up with
-          the same number of pieces, which is one for Queens.
-        </li>
-      </ul>
-
-      <h2>Queens</h2>
-      <p>
-        Place one queen in each row, in each column and in each region, with no two queens
-        touching, not even at a corner. Crosses are yours to place as notes; see{' '}
-        <Link to={{ pathname: '/how-to-play', hash: '#crosses' }}>Crosses and auto-mark</Link>.
-      </p>
-
-      <h2>Star Battle</h2>
-      <p>
-        Place stars so that each region holds exactly the number printed in it, so that every
-        row and every column holds the same number of stars, and so that no two stars touch,
-        not even at a corner. On the daily board each region holds two, which puts two stars
-        in every row and column.
-      </p>
-      <p>
-        Both games offer hints, and both are computed here on the board as it stands rather
-        than looked up: a hint can explain <em>why</em> a cell is forced instead of just
-        revealing it. Star Battle needs a rule the other game does not — a region with two
-        cells left and two stars still to place is full, so both are stars — and the hint
-        engine applies it.
-      </p>
-
-      <h2>Train Tracks</h2>
-      <p>
-        Join every cell into <strong>one unbroken line</strong>. Each cell holds one of six
-        pieces &mdash; two straights and four turns &mdash; and a piece's arms say which of the
-        four sides it reaches out to.
-      </p>
-      <ul>
-        <li>
-          <strong>An arm must be met.</strong> If a piece points at a neighbouring cell, that
-          cell must point back. This is the rule the whole game rests on, and it is why two
-          side-by-side cells do not have to be joined: the pieces themselves decide.
-        </li>
-        <li>
-          <strong>It is one line, not several.</strong> Every piece belongs to the same path,
-          and a closed loop is not allowed.
-        </li>
-        <li>
-          <strong>Both ends leave the board.</strong> The two open ends run off the grid
-          rather than stopping at a cell.
-        </li>
-        <li>
-          <strong>Rows and columns are counted.</strong> The numbers beside the board say how
-          many cells the line occupies in each row and column. They are the clue, and they
-          must come out exactly.
-        </li>
-      </ul>
-      <p>
-        The pieces already on the board are <strong>givens</strong> and cannot be moved; they
-        are drawn on a sunken cell so you can tell them from your own. They always include the
-        two ends of the line, which is what fixes where the line starts and finishes before you
-        place anything.
-      </p>
-      <p>
-        Train Tracks has <strong>no hints and no difficulty band</strong> &mdash; there is no
-        hint engine for it yet, so rather than offer hints that might contradict the answer it
-        offers none.
-      </p>
-
-      <h2 id="notes">Notes, and the picker</h2>
-      <p>
-        A cell can hold a piece, or one of two notes, or nothing:
-      </p>
-      <ul>
-        <li>
-          <strong>&times;</strong> &mdash; no track goes here. Your own reasoning; the app
-          never checks it.
-        </li>
-        <li>
-          <strong>?</strong> &mdash; a track <em>does</em> go here, you just have not settled
-          which way it turns. A row clue that is nearly spent fixes that long before it fixes
-          the direction, and this is how you write that down.
-        </li>
-      </ul>
-      <p>
-        The row of buttons above the board is the <strong>picker</strong>. Pick what you want
-        and then click: each cell takes whatever is picked. Clicking a cell that already holds
-        it clears it, so a misjudged click is undone by clicking the same thing again. The
-        last entry is the eraser, which clears a cell whatever is in it.
-      </p>
-      <p>
-        <strong>Right-click</strong> &mdash; or a two-finger click on a trackpad &mdash;
-        erases the cell outright, without changing what the picker is set to.
-        <strong>Click and drag</strong> applies whatever is picked to every cell you cross, so
-        a run of exclusions is one stroke. A whole stroke is one Undo, however many cells it
-        covered.
-      </p>
-      <p>
-        From the keyboard: <strong>1</strong> to <strong>6</strong> put that track in the
-        focused cell without going near the picker, <strong>x</strong> marks it out,
-        <strong>?</strong> marks it undecided, <strong>Delete</strong> clears it, and
-        <strong>Enter</strong> puts the picked entry in it.
-      </p>
-
-      <h2 id="crosses">Crosses and auto-mark</h2>
-      <p>
-        A cross marks a cell you have ruled out. The app never checks them: they are your
-        working notes, and a cross on a cell that should hold a piece is simply a mistake you
-        can undo.
-      </p>
-      <p>
-        <strong>Auto-mark</strong> starts off, and the page remembers your choice for next
-        time. Switched on, placing a piece also crosses
-        off the cells that piece rules out &mdash; in Queens the rest of its row, its column and
-        its region plus the cells touching it; in Star Battle only the cells touching it. It
-        draws conclusions you may not have made yet, so leaving it off keeps the board showing
-        only what you have worked out yourself.
-      </p>
-
-      <h2>Controls</h2>
-      <p>
-        A left click cycles a cell through its states: empty, cross, piece, empty for the two
-        marks games; and for Train Tracks, empty and then each of the six pieces in turn,
-        because the piece <em>is</em> the direction it runs.
-      </p>
-      <table className="controls">
-        <thead>
-          <tr>
-            <th scope="col">Input</th>
-            <th scope="col">Does</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <th scope="row">Click a cell</th>
-            <td>
-              Cycles it: empty &rarr; cross &rarr; piece &rarr; empty. On Train Tracks, puts
-              whatever the picker is set to.
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">Drag across cells</th>
-            <td>
-              Applies one action to every cell you cross. On the marks games, starting on a
-              cross erases the crosses instead of adding them; on Train Tracks the stroke
-              applies the picker to every cell it crosses.
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">Right-click a cell</th>
-            <td>
-              Toggles a cross on the marks games; erases the cell on Train Tracks. Also a
-              two-finger click on a trackpad.
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">Arrow keys</th>
-            <td>Move between cells.</td>
-          </tr>
-          <tr>
-            <th scope="row">Home / End</th>
-            <td>Jump to the start or end of the row.</td>
-          </tr>
-          <tr>
-            <th scope="row">Enter or Space</th>
-            <td>Place or remove the piece in the focused cell.</td>
-          </tr>
-          <tr>
-            <th scope="row">X</th>
-            <td>Toggle a cross. Marks games only.</td>
-          </tr>
-          <tr>
-            <th scope="row">1 to 6</th>
-            <td>
-              Put that track straight into the focused cell, without going to the picker. Train
-              Tracks only.
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">?</th>
-            <td>Mark the cell undecided. Train Tracks only.</td>
-          </tr>
-          <tr>
-            <th scope="row">Delete or Backspace</th>
-            <td>Clear the cell.</td>
-          </tr>
-          <tr>
-            <th scope="row">H</th>
-            <td>Ask for a hint (Queens only).</td>
-          </tr>
-          <tr>
-            <th scope="row">Ctrl / Cmd + Z</th>
-            <td>Undo. A whole drag counts as one move.</td>
-          </tr>
-        </tbody>
-      </table>
-      <p>
-        The board is a single tab stop: one cell is in the tab order at a time and the arrow
-        keys move within it. On the marks games each cell announces its row, column and
-        contents, and says how many pieces its region needs and whether the piece standing
-        there conflicts. On Train Tracks it says what the piece is, what its row and column
-        need, and what is wrong with it if anything is.
-      </p>
-
-      <h2>Word Paths</h2>
-      <p>Find words by tracing adjoining letters up, down, left or right. Use every
-        letter once, with one word of each shown length. Blocked cells and letters
-        already used by a word cannot be selected. Drag and release to submit, or
-        tap letters and use Submit. Space selects a focused letter; Enter submits.
-        Backspace removes the last letter, Escape clears selection, and Undo removes
-        the last accepted word. Accepted words can lead to dead ends. The game uses
-        a finite English word list; it does not recognize every English word. New boards
-        use a broader acceptance list while generated answers stay familiar.</p>
-      <p><a href={`${import.meta.env.BASE_URL}word-paths-vocabulary-notice.txt`}>Word list credits</a>.</p>
-      <p><Link to="/preview/word-paths">Try the Word Paths preview</Link>. Preview
-        progress is saved separately and does not affect daily stats.</p>
-
-      <h2>Hints</h2>
-      <p>
-        In Queens, <strong>H</strong> or the <strong>Hint</strong> button names a cell and says
-        whether to place a queen there or cross it off. A hint is only given once the board has
-        no conflicts to clean up first, and only when the position actually forces a move &mdash;
-        otherwise it says so rather than guessing. Hints you were actually shown are counted in
-        your result, so a solve without them shares differently.
-      </p>
-
-      <h2>Finishing and sharing</h2>
-      <p>
-        When the board is solved it locks and offers two share texts: the result, and the same
-        text with the finished board included, which gives the puzzle away. Only your first
-        solve of a day is recorded &mdash; coming back to a board you have already solved tells
-        you the time you first set, rather than overwriting it.
-      </p>
-
-      <h2>Your stats</h2>
-      <p>
-        Solves are kept in this browser only. There is no account and nothing is uploaded, so
-        clearing your browser data clears them with it. A streak counts a day once, whether you
-        solved one puzzle that day or both.
-      </p>
-
-      <p className="status">
-        Ready? <Link to="/">Pick today&rsquo;s puzzles</Link>.
-      </p>
+      <p className="status">Ready? <Link to="/">Pick today&rsquo;s puzzles</Link>.</p>
     </section>
   )
 }

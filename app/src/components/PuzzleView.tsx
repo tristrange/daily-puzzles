@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { formatPuzzleLabel, puzzleOfToday } from '../domain/dates'
 import {
   clearCell,
@@ -466,6 +467,13 @@ export function PuzzleView({
   return (
     <article className="puzzle">
       <div className="puzzle-heading">
+        <Link
+          className="puzzle-rules"
+          to={{ pathname: '/how-to-play', hash: `#${state.puzzle.puzzleType}` }}
+          target="_blank"
+          rel="noopener"
+          aria-label={`${PUZZLE_TYPE_LABEL[state.puzzle.puzzleType]} rules (opens in a new tab)`}
+        >Rules <span aria-hidden="true">↗</span></Link>
         <p className="eyebrow">{formatPuzzleLabel(id, timeZone)}</p>
         <h1>{PUZZLE_TYPE_LABEL[state.puzzle.puzzleType]}</h1>
         <p className="puzzle-detail">

@@ -17,7 +17,7 @@ export function WordPathsPreviewPage() {
   const sample = WORD_PATHS_PREVIEWS[index]!
   return (
     <section className="puzzle-page word-preview">
-      <Link to="/how-to-play" className="back-link" aria-label="How to play"><span aria-hidden="true">←</span><span className="back-label">How to play</span></Link>
+      <Link to={{ pathname: '/how-to-play', hash: '#word-paths' }} className="back-link" aria-label="Word Paths rules"><span aria-hidden="true">←</span><span className="back-label">How to play</span></Link>
       <article className="puzzle">
         <div className="puzzle-heading">
           <p className="eyebrow">Playtest preview</p><h1>Word Paths</h1>
