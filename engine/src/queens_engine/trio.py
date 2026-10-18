@@ -1,4 +1,4 @@
-"""Isolated 9x9 sun/moon/star prototype; not registered for publication.
+"""Trio v1: a fixed 9x9 sun/moon/star puzzle.
 
 Exact line-pattern search does not use the candidate deduction engine.
 """
@@ -109,6 +109,13 @@ class SearchResult:
 def solve(grid: TrioGrid, *, max_attempts: int = 100_000) -> SearchResult:
     """Count up to two completions. One result means all alternatives were exhausted."""
     return _search(grid, 2, max_attempts)
+
+
+def count_solutions(grid: TrioGrid, *, limit: int = 2) -> int:
+    """Count up to `limit`; exhaustion raises instead of claiming uniqueness."""
+    if type(limit) is not int or limit < 1:
+        raise ValueError("limit must be a positive integer")
+    return len(_search(grid, limit, 100_000).solutions)
 
 
 def random_completion(prng: Prng, *, max_attempts: int = 100_000) -> tuple[int, ...]:

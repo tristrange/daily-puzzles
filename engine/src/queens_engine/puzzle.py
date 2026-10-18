@@ -20,6 +20,7 @@ from jsonschema.exceptions import ValidationError
 from .board import BoardError, JsonValue, Puzzle, PuzzleType, require_int
 from .rulebook import rulebook_for, split_puzzle_id
 from .track_sizes import track_variant
+from .tracks import TrackGrid
 
 REPO_ROOT: Final[Path] = Path(__file__).resolve().parents[3]
 SCHEMA_PATH: Final[Path] = REPO_ROOT / "schema" / "puzzle.schema.json"
@@ -126,16 +127,21 @@ def parse_puzzle(data: object) -> Puzzle:
         raise PuzzleParseError(str(error)) from error
 
     identifier = _require_str(record.get("id"), "id")
-    if puzzle_type is PuzzleType.WORD_PATHS:
+    if puzzle_type in (PuzzleType.WORD_PATHS, PuzzleType.TRIO):
         parsed = split_puzzle_id(identifier)
         if parsed is None or parsed[1] is not puzzle_type:
-            raise PuzzleParseError("word-paths requires a canonical date-words id")
+            raise PuzzleParseError(
+                f"{puzzle_type.value} requires a canonical date"
+                f"{rulebook_for(puzzle_type).id_suffix} id"
+            )
     variant = track_variant(identifier)
     if variant is not None:
         if split_puzzle_id(identifier) is None:
             raise PuzzleParseError("sized Train Tracks id must name a canonical calendar day")
-        if puzzle_type is not PuzzleType.TRAIN_TRACKS or (
-            board.width != variant.side or board.height != variant.side
+        if (
+            puzzle_type is not PuzzleType.TRAIN_TRACKS
+            or not isinstance(board, TrackGrid)
+            or (board.width != variant.side or board.height != variant.side)
         ):
             raise PuzzleParseError(
                 f"{variant.name} Train Tracks id requires a "

@@ -17,7 +17,7 @@ export function RulesPage() {
     <section className="rules">
       <h1 className="page-title">How to play</h1>
       <p className="status">
-        Fresh Queens, Star Battle, Train Tracks and Word Paths puzzles arrive every day.
+        Fresh Queens, Star Battle, Train Tracks, Word Paths and Trio puzzles arrive every day.
         Past puzzles stay in the <Link to="/archive">archive</Link>.
       </p>
       <nav className="game-picker" aria-label="Game rules">
@@ -26,7 +26,6 @@ export function RulesPage() {
             {PUZZLE_TYPE_LABEL[type]}
           </Link>
         ))}
-        <Link to={{ pathname: '/how-to-play', hash: '#trio' }}>Trio · preview</Link>
       </nav>
 
       <h2 id="controls" tabIndex={-1}>Shared controls</h2>
@@ -127,7 +126,7 @@ export function RulesPage() {
       <p><Link to="/preview/word-paths">Try the Word Paths preview</Link>.
         Preview progress is saved separately and does not affect daily stats.</p>
 
-      <h2 id="trio" tabIndex={-1}>Trio · preview</h2>
+      <h2 id="trio" tabIndex={-1}>Trio</h2>
       <h3>Rules</h3>
       <ul>
         <li>Fill the 9×9 board with sun, moon and star. Each row and column needs exactly three of each.</li>
@@ -145,7 +144,8 @@ export function RulesPage() {
         around the board; Ctrl/Cmd+Z undoes. Reset keeps the timer running and can be undone.</p>
       <p>Hint explains a deduction and highlights its target with a solid outline and supporting cells with dashed outlines.
         Apply move places a forced symbol or updates one cell&rsquo;s notes to the remaining possibilities.
-        Nothing changes until you apply; Undo restores the previous move. Hints ignore your notes as evidence.</p>
+        Nothing changes until you apply; Undo restores the previous move. Hints ignore your notes as evidence.
+        Hints actually shown count in your daily result, even if you dismiss or Undo them.</p>
       <p><Link to="/preview/trio">Play the five-board Trio preview</Link>. Attempts save
         separately in this browser. The timer pauses while the page is hidden or closed.
         Preview solves do not affect daily stats or streaks. No difficulty rating yet.</p>

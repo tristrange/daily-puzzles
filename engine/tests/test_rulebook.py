@@ -39,6 +39,8 @@ from queens_engine import (
 )
 from queens_engine.rulebook import RulebookError
 from queens_engine.tracks_gen import TrackGenerationError
+from queens_engine.trio import SIDE as TRIO_SIZE
+from queens_engine.trio import TrioGrid
 
 #: 5x5 is the cheapest board the generator makes and nothing here depends on size.
 SMALL = 5
@@ -232,7 +234,11 @@ class TestTheShapeOfAPuzzle:
         width, height = book.dimensions(puzzle)
         # Read off the board, not off the size the generator was asked for: the claim
         # is that the rulebook describes the board it was handed.
-        assert (width, height) == (puzzle.board.width, puzzle.board.height)
+        if isinstance(puzzle.board, TrioGrid):
+            assert (width, height) == (TRIO_SIZE, TRIO_SIZE)
+            assert width * height == len(puzzle.board.givens)
+        else:
+            assert (width, height) == (puzzle.board.width, puzzle.board.height)
 
     @pytest.mark.parametrize("book", rulebooks(), ids=lambda b: b.puzzle_type.value)
     def test_every_type_can_render_a_puzzle(self, book: Rulebook) -> None:

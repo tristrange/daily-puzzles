@@ -95,11 +95,11 @@ describe('companionPuzzleId', () => {
 describe('puzzleIdsForDay', () => {
   it('switches to three independently named tracks boards on activation', () => {
     expect(puzzleIdsForDay('2026-10-13')).toEqual([
-      '2026-10-13', '2026-10-13-star', '2026-10-13-tracks',
+      '2026-10-13', '2026-10-13-star', '2026-10-13-tracks', '2026-10-13-trio',
     ])
     expect(puzzleIdsForDay('2026-10-14')).toEqual([
       '2026-10-14', '2026-10-14-star', '2026-10-14-tracks-small',
-      '2026-10-14-tracks-medium', '2026-10-14-tracks-large',
+      '2026-10-14-tracks-medium', '2026-10-14-tracks-large', '2026-10-14-trio',
     ])
   })
 
@@ -111,13 +111,14 @@ describe('puzzleIdsForDay', () => {
       '2026-09-30',
       '2026-09-30-star',
       '2026-09-30-tracks',
+      '2026-09-30-trio',
     ])
   })
 
   it('does not backfill Word Paths before activation', () => {
     expect(PUZZLE_TYPE_PUBLISHED['word-paths']).toBe(true)
     expect(puzzleIdsForDay('2026-09-30')).toEqual([
-      '2026-09-30', '2026-09-30-star', '2026-09-30-tracks',
+      '2026-09-30', '2026-09-30-star', '2026-09-30-tracks', '2026-09-30-trio',
     ])
   })
 })

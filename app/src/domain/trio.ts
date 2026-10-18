@@ -1,4 +1,4 @@
-/** Fixed-size playtest model. Daily-file registration follows human playtesting. */
+/** Fixed-size Trio rules, shared by daily puzzles and the preview. */
 export type TrioValue = 0 | 1 | 2 | 3
 export type TrioSymbol = Exclude<TrioValue, 0>
 export interface TrioRelation { readonly first: number; readonly second: number; readonly kind: 'same' | 'different' }
@@ -12,25 +12,54 @@ export const TRIO_LINES = [
 ]
 export const isTrioValue = (value: unknown): value is TrioValue => typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 3
 
-export function parseTrioBoard(raw: unknown): TrioBoard {
-  if (!raw || typeof raw !== 'object') throw Error('Invalid Trio board')
-  const data = raw as Record<string, unknown>
-  if (typeof data['id'] !== 'string' || !/^trio-preview-[1-9]\d*$/.test(data['id'])
-    || !Array.isArray(data['givens']) || data['givens'].length !== 81 || !data['givens'].every(isTrioValue)
-    || !Array.isArray(data['relations'])) throw Error('Invalid Trio preview data')
+export class TrioGridError extends Error {
+  constructor(message: string) { super(message); this.name = 'TrioGridError' }
+}
+
+function parseTrioContents(givens: unknown, rawRelations: unknown): Pick<TrioBoard, 'givens' | 'relations'> {
+  if (!Array.isArray(givens) || givens.length !== 81 || !givens.every(isTrioValue)
+    || !Array.isArray(rawRelations)) throw new TrioGridError('Invalid Trio board data')
   const seen = new Set<string>()
-  const relations: TrioRelation[] = data['relations'].map((item: unknown) => {
-    if (!item || typeof item !== 'object') throw Error('Invalid Trio relation')
+  const relations: TrioRelation[] = rawRelations.map((item: unknown) => {
+    if (!item || typeof item !== 'object') throw new TrioGridError('Invalid Trio relation')
     const edge = item as Record<string, unknown>
     const a = edge['first'], b = edge['second'], kind = edge['kind']
     if (typeof a !== 'number' || !Number.isInteger(a) || typeof b !== 'number' || !Number.isInteger(b)
       || a < 0 || a >= b || b >= 81 || (kind !== 'same' && kind !== 'different')
       || Math.abs(Math.floor(a / 9) - Math.floor(b / 9)) + Math.abs(a % 9 - b % 9) !== 1
-      || seen.has(`${a}:${b}`)) throw Error('Invalid Trio relation')
+      || seen.has(`${a}:${b}`)) throw new TrioGridError('Invalid Trio relation')
     seen.add(`${a}:${b}`)
     return { first: a, second: b, kind }
   })
-  return { id: data['id'], givens: [...data['givens']], relations }
+  return { givens: [...givens], relations }
+}
+
+export function parseTrioBoard(raw: unknown): TrioBoard {
+  if (!raw || typeof raw !== 'object') throw Error('Invalid Trio board')
+  const data = raw as Record<string, unknown>
+  if (typeof data['id'] !== 'string' || !/^trio-preview-[1-9]\d*$/.test(data['id'])) throw Error('Invalid Trio preview data')
+  return { id: data['id'], ...parseTrioContents(data['givens'], data['relations']) }
+}
+
+/** Daily envelope geometry; preview identities remain confined to parseTrioBoard. */
+export class TrioGrid implements TrioBoard {
+  readonly size = 9
+  readonly width = 9
+  readonly height = 9
+  readonly cellCount = 81
+  readonly id: string
+  readonly givens: readonly TrioValue[]
+  readonly relations: readonly TrioRelation[]
+
+  constructor(id: string, givens: unknown, relations: unknown) {
+    const checked = parseTrioContents(givens, relations)
+    this.id = id
+    this.givens = checked.givens
+    this.relations = checked.relations
+  }
+
+  index(row: number, col: number): number { return row * 9 + col }
+  coords(cell: number): { row: number; col: number } { return { row: Math.floor(cell / 9), col: cell % 9 } }
 }
 
 export function createTrioGame(board: TrioBoard): TrioGame {

@@ -18,7 +18,9 @@ interface Expect {
   seed: number;
   generatorVersion: number;
   type: string;
-  regionCapacity: number[];
+  regionCapacity?: number[];
+  givens?: number[];
+  relations?: unknown[];
   difficulty: number | null;
 }
 
@@ -80,7 +82,12 @@ describe("conformance: schema-cases", () => {
       expect(puzzle.board.width).toBe(expected.size);
       expect(puzzle.seed).toBe(expected.seed);
       expect(puzzle.generatorVersion).toBe(expected.generatorVersion);
-      expect([...marksBoard(puzzle).regionCapacity]).toEqual(expected.regionCapacity);
+      if (expected.type === 'trio') {
+        expect(puzzle.board.height).toBe(expected.size);
+        expect(puzzle.board).toMatchObject({ givens: expected.givens, relations: expected.relations });
+      } else {
+        expect([...marksBoard(puzzle).regionCapacity]).toEqual(expected.regionCapacity);
+      }
       expect(puzzle.difficulty).toBe(expected.difficulty);
     } else {
       let message: string | null = null;

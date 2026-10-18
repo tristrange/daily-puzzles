@@ -1,4 +1,4 @@
-"""Behavioural contract for the isolated, unpublished Trio prototype."""
+"""Behavioural contract for the frozen Trio rules and independent exact search."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from queens_engine.trio import (
     TrioContradictionError,
     TrioGrid,
     TrioSearchLimitError,
+    count_solutions,
     deduce,
     is_solution,
     solve,
@@ -35,10 +36,16 @@ def test_relations_cannot_wrap_rows_or_run_diagonally(pair: tuple[int, int]) -> 
 
 def test_exact_counter_distinguishes_zero_one_and_multiple_solutions() -> None:
     assert solve(TrioGrid(SOLUTION)).solutions == (SOLUTION,)
+    assert count_solutions(TrioGrid(SOLUTION)) == 1
     ambiguous = tuple(v if v == 3 else 0 for v in SOLUTION)
     assert len(solve(TrioGrid(ambiguous)).solutions) == 2
+    assert count_solutions(TrioGrid(ambiguous)) == 2
+    assert count_solutions(TrioGrid(ambiguous), limit=1) == 1
     contradictory = (1, 1, 1, *SOLUTION[3:])
     assert solve(TrioGrid(contradictory)).solutions == ()
+    assert count_solutions(TrioGrid(contradictory)) == 0
+    with pytest.raises(ValueError, match="positive"):
+        count_solutions(TrioGrid(SOLUTION), limit=0)
 
 
 def test_completion_preserves_givens_and_allows_repeated_rows_and_diagonal_runs() -> None:

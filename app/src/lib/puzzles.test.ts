@@ -202,11 +202,13 @@ describe('listPublishedPuzzles', () => {
       return spaShellResponse()
     }
     await listPublishedPuzzles('2026-10-03', probeFetcher)
-    // This pre-launch window has three families and only legacy tracks slots.
+    // This window has three legacy families plus eight Trio days since September 26.
     // Missing companion files still need a probe before being reported absent.
-    expect(probes).toHaveLength(ARCHIVE_WINDOW_DAYS * 3)
+    expect(probes).toHaveLength(ARCHIVE_WINDOW_DAYS * 3 + 8)
     expect(probes).toContain('2026-10-03.json')
     expect(probes).toContain('2026-10-03-star.json')
+    expect(probes).toContain('2026-09-26-trio.json')
+    expect(probes).not.toContain('2026-09-25-trio.json')
   })
 
   it('lists both puzzles of a day, the Queens one first', async () => {
@@ -239,7 +241,7 @@ describe('listPublishedPuzzles', () => {
       return response
     }
     const found = await listPublishedPuzzles('2026-10-03', countingFetcher)
-    expect(answeredOk).toBe(ARCHIVE_WINDOW_DAYS * 3)
+    expect(answeredOk).toBe(ARCHIVE_WINDOW_DAYS * 3 + 8)
     expect(found).toEqual(queens)
   })
 

@@ -16,6 +16,7 @@ const DESCRIPTION: Record<PuzzleType, string> = {
   'star-battle': 'Place stars to satisfy each row, column and region. Keep them apart.',
   'train-tracks': 'Connect the ends with one track. Match every row and column count.',
   'word-paths': 'Find words along adjoining letters. Use every letter once.',
+  trio: 'Balance sun, moon and star. Three of each in every row and column.',
 }
 
 /**
@@ -61,10 +62,6 @@ export function HomePage() {
       {state.status === 'ready' && (
         <TodayCards probes={state.probes} solved={solved} />
       )}
-      <aside className="trio-preview-entry">
-        <div><p className="eyebrow">New playtest</p><h2>Meet Trio</h2><p>Sun, moon and star. Three symbols, one balanced board.</p></div>
-        <Link className="tool-button" to="/preview/trio">Try Trio <span aria-hidden="true">→</span></Link>
-      </aside>
       <div className="today-more">
         <p>Another round?</p>
         <Link to="/archive">Explore the archive <span aria-hidden="true">→</span></Link>

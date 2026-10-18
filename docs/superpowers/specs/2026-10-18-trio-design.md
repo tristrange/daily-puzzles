@@ -87,3 +87,14 @@ fifth daily family is registered. The existing Python engine independently
 verifies these exact preview inputs, and client tests use measured answers only
 as test data. Daily schema/ID integration and generator freezing follow
 playtesting. See [preview plan](../plans/2026-10-18-trio-preview.md).
+
+## Daily rollout after playtesting
+
+On October 19 the user approved daily Trio publication and a backlog matching
+Star Battle. Freeze the measured construction as generator version 1; retain
+9×9 and no difficulty label. Register `YYYY-MM-DD-trio` with a `size`, `givens`
+and `relations` board envelope, no stored solution, and September 26 as the
+shared activation date. Seed replay, direct-deduction completion and independent
+uniqueness remain required. Preserve preview attempts separately from daily
+progress/results. Backfill through October 22 and let the existing daily
+publisher maintain future slots; no new scheduler or CI policy is needed.

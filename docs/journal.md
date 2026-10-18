@@ -1365,3 +1365,37 @@ Trio slice. Word Paths stays last. No daily publishing, stats, dependency, engin
 or CI changes are included.
 
 [Phone hint](images/trio-hint-phone.png) · [Desktop hint](images/trio-hint-desktop.png)
+
+## 2026-10-19 — Daily Trio and archive backlog
+
+Promoted the playtested Trio rules and explained hints into the existing daily
+pipeline. The fixed 9×9 recipe is frozen as version 1, with no difficulty label.
+The shared schema and both readers enforce the canonical date-trio identity,
+81 givens and ordered adjacent same/different relations. Answer fields, unknown
+versions and difficulty claims are rejected. A frozen pilot digest guards replay.
+
+Added 27 new answer-free files, September 26 through October 22. Each was
+regenerated from its recorded seed, independently counted as unique and completed
+by direct deduction. Existing files from the other games were not rewritten.
+The dated activation gate makes the backlog visible through today while keeping
+future files out of the archive. The existing daily publisher maintains new slots
+and skips these already published Trio files.
+
+Daily Trio now appears on Today and in Archive, Stats and sharing. Daily progress
+uses a separate storage prefix and persists shown hints; preview keys and daily
+results stay independent. First-solve time and hint count win over replays,
+including shared results. A hint that finishes the board announces completion
+instead of promising Undo after the completion lock. The fixed-size caption is
+omitted on narrow daily screens so the ninth row remains visible.
+
+All 665 app tests and 648 engine tests pass. Typecheck and the GitHub Pages build
+pass; Python lint/format/type checks are clean. App lint retains only the existing
+TracksStage warning. Shared fixtures exercise structural and semantic rejection.
+Browser checks covered Today's dated link, the 24 released archive dates, hint
+notes and reload, final hint completion, Stats filtering, first-result sharing on
+replay and spoiler sharing. The board fits at 320×667 and 375×667; offline update
+activation was exercised by closing old tabs. Physical iPhone and airplane-mode
+checks remain unverified. No dependencies or CI settings changed.
+
+[Daily phone board](images/trio-daily-phone.png) ·
+[Today's lineup](images/trio-daily-today.png)

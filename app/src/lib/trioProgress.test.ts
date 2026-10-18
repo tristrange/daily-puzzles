@@ -32,3 +32,25 @@ it('keeps play usable when storage is unavailable', () => {
   expect(readTrioProgress(board)).toBeNull()
   expect(storeTrioProgress(board, createTrioGame(board), 0)).toBe(false)
 })
+
+it('keeps daily hints and attempts separate from all preview data', () => {
+  const values = new Map<string, string>()
+  vi.stubGlobal('localStorage', { getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) })
+  const preview = parseTrioBoard(raw[0])
+  const daily = { ...preview, id: '2026-10-18-trio' }
+  const game = createTrioGame(preview)
+  storeTrioProgress(preview, game, 123)
+  const previewBefore = values.get(`daily-puzzles.trio-preview.v1.${preview.id}`)
+  expect(storeTrioProgress(daily, game, 456, true, 3)).toBe(true)
+  expect(readTrioProgress(daily, true)).toEqual({ game, elapsedMs: 456, hints: 3 })
+  expect(readTrioProgress(daily)).toBeNull()
+  expect(readTrioProgress(preview, true)).toBeNull()
+  expect(readTrioProgress(preview)).toEqual({ game, elapsedMs: 123 })
+  expect(values.get(`daily-puzzles.trio-preview.v1.${preview.id}`)).toBe(previewBefore)
+  const dailyKey = `daily-puzzles.trio.v1.${daily.id}`
+  const stored = JSON.parse(values.get(dailyKey)!)
+  values.set(dailyKey, JSON.stringify({ ...stored, hints: -1 }))
+  expect(readTrioProgress(daily, true)).toBeNull()
+  expect(storeTrioProgress(daily, game, 0, true, -1)).toBe(false)
+})

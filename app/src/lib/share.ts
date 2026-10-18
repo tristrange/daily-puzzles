@@ -234,3 +234,10 @@ export function buildWordSolutionShareText(result: ShareResult, game: WordGame):
   })
   return [...headerLines(result), '', ...words, '', ...(result.streak > 1 ? [`${result.streak}-day streak`] : []), result.link].join('\n')
 }
+
+/** Explicit spoiler share: Trio symbols in their solved positions. */
+export function buildTrioSolutionShareText(result: ShareResult, cells: readonly number[]): string {
+  const symbols = ['·', '☀', '☾', '★']
+  const rows = Array.from({ length: 9 }, (_, row) => cells.slice(row * 9, row * 9 + 9).map((value) => symbols[value] ?? '·').join(' '))
+  return [...headerLines(result), '', ...rows, '', ...(result.streak > 1 ? [`${result.streak}-day streak`] : []), result.link].join('\n')
+}
