@@ -67,10 +67,7 @@ describe('Word Paths file contract', () => {
   it('registers identity without changing pre-launch daily slots', () => {
     expect(puzzleIdFor('2026-10-14', 'word-paths')).toBe('2026-10-14-words')
     expect(PUZZLE_TYPE_PUBLISHED['word-paths']).toBe(true)
-    expect(puzzleIdsForDay('2026-10-14')).toEqual([
-      '2026-10-14', '2026-10-14-star', '2026-10-14-tracks-small',
-      '2026-10-14-tracks-medium', '2026-10-14-tracks-large',
-    ])
+    expect(puzzleIdsForDay('2026-10-14')).not.toContain('2026-10-14-words')
   })
 })
 

@@ -84,7 +84,7 @@ describe('conformance: id-cases', () => {
     }
     if (case_.valid) {
       expect(parsePuzzle(data).id).toBe(data.id)
-      expect(parsePuzzle(data).board.width).toBe(data.board.width)
+      expect(parsePuzzle(data).board.width).toBe(data.board.width ?? data.board.size)
     } else {
       expect(() => parsePuzzle(data)).toThrow()
     }

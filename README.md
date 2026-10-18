@@ -7,9 +7,10 @@ app that plays them.
 **Live site → [tristrange.github.io/daily-puzzles](https://tristrange.github.io/daily-puzzles/)**
 
 No server, no database and no account. The entire product is a static site and a directory
-of committed puzzle files. **Queens**, **Star Battle**, **Train Tracks**, and
-**Word Paths** each keep their own first solve. Word Paths daily slots start on
-October 15, 2026; its preview remains available independently.
+of committed puzzle files. **Queens**, **Star Battle**, **Train Tracks**,
+**Word Paths** and **Trio** each keep their own first solve. Word Paths daily slots start on
+October 15, 2026. Trio's archive starts on September 26, 2026, backfilled at launch;
+both previews remain available independently.
 
 ---
 
@@ -65,13 +66,15 @@ boards retain their frozen vocabulary. Uniqueness is not claimed across every
 English word. No difficulty rating or hints are claimed.
 Daily progress and results are separate from the [ten-board preview](https://tristrange.github.io/daily-puzzles/#/preview/word-paths).
 
-**Trio preview** — balance sun, moon and star on a 9×9 board: three of each per
+**Trio** — balance sun, moon and star on a 9×9 board: three of each per
 row and column, no three identical symbols consecutively, and adjacent same/different
-clues. [Try the five-board preview](https://tristrange.github.io/daily-puzzles/#/preview/trio).
-It includes pencil notes, undo/reset, explained hints and separate saved attempts.
+clues. [Play the daily archive](https://tristrange.github.io/daily-puzzles/#/archive?game=trio).
+Each daily board is uniquely solvable and completes through direct deductions.
+It includes pencil notes, undo/reset, explained hints and saved attempts.
 Hints highlight their target and supporting cells; Apply move places a forced
-symbol or updates one cell’s candidate notes, with Undo available. Preview solves
-never affect daily stats; daily publication and difficulty ratings are not enabled.
+symbol or updates one cell's candidate notes, with Undo available until solved.
+The [five-board preview](https://tristrange.github.io/daily-puzzles/#/preview/trio)
+retains separate attempts and never affects daily stats. No difficulty rating is claimed.
 
 ---
 
@@ -87,7 +90,7 @@ can then be played without a connection. New or unopened puzzles need internet.
 
 Safari and the installed iPhone app keep separate progress, stats, settings and
 downloads. Open the installed app online before relying on it offline.
-Train Tracks and Word Paths resume unfinished games; Queens and Star Battle
+Train Tracks, Word Paths and Trio resume unfinished games; Queens and Star Battle
 restart unfinished attempts on reload. Browser cache eviction or clearing site
 data can remove downloads. Updates wait until all app windows close; finish
 your game, then close and reopen them. No account or syncing is added.

@@ -7,9 +7,20 @@ import { applyTrioHint, findTrioHint, type TrioHint } from '../domain/trioHints'
 import { TrioBoard } from './TrioBoard'
 import { TrioSymbol } from './TrioSymbol'
 import { TrioHintPanel } from './TrioHintPanel'
+import type { Puzzle } from '../domain/puzzle'
+import { puzzleOfToday } from '../domain/dates'
+import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } from '../lib/stats'
+import { buildShareText, buildTrioSolutionShareText, copyText, puzzleShareLink } from '../lib/share'
+import { SolvedPanel } from './SolvedPanel'
 
-export function TrioStage({ board }: { board: Board }) {
-  const [initial] = useState(() => readTrioProgress(board))
+export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) {
+  const daily = puzzle !== undefined
+  const [initial] = useState(() => readTrioProgress(board, daily))
+  const hintsUsed = useRef(initial?.hints ?? 0)
+  const [stats, setStats] = useState<Stats | null>(null)
+  const [firstSolve, setFirstSolve] = useState<SolveRecord | null>(null)
+  const [copied, setCopied] = useState<'idle' | 'result' | 'solution' | 'failed'>('idle')
+  const [shareText, setShareText] = useState<string | null>(null)
   const [game, setGame] = useState(() => initial?.game ?? createTrioGame(board))
   const current = useRef(game)
   const before = useRef<TrioGame | null>(null)
@@ -35,8 +46,8 @@ export function TrioStage({ board }: { board: Board }) {
   const save = useCallback(() => {
     const time = settle()
     setElapsed(time)
-    setSaving(storeTrioProgress(board, current.current, time))
-  }, [board, settle])
+    setSaving(storeTrioProgress(board, current.current, time, daily, hintsUsed.current))
+  }, [board, daily, settle])
   useEffect(() => {
     if (solved) return
     clock.current = { ...clock.current, lastAt: performance.now(), visible: !document.hidden }
@@ -48,9 +59,9 @@ export function TrioStage({ board }: { board: Board }) {
       clearInterval(timer)
       document.removeEventListener('visibilitychange', flush)
       window.removeEventListener('pagehide', flush)
-      if (!completed.current) storeTrioProgress(board, current.current, settle())
+      if (!completed.current) storeTrioProgress(board, current.current, settle(), daily, hintsUsed.current)
     }
-  }, [board, save, settle, solved])
+  }, [board, daily, save, settle, solved])
 
   const change = (next: TrioGame) => { current.current = next; setGame(next) }
   const remember = (previous: TrioGame) => setHistory((past) => [...past.slice(-99), previous])
@@ -66,7 +77,15 @@ export function TrioStage({ board }: { board: Board }) {
     else if (previous !== current.current) {
       remember(previous)
       if (isTrioSolved(board, current.current.cells)) {
-        setElapsed(settle())
+        const elapsedMs = settle()
+        setElapsed(elapsedMs)
+        if (puzzle) {
+          const when = Date.now()
+          setFirstSolve(readStoredStats().find((record) => record.id === puzzle.id) ?? null)
+          setStats(summarise(storeSolve({ id: puzzle.id, puzzleType: 'trio', size: 9,
+            elapsedMs, hints: hintsUsed.current, solvedAt: when }),
+            puzzleOfToday(new Date(when), Intl.DateTimeFormat().resolvedOptions().timeZone)))
+        }
         completed.current = true
         clock.current.visible = false
         setSolved(true)
@@ -95,6 +114,7 @@ export function TrioStage({ board }: { board: Board }) {
     if (completed.current || before.current) return
     const result = findTrioHint(board, current.current)
     setHint(result.kind === 'hint' ? result.hint : null)
+    if (result.kind === 'hint') { hintsUsed.current += 1; save() }
     setMessage(result.kind === 'contradiction' ? 'Your placed symbols lead to a contradiction. Check your entries or Undo before asking for a hint.'
       : result.kind === 'none' ? 'These rules found no further deduction. This does not prove that guessing is necessary.' : '')
   }
@@ -111,8 +131,22 @@ export function TrioStage({ board }: { board: Board }) {
     begin()
     change(next)
     end(false)
-    setMessage('Hint applied. Undo brings back your previous symbols and notes.')
+    setMessage(completed.current ? '' : 'Hint applied. Undo brings back your previous symbols and notes.')
     hintButton.current?.focus({ preventScroll: true })
+  }
+
+  const share = async (variant: 'result' | 'solution') => {
+    if (!puzzle) return
+    const counted = firstSolve ?? { elapsedMs: elapsed, hints: hintsUsed.current }
+    const result = { puzzleId: puzzle.id, puzzleType: 'trio' as const, width: 9, height: 9,
+      elapsedMs: counted.elapsedMs, hints: counted.hints, streak: stats?.currentStreak ?? 0,
+      link: puzzleShareLink(puzzle.id) }
+    const text = variant === 'solution' ? buildTrioSolutionShareText(result, game.cells) : buildShareText(result)
+    const ok = await copyText(text)
+    setCopied(ok ? variant : 'failed')
+    setShareText(ok ? null : text)
+    setMessage(ok ? (variant === 'solution' ? 'Share text with the solution copied — that one gives the puzzle away.' : 'Share text copied to the clipboard.')
+      : 'Could not reach the clipboard — the share text is shown below, ready to copy.')
   }
 
   return <div className="trio-game" ref={stage}>
@@ -134,8 +168,9 @@ export function TrioStage({ board }: { board: Board }) {
     <TrioBoard board={board} game={game} brush={brush} pencil={pencil} locked={solved} conflicts={conflicts} instructionsId={hint ? `${instructionsId} ${hintId}` : instructionsId} hint={hint}
       onApply={apply} onBegin={begin} onEnd={end} onUndo={undo} onPencil={() => setPencil(!pencil)} />
     <p className={`trio-feedback${conflicts.size ? ' error' : ''}`} role="status">
-      {solved ? `Solved in ${formatTime(elapsed)}! Choose another board to keep playing.` : conflicts.size ? `${conflicts.size} cells conflict with the rules. You can keep editing or Undo.` : message || '\u00a0'}
+      {solved ? message || `Solved in ${formatTime(elapsed)}!${daily ? '' : ' Choose another board to keep playing.'}` : conflicts.size ? `${conflicts.size} cells conflict with the rules. You can keep editing or Undo.` : message || '\u00a0'}
     </p>
+    {daily && <SolvedPanel solved={solved} firstSolve={firstSolve} streak={stats?.currentStreak ?? 0} copied={copied} shareText={shareText} onShare={share} />}
     {hint && <TrioHintPanel hint={hint} id={hintId} onApply={acceptHint} onDismiss={dismissHint} onShowCell={showHintCell} />}
     {!saving && !solved && <p className="status error" role="status">Progress can&rsquo;t be saved. Keep this page open to retain your attempt.</p>}
     <p className="word-note" id={instructionsId}>Three of each symbol in every row and column. No three identical symbols consecutively.

@@ -10,11 +10,11 @@
     "id": {
       "description": "Puzzle date in UTC, YYYY-MM-DD, with an optional family suffix for a companion puzzle of that day. Also the filename stem. The suffix list is generated from `conformance/id-cases/manifest.json`, which also pins the engine's `Rulebook.id_suffix` and the app's `PUZZLE_TYPE_SUFFIX` to it. Escapes are kept to what both regex flavours accept: ajv compiles patterns with the `u` flag, which rejects a hyphen escaped the Python way.",
       "type": "string",
-      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(-tracks-medium|-tracks-small|-tracks-large|-tracks|-words|-star)?$"
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(-tracks-medium|-tracks-small|-tracks-large|-tracks|-words|-star|-trio)?$"
     },
     "type": {
       "description": "Puzzle family. Selects the adapter in the app.",
-      "enum": ["queens", "star-battle", "train-tracks", "word-paths"]
+      "enum": ["queens", "star-battle", "train-tracks", "word-paths", "trio"]
     },
     "seed": {
       "description": "Seed for the deterministic PRNG, so any puzzle can be replayed exactly.",
@@ -149,6 +149,88 @@
               "wordLengths": {
                 "type": "array", "minItems": 1, "maxItems": 4, "uniqueItems": true,
                 "items": { "type": "integer", "minimum": 3, "maximum": 6 }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "trio"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "not": {
+          "properties": {
+            "difficulty": {}
+          },
+          "required": [
+            "difficulty"
+          ]
+        },
+        "properties": {
+          "generatorVersion": {
+            "const": 1
+          },
+          "board": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "size",
+              "givens",
+              "relations"
+            ],
+            "properties": {
+              "size": {
+                "const": 9
+              },
+              "givens": {
+                "type": "array",
+                "minItems": 81,
+                "maxItems": 81,
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 3
+                }
+              },
+              "relations": {
+                "type": "array",
+                "maxItems": 144,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "first",
+                    "second",
+                    "kind"
+                  ],
+                  "properties": {
+                    "first": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 80
+                    },
+                    "second": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 80
+                    },
+                    "kind": {
+                      "enum": [
+                        "same",
+                        "different"
+                      ]
+                    }
+                  }
+                }
               }
             }
           }

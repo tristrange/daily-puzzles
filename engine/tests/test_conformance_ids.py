@@ -17,7 +17,7 @@ from tools.schema_ids import current_pattern, expected_pattern
 
 from queens_engine.board import PuzzleType
 from queens_engine.puzzle import CONFORMANCE_DIR, PuzzleParseError, parse_puzzle
-from queens_engine.rulebook import puzzle_id, rulebooks, split_puzzle_id
+from queens_engine.rulebook import puzzle_id, rulebook_for, rulebooks, split_puzzle_id
 from queens_engine.track_sizes import TRACK_SIZES_START, TRACK_VARIANTS
 
 CASES_DIR = CONFORMANCE_DIR / "id-cases"
@@ -140,7 +140,12 @@ def test_sized_envelope_contract(case: dict[str, Any]) -> None:
     if case["valid"]:
         puzzle = parse_puzzle(data)
         assert puzzle.id == data["id"]
-        assert puzzle.board.width == data["board"]["width"]
+        width, height = rulebook_for(puzzle.puzzle_type).dimensions(puzzle)
+        board = data["board"]
+        assert (width, height) == (
+            board.get("width", board.get("size")),
+            board.get("height", board.get("size")),
+        )
     else:
         with pytest.raises(PuzzleParseError):
             parse_puzzle(data)

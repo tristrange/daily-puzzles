@@ -133,9 +133,10 @@ class TestPublishWindow:
         # claim is stated over all of them: a unique but unrated board says so
         # instead of printing a number, and exactly the rated one prints a score.
         scored = [line for line in lines if " score " in line]
-        unrated = [line for line in lines if "(unique, not logic-gated)" in line]
+        unrated = [line for line in lines if "(unique," in line]
         assert len(scored) == 1
         assert len(unrated) == len(PUBLISHED) - 1
+        assert any("(unique, direct deductions)" in line for line in unrated)
         for line in unrated:
             assert "score" not in line
 

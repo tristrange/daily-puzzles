@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     # cycle: `tracks.py` reaches for the solver's default limit, and the solver
     # builds `Board`s.
     from .tracks import TrackGrid
+    from .trio import TrioGrid
     from .word_paths import WordGrid
 
 MIN_SIZE: Final[int] = 2
@@ -40,6 +41,7 @@ class PuzzleType(StrEnum):
     STAR_BATTLE = "star-battle"
     TRAIN_TRACKS = "train-tracks"
     WORD_PATHS = "word-paths"
+    TRIO = "trio"
 
 
 class BoardError(ValueError):
@@ -186,7 +188,7 @@ class Puzzle:
     seed: int
     generator_version: int
     #: Family-specific grid. Shared readers ask the rulebook for dimensions.
-    board: Board | TrackGrid | WordGrid
+    board: Board | TrackGrid | WordGrid | TrioGrid
     #: Band index, 1-based into `LEVEL_NAMES`. `None` for boards published
     #: before the weekly ramp, and for anything generated outside a target.
     difficulty: int | None = None

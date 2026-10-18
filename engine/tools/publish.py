@@ -270,7 +270,13 @@ def main(argv: list[str] | None = None) -> int:
                 width, height = book.dimensions(puzzle)
                 print(
                     f"  seed {puzzle.seed} size {width}x{height}{band}"
-                    + (f" score {score:g}" if score is not None else " (unique, not logic-gated)")
+                    + (
+                        f" score {score:g}"
+                        if score is not None
+                        else " (unique, direct deductions)"
+                        if book.logic_only
+                        else " (unique, not logic-gated)"
+                    )
                 )
         window += timedelta(days=1)
     return 0

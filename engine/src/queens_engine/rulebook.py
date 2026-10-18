@@ -28,7 +28,7 @@ from abc import ABC, abstractmethod
 from dataclasses import replace
 from datetime import date
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, Final, cast
 
 from .board import (
     Board,
@@ -56,6 +56,13 @@ from .track_sizes import TRACK_SIZES_START, TRACK_VARIANTS, TrackSize, track_var
 from .tracks import TrackGrid
 from .tracks import count_solutions as count_track_solutions
 from .tracks_gen import TrackGenerationError, generate_grid
+from .trio import SIDE as TRIO_SIZE
+from .trio import LogicResult, Relation, TrioGrid
+from .trio import count_solutions as count_trio_solutions
+from .trio import deduce as deduce_trio
+from .trio_gen import GENERATOR_VERSION as TRIO_GENERATOR_VERSION
+from .trio_gen import TrioGenerationError
+from .trio_gen import generate as generate_trio_grid
 from .word_paths import (
     SearchBudget,
     WordGrid,
@@ -175,14 +182,14 @@ class Rulebook(ABC):
 
     @abstractmethod
     def count_solutions(
-        self, board: Board | TrackGrid | WordGrid, *, limit: int = DEFAULT_LIMIT
+        self, board: Board | TrackGrid | WordGrid | TrioGrid, *, limit: int = DEFAULT_LIMIT
     ) -> int:
         """Count this type's solutions on `board`, stopping at `limit`."""
 
     @abstractmethod
     def deduce(
-        self, board: Board | TrackGrid | WordGrid, *, allow_guesses: bool = True
-    ) -> DeductionTrace | None:
+        self, board: Board | TrackGrid | WordGrid | TrioGrid, *, allow_guesses: bool = True
+    ) -> DeductionTrace | LogicResult | None:
         """Deduce what `board` forces, or `None` if this type has no such engine."""
 
     @abstractmethod
@@ -235,7 +242,7 @@ class Rulebook(ABC):
     @abstractmethod
     def parse_board(
         self, record: dict[str, Any], *, generator_version: int = 1
-    ) -> Board | TrackGrid | WordGrid:
+    ) -> Board | TrackGrid | WordGrid | TrioGrid:
         """The board a file's `board` object describes.
 
         The schema has already refused the shapes it can express, so this reads the
@@ -247,7 +254,7 @@ class Rulebook(ABC):
         """
 
     @abstractmethod
-    def board_to_dict(self, board: Board | TrackGrid | WordGrid) -> dict[str, JsonValue]:
+    def board_to_dict(self, board: Board | TrackGrid | WordGrid | TrioGrid) -> dict[str, JsonValue]:
         """The schema-shaped `board` object for `board`.
 
         The counterpart to `parse_board`, and the other half of removing that branch
@@ -256,7 +263,7 @@ class Rulebook(ABC):
         """
 
 
-def as_marks_board(board: Board | TrackGrid | WordGrid) -> Board:
+def as_marks_board(board: Board | TrackGrid | WordGrid | TrioGrid) -> Board:
     """`board`, if it is a marks board.
 
     A caller is handed whatever the file carried, so anything that reads marks
@@ -322,12 +329,12 @@ class MarkRulebook(Rulebook):
         )
 
     def count_solutions(
-        self, board: Board | TrackGrid | WordGrid, *, limit: int = DEFAULT_LIMIT
+        self, board: Board | TrackGrid | WordGrid | TrioGrid, *, limit: int = DEFAULT_LIMIT
     ) -> int:
         return count_board_solutions(as_marks_board(board), limit=limit)
 
     def deduce(
-        self, board: Board | TrackGrid | WordGrid, *, allow_guesses: bool = True
+        self, board: Board | TrackGrid | WordGrid | TrioGrid, *, allow_guesses: bool = True
     ) -> DeductionTrace | None:
         return deduce_board(as_marks_board(board), allow_guesses=allow_guesses)
 
@@ -393,7 +400,7 @@ class MarkRulebook(Rulebook):
             puzzle_type=self.puzzle_type,
         )
 
-    def board_to_dict(self, board: Board | TrackGrid | WordGrid) -> dict[str, JsonValue]:
+    def board_to_dict(self, board: Board | TrackGrid | WordGrid | TrioGrid) -> dict[str, JsonValue]:
         marks = as_marks_board(board)
         data: dict[str, JsonValue] = {
             "size": marks.size,
@@ -474,14 +481,14 @@ class TrackRulebook(Rulebook):
         )
 
     def count_solutions(
-        self, board: Board | TrackGrid | WordGrid, *, limit: int = DEFAULT_LIMIT
+        self, board: Board | TrackGrid | WordGrid | TrioGrid, *, limit: int = DEFAULT_LIMIT
     ) -> int:
         if not isinstance(board, TrackGrid):
             raise GenerationError("train-tracks count needs a track grid")
         return count_track_solutions(board, limit=limit)
 
     def deduce(
-        self, board: Board | TrackGrid | WordGrid, *, allow_guesses: bool = True
+        self, board: Board | TrackGrid | WordGrid | TrioGrid, *, allow_guesses: bool = True
     ) -> DeductionTrace | None:
         # No engine for this genre yet. `None` is the honest answer and is what the
         # contract allows: a family without one plays without hints rather than
@@ -557,7 +564,7 @@ class TrackRulebook(Rulebook):
         # and the two open ends — so there is nothing left to check here.
         return TrackGrid(width, height, row_clues, col_clues, givens)
 
-    def board_to_dict(self, board: Board | TrackGrid | WordGrid) -> dict[str, JsonValue]:
+    def board_to_dict(self, board: Board | TrackGrid | WordGrid | TrioGrid) -> dict[str, JsonValue]:
         if not isinstance(board, TrackGrid):
             raise GenerationError("train-tracks writes a track grid, not a marks board")
         return {
@@ -624,14 +631,16 @@ class WordPathRulebook(Rulebook):
         return Puzzle(identifier, self.puzzle_type, seed, version, grid)
 
     def count_solutions(
-        self, board: Board | TrackGrid | WordGrid, *, limit: int = DEFAULT_LIMIT
+        self, board: Board | TrackGrid | WordGrid | TrioGrid, *, limit: int = DEFAULT_LIMIT
     ) -> int:
         grid = self._grid(board)
         return count_word_solutions(
             grid, vocabulary_for_version(grid.vocabulary_version), limit=limit
         )
 
-    def deduce(self, board: Board | TrackGrid | WordGrid, *, allow_guesses: bool = True) -> None:
+    def deduce(
+        self, board: Board | TrackGrid | WordGrid | TrioGrid, *, allow_guesses: bool = True
+    ) -> None:
         del board, allow_guesses
 
     def replay(self, puzzle: Puzzle) -> Puzzle:
@@ -655,7 +664,7 @@ class WordPathRulebook(Rulebook):
         return "\n".join([f"{puzzle.id} seed={puzzle.seed} size={grid.width}x{grid.height}", *rows])
 
     @staticmethod
-    def _grid(board: Board | TrackGrid | WordGrid) -> WordGrid:
+    def _grid(board: Board | TrackGrid | WordGrid | TrioGrid) -> WordGrid:
         if not isinstance(board, WordGrid):
             raise GenerationError("word-paths needs a word grid")
         return board
@@ -677,13 +686,132 @@ class WordPathRulebook(Rulebook):
             vocabulary_version=generator_version,
         )
 
-    def board_to_dict(self, board: Board | TrackGrid | WordGrid) -> dict[str, JsonValue]:
+    def board_to_dict(self, board: Board | TrackGrid | WordGrid | TrioGrid) -> dict[str, JsonValue]:
         grid = self._grid(board)
         return {
             "width": grid.width,
             "height": grid.height,
             "letters": list(grid.letters),
             "wordLengths": list(grid.word_lengths),
+        }
+
+
+TRIO_START: Final = date.fromisoformat(
+    json.loads(
+        (Path(__file__).resolve().parents[3] / "conformance/id-cases/manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )["trio"]["activationDay"]
+)
+
+
+class TrioRulebook(Rulebook):
+    """The frozen pilot recipe, certified unique and complete by direct deduction."""
+
+    puzzle_type = PuzzleType.TRIO
+    id_suffix = "-trio"
+    on_ramp = False
+    rated = False
+    logic_only = True
+    default_size = TRIO_SIZE
+
+    def daily_ids(self, day: date) -> tuple[str, ...]:
+        return super().daily_ids(day) if day >= TRIO_START else ()
+
+    def generate(
+        self,
+        *,
+        seed: int,
+        puzzle_id: str,
+        size: int | None = None,
+        stars_per_row: int | None = None,
+        max_attempts: int | None = None,
+    ) -> Puzzle:
+        if any(value is not None for value in (size, stars_per_row, max_attempts)):
+            raise GenerationError("trio uses a fixed versioned recipe, without overrides")
+        parsed = split_puzzle_id(puzzle_id)
+        if parsed is None or parsed[1] is not self.puzzle_type:
+            raise GenerationError("trio requires a canonical date-trio id")
+        try:
+            grid = generate_trio_grid(seed)
+        except (ValueError, TrioGenerationError) as error:
+            raise GenerationError(str(error)) from error
+        if not deduce_trio(grid).solved:
+            raise GenerationError("trio board does not complete through direct deductions")
+        return Puzzle(puzzle_id, self.puzzle_type, seed, TRIO_GENERATOR_VERSION, grid)
+
+    def count_solutions(
+        self, board: Board | TrackGrid | WordGrid | TrioGrid, *, limit: int = DEFAULT_LIMIT
+    ) -> int:
+        return count_trio_solutions(self._grid(board), limit=limit)
+
+    def deduce(
+        self, board: Board | TrackGrid | WordGrid | TrioGrid, *, allow_guesses: bool = True
+    ) -> LogicResult:
+        del allow_guesses
+        return deduce_trio(self._grid(board))
+
+    def replay(self, puzzle: Puzzle) -> Puzzle:
+        if puzzle.generator_version != TRIO_GENERATOR_VERSION:
+            raise GenerationError(f"unsupported trio generator version {puzzle.generator_version}")
+        self._grid(puzzle.board)
+        return self.generate(seed=puzzle.seed, puzzle_id=puzzle.id)
+
+    def dimensions(self, puzzle: Puzzle) -> tuple[int, int]:
+        self._grid(puzzle.board)
+        return TRIO_SIZE, TRIO_SIZE
+
+    def render(self, puzzle: Puzzle) -> str:
+        grid = self._grid(puzzle.board)
+        rows = [
+            "".join(f" {value or '.'}" for value in grid.givens[start : start + TRIO_SIZE])
+            for start in range(0, len(grid.givens), TRIO_SIZE)
+        ]
+        return "\n".join([f"{puzzle.id} seed={puzzle.seed} size={TRIO_SIZE}x{TRIO_SIZE}", *rows])
+
+    @staticmethod
+    def _grid(board: Board | TrackGrid | WordGrid | TrioGrid) -> TrioGrid:
+        if not isinstance(board, TrioGrid):
+            raise GenerationError("trio needs a trio grid")
+        return board
+
+    def parse_board(self, record: dict[str, Any], *, generator_version: int = 1) -> TrioGrid:
+        if generator_version != TRIO_GENERATOR_VERSION:
+            raise BoardError(f"unsupported trio generator version {generator_version}")
+        if require_int(record.get("size"), "board.size") != TRIO_SIZE:
+            raise BoardError("trio size must be 9")
+        relations: list[Relation] = []
+        for edge in require_list(record.get("relations"), "board.relations"):
+            if not isinstance(edge, dict):
+                raise BoardError("board.relations[] must be an object")
+            relation = cast("dict[str, JsonValue]", edge)
+            kind = relation.get("kind")
+            if not isinstance(kind, str) or kind not in ("same", "different"):
+                raise BoardError("relation kind must be same or different")
+            relations.append(
+                Relation(
+                    require_int(relation.get("first"), "board.relations[].first"),
+                    require_int(relation.get("second"), "board.relations[].second"),
+                    kind,
+                )
+            )
+        return TrioGrid(
+            tuple(
+                require_int(value, "board.givens[]")
+                for value in require_list(record.get("givens"), "board.givens")
+            ),
+            tuple(relations),
+        )
+
+    def board_to_dict(self, board: Board | TrackGrid | WordGrid | TrioGrid) -> dict[str, JsonValue]:
+        grid = self._grid(board)
+        return {
+            "size": TRIO_SIZE,
+            "givens": list(grid.givens),
+            "relations": [
+                {"first": edge.first, "second": edge.second, "kind": edge.kind}
+                for edge in grid.relations
+            ],
         }
 
 
@@ -700,6 +828,7 @@ _RULEBOOKS: Final[dict[PuzzleType, Rulebook]] = {
     ),
     PuzzleType.TRAIN_TRACKS: TrackRulebook(),
     PuzzleType.WORD_PATHS: WordPathRulebook(),
+    PuzzleType.TRIO: TrioRulebook(),
 }
 
 
@@ -810,6 +939,7 @@ __all__ = [
     "MarkRulebook",
     "Rulebook",
     "RulebookError",
+    "TrioRulebook",
     "puzzle_id",
     "rulebook_for",
     "rulebooks",

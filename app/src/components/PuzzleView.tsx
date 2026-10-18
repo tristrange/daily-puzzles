@@ -21,9 +21,10 @@ import {
 import { DIFFICULTY_LABEL, PUZZLE_PIECE, PUZZLE_TYPE_HAS_HINTS, PUZZLE_TYPE_LABEL } from '../domain/games'
 import { firstHint, type Hint } from '../domain/hints'
 import type { Board } from '../domain/board'
-import { isMarksPuzzle, isTracksPuzzle, type Puzzle } from '../domain/puzzle'
+import { isMarksPuzzle, isTracksPuzzle, isTrioPuzzle, type Puzzle } from '../domain/puzzle'
 import { trackVariantOf } from '../domain/trackSizes'
 import { TracksStage } from './TracksStage'
+import { TrioStage } from './TrioStage'
 import { WordGrid } from '../domain/wordPaths'
 import { PuzzleNotFoundError, PuzzleUnavailableError, loadPuzzle } from '../lib/puzzles'
 import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } from '../lib/stats'
@@ -483,7 +484,9 @@ export function PuzzleView({
         </p>
       </div>
       <div key={state.puzzle.id}>
-        {isTracksPuzzle(state.puzzle) ? (
+        {isTrioPuzzle(state.puzzle) ? (
+          <TrioStage board={state.puzzle.board} puzzle={state.puzzle} />
+        ) : isTracksPuzzle(state.puzzle) ? (
           <TracksStage puzzle={state.puzzle} grid={state.puzzle.board} timeZone={timeZone} />
         ) : isMarksPuzzle(state.puzzle) ? (
           <PuzzleStage puzzle={state.puzzle} board={state.puzzle.board} timeZone={timeZone} />

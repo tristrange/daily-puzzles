@@ -1307,22 +1307,11 @@
   .board.playable.word-board { width: min(100%, max(16rem, 100svh - 29rem), 24rem); }
 }
 
-/* Trio preview: distinct silhouettes, with relation clues between cells. */
-.trio-preview-entry {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 1.5rem;
-  padding: 1.25rem;
-  border: 1px solid var(--border);
-  border-radius: 1rem;
-  background: var(--surface);
+/* Trio: distinct silhouettes, with relation clues between cells. */
+.game-trio {
+  --motif-color: light-dark(#946000, #f4c35b);
+  --motif-wash: light-dark(#fff2d2, #413621);
 }
-.trio-preview-entry h2 { margin: 0; font-size: 1.25rem; }
-.trio-preview-entry p { margin: 0.25rem 0 0; }
-.trio-preview-entry .eyebrow { color: var(--accent); font-size: 0.75rem; }
 .trio-game { max-width: 38rem; margin: auto; }
 .trio-game .puzzle-tools { margin-bottom: 0.75rem; gap: 0.25rem; }
 .trio-game .puzzle-tools .tool-button { padding-inline: 0.5rem; min-width: 2.75rem; }
@@ -1404,8 +1393,10 @@
 @media (max-width: 47.999rem) {
   .shell:has(.trio-game) > .offline-status { margin-bottom: 0.25rem; }
   .content:has(.trio-game) { padding-top: 0.25rem; }
-  .trio-preview .puzzle-heading { margin-bottom: 0.5rem; }
-  .trio-preview .puzzle-detail { margin-top: 0.25rem; }
+  .puzzle:has(.trio-game) .puzzle-heading { margin-bottom: 0.5rem; }
+  .puzzle:has(.trio-game) .puzzle-detail { margin-top: 0.25rem; }
+  /* The grid names its fixed size; leave room for the ninth row on phones. */
+  .puzzle:has(.trio-game) .puzzle-heading:has(.eyebrow) .puzzle-detail { display: none; }
   .trio-game .puzzle-tools { margin-bottom: 0.5rem; padding: 0.2rem; }
   .trio-game .puzzle-tools .tool-button { font-size: 0.8125rem; }
   .trio-pick-face { min-height: 2.75rem; padding: 0.2rem; gap: 0.1rem; }

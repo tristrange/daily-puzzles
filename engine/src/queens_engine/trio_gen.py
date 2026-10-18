@@ -1,4 +1,4 @@
-"""Provisional Trio construction recipe, separate from the production publisher."""
+"""Frozen Trio v1 recipe; preserve its PRNG calls and clue-removal order for replay."""
 
 from __future__ import annotations
 
@@ -14,12 +14,13 @@ from .trio import (
     solve,
 )
 
+GENERATOR_VERSION = 1
 INITIAL_RELATIONS = 24
 CONSTRUCTION_ATTEMPTS = 10
 
 
 class TrioGenerationError(RuntimeError):
-    """The pilot recipe cannot certify a board inside its bounds."""
+    """The v1 recipe cannot certify a board inside its bounds."""
 
 
 def generate(seed: int) -> TrioGrid:

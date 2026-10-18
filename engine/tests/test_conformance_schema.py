@@ -12,9 +12,9 @@ from typing import Any
 
 import pytest
 
-from helpers import marks_board
-from queens_engine import PuzzleParseError, parse_puzzle, rulebook_for
+from queens_engine import Board, PuzzleParseError, parse_puzzle, rulebook_for
 from queens_engine.puzzle import CONFORMANCE_DIR
+from queens_engine.trio import TrioGrid
 
 CASES_DIR = CONFORMANCE_DIR / "schema-cases"
 
@@ -69,7 +69,15 @@ def test_schema_case(case: dict[str, Any]) -> None:
         assert (width, height) == (expected["size"], expected["size"])
         assert puzzle.seed == expected["seed"]
         assert puzzle.generator_version == expected["generatorVersion"]
-        assert list(marks_board(puzzle).region_capacity) == expected["regionCapacity"]
+        if isinstance(puzzle.board, Board):
+            assert list(puzzle.board.region_capacity) == expected["regionCapacity"]
+        else:
+            assert isinstance(puzzle.board, TrioGrid)
+            assert list(puzzle.board.givens) == expected["givens"]
+            assert (
+                rulebook_for(puzzle.puzzle_type).board_to_dict(puzzle.board)["relations"]
+                == expected["relations"]
+            )
         assert puzzle.difficulty == expected["difficulty"]
     else:
         with pytest.raises(PuzzleParseError) as caught:
