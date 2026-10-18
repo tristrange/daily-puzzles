@@ -70,7 +70,11 @@ export function RulesPage() {
       <p>Use the same controls as Queens, with stars in place of queens:
         tap cycles empty → cross → star → empty; drag adds or erases crosses;
         right-click or X toggles a cross. Enter or Space toggles a star;
-        Delete or Backspace clears the cell. Star Battle has no hints.</p>
+        Delete or Backspace clears the cell.</p>
+      <h3>Hints</h3>
+      <p>Use Hint or H for an explained, forced move, just as in Queens.
+        Hints account for regions needing multiple stars. Clear conflicts first;
+        hints actually shown count in your result.</p>
       <h3 id="crosses" tabIndex={-1}>Crosses and auto-mark</h3>
       <p>For Queens and Star Battle, a cross marks a cell you have ruled out. The app
         does not validate crosses, so you can accidentally rule out a correct cell.</p>

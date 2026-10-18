@@ -1225,10 +1225,10 @@ metrics and per-size comparisons are outside this recent-history change.
 ## 2026-10-18 — Game rules and direct navigation
 
 How to play now starts with shared controls and a four-game jump list. Each game
-has its own rules and controls, with Queens hints, marking notes and the Train
+has its own rules and controls, with Queens and Star Battle hints, marking notes and the Train
 Tracks picker explained in their relevant sections. Install, offline and stats
-information remains available below the games. Outdated claims about Star Battle
-hints, filling every Train Tracks cell and cycling track pieces were corrected
+information remains available below the games. Outdated claims about
+filling every Train Tracks cell and cycling track pieces were corrected
 against the actual controls; all four daily games are now described as available.
 
 Loaded puzzle headings link to the parsed game's rules, including legacy Star
