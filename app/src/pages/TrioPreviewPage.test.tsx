@@ -13,4 +13,5 @@ it('offers five playable boards and direct rules without daily stats', () => {
   expect(html).toContain('Preview solves do not count toward daily stats')
   expect(html).toContain('Board 2 of 5')
   expect(html).toContain('Symbol to place')
+  expect(html).toContain('aria-label="Get an explained hint"')
 })

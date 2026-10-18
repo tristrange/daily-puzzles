@@ -143,9 +143,12 @@ export function RulesPage() {
       <p>Keys 1, 2 and 3 place sun, moon and star; Enter or Space uses the picker.
         N toggles Notes. Delete, Backspace or 0 erases. Arrow keys and Home/End move
         around the board; Ctrl/Cmd+Z undoes. Reset keeps the timer running and can be undone.</p>
+      <p>Hint explains a deduction and highlights its target with a solid outline and supporting cells with dashed outlines.
+        Apply move places a forced symbol or updates one cell&rsquo;s notes to the remaining possibilities.
+        Nothing changes until you apply; Undo restores the previous move. Hints ignore your notes as evidence.</p>
       <p><Link to="/preview/trio">Play the five-board Trio preview</Link>. Attempts save
         separately in this browser. The timer pauses while the page is hidden or closed.
-        Preview solves do not affect daily stats or streaks. No hints or difficulty rating yet.</p>
+        Preview solves do not affect daily stats or streaks. No difficulty rating yet.</p>
 
       <h2>Finishing, sharing and stats</h2>
       <p>A solved board locks and offers a result to share, optionally including the finished
