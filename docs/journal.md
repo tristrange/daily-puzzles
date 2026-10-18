@@ -1188,3 +1188,36 @@ failed requests; no physical iPhone airplane-mode test is claimed.
 Per-game stats and rules navigation remain separate follow-ups. The archive
 still uses the existing 30-day window; no search, pagination, index manifest or
 new dependency was introduced.
+
+## 2026-10-18 — Recent solves by game
+
+Recent solves now uses the archive's game selector, with `#/stats?game=train-tracks`
+as a bookmarkable selection. Invalid or missing selections use Queens. The list
+filters by the recorded game before taking the ten most recently completed solves,
+so another game's activity cannot push a selected game's history out of view.
+Dates, solve times, track size names and hint counts remain visible. An unplayed
+game has its own empty message while the history controls remain available.
+
+The overview is explicitly labelled All games and keeps its existing totals,
+streaks and aggregate timing. Clear all stats and its confirmation explicitly name
+the global deletion scope; the storage and deletion functions are unchanged.
+Archive and Stats share the renamed `game-picker` CSS, including 44px targets and
+a two-column phone layout. The selected link retains its accent while hovered.
+
+All 620 app tests, typecheck, lint and production build pass. Five focused cases
+cover recorded-family filtering, filtering before the recent limit, an empty
+selected game, and missing/invalid URL values. Lint retains the existing warning
+in unchanged TracksStage effect code. No dependency or storage migration was added.
+
+A production preview with disposable sample history confirmed stable all-game
+totals across selections, empty-game feedback, browser Back, refresh, and the
+all-game deletion wording followed by Keep them. Actual deletion was not repeated;
+the existing storage tests cover it. At 320px and 390px, selectors retain 44px
+height without horizontal overflow. Dark/light appearance and the archive's
+shared selector were also checked. Physical iPhone testing remains unverified.
+
+[Desktop stats](images/per-game-stats-desktop.jpg) ·
+[Phone recent solves](images/per-game-stats-phone.jpg)
+
+Dedicated rules sections and links from each game are next. Per-game aggregate
+metrics and per-size comparisons are outside this recent-history change.

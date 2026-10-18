@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
+import { PUZZLE_TYPES } from '../domain/board'
 import { formatPuzzleLabel, puzzleOfToday } from '../domain/dates'
-import { PUZZLE_TYPE_LABEL } from '../domain/games'
+import { DEFAULT_PUZZLE_TYPE, PUZZLE_TYPE_LABEL, PUZZLE_TYPE_PUBLISHED } from '../domain/games'
 import { trackVariantOf } from '../domain/trackSizes'
 import { formatTime } from '../domain/game'
 import {
@@ -21,6 +22,8 @@ function stat(label: string, value: string | null): { label: string; value: stri
 }
 
 export function StatsPage() {
+  const [params] = useSearchParams()
+  const type = PUZZLE_TYPES.find(type => type === params.get('game') && PUZZLE_TYPE_PUBLISHED[type]) ?? DEFAULT_PUZZLE_TYPE
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
   // A snapshot read once per visit, as on the archive page: the history is not
   // going to change while the page is open, and re-reading it per render would
@@ -32,7 +35,7 @@ export function StatsPage() {
   const [notice, setNotice] = useState('')
   const [todayId] = useState(() => puzzleOfToday(new Date(), timeZone))
   const stats = summarise(records, todayId)
-  const recent = mostRecentSolves(records, RECENT_LIMIT)
+  const recent = mostRecentSolves(records.filter(record => record.puzzleType === type), RECENT_LIMIT)
   // Which families the history actually spans: never padded out with one the
   // player has not played, and never missing one they have.
   const solveCounts = formatSolveCounts(stats.byType)
@@ -73,6 +76,7 @@ export function StatsPage() {
       ) : (
         <>
           <p className="status">Kept in this browser only. Nothing is sent anywhere.</p>
+          <h2 className="page-title">All games</h2>
           <dl className="stats-grid">
             {tiles.map((tile) => (
               <div className="stat" key={tile.label}>
@@ -82,30 +86,40 @@ export function StatsPage() {
             ))}
           </dl>
           {solveCounts !== null && <p className="status">{solveCounts}.</p>}
-          <h2 className="page-title">Recent solves</h2>
-          <ul className="archive">
-            {recent.map((record) => (
-              <li key={record.id}>
-                <Link to={`/archive/${record.id}`}>{formatPuzzleLabel(record.id, timeZone)}</Link>{' '}
-                <span className="stat-detail">
-                  {PUZZLE_TYPE_LABEL[record.puzzleType ?? 'queens']}
-                  {record.puzzleType === 'train-tracks' && trackVariantOf(record.id) && ` ${trackVariantOf(record.id)!.label}`}
-                  {' · '}{formatTime(record.elapsedMs)}
-                  {record.hints > 0 && ` · ${record.hints} hint${record.hints === 1 ? '' : 's'}`}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <section className="recent-solves" aria-labelledby="recent-solves-heading">
+            <h2 className="page-title" id="recent-solves-heading">Recent solves</h2>
+            <nav className="game-picker" aria-label="Recent solves game">
+              {PUZZLE_TYPES.filter(type => PUZZLE_TYPE_PUBLISHED[type]).map(game => (
+                <Link key={game} to={`/stats?game=${game}`} aria-current={game === type ? 'page' : undefined}>
+                  {PUZZLE_TYPE_LABEL[game]}
+                </Link>
+              ))}
+            </nav>
+            {recent.length === 0 && <p className="status">No {PUZZLE_TYPE_LABEL[type]} solves yet.</p>}
+            <ul className="archive">
+              {recent.map((record) => (
+                <li key={record.id}>
+                  <Link to={`/archive/${record.id}`}>{formatPuzzleLabel(record.id, timeZone)}</Link>{' '}
+                  <span className="stat-detail">
+                    {PUZZLE_TYPE_LABEL[record.puzzleType ?? 'queens']}
+                    {record.puzzleType === 'train-tracks' && trackVariantOf(record.id) && ` ${trackVariantOf(record.id)!.label}`}
+                    {' · '}{formatTime(record.elapsedMs)}
+                    {record.hints > 0 && ` · ${record.hints} hint${record.hints === 1 ? '' : 's'}`}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
           <div className="stats-footer">
             {confirming ? (
               <>
                 <p className="status">
-                  This deletes every solve recorded in this browser, including the streak. It
+                  This deletes every solve across all games in this browser, including the streak. It
                   cannot be undone.
                 </p>
                 <div className="stats-clear">
                   <button type="button" className="tool-button danger" onClick={forget}>
-                    Yes, delete my stats
+                    Yes, delete all stats
                   </button>
                   <button
                     type="button"
@@ -122,7 +136,7 @@ export function StatsPage() {
                 className="tool-button"
                 onClick={() => setConfirming(true)}
               >
-                Clear my stats
+                Clear all stats
               </button>
             )}
           </div>
