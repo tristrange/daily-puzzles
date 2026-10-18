@@ -23,6 +23,6 @@ export function TrioHintPanel({ hint, id, onApply, onDismiss, onShowCell }: {
     <ol>{hint.steps.map((step, i) => <li key={i}>{step.reason}</li>)}</ol>
     {!placed && <p className="trio-hint-effect">Apply updates notes to {trioCandidateNames(hint.candidates)}; the cell stays empty.</p>}
     <button type="button" className="tool-button trio-apply-hint" onClick={onApply}>Apply move</button>
-    <span className="trio-hint-undo">You can Undo this move.</span>
+    <span className="trio-hint-undo">Undo is available until solved.</span>
   </section>
 }

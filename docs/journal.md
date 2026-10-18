@@ -1347,6 +1347,7 @@ the full deduction pass for contradictions before offering a move. Applying an
 elimination updates only that cell's notes to the remaining candidates. A forced
 symbol uses the normal placement path. Both are one undoable move; existing
 progress storage needs no migration. Edits, Undo and Reset clear stale hints.
+As with manual play, completing the board locks editing and Undo.
 
 Five focused domain cases cover elimination, equality chains, different clues,
 misleading notes, indirect contradictions, stale application and all five pilots.
@@ -1355,7 +1356,9 @@ only the existing TracksStage effect warning. Browser checks covered candidate
 application and Undo, persistence, keyboard dismissal, target focus, stale-hint
 removal and completion through a forced-symbol hint. At 320×667 and 375×667 the
 initial board still fits without horizontal overflow; long explanations scroll.
-Physical iPhone and airplane-mode checks remain unverified.
+The production build also opens directly under `/daily-puzzles/` to board 5,
+applies a candidate hint and restores it after reload. Independent review found
+no material issues. Physical iPhone and airplane-mode checks remain unverified.
 
 Queens/Star Battle explanation improvements and Train Tracks hints follow this
 Trio slice. Word Paths stays last. No daily publishing, stats, dependency, engine
