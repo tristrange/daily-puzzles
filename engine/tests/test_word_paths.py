@@ -154,7 +154,20 @@ def test_invalid_budget_is_rejected(max_states: int) -> None:
         words.SearchBudget(max_states)
 
 
-@pytest.mark.parametrize("vocabulary", [("cat",), ("CAT", "CAT"), ("A-B",), ()])
+@pytest.mark.parametrize(
+    "vocabulary",
+    [
+        ("cat",),
+        ("CAT", "CAT"),
+        ("A-B",),
+        (),
+        ("ÉTÉ",),
+        ("ABC1",),
+        ("ABC\n",),
+        ("AB",),
+        ("ABCDEFG",),
+    ],
+)
 def test_solver_rejects_invalid_vocabulary(vocabulary: tuple[str, ...]) -> None:
     with pytest.raises(WordGridError):
         words.count_solutions(WordGrid(3, 1, tuple("CAT"), (3,)), vocabulary)

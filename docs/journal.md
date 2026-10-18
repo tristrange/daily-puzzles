@@ -1399,3 +1399,31 @@ checks remain unverified. No dependencies or CI settings changed.
 
 [Daily phone board](images/trio-daily-phone.png) ·
 [Today's lineup](images/trio-daily-today.png)
+
+## 2026-10-19 — Reduce repeated engine-test work
+
+The daily Trio PR's GitHub engine job took 14m 33s: 9m 24s for tests and
+4m 51s for full archive verification. This change targets test work without
+removing correctness checks or changing CI/deployment routing.
+
+Hint tests now build their real corpus once, with deep copies for corruption
+and CLI cases. Registry shape/render checks share immutable generated samples;
+replay still invokes the real generator. Publishing-window tests reuse identical
+Star Battle generation within their class while retaining real file writes,
+resume logic, seed retries and layout checks. The stars-per-row replay check
+uses an 8×8 board; default 9×9 generation and replay remain covered elsewhere.
+
+Profiling the 100-seed Word Paths test found repeated vocabulary validation
+dominated its runtime. Equivalent native ASCII/alphabetic/uppercase predicates
+replace the Python character loop. The full vocabulary is still validated at
+each call; no production cache or skipped validation was added. Five inexpensive
+rejection cases cover Unicode, digits, trailing newline and length bounds. A
+manual sweep checked every Unicode code point against the ASCII A–Z boundary.
+
+All 653 engine tests pass in 135.98s locally, versus 648 tests in 222.63s before
+(39% less time). The same 100-seed independent-solver/replay test drops from
+37.37s to 21.05s. Pyright, Ruff lint/format and schema-ID checks pass. A fresh
+independent review found no actionable issues. These local timings are not a
+promise about GitHub runner performance; compare the PR's actual run before
+considering further CI changes. Puzzle recipes, archive files and player data
+are unchanged.
