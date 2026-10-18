@@ -11,6 +11,8 @@ import { StarBattlePage } from './pages/StarBattlePage'
 import { StatsPage } from './pages/StatsPage'
 const WordPathsPreviewPage = lazy(() => import('./pages/WordPathsPreviewPage').then((module) => ({ default: module.WordPathsPreviewPage })))
 
+const TrioPreviewPage = lazy(() => import('./pages/TrioPreviewPage').then((module) => ({ default: module.TrioPreviewPage })))
+
 function App() {
   return (
     <HashRouter>
@@ -21,6 +23,7 @@ function App() {
           <Route path="archive/:id" element={<PuzzlePage />} />
           <Route path="star-battle" element={<StarBattlePage />} />
           <Route path="preview/word-paths" element={<Suspense fallback={<p className="status">Loading preview…</p>}><WordPathsPreviewPage /></Suspense>} />
+          <Route path="preview/trio" element={<Suspense fallback={<p className="status">Loading preview…</p>}><TrioPreviewPage /></Suspense>} />
           <Route path="stats" element={<StatsPage />} />
           <Route path="how-to-play" element={<RulesPage />} />
           <Route path="*" element={<NotFoundPage />} />

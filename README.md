@@ -65,6 +65,12 @@ boards retain their frozen vocabulary. Uniqueness is not claimed across every
 English word. No difficulty rating or hints are claimed.
 Daily progress and results are separate from the [ten-board preview](https://tristrange.github.io/daily-puzzles/#/preview/word-paths).
 
+**Trio preview** — balance sun, moon and star on a 9×9 board: three of each per
+row and column, no three identical symbols consecutively, and adjacent same/different
+clues. [Try the five-board preview](https://tristrange.github.io/daily-puzzles/#/preview/trio).
+It includes pencil notes, undo/reset and separate saved attempts. Preview solves
+never affect daily stats; daily publication and difficulty ratings are not enabled.
+
 ---
 
 ## Add to your Home Screen

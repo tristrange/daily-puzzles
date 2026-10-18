@@ -26,6 +26,7 @@ export function RulesPage() {
             {PUZZLE_TYPE_LABEL[type]}
           </Link>
         ))}
+        <Link to={{ pathname: '/how-to-play', hash: '#trio' }}>Trio · preview</Link>
       </nav>
 
       <h2 id="controls" tabIndex={-1}>Shared controls</h2>
@@ -125,6 +126,26 @@ export function RulesPage() {
         See the <a href={`${import.meta.env.BASE_URL}word-paths-vocabulary-notice.txt`}>word list credits</a>.</p>
       <p><Link to="/preview/word-paths">Try the Word Paths preview</Link>.
         Preview progress is saved separately and does not affect daily stats.</p>
+
+      <h2 id="trio" tabIndex={-1}>Trio · preview</h2>
+      <h3>Rules</h3>
+      <ul>
+        <li>Fill the 9×9 board with sun, moon and star. Each row and column needs exactly three of each.</li>
+        <li>No three identical symbols may be consecutive horizontally or vertically. Diagonals are unrestricted.</li>
+        <li>An = between cells requires matching symbols. An × requires different symbols; either of the other two can fit.</li>
+        <li>Cells with a corner dot are givens and cannot be changed. Repeated row or column patterns are allowed.</li>
+      </ul>
+      <h3>Controls</h3>
+      <p>Pick Sun, Moon, Star or Erase, then tap or drag across cells. Tapping a cell
+        containing the selected symbol clears it. One drag is one Undo. Right-click erases.</p>
+      <p>Turn on Notes to mark possible symbols in empty cells. Notes are your working
+        and are not checked. Placing a symbol clears that cell&rsquo;s notes.</p>
+      <p>Keys 1, 2 and 3 place sun, moon and star; Enter or Space uses the picker.
+        N toggles Notes. Delete, Backspace or 0 erases. Arrow keys and Home/End move
+        around the board; Ctrl/Cmd+Z undoes. Reset keeps the timer running and can be undone.</p>
+      <p><Link to="/preview/trio">Play the five-board Trio preview</Link>. Attempts save
+        separately in this browser. The timer pauses while the page is hidden or closed.
+        Preview solves do not affect daily stats or streaks. No hints or difficulty rating yet.</p>
 
       <h2>Finishing, sharing and stats</h2>
       <p>A solved board locks and offers a result to share, optionally including the finished

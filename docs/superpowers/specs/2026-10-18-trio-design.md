@@ -77,3 +77,13 @@ keeping exact search independent of the candidate-rule solver. The search budget
 counts attempted line branches; fixed-size pattern filtering is finite separately.
 Construction tries at most ten bounded searches. This changes the provisional
 recipe only; no public generator version or published content is affected.
+
+## Preview sequencing update
+
+After the engine merge, the user requested a playable test before returning to
+CI optimization. The next PR therefore bundles the five measured, answer-free
+boards in the app with a preview-only parser and playing screen. No incomplete
+fifth daily family is registered. The existing Python engine independently
+verifies these exact preview inputs, and client tests use measured answers only
+as test data. Daily schema/ID integration and generator freezing follow
+playtesting. See [preview plan](../plans/2026-10-18-trio-preview.md).
