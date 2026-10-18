@@ -48,14 +48,14 @@ export function TrioBoard({ board, game, brush, pencil, locked, conflicts, instr
     active.visited.add(cell)
     onApply(cell, active.action)
   }
-  const one = (cell: number, value: TrioValue) => { if (!locked) { onBegin(); onApply(cell, trioAction(game, cell, value, pencil)); onEnd(false) } }
+  const one = (cell: number, value: TrioValue) => { if (!locked && !stroke.current) { onBegin(); onApply(cell, trioAction(game, cell, value, pencil)); onEnd(false) } }
   const key = (event: KeyboardEvent<HTMLDivElement>) => {
     const row = Math.floor(focus / 9), col = focus % 9
     const navigation: Record<string, number> = { ArrowUp: Math.max(0, row - 1) * 9 + col, ArrowDown: Math.min(8, row + 1) * 9 + col,
       ArrowLeft: row * 9 + Math.max(0, col - 1), ArrowRight: row * 9 + Math.min(8, col + 1), Home: row * 9, End: row * 9 + 8 }
     if (navigation[event.key] !== undefined) { event.preventDefault(); setFocus(navigation[event.key]!); return }
     if (locked) return
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); onUndo(); return }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); finish(true); onUndo(); return }
     if (event.ctrlKey || event.metaKey || event.altKey) return
     if (event.key.toLowerCase() === 'n') { event.preventDefault(); onPencil(); return }
     if (['1', '2', '3', '0', 'Delete', 'Backspace', 'Enter', ' '].includes(event.key)) {

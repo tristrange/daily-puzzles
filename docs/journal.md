@@ -1310,8 +1310,8 @@ board touches for play and retains native pinch zoom. The full board fits at
 scroll to preserve readable cells. Board selection follows the game and returns
 the viewport to the top when changed.
 
-All 628 app tests, typecheck and the production build with the GitHub Pages base
-path pass. Lint retains only the existing TracksStage effect warning. Seven small
+All 629 app tests, typecheck and the production build with the GitHub Pages base
+path pass. Lint retains only the existing TracksStage effect warning. Eight small
 cases cover the shared measured answers, rule violations, preview parsing,
 givens/notes, snapshot validation and preview markup. All five exact bundled
 inputs independently pass the existing Python deduction and uniqueness checks.
@@ -1326,3 +1326,9 @@ unverified; no human difficulty rating is claimed.
 
 [Phone preview](images/trio-preview-phone.jpg) ·
 [Desktop preview](images/trio-preview-desktop.jpg)
+
+Independent review caught mixed keyboard/pointer edits nesting a second move in
+a held drag. Keyboard placement now waits until the stroke ends; Ctrl/Cmd+Z
+cancels it before Undo. External Undo/Reset also preserve the active transaction.
+A focused event-handler regression fails against the original code and passes
+with the fix; the reviewer confirmed the correction.

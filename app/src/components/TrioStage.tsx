@@ -71,14 +71,14 @@ export function TrioStage({ board }: { board: Board }) {
   }
   const undo = () => {
     const previous = history.at(-1)
-    if (completed.current || !previous) return
+    if (completed.current || before.current || !previous) return
     change(previous)
     setHistory(history.slice(0, -1))
     setMessage('Undid the last move.')
     save()
   }
   const reset = () => {
-    if (completed.current) return
+    if (completed.current || before.current) return
     remember(current.current)
     change(createTrioGame(board))
     setMessage('Board cleared. Undo brings it back; the clock keeps running.')
