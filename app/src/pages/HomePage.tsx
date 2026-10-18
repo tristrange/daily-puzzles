@@ -61,6 +61,10 @@ export function HomePage() {
       {state.status === 'ready' && (
         <TodayCards probes={state.probes} solved={solved} />
       )}
+      <aside className="trio-preview-entry">
+        <div><p className="eyebrow">New playtest</p><h2>Meet Trio</h2><p>Sun, moon and star. Three symbols, one balanced board.</p></div>
+        <Link className="tool-button" to="/preview/trio">Try Trio <span aria-hidden="true">→</span></Link>
+      </aside>
       <div className="today-more">
         <p>Another round?</p>
         <Link to="/archive">Explore the archive <span aria-hidden="true">→</span></Link>

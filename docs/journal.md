@@ -1285,3 +1285,50 @@ engine-only change; phone usability and difficulty remain for the playable previ
 
 Next steps: freeze the file/ID contract and cross-language fixtures, build the
 preview with the agreed symbols, then playtest before enabling daily publication.
+
+## 2026-10-18 — Playable Trio preview
+
+The user reprioritized a playable test before engine-test optimization. This PR
+therefore bundles the five verified pilot boards as answer-free preview data,
+without registering an incomplete fifth daily family. Daily schema/ID integration
+and freezing a publishing recipe remain after playtesting. No test or CI
+optimization is included; the four daily games and their data remain unchanged.
+
+The lazy `#/preview/trio?board=1` route is reachable from Today's Meet Trio entry
+and its own How to play section. Each board has its own validated, fingerprinted
+local snapshot of placed symbols, pencil notes and active time. Givens cannot be
+changed. Notes are optional working and never count as placed symbols. Completion
+checks the actual rules without a stored answer; preview solves never read or
+write daily stats. Undo belongs to the current visit, as with the other previews.
+
+Distinct SVG sun, crescent and five-point star silhouettes use amber, blue and
+purple in light/dark appearance. A native radio picker and Notes toggle support
+tap, drag, right-click erase and keyboard input. Pointer cancellation restores the
+stroke; a committed horizontal or vertical drag is one Undo. The grid reserves
+board touches for play and retains native pinch zoom. The full board fits at
+375×667 (bottom 662px) and 320×667 without horizontal overflow. Very short screens
+scroll to preserve readable cells. Board selection follows the game and returns
+the viewport to the top when changed.
+
+All 629 app tests, typecheck and the production build with the GitHub Pages base
+path pass. Lint retains only the existing TracksStage effect warning. Eight small
+cases cover the shared measured answers, rule violations, preview parsing,
+givens/notes, snapshot validation and preview markup. All five exact bundled
+inputs independently pass the existing Python deduction and uniqueness checks.
+No new dependency or engine/schema/published-content change was made.
+
+Browser verification covered symbol entry, notes, reset/Undo, reload and separate
+board attempts, both drag directions with one-step Undo, rules focus, Today entry,
+a complete keyboard solve and an unchanged daily-stats snapshot. The production
+build opens directly under `/daily-puzzles/`, restores progress and reports App
+ready offline. Physical iPhone touch/pinch and airplane-mode testing remain
+unverified; no human difficulty rating is claimed.
+
+[Phone preview](images/trio-preview-phone.jpg) ·
+[Desktop preview](images/trio-preview-desktop.jpg)
+
+Independent review caught mixed keyboard/pointer edits nesting a second move in
+a held drag. Keyboard placement now waits until the stroke ends; Ctrl/Cmd+Z
+cancels it before Undo. External Undo/Reset also preserve the active transaction.
+A focused event-handler regression fails against the original code and passes
+with the fix; the reviewer confirmed the correction.
