@@ -213,3 +213,22 @@ If imports fail unexpectedly, check the flags before reaching for `uv sync`:
 ls -lO .venv/lib/python3.13/site-packages/*.pth
 chflags -R nohidden .venv          # only if the flag is not deliberate
 ```
+
+## Trio prototype (not published)
+
+Trio is a 9×9 sun/moon/star variant: three of each symbol in every row and column,
+no three identical consecutive symbols, and adjacent same/different clues. The
+prototype has direct deductions and a separate exact line-pattern solver. It is
+not registered with the daily publisher or browser app yet.
+
+From `engine/`:
+
+```sh
+uv run python -m tools.trio_probe --count 20 --out /tmp/trio-pilot.json
+uv run pytest -q tests/test_trio.py tests/test_trio_gen.py
+```
+
+The probe writes review data including answers and deduction traces, never public
+puzzle files. Its provisional recipe requires deduction completion and a unique
+solution. See the [design](../docs/superpowers/specs/2026-10-18-trio-design.md) and
+[measured pilot](../docs/measurements/trio-pilot.json). Human difficulty is untested.
