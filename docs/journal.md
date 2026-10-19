@@ -1431,11 +1431,12 @@ are unchanged.
 ## 2026-10-19 — Compact Today and more room for Trio
 
 Today's heading now shares its first desktop row with the date. Smaller motif
-tiles sit beside game names. Train Tracks occupies a taller card in the last
-desktop column, with three full-width size choices; every label stays on one
-line at both 801px and 1280px widths. At 1280×720, all five unplayed game cards
-end at 693px instead of requiring a second screen. Phones retain full-width
-track-size choices.
+tiles sit beside game names. Every card uses ordinary grid placement, so adding
+a sixth game fills the second row instead of opening an unnecessary third row.
+Train Tracks keeps three full-width size choices; every label stays on one line.
+The first row grows to fit those choices: at 1280×800, all five unplayed cards
+end at 767px. Shorter screens can scroll. Phones retain full-width choices and
+a single-column layout.
 
 Removed the sticky header's decorative fade: it extended over the offline
 status text and made the first line look clipped. No extra header height was

@@ -1194,7 +1194,6 @@
   .today-heading .page-title { grid-column: 1; grid-row: 1; margin: 0; }
   .today-heading .eyebrow { grid-column: 2; grid-row: 1; margin: 0; }
   .today-heading .page-intro { grid-column: 1 / -1; }
-  .game-train-tracks { grid-column: 3; grid-row: 1 / span 2; align-self: start; }
 }
 
 /* Word Paths follows the finger directly; no gesture animation or scroll pan. */
