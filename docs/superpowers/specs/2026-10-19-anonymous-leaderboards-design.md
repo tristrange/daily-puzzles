@@ -1,6 +1,7 @@
 # Account-free leaderboards
 
-Status: design approved on October 19, 2026; implementation and hosted setup have not started.
+Status: design approved on October 19, 2026; backend implemented for review.
+Hosted setup and app integration are not active.
 
 ## Purpose and constraints
 
@@ -147,8 +148,13 @@ Missing configuration leaves cloud features disabled with a useful page message;
 local play continues and there are no provider requests. Reject partial or invalid
 configuration rather than sending requests to a guessed endpoint.
 
-The trusted main deployment synchronizes the published-puzzle catalog before
-activating the configured app. It uses a server-only Supabase secret key stored
+The trusted main deployment attempts to synchronize the published-puzzle catalog
+before building the app. Failure produces a workflow warning and does not stop
+new puzzle publication; the next deployment retries the idempotent batch. This
+resolves the conflict between strict catalog ordering and the requirement that
+optional free-backend outages must not interrupt the puzzle site. New rankings
+may remain unavailable until synchronization succeeds.
+It uses a server-only Supabase secret key stored
 as a GitHub Actions secret; this key must never use a `VITE_` variable or enter
 the browser build. Do not grant it to PR jobs. Upsert catalog metadata from the
 already verified puzzle files; retain older catalog rows with existing results.

@@ -32,7 +32,7 @@ def engine_required() -> bool:
             continue
         if path.startswith("app/public/puzzles/"):
             return True
-        if path.startswith(("app/", "docs/")) or path in {
+        if path.startswith(("app/", "docs/", "backend/leaderboard/")) or path in {
             "README.md",
             "AGENTS.md",
             "LICENSE",

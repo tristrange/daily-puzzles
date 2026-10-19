@@ -1,7 +1,7 @@
 # Free leaderboard setup
 
-The leaderboard is being designed; there is no hosted service or migration to
-apply yet. These steps prepare the free provider projects. Players will not need
+The backend is prepared; the app integration and public leaderboard are not live
+yet. These steps prepare the free provider projects. Players will not need
 accounts, but you need maintainer accounts to own the infrastructure.
 
 ## 1. Create a Supabase Free project
@@ -18,8 +18,14 @@ accounts, but you need maintainer accounts to own the infrastructure.
    dialog/API settings. These are intended for public clients. A legacy `anon`
    key can serve the same client role; a secret or `service_role` key cannot.
 
-At this stage, do not create tables by hand or enable anonymous sign-ins. The
-reviewed migration and CAPTCHA setup should be ready first.
+Do not invent tables by hand. After the backend PR is merged, open Supabase's
+SQL Editor and run the complete contents of
+[`001_leaderboards.sql`](../backend/leaderboard/migrations/001_leaderboards.sql)
+once. It creates the tables, private rate counter and restricted RPC functions
+in one transaction. Reapplying it fails without dropping the existing data.
+Never run `tests/auth-fixture.sql` on Supabase: that file belongs only in the
+disposable local test database. Configure CAPTCHA before enabling anonymous
+sign-ins; the provider toggles alone do not activate publishing in the app.
 
 ## 2. Prepare free signup protection
 
@@ -32,12 +38,13 @@ a free plan and does not require moving the puzzle site away from GitHub Pages.
 2. Add a widget named `daily-puzzles-leaderboard` for `tristrange.github.io`, using
    the Managed widget type. Enter the hostname without a URL path.
 3. Keep the **site key** for the frontend. Keep the **secret key** private.
-4. When the backend is ready, configure Supabase Authentication's CAPTCHA
+4. After applying the backend migration, configure Supabase Authentication's CAPTCHA
    protection to use Turnstile and enter the secret there. Then enable anonymous
    sign-ins. The secret never belongs in the app or the repository.
 
-Local testing will use the documented test setup supplied with the implementation;
-do not weaken the production widget or put a production secret into a test file.
+The local SQL tests do not use hosted credentials or CAPTCHA. The later app
+slice will supply the frontend test setup. Do not weaken the production widget
+or put a production secret into a test file.
 
 ## 3. Values we will use
 
@@ -56,14 +63,46 @@ The eventual Pages build uses these public repository variables:
 | `SUPABASE_PUBLISHABLE_KEY` | `VITE_SUPABASE_PUBLISHABLE_KEY` |
 | `TURNSTILE_SITE_KEY` | `VITE_TURNSTILE_SITE_KEY` |
 
-Catalog synchronization will additionally require a server-only
-`SUPABASE_SECRET_KEY` in GitHub's **Actions secrets**. Add that through GitHub's
-settings when the backend instructions are ready; do not paste it into chat.
-PR checks and the browser build must not receive it.
+Catalog synchronization also requires a server-only `SUPABASE_SECRET_KEY` in
+GitHub's **Settings → Secrets and variables → Actions → Secrets**. Use a new
+`sb_secret_...` key from Supabase API settings. Add it directly in GitHub; do not
+paste it into chat. PR checks and the browser build do not receive it.
 
-Public keys do not grant administrative access. We still need the migration
-and access tests in place before enabling the app. Applying that reviewed SQL
-will be a separate setup step with exact instructions from the backend PR.
+Set `SUPABASE_URL` as a repository variable after applying the migration, then
+add the secret. The next normal main deployment synchronizes all committed
+puzzle IDs before building Pages. A sync failure emits a workflow warning and
+publishing continues, so a paused leaderboard cannot stop new daily puzzles.
+The next deployment retries; you can also rerun synchronization manually. Without
+a secret, current deployment is unchanged. Public app integration waits
+for the later app PR, so leave its other two variables unset until activation.
+
+For manual catalog synchronization, load the URL and server secret into your
+terminal environment privately and run:
+
+```sh
+node backend/leaderboard/sync-catalog.mjs
+```
+
+It sends only puzzle ID, game/date, dimensions and size label. It does not send
+boards or solutions, delete old entries, create projects or change any plan.
+The server key uses the `apikey` header; it is not a player JWT.
+
+## Local verification
+
+With Docker Desktop running, from the repository root:
+
+```sh
+node --test backend/leaderboard/sync-catalog.test.mjs
+bash backend/leaderboard/test.sh
+```
+
+The SQL script owns a new `postgres:17` container and removes it afterward. It
+accepts no database URL, exposes no host port and cannot run against a hosted
+database. A test-only Auth fixture supplies the roles and `auth.uid()` context;
+the checks exercise real PostgreSQL permissions, rankings, duplicates, owner
+deletion, write limits and concurrent first submissions. They do not prove
+Supabase HTTP authentication or CAPTCHA; two real anonymous sessions remain
+required before public launch. No new npm/Python packages are needed here.
 
 ## 4. Activation and rollback
 

@@ -133,8 +133,9 @@ feature still disabled until the later app PR and configured hosted checks.
 - [ ] Add a catalog step in the existing trusted main deploy job, before the
   Pages build, enabled only when the maintainer sets the server secret. Keep the
   key in that one step's environment, never a job-wide or `VITE_` variable. A
-  configured sync failure blocks that deploy instead of publishing an app with
-  a stale catalog. With no secret configured, existing deployment is unchanged.
+  configured sync failure emits a warning and allows puzzle publishing to
+  continue; the next deployment retries. With no secret configured, existing
+  deployment is unchanged. This follows the spec's outage-isolation constraint.
 - [ ] Update setup instructions with the exact migration path, local SQL test
   command and catalog command. The maintainer applies reviewed SQL in Supabase,
   enables CAPTCHA/anonymous Auth, then configures the GitHub secret. Public app
