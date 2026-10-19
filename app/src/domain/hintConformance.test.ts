@@ -43,6 +43,6 @@ describe('conformance: hint-cases', () => {
     const puzzle = parsePuzzle(readCase(testCase.file))
     const queens = new Set(testCase.state?.queens ?? [])
     const marks = new Set(testCase.state?.marks ?? [])
-    expect(firstHint(marksBoard(puzzle), queens, marks)).toEqual(testCase.hint)
+    expect(firstHint(marksBoard(puzzle), queens, marks)).toMatchObject(testCase.hint)
   })
 })

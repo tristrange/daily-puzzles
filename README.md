@@ -28,6 +28,11 @@ long diagonal as long as they are not adjacent.
 **Star Battle** — the same board with two stars per row, column and region. Same
 no-touching rule, same solver.
 
+Both games offer explained hints with target and support highlights. Apply move
+places a forced piece or crosses out one cell; Undo/Redo can restore the move
+until solved. Hints reason from your placed pieces and crosses, so they assume
+your crosses are correct.
+
 Neither game will hand you a puzzle you cannot solve, and both guarantee two things the
 player is never told: regions partition the grid and each is 4-connected, and **exactly one
 solution exists**.

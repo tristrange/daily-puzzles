@@ -29,7 +29,7 @@
 
 import type { Board } from './board'
 import { starsPerRow } from './game'
-import { PUZZLE_TYPE_HAS_HINTS } from './games'
+import { PUZZLE_PIECE, PUZZLE_TYPE_HAS_HINTS } from './games'
 
 export const HINT_RULES = [
   'single-region',
@@ -49,6 +49,9 @@ export interface Hint {
   action: 'queen' | 'x'
   /** The rule that forces it. */
   rule: HintRule
+  /** Evidence captured where the rule fires, before changing its candidate state. */
+  reason: string
+  support: readonly number[]
 }
 
 type GroupKind = 'region' | 'row' | 'column'
@@ -63,6 +66,7 @@ type GroupKind = 'region' | 'row' | 'column'
  */
 interface CandidateState {
   board: Board
+  queens: ReadonlySet<number>
   cand: Uint8Array
   rowNeed: number[]
   colNeed: number[]
@@ -76,6 +80,7 @@ interface CandidateState {
 function initialState(board: Board, queens: ReadonlySet<number>, marks: ReadonlySet<number>): CandidateState {
   const state: CandidateState = {
     board,
+    queens,
     cand: new Uint8Array(board.cellCount).fill(1),
     rowNeed: new Array<number>(board.size).fill(starsPerRow(board)),
     colNeed: new Array<number>(board.size).fill(starsPerRow(board)),
@@ -182,15 +187,57 @@ function singleCandidate(state: CandidateState, cells: readonly number[]): numbe
   return found
 }
 
-function queenHint(cell: number, rule: HintRule): Hint {
-  return { cell, action: 'queen', rule }
+export function hintCellName(board: Board, cell: number): string {
+  const { row, col } = board.coords(cell)
+  return `row ${row + 1}, column ${col + 1}`
 }
 
-function deadHint(state: CandidateState, rule: HintRule, victims: readonly number[]): Hint | null {
+type Group = readonly [GroupKind, number]
+
+function groupNeed(state: CandidateState, [kind, index]: Group): number {
+  return (kind === 'region' ? state.regionNeed : kind === 'row' ? state.rowNeed : state.colNeed)[index]!
+}
+
+function explainedHint(state: CandidateState, cell: number, action: Hint['action'], rule: HintRule,
+  sources: readonly Group[], homes: readonly Group[] = []): Hint {
+  const { board } = state
+  const piece = PUZZLE_PIECE[board.puzzleType]
+  const count = (n: number) => `${n} ${n === 1 ? piece.noun : piece.plural}`
+  const groupName = ([kind, index]: Group) => kind === 'region'
+    ? `region containing ${hintCellName(board, state.cellsOfRegion[index]![0]!)}` : `${kind} ${index + 1}`
+  const sourceCells = sources.flatMap(([kind, index]) => [...groupCells(state, kind, index)])
+  const support = new Set([...sourceCells, ...homes.flatMap(([kind, index]) => [...groupCells(state, kind, index)])])
+  // A placed piece outside the groups may explain why one of their cells is unavailable.
+  for (const queen of state.queens) {
+    if (!(queen >= 0 && queen < board.cellCount)) continue
+    const q = board.coords(queen)
+    if (sourceCells.some((c) => {
+      const p = board.coords(c)
+      return (p.row === q.row && state.rowNeed[q.row] === 0)
+        || (p.col === q.col && state.colNeed[q.col] === 0)
+        || (board.regionAt(c) === board.regionAt(queen) && state.regionNeed[board.regionAt(queen)] === 0)
+        || (Math.abs(p.row - q.row) <= 1 && Math.abs(p.col - q.col) <= 1)
+    })) support.add(queen)
+  }
+  support.delete(cell)
+  const need = sources.reduce((total, group) => total + groupNeed(state, group), 0)
+  const subject = `The ${sources.map(groupName).join(' and ')}`
+  const demand = `${subject} still ${sources.length === 1 ? 'needs' : 'need'} ${count(need)}.`
+  let reason: string
+  if (homes.length) {
+    reason = `${demand} All available cells in ${sources.length === 1 ? 'this group lie' : 'these groups lie'} in ${homes.map(groupName).join(' and ')}, with room for exactly ${need} more ${need === 1 ? piece.noun : piece.plural} in total. Those spaces must be reserved for ${sources.length === 1 ? 'this group' : 'these groups'}, so ${hintCellName(board, cell)} outside ${sources.length === 1 ? 'it' : 'them'} cannot hold a ${piece.noun}.`
+  } else if (rule === 'fill') {
+    reason = `${demand} There are exactly ${need} available cells left, so every one must hold a ${piece.noun}, including ${hintCellName(board, cell)}.`
+  } else {
+    reason = `${demand} Its only available cell is ${hintCellName(board, cell)}, so place a ${piece.noun} there.`
+  }
+  return { cell, action, rule, reason, support: [...support] }
+}
+
+function deadHint(state: CandidateState, rule: HintRule, victims: readonly number[],
+  sources: readonly Group[], homes: readonly Group[]): Hint | null {
   for (const cell of victims) {
-    if (eliminate(state, cell)) {
-      return { cell, action: 'x', rule }
-    }
+    if (state.cand[cell]) return explainedHint(state, cell, 'x', rule, sources, homes)
   }
   return null
 }
@@ -216,14 +263,12 @@ function huntSingles(state: CandidateState): Hint | null {
       if (need === 1 && frees[group] === 1) {
         const cell = singleCandidate(state, groupCells(state, kind, group))
         if (cell !== null) {
-          placeStar(state, cell)
-          return queenHint(cell, rule)
+          return explainedHint(state, cell, 'queen', rule, [[kind, group]])
         }
       } else if (need === frees[group]) {
         for (const cell of groupCells(state, kind, group)) {
           if (state.cand[cell]) {
-            placeStar(state, cell)
-            return queenHint(cell, 'fill')
+            return explainedHint(state, cell, 'queen', 'fill', [[kind, group]])
           }
         }
       }
@@ -291,7 +336,7 @@ function huntIntersections(state: CandidateState): Hint | null {
           (cell) => state.board.regionAt(cell) !== region,
         ),
       )
-      const hint = deadHint(state, 'intersection', dead)
+      const hint = deadHint(state, 'intersection', dead, [['region', region]], [...homes].map((home) => [kind, home]))
       if (hint) return hint
     }
   }
@@ -314,7 +359,7 @@ function huntIntersections(state: CandidateState): Hint | null {
           (cell) => state.board.coords(cell)[axis] !== line,
         ),
       )
-      const hint = deadHint(state, 'intersection', dead)
+      const hint = deadHint(state, 'intersection', dead, [[kind, line]], [...regions].map((region) => ['region', region]))
       if (hint) return hint
     }
   }
@@ -392,7 +437,7 @@ function huntSubsets(state: CandidateState): Hint | null {
             victims.push(cell)
           }
         }
-        const hint = deadHint(state, 'subset', victims)
+        const hint = deadHint(state, 'subset', victims, combo.map((group) => [source, group]), [...homes].map((group) => [home, group]))
         if (hint) return hint
       }
     }
@@ -406,10 +451,8 @@ function huntSubsets(state: CandidateState): Hint | null {
  * the caller's job.
  *
  * Mark games with the ported rules only: `PUZZLE_TYPE_HAS_HINTS` says which. The
- * port's rules are single-star (a group with one candidate left, regions consumed
- * whole), so a k-star board would get hints that are simply wrong, and a wrong hint
- * is worse than none. Reading the same table the UI hides its button from means the
- * two cannot disagree about which families these are.
+ * rules account for each group's remaining capacity, including multi-star boards.
+ * Reading the same table the UI hides its button from keeps the two aligned.
  */
 export function firstHint(
   board: Board,

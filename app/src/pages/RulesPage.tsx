@@ -60,6 +60,10 @@ export function RulesPage() {
       <p>Use Hint or H to ask for a forced move and its explanation. Clear conflicts first.
         If no move can be explained, the app says so rather than guessing.
         Hints actually shown count in your result.</p>
+      <p>The solid outline marks the target; dashed outlines show supporting cells.
+        Apply move places the queen or adds a cross as one undoable move. Use the
+        location link to return to the target, or Escape to dismiss the explanation.
+        Hints use your placed queens and crosses, so a mistaken cross can mislead them.</p>
 
       <h2 id="star-battle" tabIndex={-1}>Star Battle</h2>
       <h3>Rules</h3>
@@ -77,6 +81,9 @@ export function RulesPage() {
       <p>Use Hint or H for an explained, forced move, just as in Queens.
         Hints account for regions needing multiple stars. Clear conflicts first;
         hints actually shown count in your result.</p>
+      <p>Target and support highlights show the reasoning. Apply move places a star
+        or crosses out one cell; Undo restores the previous board until solved.
+        Your placed stars and crosses are used as the starting assumptions.</p>
       <h3 id="crosses" tabIndex={-1}>Crosses and auto-mark</h3>
       <p>For Queens and Star Battle, a cross marks a cell you have ruled out. The app
         does not validate crosses, so you can accidentally rule out a correct cell.</p>

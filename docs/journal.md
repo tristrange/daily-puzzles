@@ -1481,3 +1481,36 @@ and physical iPhone testing remain unverified; handler behavior is unit tested.
 No dependencies, engine rules or saved-progress formats changed.
 
 [Trio history controls](images/trio-redo-desktop.png)
+
+## 2026-10-19 — Explain Queens and Star Battle deductions
+
+Queens and Star Battle now use Trio's explain-then-apply interaction. The hint
+engine captures the groups, remaining piece counts and supporting cells at the
+rule that finds the move. Explanations cover singles, filling a group,
+intersections and subsets, including regions and lines needing multiple stars.
+The deduction order and selected moves remain pinned by the existing shared
+conformance fixtures and full hint baseline.
+
+Solid target and dashed support outlines distinguish the move from its evidence.
+The shared HintPanel focuses its explanation, supports Escape/Dismiss, and offers
+a location button to return to the target on phones. Timer renders preserve
+focus. Apply move places a piece or adds one cross through normal history and
+solve handling; Undo/Redo restores it until solved. Edits and gestures dismiss
+stale hints. The panel states that these games use player crosses as exclusions;
+it does not claim to validate them against a solution. A stalled rule pass no
+longer suggests that the player needs to guess.
+
+All 677 app tests, TypeScript and the production build pass. New regression
+checks exercise explanation evidence and remaining counts, requesting without
+editing, applying an undoable move in both games, and hint-assisted completion
+with stats. Lint retains the existing TracksStage warning. Independent review
+caught support outlines hiding keyboard focus; a separate solid focus outline
+fixes that, verified in the browser. Browser checks also cover desktop,
+375×667 and 320×667 layouts, light/dark themes, location and Escape focus,
+Apply/Undo/Redo, stale cleanup and Trio candidate-note hints after the shared
+panel extraction. Physical iPhone/Safari testing remains unverified. No engine,
+published puzzle, dependency or saved-data changes; Python tests were not rerun.
+Train Tracks deductions remain the next separate milestone.
+
+[Desktop explanation](images/star-explained-hint-desktop.png) ·
+[Phone explanation](images/star-explained-hint-phone.png)
