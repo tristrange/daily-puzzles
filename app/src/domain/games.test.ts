@@ -121,9 +121,8 @@ describe('puzzle type registry', () => {
     for (const type of PUZZLE_TYPES) {
       expect(typeof PUZZLE_TYPE_HAS_HINTS[type]).toBe('boolean')
       // A family without hints must never produce one, whatever the position.
-      // Train Tracks is that family today, and it cannot be handed a `Board` at
-      // all — which is the stronger statement, and the reason this loop has to
-      // narrow rather than pass every type to `makeBoard`.
+      // Other families use their own board and hint engines; this loop narrows
+      // to the marks families accepted by firstHint.
       if (!PUZZLE_TYPE_HAS_HINTS[type] && (type === 'queens' || type === 'star-battle')) {
         expect(firstHint(makeBoard(type))).toBeNull()
       }

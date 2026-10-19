@@ -3,7 +3,7 @@ import { puzzleTypeOf } from '../domain/dates'
 import type { TrackGrid } from '../domain/tracks'
 import { isTracksSolved, MAYBE, type TracksGame } from '../domain/tracksGame'
 
-export type TrackProgress = { readonly game: TracksGame; readonly elapsedMs: number }
+export type TrackProgress = { readonly game: TracksGame; readonly elapsedMs: number; readonly hints: number }
 
 function key(id: string): string {
   return `daily-puzzles.track-progress.${id}`
@@ -20,6 +20,8 @@ export function readTrackProgress(id: string, grid: TrackGrid): TrackProgress | 
     if (value === null || typeof value !== 'object') return null
     const snapshot = value as Record<string, unknown>
     const { pieces, elapsedMs } = snapshot
+    const hints = snapshot['hints'] === undefined ? 0 : snapshot['hints']
+    if (typeof hints !== 'number' || !Number.isSafeInteger(hints) || hints < 0) return null
     if (snapshot['version'] !== 1 || snapshot['board'] !== fingerprint(grid)) return null
     if (typeof elapsedMs !== 'number' || !Number.isSafeInteger(elapsedMs) || elapsedMs < 0) return null
     if (!Array.isArray(pieces) || pieces.length !== grid.cellCount) return null
@@ -32,21 +34,22 @@ export function readTrackProgress(id: string, grid: TrackGrid): TrackProgress | 
       clearTrackProgress(id)
       return null
     }
-    return { game, elapsedMs }
+    return { game, elapsedMs, hints }
   } catch {
     return null
   }
 }
 
-export function storeTrackProgress(id: string, game: TracksGame, elapsedMs: number): boolean {
-  if (puzzleTypeOf(id) !== 'train-tracks' || !Number.isSafeInteger(elapsedMs) || elapsedMs < 0) return false
+export function storeTrackProgress(id: string, game: TracksGame, elapsedMs: number, hints = 0): boolean {
+  if (puzzleTypeOf(id) !== 'train-tracks' || !Number.isSafeInteger(elapsedMs) || elapsedMs < 0
+    || !Number.isSafeInteger(hints) || hints < 0) return false
   if (isTracksSolved(game)) {
     clearTrackProgress(id)
     return true
   }
   try {
     localStorage.setItem(key(id), JSON.stringify({
-      version: 1, board: fingerprint(game.grid), pieces: game.pieces, elapsedMs,
+      version: 1, board: fingerprint(game.grid), pieces: game.pieces, elapsedMs, hints,
     }))
     return true
   } catch {

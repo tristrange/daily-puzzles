@@ -1,20 +1,14 @@
-/**
- * The Train Tracks playing area.
- *
- * Separate from the marks stage rather than a second branch inside it, because
- * almost nothing is shared: no auto-mark (a piece rules out nothing on its own —
- * the whole question is what its neighbour does back), no hints, and a different
- * set of things a click can leave behind. The clock, undo and reset are a few
- * lines each and are duplicated rather than hoisted, because hoisting them means a
- * generic over two unrelated state types to share code that is mostly `setState`.
- */
+/** Track pieces and directional rules need their own stage; controls and hint presentation are shared. */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { formatTime } from '../domain/game'
 import type { Puzzle } from '../domain/puzzle'
 import type { TrackGrid } from '../domain/tracks'
 import {
   applyBrush,
+  CROSS,
+  MAYBE,
+  TRACK_CELL_NAME,
   clearCell,
   createTracksGame,
   isEmpty,
@@ -40,6 +34,8 @@ import {
 import { TrackPicker } from './TrackPicker'
 import { TracksBoard } from './TracksBoard'
 import { SolvedPanel } from './SolvedPanel'
+import { HintPanel } from './HintPanel'
+import { applyTrackHint, findTrackHint, trackCellName, type TrackHint } from '../domain/trackHints'
 import { ResetButton } from './ResetButton'
 import { useMoveHistory } from '../lib/useMoveHistory'
 
@@ -54,6 +50,14 @@ export function TracksStage({
 }) {
   const [initialProgress] = useState(() => readTrackProgress(puzzle.id, grid))
   const [game, setGame] = useState<TracksGame>(() => initialProgress?.game ?? createTracksGame(grid))
+  const stage = useRef<HTMLDivElement>(null)
+  const hintButton = useRef<HTMLButtonElement>(null)
+  const hintId = useId()
+  const [hint, setHint] = useState<TrackHint | null>(null)
+  const [hintMessage, setHintMessage] = useState('')
+  const hintReasons = useMemo(() => hint ? hint.steps.map((step) => step.reason) : [], [hint])
+  const hintsUsed = useRef(initialProgress?.hints ?? 0)
+  const clearHint = () => { setHint(null); setHintMessage('') }
   const history = useMoveHistory<TracksGame>()
   const [announcement, setAnnouncement] = useState('')
   const [solvedAt, setSolvedAt] = useState<number | null>(null)
@@ -76,7 +80,7 @@ export function TracksStage({
   useEffect(() => {
     if (solvedAt !== null) return
     const save = () => storeTrackProgress(
-      puzzle.id, currentGame.current, Math.max(0, Date.now() - startedAt),
+      puzzle.id, currentGame.current, Math.max(0, Date.now() - startedAt), hintsUsed.current,
     )
     const timer = setInterval(() => {
       setElapsed(Math.max(0, Date.now() - startedAt))
@@ -125,7 +129,7 @@ export function TracksStage({
           // its width; nothing reads the field, so nothing is misled.
           size: grid.width,
           elapsedMs: when - startedAt,
-          hints: 0,
+          hints: hintsUsed.current,
           solvedAt: when,
         }),
         puzzleOfToday(new Date(when), timeZone),
@@ -149,16 +153,18 @@ export function TracksStage({
     // move from the bounded history — and an Undo that appears to do nothing is
     // worse than no Undo at all. The marks board has the same rule in `endStroke`.
     if (next === before) return
+    clearHint()
     history.remember(before)
     currentGame.current = next
     setGame(next)
-    setSavingAvailable(storeTrackProgress(puzzle.id, next, Math.max(0, Date.now() - startedAt)))
+    setSavingAvailable(storeTrackProgress(puzzle.id, next, Math.max(0, Date.now() - startedAt), hintsUsed.current))
     if (solvedAt !== null || !isTracksSolved(next)) return
     recordSolve(Date.now())
   }
 
   /** A press landed. The whole stroke, drag or click, is one move from here. */
   const beginStroke = () => {
+    clearHint()
     strokeStart.current = game
   }
 
@@ -190,9 +196,10 @@ export function TracksStage({
     if (solved || strokeStart.current !== null) return
     const previous = history.undo(game)
     if (previous === undefined) return
+    clearHint()
     currentGame.current = previous
     setGame(previous)
-    setSavingAvailable(storeTrackProgress(puzzle.id, previous, Math.max(0, Date.now() - startedAt)))
+    setSavingAvailable(storeTrackProgress(puzzle.id, previous, Math.max(0, Date.now() - startedAt), hintsUsed.current))
     setAnnouncement('Undid the last move.')
   }
 
@@ -200,9 +207,10 @@ export function TracksStage({
     if (solved || strokeStart.current !== null) return
     const next = history.redo(game)
     if (next === undefined) return
+    clearHint()
     currentGame.current = next
     setGame(next)
-    setSavingAvailable(storeTrackProgress(puzzle.id, next, Math.max(0, Date.now() - startedAt)))
+    setSavingAvailable(storeTrackProgress(puzzle.id, next, Math.max(0, Date.now() - startedAt), hintsUsed.current))
     setAnnouncement('Redid the last move.')
   }
 
@@ -212,8 +220,37 @@ export function TracksStage({
     setAnnouncement('Board cleared. Undo brings it back.')
   }
 
+  const requestHint = () => {
+    if (completed.current || solved || strokeStart.current !== null) return
+    const result = findTrackHint(currentGame.current)
+    setHint(result.kind === 'hint' ? result.hint : null)
+    const message = result.kind === 'contradiction'
+      ? 'Your tracks and crosses lead to a contradiction. Check your entries or Undo before asking for a hint.'
+      : result.kind === 'none' ? 'These count and connection rules found no further deduction. This does not prove that guessing is necessary.' : ''
+    setHintMessage(message)
+    setAnnouncement(message)
+    if (result.kind === 'hint') {
+      hintsUsed.current += 1
+      setSavingAvailable(storeTrackProgress(puzzle.id, currentGame.current, Math.max(0, Date.now() - startedAt), hintsUsed.current))
+    }
+  }
+  const dismissHint = () => { clearHint(); hintButton.current?.focus({ preventScroll: true }) }
+  const showHintCell = () => {
+    const target = stage.current?.querySelector<HTMLElement>('[data-hint="target"]')
+    target?.focus({ preventScroll: true })
+    target?.scrollIntoView({ block: 'center' })
+  }
+  const acceptHint = () => {
+    if (!hint || completed.current || solved || strokeStart.current !== null) return
+    const before = currentGame.current, next = applyTrackHint(before, hint)
+    if (next === before) { dismissHint(); return }
+    applyGame(next, before)
+    if (isTracksSolved(next)) stage.current?.querySelector<HTMLElement>(`[data-cell="${hint.cell}"]`)?.focus({ preventScroll: true })
+    else { setAnnouncement('Hint applied. Undo restores your previous board.'); hintButton.current?.focus({ preventScroll: true }) }
+  }
+
   const share = async (variant: 'result' | 'solution') => {
-    const counted = firstSolve ?? { elapsedMs: shownTime, hints: 0 }
+    const counted = firstSolve ?? { elapsedMs: shownTime, hints: hintsUsed.current }
     const result: ShareResult = {
       puzzleId: puzzle.id,
       width: grid.width,
@@ -256,7 +293,7 @@ export function TracksStage({
   }
 
   return (
-    <>
+    <div className="tracks-game" ref={stage}>
       <div className="tracks-workspace">
         <div className="tracks-controls">
           <div className="puzzle-tools">
@@ -275,6 +312,9 @@ export function TracksStage({
             <button type="button" className="tool-button" onClick={redo}
               disabled={!history.canRedo || solved} aria-label="Redo last move">Redo</button>
             <ResetButton onReset={reset} disabled={isEmpty(game) || solved} />
+            <button ref={hintButton} type="button" className="tool-button" onClick={requestHint}
+              disabled={solved} aria-label="Get an explained hint" aria-expanded={hint !== null}
+              aria-controls={hint ? hintId : undefined}>Hint</button>
           </div>
           {!savingAvailable && !solved && (
             <p className="status error" role="status">
@@ -286,6 +326,9 @@ export function TracksStage({
         <TracksBoard
           grid={grid}
           game={game}
+          hint={hint}
+          hintId={hint ? hintId : undefined}
+          onRequestHint={requestHint}
           conflicts={conflictList}
           locked={solved}
           brush={brush}
@@ -303,8 +346,12 @@ export function TracksStage({
           ? `Solved in ${formatTime(shownTime)}`
           : conflictList.length > 0
             ? statusTextFor(conflictList)
-            : ' '}
+            : hintMessage || ' '}
       </p>
+      {hint && <HintPanel id={hintId} location={trackCellName(grid, hint.cell)}
+        title={hint.brush === CROSS ? 'Rule out track' : hint.brush === MAYBE ? 'Mark definite track' : `Place ${TRACK_CELL_NAME[hint.brush]}`}
+        reasons={hintReasons} effect={`${hint.brush === MAYBE ? 'Apply puts ? in this cell. It counts as track; choose its direction later. ' : ''}Uses your placed tracks, ? cells and crosses as starting assumptions.`}
+        onApply={acceptHint} onDismiss={dismissHint} onShowCell={showHintCell} />}
       <SolvedPanel
         solved={solved}
         firstSolve={firstSolve}
@@ -316,6 +363,6 @@ export function TracksStage({
       <p className="sr-only" role="status" aria-live="polite">
         {announcement}
       </p>
-    </>
+    </div>
   )
 }

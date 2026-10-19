@@ -274,13 +274,12 @@ The pieces the plan called for and the shape they took:
 - **`Puzzle.size` is deleted**, exactly as in the engine. Every consumer reads
   `puzzle.board.width` and `.height` instead, which is why the home page and the
   share text needed no per-type branch.
-- **`GameState` did not become a union.** It would have meant narrowing in every
-  handler, and there is almost nothing shared to generalise: a tracks board has no
-  marks to cross out, no auto-mark (a piece rules out nothing on its own — the
-  whole question is what its neighbour does back), and no hints. `TracksStage` is
-  its own component next to `PuzzleStage`; what the two share — the clock, undo,
-  reset, the solved panel and the share — is `SolvedPanel`, extracted as
-  presentation over facts both already hold.
+- **`GameState` did not become a union.** The track picker, directional connections
+  and occupancy notes need their own state and rules, so `TracksStage` remains
+  separate from `PuzzleStage`. Shared presentation includes `SolvedPanel`,
+  `ResetButton` and the explained `HintPanel`; bounded Undo/Redo uses
+  `useMoveHistory`. Train Tracks now has its own client-side count/connection
+  deductions without changing the Python generator's uniqueness-only guarantee.
 - **`isSolved` and `conflicts` are the tracks rules**, not a generalised version of
   the marks ones. See below.
 

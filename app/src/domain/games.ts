@@ -77,10 +77,7 @@ export function isDefaultPuzzleType(puzzleType: PuzzleType): boolean {
 export const PUZZLE_TYPE_HAS_HINTS: Record<PuzzleType, boolean> = {
   queens: true,
   'star-battle': true,
-  // No deduction engine for this genre yet, so the engine answers `null` and the
-  // button would be a claim about a board nothing can reason about. The two
-  // tables are one fact: registering the family here is also deciding this.
-  'train-tracks': false,
+  'train-tracks': true,
   'word-paths': false,
   trio: true,
 }

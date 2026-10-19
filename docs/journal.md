@@ -1536,3 +1536,41 @@ column overfill caused by two ? cells. Physical iPhone testing was not repeated.
 No engine, saved-format, puzzle-content or dependency changes were needed.
 
 [Undecided cells overfill a row](images/tracks-undirected-counts.png)
+
+## 2026-10-19 — Explained Train Tracks hints
+
+Train Tracks now offers count, connection and edge deductions in the shared
+HintPanel. Cell domains represent empty or one of six shapes; ? fixes occupancy
+without choosing a direction. Row/column bounds and reciprocal ends narrow those
+domains to a fixed point. Contradictions anywhere in that pass suppress hints.
+The first deduction expressible as a cross, ?, or forced shape is offered with
+its earlier supporting deductions and distinct target/support highlights.
+
+Apply move uses normal history and solve handling. H opens hints, Escape returns
+to Hint, and the location button focuses the target. Edits and gestures clear
+stale explanations; source identity prevents applying an old hint. Shown hints
+are retained through Undo/Redo and Reset, saved with the attempt, and included in
+the first solve and share text. An absent hint count in a legacy v1 snapshot means
+zero. Player tracks, ? cells and crosses are assumptions, disclosed in every hint.
+There is no search or global loop/path reasoning, and a stalled rule pass does
+not claim that guessing is required. Generator guarantees are unchanged.
+
+All 688 app tests, TypeScript and the production build pass. Tests cover occupancy
+and shape hints, causal evidence, contradictions, stale application, history,
+completion/statistics/sharing and compatible progress restoration. Lint retains
+the existing TracksStage effect warning. Independent review caught an omitted
+assumptions note for ? hints and obsolete rules text; both were fixed and checked.
+
+An offline oracle exercise used the Python exact solver on seven published boards
+(7×7, 8×8, 10×10 and 12×12), each from three correct starting positions. All 1,644
+proposed moves and 4,141 supporting restrictions preserved the independent solution.
+Four traces finished and 17 stalled, demonstrating the limited scope. Answers and
+the temporary oracle runner were not added to the app or default test suite.
+
+Production browser checks cover desktop, 375×667 and 320×667, light/dark themes,
+H, location/escape focus, timer focus stability, Apply/Undo/Redo and reload. Applying
+a final forced shape completed a real 8×8 board; Stats recorded all six shown
+hints across reload. Physical iPhone/Safari testing remains unverified. No new
+dependencies or published puzzle files; the full Python suite was not rerun.
+
+[Phone explanation](images/tracks-hint-phone.png)

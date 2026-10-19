@@ -45,6 +45,7 @@ import {
 } from 'react'
 import { PUZZLE_TYPE_LABEL } from '../domain/games'
 import { TrackGrid } from '../domain/tracks'
+import type { TrackHint } from '../domain/trackHints'
 import { TrackPiece } from './TrackPiece'
 import {
   cellState,
@@ -59,6 +60,9 @@ import {
 export interface TracksBoardProps {
   grid: TrackGrid
   game: TracksGame
+  hint?: TrackHint | null
+  hintId?: string | undefined
+  onRequestHint: () => void
   /** What is wrong, if anything. A cell can break several rules at once. */
   conflicts: readonly TrackConflict[]
   locked?: boolean
@@ -115,6 +119,9 @@ function reasonFor(grid: TrackGrid, conflict: TrackConflict): string {
 export function TracksBoard({
   grid,
   game,
+  hint = null,
+  hintId,
+  onRequestHint,
   conflicts,
   locked = false,
   brush,
@@ -249,6 +256,11 @@ export function TracksBoard({
       // One key per state, the way the marks board has one key per mark. Without
       // these, Enter with a fixed brush would put the same piece in every cell,
       // which is worse than the cycle it replaced: it cannot reach the other six.
+      case 'h':
+      case 'H':
+        event.preventDefault()
+        if (stroke.current === null) onRequestHint()
+        break
       case 'x':
       case 'X':
         event.preventDefault()
@@ -295,6 +307,7 @@ export function TracksBoard({
     return text
   }, [conflicts, grid])
 
+  const support = new Set(hint?.steps.flatMap((step) => [...step.group]) ?? [])
   const labelFor = (cell: number): string => {
     const { row, col } = grid.coords(cell)
     const what =
@@ -302,7 +315,7 @@ export function TracksBoard({
         ? `given ${TRACK_CELL_NAME[pieceAt(cell)] ?? 'track'}`
         : TRACK_CELL_NAME[pieceAt(cell)] ?? 'empty'
     const clue = `, row needs ${grid.rowClues[row] ?? 0}, column needs ${grid.colClues[col] ?? 0}`
-    return `Row ${row + 1}, column ${col + 1}, ${what}${clue}${faults.get(cell) ?? ''}`
+    return `Row ${row + 1}, column ${col + 1}, ${what}${clue}${faults.get(cell) ?? ''}${hint?.cell === cell ? ', hint target' : support.has(cell) ? ', hint support' : ''}`
   }
 
   const classNameFor = (cell: number): string => {
@@ -322,6 +335,7 @@ export function TracksBoard({
         key={cell}
         role="gridcell"
         data-cell={cell}
+        data-hint={hint?.cell === cell ? 'target' : support.has(cell) ? 'support' : undefined}
         aria-label={labelFor(cell)}
         className={classNameFor(cell)}
         tabIndex={cell === focusIndex ? 0 : -1}
@@ -383,6 +397,7 @@ export function TracksBoard({
         ref={boardRef}
         className={painting ? 'board playable painting' : 'board playable'}
         role="grid"
+        aria-describedby={hintId}
         aria-label={`${grid.width} by ${grid.height} ${puzzleName} puzzle. Rows need ${grid.rowClues.join(', ')} cells; columns need ${grid.colClues.join(', ')}`}
         onKeyDown={onKeyDown}
       >
