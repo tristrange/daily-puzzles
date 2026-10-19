@@ -241,12 +241,39 @@ describe('trackConflicts', () => {
     const game = createTracksGame(middleRow())
     expect(trackConflicts(game).filter((conflict) => conflict.rule === 'row-count')).toEqual([])
   })
+
+  it('counts undecided track cells in both clue limits and flags only editable occupied cells', () => {
+    const grid = middleRow()
+    // Column 0 already contains its given track. The ? overfills both its row
+    // (clue 0) and column (clue 1); the cross in column 1 occupies no track space.
+    const game = applyBrush(applyBrush(createTracksGame(grid), 0, MAYBE), 1, CROSS)
+    expect(trackConflicts(game).filter((c) => c.rule === 'row-count' || c.rule === 'col-count')).toEqual([
+      { rule: 'row-count', cell: 0, other: 0 },
+      { rule: 'col-count', cell: 0, other: 0 },
+    ])
+    const mixed = applyBrush(game, 1, 2)
+    expect(trackConflicts(mixed).filter((c) => c.rule === 'row-count').map((c) => c.cell)).toEqual([0, 1])
+    expect(trackConflicts(clearCell(game, 0)).filter((c) => c.rule === 'row-count' || c.rule === 'col-count')).toEqual([])
+  })
+
+  it('treats an undecided cell as occupied without inventing a track direction', () => {
+    const game = applyBrush(createTracksGame(middleRow()), 4, MAYBE)
+    expect(trackConflicts(game).filter((c) => isFault(c.rule))).toEqual([])
+    expect(isTracksSolved(game)).toBe(false)
+    expect(isTracksSolved(applyBrush(game, 4, 1))).toBe(true)
+  })
 })
 
 describe('isTracksSolved', () => {
   it('accepts the line the grid was built around', () => {
     const grid = middleRow()
     expect(isTracksSolved(placed(grid, [0, 0, 0, 1, 1, 1, 0, 0, 0]))).toBe(true)
+  })
+
+  it('allows crosses beside a completed route but requires undecided track cells to be resolved', () => {
+    const game = placed(middleRow(), [0, 0, 0, 1, 1, 1, 0, 0, 0])
+    expect(isTracksSolved(applyBrush(game, 0, CROSS))).toBe(true)
+    expect(isTracksSolved(applyBrush(game, 0, MAYBE))).toBe(false)
   })
 
   it('rejects the right cells with the wrong turn', () => {
