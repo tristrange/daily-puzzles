@@ -251,7 +251,7 @@ export function TracksStage({
     const counts = faults.some((f) => f.rule === 'row-count' || f.rule === 'col-count')
     if (joins && counts) return 'Some track does not meet, and a line is over its count.'
     if (joins) return 'Some track does not meet — fix it.'
-    if (counts) return 'A line holds more than its count — remove a piece.'
+    if (counts) return 'A line holds more than its count — clear a track or undecided cell.'
     return 'Too many track ends run off the grid.'
   }
 

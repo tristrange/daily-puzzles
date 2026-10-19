@@ -111,7 +111,8 @@ export function RulesPage() {
         <li><strong>×</strong> means no track goes here.</li>
         <li><strong>?</strong> means a track goes here, but you have not chosen its direction.</li>
       </ul>
-      <p>Notes do not count as track pieces. The app does not validate them.</p>
+      <p>Each ? counts as a track towards row and column limits, but needs a direction
+        before it can join the finished route. × marks do not count.</p>
       <p>Keys 1–6 place the corresponding track piece in the focused cell.
         X places ×; ? places an undecided note. Delete or Backspace clears the cell;
         Enter or Space applies the selected picker entry.</p>

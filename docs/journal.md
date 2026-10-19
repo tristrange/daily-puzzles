@@ -1514,3 +1514,25 @@ Train Tracks deductions remain the next separate milestone.
 
 [Desktop explanation](images/star-explained-hint-desktop.png) ·
 [Phone explanation](images/star-explained-hint-phone.png)
+
+## 2026-10-19 — Count undecided Train Tracks cells
+
+The ? marker now reserves track space when checking row and column clue limits.
+Shaped tracks and ? cells share that tally, while crosses remain excluded. An
+overfilled line highlights its editable occupied cells, including ? markers;
+givens stay fixed. Direction, connection and path checks still require a shaped
+track. Every ? must be resolved before the route can finish, so an otherwise
+complete route with extra ? cells is no longer accepted. Rules and status text
+describe the distinction. The marker's appearance is unchanged.
+
+All 680 app tests, TypeScript and the production build pass; lint retains the
+existing TracksStage warning. Three focused regression cases cover both axes,
+mixed track/? occupancy, clearing an overfill, clue equality without invented
+direction conflicts, and completion versus leftover crosses or ? cells. An
+independent review found no actionable issues. Production browser checks show
+one given plus three ? cells meeting a clue of four, a fourth ? triggering the
+warning, Undo/Redo clearing and restoring it, persistence after reload, and a
+column overfill caused by two ? cells. Physical iPhone testing was not repeated.
+No engine, saved-format, puzzle-content or dependency changes were needed.
+
+[Undecided cells overfill a row](images/tracks-undirected-counts.png)

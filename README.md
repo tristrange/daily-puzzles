@@ -57,6 +57,10 @@ board size, not difficulty. New boards use every row and column, scatter extra
 givens, and have a proven unique solution; no logic-only guarantee is claimed.
 Historical 7×7 boards remain playable with their original rules and contents.
 
+The ? marker commits a cell to track while its direction is undecided. It counts
+towards row and column limits, just like a shaped track; × marks do not count.
+Choose a track shape or clear every ? before completing the route.
+
 Unfinished Train Tracks boards and elapsed time save independently in this browser.
 Time pauses between page visits; Undo and Redo belong to the current visit. Finished boards
 start fresh for replay while the original solve stays in stats. Appearance defaults

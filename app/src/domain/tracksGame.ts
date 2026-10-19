@@ -169,19 +169,15 @@ function replace(pieces: readonly number[], cell: number, value: number): number
   return next
 }
 
-/**
- * Whether a cell holds a piece.
- *
- * Named for what it means rather than kept as `isOn`, because a cell can now hold
- * something that is not a piece — a cross, a maybe — and every caller of the old
- * name wanted the piece. A cross has to count towards nothing: not towards a row
- * clue, not as a pair of ends, not as a cell the line has to reach. Reading a
- * cross as a piece would have made the win condition pass on a board with two
- * crosses in it.
- */
+/** Whether a cell has a shaped track with known ends, rather than a cross or ?. */
 export function hasPiece(game: TracksGame, cell: number): boolean {
   const value = game.pieces[cell] ?? 0
   return value !== 0 && value <= PIECE_COUNT
+}
+
+/** A ? commits track space to the clue, without committing any direction. */
+function countsTowardsClue(game: TracksGame, cell: number): boolean {
+  return hasPiece(game, cell) || game.pieces[cell] === MAYBE
 }
 
 /** What `cell` holds, as one of the four things a cell can be. */
@@ -209,7 +205,7 @@ export function trackConflicts(game: TracksGame): readonly TrackConflict[] {
   const colCount = new Array<number>(grid.width).fill(0)
 
   for (let cell = 0; cell < grid.cellCount; cell += 1) {
-    if (!hasPiece(game, cell)) continue
+    if (!countsTowardsClue(game, cell)) continue
     const { row, col } = grid.coords(cell)
     rowCount[row] = (rowCount[row] ?? 0) + 1
     colCount[col] = (colCount[col] ?? 0) + 1
@@ -271,7 +267,7 @@ export function trackConflicts(game: TracksGame): readonly TrackConflict[] {
     if ((rowCount[row] ?? 0) <= (grid.rowClues[row] ?? 0)) continue
     for (let col = 0; col < grid.width; col += 1) {
       const cell = grid.index(row, col)
-      if (hasPiece(game, cell) && grid.pieceAt(cell) === 0) {
+      if (countsTowardsClue(game, cell) && grid.pieceAt(cell) === 0) {
         found.push({ rule: 'row-count', cell, other: row })
       }
     }
@@ -280,7 +276,7 @@ export function trackConflicts(game: TracksGame): readonly TrackConflict[] {
     if ((colCount[col] ?? 0) <= (grid.colClues[col] ?? 0)) continue
     for (let row = 0; row < grid.height; row += 1) {
       const cell = grid.index(row, col)
-      if (hasPiece(game, cell) && grid.pieceAt(cell) === 0) {
+      if (countsTowardsClue(game, cell) && grid.pieceAt(cell) === 0) {
         found.push({ rule: 'col-count', cell, other: col })
       }
     }
@@ -309,12 +305,8 @@ function pieceEnds(piece: number): readonly number[] {
  *   single path *and* any number of separate loops. The line has to be the whole
  *   of it, which is what the connectivity check is for.
  *
- * Crosses and maybes are not consulted. A note is the player's reasoning, not a
- * claim the answer can fail: someone who has crossed out a cell the finished line
- * does not use has been right all along, and someone whose last `?` outlived the
- * piece they were undecided about has a stale note, not a wrong answer. Blocking
- * a solve over either would mean the last note before finishing was the thing
- * standing between them and finishing. Reset clears them.
+ * Crosses do not affect a completed route. Undecided cells count towards clue
+ * limits but have no ends, so they must be resolved before the route can finish.
  */
 export function isTracksSolved(game: TracksGame): boolean {
   const { grid } = game
