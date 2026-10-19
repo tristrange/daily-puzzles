@@ -140,12 +140,27 @@ supporting cells differently, with matching accessible labels. The rule that
 finds the move also captures the explanation and remaining counts, so multi-star
 reasoning describes the live position. Conflicting pieces glow red until resolved.
 
-Queens, Star Battle and Trio share `HintPanel`: requesting a hint changes no cells;
+Queens, Star Battle, Trio and Train Tracks share `HintPanel`: requesting a hint changes no cells;
 Apply move uses the ordinary history and solve path. Escape/Dismiss returns focus
 to Hint, and the location button returns to the target. Stable explanation props
 keep timer renders from stealing focus. Board edits and Undo/Redo dismiss stale
 hints. Queens/Star Battle treat player crosses as exclusions; the panel discloses
 that assumption rather than claiming to validate them against a solution.
+
+Train Tracks uses `trackHints.ts` instead of the marks deduction port. A cell's
+domain contains empty or one of six track shapes: a cross fixes empty, ? excludes
+empty, and a shaped track fixes its ends. Only the two given endpoints may leave
+the board. Row/column minimum and maximum occupancy and reciprocal connection
+constraints narrow domains to a fixed point. A contradiction anywhere in that
+pass suppresses all hints. No search or global loop/path deductions are included.
+
+Each restriction records its reason and earlier evidence. The first restriction
+representable by a cross, ? or forced shape becomes a hint with its prerequisite
+steps. Apply checks the original game identity and records one move. The panel
+discloses that player tracks and crosses are assumptions. Shown hints persist
+in the existing v1 progress object; absent counts from older saves mean zero.
+They are retained through Undo/Redo and Reset and included in the first solve and
+its share text. This client-side assistance does not change generator guarantees.
 
 ## The game loop
 

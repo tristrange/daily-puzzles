@@ -430,7 +430,7 @@
     outline-width: 3px;
   }
 
-  &[data-hint='support'] { outline: 1px dashed var(--mark-ink); outline-offset: -3px; }
+  &[data-hint='support'] { outline: 1px dashed var(--mark-ink, var(--accent)); outline-offset: -3px; }
   &[data-hint='target'] {
     outline-color: var(--hint);
     outline-width: 3px;

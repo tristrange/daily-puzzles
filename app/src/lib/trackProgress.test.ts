@@ -26,6 +26,21 @@ function gridFor(data: unknown): TrackGrid {
 }
 
 describe('Train Tracks progress', () => {
+  it('restores hint counts, accepts legacy snapshots and rejects invalid counts', () => {
+    const values = memoryStorage(), grid = gridFor(small)
+    storeTrackProgress(small.id, createTracksGame(grid), 1000, 3)
+    expect(readTrackProgress(small.id, grid)?.hints).toBe(3)
+    const [key, value] = [...values][0]!
+    const snapshot = JSON.parse(value)
+    delete snapshot.hints
+    values.set(key, JSON.stringify(snapshot))
+    expect(readTrackProgress(small.id, grid)?.hints).toBe(0)
+    for (const hints of [-1, 1.5, '3', null]) {
+      values.set(key, JSON.stringify({ ...snapshot, hints }))
+      expect(readTrackProgress(small.id, grid)).toBeNull()
+    }
+    expect(storeTrackProgress(small.id, createTracksGame(grid), 1000, -1)).toBe(false)
+  })
   it('keeps all three boards, notes and times under distinct full IDs', () => {
     const values = memoryStorage()
     for (const [index, data] of [small, medium, large].entries()) {

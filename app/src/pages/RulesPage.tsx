@@ -102,7 +102,7 @@ export function RulesPage() {
         <li>Given pieces cannot be changed. They include both ends of the route.</li>
       </ul>
       <p>Choose Small (8×8), Medium (10×10) or Large (12×12). These are board sizes,
-        not difficulty ratings. Train Tracks has no hints.</p>
+        not difficulty ratings.</p>
       <h3 id="notes" tabIndex={-1}>Controls, notes and the picker</h3>
       <p>Choose a straight, turn, note or eraser from the picker, then tap or drag across
         cells to apply it. Tapping a cell that already holds your selection clears it.
@@ -113,6 +113,17 @@ export function RulesPage() {
       </ul>
       <p>Each ? counts as a track towards row and column limits, but needs a direction
         before it can join the finished route. × marks do not count.</p>
+      <h3>Hints</h3>
+      <p>Hint or H explains a deduction from row and column counts, matching track
+        connections or the two fixed edge ends. A solid outline marks the target;
+        dashed outlines show support. Apply move crosses out one cell, places ?
+        for definite track, or sets a forced shape. Undo restores the move until solved.</p>
+      <p>The explanation may include earlier deductions. Use its location link to
+        return to the target, or Escape to dismiss. Hints use your tracks, ? cells
+        and crosses as assumptions; mistaken entries can mislead them. Shown hints
+        count in your result even if dismissed or undone, and survive reloads.</p>
+      <p>These rules do not search for a solution or reason about every possible loop
+        or path. Finding no further deduction does not prove guessing is necessary.</p>
       <p>Keys 1–6 place the corresponding track piece in the focused cell.
         X places ×; ? places an undecided note. Delete or Backspace clears the cell;
         Enter or Space applies the selected picker entry.</p>

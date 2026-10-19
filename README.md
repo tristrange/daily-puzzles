@@ -61,6 +61,12 @@ The ? marker commits a cell to track while its direction is undecided. It counts
 towards row and column limits, just like a shaped track; × marks do not count.
 Choose a track shape or clear every ? before completing the route.
 
+Explained hints use clue counts, matching connections and fixed edge endpoints.
+Apply move records an empty cell, definite track (?) or a forced shape as one
+undoable move. Hints rely on your tracks and crosses as assumptions and may stall;
+they do not search or guarantee a logic-only solution. Shown hints are saved with
+unfinished attempts and counted in solve results.
+
 Unfinished Train Tracks boards and elapsed time save independently in this browser.
 Time pauses between page visits; Undo and Redo belong to the current visit. Finished boards
 start fresh for replay while the original solve stays in stats. Appearance defaults
