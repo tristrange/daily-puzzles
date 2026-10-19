@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react'
 
-export function HintPanel({ id, location, title, reasons, effect, onApply, onDismiss, onShowCell }: {
+export function HintPanel({ id, location, title, reasons, effect, onApply, onDismiss, onShowCell, variant = 'logic' }: {
   id: string; location: string; title: string; reasons: readonly string[]; effect?: string
-  onApply: () => void; onDismiss: () => void; onShowCell: () => void
+  onApply?: (() => void) | undefined; onDismiss: () => void; onShowCell: () => void; variant?: 'logic' | 'word'
 }) {
   const panel = useRef<HTMLElement>(null)
   useEffect(() => {
@@ -12,15 +12,15 @@ export function HintPanel({ id, location, title, reasons, effect, onApply, onDis
   return <section className="hint-panel" ref={panel} tabIndex={-1} aria-labelledby={`${id}-title`} id={id}
     onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); onDismiss() } }}>
     <div className="hint-heading">
-      <div><p className="eyebrow">Explained hint · <button type="button" className="hint-location" onClick={onShowCell}
+      <div><p className="eyebrow">{variant === 'word' ? 'Word hint' : 'Explained hint'} · <button type="button" className="hint-location" onClick={onShowCell}
         aria-label={`Show hint target at ${location}`}>{location}</button></p>
         <h2 id={`${id}-title`}>{title}</h2></div>
       <button type="button" className="tool-button" onClick={onDismiss} aria-label="Dismiss hint">×</button>
     </div>
-    <p className="hint-key">Target: solid outline · Support: dashed</p>
+    <p className="hint-key">{variant === 'word' ? 'Solid: start · Dashed: continuation · Bottom badges: hint order' : 'Target: solid outline · Support: dashed'}</p>
     <ol>{reasons.map((reason, i) => <li key={i}>{reason}</li>)}</ol>
     {effect && <p className="hint-effect">{effect}</p>}
-    <button type="button" className="tool-button apply-hint" onClick={onApply}>Apply move</button>
-    <span className="hint-undo">Undo is available until solved.</span>
+    {onApply && <button type="button" className="tool-button apply-hint" onClick={onApply}>{variant === 'word' ? 'Reveal next letter' : 'Apply move'}</button>}
+    <span className="hint-undo">{variant === 'word' ? 'Each revealed letter counts as a hint.' : 'Undo is available until solved.'}</span>
   </section>
 }

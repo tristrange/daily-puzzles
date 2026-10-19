@@ -419,6 +419,28 @@ simply that the better of the two clears 3:1, which `colours.test.ts` asserts fo
 region in the palette. Worst case 4.08:1. The cross is therefore darker than it was on
 most cells; that is the cost of the guarantee, and the × glyph still carries the meaning.
 
+## Word Paths hints
+
+`domain/wordHints.ts` enumerates adjoining dictionary paths, then finds one
+non-overlapping cover of the remaining word lengths. Accepted words stay fixed;
+an unfinished trace is ignored. It uses the board's frozen vocabulary version,
+not just the familiar generation pool. Compact bit positions represent at most
+18 active letters, including on blocked grids whose cell indices exceed 31.
+A 50,000-state budget bounds path and cover search. Exhaustion is distinct from
+an exhaustive dead end; only the latter recommends undoing an accepted word.
+
+The shared HintPanel shows one starting cell, then one additional letter and
+position per explicit request. It never changes or submits a trace. Accepted
+words, Undo, Redo and Reset clear the panel; trace edits leave its still-valid
+suggestion available. H opens it, its location focuses the start, and Escape
+returns focus to Hint. Numbers identify the revealed continuation order.
+
+Each revealed letter counts as a hint. The count survives Undo/Redo, Reset and
+reload, flows into first-solve results and shares, and stays isolated between
+preview and daily attempts. `wordProgress` retains its storage keys, version and
+board fingerprint; old snapshots without a hint count read as zero. No stored
+answers, published puzzle changes, new dependencies or network calls are needed.
+
 ## Daily Train Tracks sizes and saved boards
 
 From October 14, 2026 the daily chooser groups Small 8×8, Medium 10×10 and Large
