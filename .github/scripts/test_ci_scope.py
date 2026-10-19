@@ -93,6 +93,12 @@ class CIScopeTests(unittest.TestCase):
                 self.commit()
                 self.assertEqual(self.scope(), "engine=true")
 
+    def test_isolated_leaderboard_backend_skips_puzzle_engine(self):
+        self.write("backend/leaderboard/migrations/001_leaderboards.sql")
+        self.commit()
+        self.assertEqual(self.scope(), "engine=false")
+        self.assertEqual(self.scope(event="push"), "engine=true")
+
     def test_removed_or_renamed_engine_inputs_cannot_hide_under_app(self):
         (self.repo / "app").mkdir()
         self.git("mv", "engine/core.py", "app/core.py")

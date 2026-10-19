@@ -1,0 +1,35 @@
+name: leaderboard
+
+on:
+  pull_request:
+    paths:
+      - 'backend/leaderboard/**'
+      - 'app/public/puzzles/**'
+      - '.github/workflows/leaderboard.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'backend/leaderboard/**'
+      - 'app/public/puzzles/**'
+      - '.github/workflows/leaderboard.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: leaderboard-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  database:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Catalog contract
+        run: node --test backend/leaderboard/sync-catalog.test.mjs
+      - name: Database permissions and ranking
+        run: bash backend/leaderboard/test.sh

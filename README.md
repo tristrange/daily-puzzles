@@ -12,6 +12,9 @@ of committed puzzle files. **Queens**, **Star Battle**, **Train Tracks**,
 October 15, 2026. Trio's archive starts on September 26, 2026, backfilled at launch;
 both previews remain available independently.
 
+An optional account-free leaderboard backend is being prepared. It is not active
+in the app yet; see the [Free-plan setup guide](docs/leaderboard-setup.md).
+
 ---
 
 ## The puzzles

@@ -1612,3 +1612,31 @@ unverified. No dependencies, puzzle content or Python code changed; the full
 Python suite was not rerun.
 
 [Phone word hint](images/words-hint-phone.png)
+
+
+## 2026-10-20 — Free anonymous leaderboard backend
+
+The approved first slice adds a transactional Supabase migration, restricted
+ranking/submission/deletion functions and a trusted metadata importer. Public
+reads expose display fields only; ownership comes from Auth, first scores are
+immutable, and a separate counter survives removing results. Equal hints/time
+share competition rank; exact puzzle IDs keep Train Tracks sizes separate.
+
+Five Node importer tests, seven CI routing tests and disposable PostgreSQL 17
+contract/concurrency checks pass. Independent review repeated the SQL contract
+with Supabase-style default grants and found no blocking issues. One minor is
+deferred: the concurrent test could bind each returned status to its retained
+score, rather than accepting either first writer. The implementation serializes
+both writes correctly. All 137 committed puzzle files validate as metadata.
+
+Catalog synchronization is optional and main-only. Failures warn and allow
+Pages publication to continue, so a paused Free project cannot stop new puzzles;
+rankings can remain pending until the next successful sync. The setup guide
+keeps server keys outside the app and records Free-plan/CAPTCHA configuration.
+
+No provider project, credentials or paid plan was created. Actual hosted Auth,
+CAPTCHA and gateway behavior remain a two-session launch gate. Frontend opt-in,
+queues, accessibility and offline checks belong to the next app slice; this PR
+alone does not expose a leaderboard. Scores remain community-reported and
+anonymous identities cannot prevent identity farming. Unchanged Python engine
+checks run in GitHub rather than being duplicated locally.

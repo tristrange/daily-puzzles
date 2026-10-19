@@ -126,6 +126,19 @@ jobs:
       - name: Install
         run: npm ci
         working-directory: app
+      - name: Synchronize optional leaderboard catalog
+        env:
+          # This job runs on trusted main only. Keep this key out of build env.
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          if [ -n "$SUPABASE_SECRET_KEY" ]; then
+            if ! node backend/leaderboard/sync-catalog.mjs; then
+              echo "::warning::Leaderboard catalog sync failed; publishing puzzles continues. Retry on the next deployment."
+            fi
+          else
+            echo "Leaderboard catalog is not configured; skipping sync."
+          fi
       - name: Build
         working-directory: app
         env:
