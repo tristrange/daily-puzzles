@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatPuzzleLabel, puzzleOfToday } from '../domain/dates'
 import {
@@ -19,7 +19,7 @@ import {
   type GameState,
 } from '../domain/game'
 import { DIFFICULTY_LABEL, PUZZLE_PIECE, PUZZLE_TYPE_HAS_HINTS, PUZZLE_TYPE_LABEL } from '../domain/games'
-import { firstHint, type Hint } from '../domain/hints'
+import { firstHint, hintCellName, type Hint } from '../domain/hints'
 import type { Board } from '../domain/board'
 import { isMarksPuzzle, isTracksPuzzle, isTrioPuzzle, type Puzzle } from '../domain/puzzle'
 import { trackVariantOf } from '../domain/trackSizes'
@@ -31,6 +31,7 @@ import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } 
 import { readStoredAutoMark, storeAutoMark } from '../lib/autoMark'
 import { buildShareText, buildSolutionShareText, copyText, puzzleShareLink } from '../lib/share'
 import { InteractiveBoard } from './InteractiveBoard'
+import { HintPanel } from './HintPanel'
 import { ResetButton } from './ResetButton'
 import { useMoveHistory } from '../lib/useMoveHistory'
 
@@ -54,7 +55,7 @@ function sameState(a: GameState, b: GameState): boolean {
  * (board, timer, undo history) starts fresh whenever a different puzzle is
  * shown.
  */
-function PuzzleStage({
+export function PuzzleStage({
   puzzle,
   board,
   timeZone,
@@ -66,7 +67,11 @@ function PuzzleStage({
 }) {
   const [game, setGame] = useState<GameState>(() => createGame(board))
   const history = useMoveHistory<GameState>()
+  const stage = useRef<HTMLDivElement>(null)
+  const hintButton = useRef<HTMLButtonElement>(null)
+  const hintId = useId()
   const [hint, setHint] = useState<Hint | null>(null)
+  const hintReasons = useMemo(() => hint ? [hint.reason] : [], [hint])
   const [announcement, setAnnouncement] = useState('')
   const [autoMark, setAutoMark] = useState(readStoredAutoMark)
   const [solvedAt, setSolvedAt] = useState<number | null>(null)
@@ -155,6 +160,7 @@ function PuzzleStage({
   }
 
   const beginStroke = () => {
+    resetHint()
     strokeStart.current = game
   }
 
@@ -231,7 +237,7 @@ function PuzzleStage({
   }
 
   const requestHint = () => {
-    if (!hintsAvailable) return
+    if (!hintsAvailable || solved || strokeStart.current !== null) return
     if (conflictList.length > 0) {
       announce(`Remove the conflicting ${piece} before asking for a hint.`)
       return
@@ -244,13 +250,13 @@ function PuzzleStage({
       if (game.queens.size === piecesNeeded(board)) {
         announce(`All ${piecePlural} are placed.`)
       } else {
-        announce(`No forced move right now — try placing a ${piece} somewhere.`)
+        announce(`These rules found no further deduction. This does not prove that guessing is necessary.`)
       }
       return
     }
     setHint(next)
     setHintsUsed((count) => count + 1)
-    const position = describeCell(board, next.cell)
+    const position = hintCellName(board, next.cell)
     setAnnouncement(
       next.action === 'queen'
         ? `Hint: place a ${piece} at ${position}.`
@@ -258,12 +264,30 @@ function PuzzleStage({
     )
   }
 
-  const hintText =
-    hint === null
-      ? null
-      : hint.action === 'queen'
-        ? `Place a ${piece} at ${describeCell(board, hint.cell)}.`
-        : `Mark ${describeCell(board, hint.cell)} — it cannot hold a ${piece}.`
+  const dismissHint = () => { resetHint(); hintButton.current?.focus({ preventScroll: true }) }
+  const showHintCell = () => {
+    const cell = stage.current?.querySelector<HTMLElement>('[data-hint="target"]')
+    cell?.focus({ preventScroll: true })
+    cell?.scrollIntoView({ block: 'center' })
+  }
+  const acceptHint = () => {
+    if (!hint || solved || strokeStart.current !== null || conflictList.length) return
+    const latest = firstHint(board, game.queens, game.marks)
+    if (!latest || latest.cell !== hint.cell || latest.action !== hint.action || latest.rule !== hint.rule) {
+      dismissHint()
+      return
+    }
+    const next = hint.action === 'queen'
+      ? autoMark ? placeQueenAutoMark(game, hint.cell) : toggleQueen(game, hint.cell)
+      : toggleMark(game, hint.cell)
+    applyGame(next)
+    if (isSolved(next)) {
+      stage.current?.querySelector<HTMLElement>(`[data-cell="${hint.cell}"]`)?.focus({ preventScroll: true })
+    } else {
+      setAnnouncement('Hint applied. Undo brings back the previous board.')
+      hintButton.current?.focus({ preventScroll: true })
+    }
+  }
 
   /**
    * Copy a share, optionally with the solution on it.
@@ -318,7 +342,7 @@ function PuzzleStage({
       : ' '
 
   return (
-    <>
+    <div className="marks-game" ref={stage}>
       <div className="puzzle-tools">
         <span className="timer" role="timer" aria-label="Elapsed time">
           {formatTime(shownTime)}
@@ -344,7 +368,8 @@ function PuzzleStage({
         </button>
         <ResetButton onReset={reset} disabled={isEmpty(game) || solved} />
         {hintsAvailable && (
-          <button type="button" className="tool-button" onClick={requestHint} disabled={solved}>
+          <button ref={hintButton} type="button" className="tool-button" onClick={requestHint} disabled={solved}
+            aria-label="Get an explained hint" aria-expanded={hint !== null} aria-controls={hint ? hintId : undefined}>
             Hint
           </button>
         )}
@@ -353,6 +378,7 @@ function PuzzleStage({
         board={board}
         game={game}
         hint={hint}
+        hintId={hint ? hintId : undefined}
         conflictCells={conflictCells}
         locked={solved}
         onToggleQueen={(cell) => {
@@ -367,7 +393,11 @@ function PuzzleStage({
         onPaintCell={paintCell}
         onGestureEnd={endStroke}
       />
-      <p className="hint-text">{hintText ?? statusText}</p>
+      <p className="hint-text">{statusText}</p>
+      {hint && <HintPanel id={hintId} location={hintCellName(board, hint.cell)}
+        title={hint.action === 'queen' ? `Place a ${piece}` : `Rule out a ${piece}`}
+        reasons={hintReasons} effect={`Uses your placed ${piecePlural} and crosses. Crosses are treated as ruled-out cells.`}
+        onApply={acceptHint} onDismiss={dismissHint} onShowCell={showHintCell} />}
       {solved && (
         <div className="solved-panel">
           <p className="solved-banner">
@@ -419,13 +449,8 @@ function PuzzleStage({
       <p className="sr-only" role="status" aria-live="polite">
         {announcement}
       </p>
-    </>
+    </div>
   )
-}
-
-function describeCell(board: Board, cell: number): string {
-  const { row, col } = board.coords(cell)
-  return `row ${row + 1}, column ${col + 1}`
 }
 
 export function PuzzleView({

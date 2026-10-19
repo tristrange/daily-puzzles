@@ -135,8 +135,17 @@ with a roving tabindex (exactly one cell in the tab order) and full keyboard pla
 arrows to move, Enter/Space to place or take back a queen, `X` to mark, Delete/Backspace
 to clear, `H` for a hint. Screen readers get a per-cell label (`Row 3, column 4, marked`)
 and a visually hidden `aria-live` region carries hint and conflict announcements, so a
-keyboard-only player drives the board end to end. A hint highlights the one cell it
-advises, and conflicting queens glow red until resolved.
+keyboard-only player drives the board end to end. Hints outline the target and
+supporting cells differently, with matching accessible labels. The rule that
+finds the move also captures the explanation and remaining counts, so multi-star
+reasoning describes the live position. Conflicting pieces glow red until resolved.
+
+Queens, Star Battle and Trio share `HintPanel`: requesting a hint changes no cells;
+Apply move uses the ordinary history and solve path. Escape/Dismiss returns focus
+to Hint, and the location button returns to the target. Stable explanation props
+keep timer renders from stealing focus. Board edits and Undo/Redo dismiss stale
+hints. Queens/Star Battle treat player crosses as exclusions; the panel discloses
+that assumption rather than claiming to validate them against a solution.
 
 ## The game loop
 

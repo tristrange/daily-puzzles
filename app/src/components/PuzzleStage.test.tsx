@@ -1,0 +1,71 @@
+import { isValidElement, type ReactElement, type ReactNode } from 'react'
+import { afterEach, expect, it, vi } from 'vitest'
+import queen from '@shared/conformance/hint-cases/2026-05-11.puzzle.json'
+import star from '@shared/conformance/hint-cases/2026-10-08-star.puzzle.json'
+import { parsePuzzle } from '../domain/puzzle'
+import { marksBoard } from '../domain/helpers'
+import { readStoredStats } from '../lib/stats'
+import { PuzzleStage } from './PuzzleView'
+import { InteractiveBoard } from './InteractiveBoard'
+
+// Real stage handlers and game rules; persistent hook state avoids a DOM dependency.
+const hooks = vi.hoisted(() => ({ values: [] as unknown[], cursor: 0 }))
+vi.mock('react', async (original) => ({ ...await original<typeof import('react')>(),
+  useState: (initial: unknown) => {
+    const index = hooks.cursor++
+    if (!(index in hooks.values)) hooks.values[index] = typeof initial === 'function' ? initial() : initial
+    return [hooks.values[index], (value: unknown) => { hooks.values[index] = typeof value === 'function' ? value(hooks.values[index]) : value }]
+  },
+  useRef: (current: unknown) => {
+    const index = hooks.cursor++
+    if (!(index in hooks.values)) hooks.values[index] = { current }
+    return hooks.values[index]
+  },
+  useEffect: () => {}, useMemo: (fn: () => unknown) => fn(), useId: () => 'hint-id',
+}))
+function children(node: ReactNode): ReactElement<Record<string, unknown>>[] {
+  if (Array.isArray(node)) return node.flatMap(children)
+  if (!isValidElement<Record<string, unknown>>(node)) return []
+  return [node, ...children(node.props['children'] as ReactNode)]
+}
+function playing(raw: unknown) {
+  const values = new Map<string, string>()
+  vi.stubGlobal('localStorage', { getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value) })
+  const puzzle = parsePuzzle(raw)
+  const render = () => { hooks.cursor = 0; return children(PuzzleStage({ puzzle, board: marksBoard(puzzle), timeZone: 'UTC' })) }
+  const board = () => render().find((element) => element.type === InteractiveBoard)!.props
+  const click = (name: string) => { (render().find((element) => element.type === 'button' && element.props['children'] === name)!.props['onClick'] as () => void)() }
+  const panel = () => render().find((element) => typeof element.type === 'function' && element.type.name === 'HintPanel')
+  return { board, click, panel }
+}
+afterEach(() => { hooks.values = []; hooks.cursor = 0; vi.unstubAllGlobals() })
+
+it.each([['Queens', queen, 'queens', 5], ['Star Battle', star, 'marks', 0]] as const)(
+  '%s shows the deduction before applying one undoable move', (_, raw, kind, target) => {
+    const { board, click, panel } = playing(raw)
+    click('Hint')
+    expect(panel()).toBeDefined()
+    expect((board()['game'] as { queens: Set<number>; marks: Set<number> })[kind].size).toBe(0)
+    ;(panel()!.props['onApply'] as () => void)()
+    expect((board()['game'] as { queens: Set<number>; marks: Set<number> })[kind]).toEqual(new Set([target]))
+    expect(panel()).toBeUndefined()
+    click('Undo')
+    expect((board()['game'] as { queens: Set<number>; marks: Set<number> })[kind].size).toBe(0)
+    click('Redo')
+    expect((board()['game'] as { queens: Set<number>; marks: Set<number> })[kind]).toEqual(new Set([target]))
+    click('Hint')
+    ;(board()['onGestureStart'] as () => void)()
+    expect(panel()).toBeUndefined()
+  },
+)
+
+it('records a solve and its shown hint when Apply move fills the last cell', () => {
+  const { board, click, panel } = playing(queen)
+  for (const cell of [3, 5, 12, 19]) (board()['onToggleQueen'] as (cell: number) => void)(cell)
+  click('Hint')
+  expect(panel()).toBeDefined()
+  ;(panel()!.props['onApply'] as () => void)()
+  expect(board()['locked']).toBe(true)
+  expect(readStoredStats()).toMatchObject([{ id: '2026-05-11', hints: 1 }])
+})

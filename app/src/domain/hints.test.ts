@@ -23,18 +23,18 @@ function puzzle(file: string) {
 describe('firstHint', () => {
   it('advises the forced queen on an empty puzzle', () => {
     const board = marksBoard(puzzle('2026-05-11.puzzle.json'))
-    expect(firstHint(board)).toEqual({ cell: 5, action: 'queen', rule: 'single-region' })
+    expect(firstHint(board)).toMatchObject({ cell: 5, action: 'queen', rule: 'single-region' })
   })
 
   it('advises a dead cell when a line is claimed', () => {
     const board = marksBoard(puzzle('2026-05-12.puzzle.json'))
-    expect(firstHint(board)).toEqual({ cell: 4, action: 'x', rule: 'intersection' })
+    expect(firstHint(board)).toMatchObject({ cell: 4, action: 'x', rule: 'intersection' })
   })
 
   it('reasons from player marks', () => {
     const board = marksBoard(puzzle('2026-05-17.puzzle.json'))
     const marks = new Set([0, 11, 16, 17, 21, 22])
-    expect(firstHint(board, new Set(), marks)).toEqual({ cell: 5, action: 'x', rule: 'subset' })
+    expect(firstHint(board, new Set(), marks)).toMatchObject({ cell: 5, action: 'x', rule: 'subset' })
   })
 
   it('is pure: the same state always gives the same hint', () => {
@@ -103,5 +103,51 @@ describe('hints never contradict the solution', () => {
       }
     }
     expect(hints).toBeGreaterThan(10)
+  })
+})
+
+describe('hint explanations', () => {
+  it('identifies the only available cell and highlights the region that requires it', () => {
+    const board = marksBoard(puzzle('2026-05-11.puzzle.json'))
+    const hint = firstHint(board)!
+    expect(hint.reason).toContain('1 queen')
+    expect(hint.reason).toContain('only available cell')
+    expect(hint.support).toEqual([]) // The region consists of the target cell alone.
+    const afterPlacement = firstHint(board, new Set([5]))!
+    expect(afterPlacement.cell).toBe(21)
+    // The queen at 5 rules out cell 20 through its column, leaving 21 forced.
+    expect(afterPlacement.support).toEqual([20, 5])
+  })
+
+  it('explains why a region claims a column without placing a piece', () => {
+    const board = marksBoard(puzzle('2026-05-12.puzzle.json'))
+    const hint = firstHint(board)!
+    expect(hint.action).toBe('x')
+    expect(hint.reason).toContain('column 5')
+    expect(hint.reason).toContain('room for exactly 1 more queen')
+    expect(hint.support).toEqual([19, 24, 9, 14])
+  })
+
+  it('reports the remaining star count before consuming a fill candidate', () => {
+    const board = marksBoard(puzzle('2026-10-08-star.puzzle.json'))
+    const queens = new Set([6, 8, 10, 12, 23, 26, 28, 30, 41])
+    const hint = firstHint(board, queens)!
+    expect(hint).toMatchObject({ cell: 76, action: 'queen', rule: 'fill' })
+    expect(hint.reason).toContain('2 stars')
+    expect(hint.reason).toContain('2 available cells')
+    expect(hint.support).toContain(75)
+    expect(hint.support).not.toContain(76)
+    expect([...queens]).toEqual([6, 8, 10, 12, 23, 26, 28, 30, 41])
+  })
+
+  it('explains a subset using the combined demand and highlights its source groups', () => {
+    const board = marksBoard(puzzle('2026-05-17.puzzle.json'))
+    const hint = firstHint(board, new Set(), new Set([0, 11, 16, 17, 21, 22]))!
+    expect(hint.rule).toBe('subset')
+    expect(hint.reason).toContain('3 queens')
+    expect(hint.reason).toContain('room for exactly 3 more queens')
+    expect(hint.support).toContain(1)
+    expect(hint.support).toContain(2)
+    expect(hint.support).not.toContain(hint.cell)
   })
 })

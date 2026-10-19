@@ -50,6 +50,7 @@ export interface CellActionProps {
   board: Board
   game: GameState
   hint: Hint | null
+  hintId?: string | undefined
   conflictCells: ReadonlySet<number>
   locked?: boolean
   onToggleQueen: (cell: number) => void
@@ -78,6 +79,7 @@ export function InteractiveBoard({
   board,
   game,
   hint,
+  hintId,
   conflictCells,
   locked = false,
   onToggleQueen,
@@ -112,6 +114,7 @@ export function InteractiveBoard({
   // accessible name, and read from the registry so a new family is announced by its
   // own name rather than as a star battle.
   const puzzleName = PUZZLE_TYPE_LABEL[board.puzzleType].toLowerCase()
+  const support = new Set(hint?.support ?? [])
   const colours = useMemo(() => regionColours(board), [board])
   // One style object per region rather than per cell: 64 cells re-deriving the
   // same eight colours on every pointer move during a stroke is waste.
@@ -289,14 +292,11 @@ export function InteractiveBoard({
     const capacity = board.regionCapacity[region] ?? 0
     const needs = capacity > 1 ? `, region holds ${capacity} ${piece.plural}` : ''
     const conflict = conflictCells.has(cell) ? `, conflicting ${piece.noun}` : ''
-    return `${position}, ${contents}${needs}${conflict}`
+    return `${position}, ${contents}${needs}${conflict}${hint?.cell === cell ? ', hint target' : support.has(cell) ? ', hint support' : ''}`
   }
 
   const classNameFor = (cell: number): string => {
     const classes = ['cell']
-    if (hint !== null && hint.cell === cell) {
-      classes.push(hint.action === 'queen' ? 'hint-queen' : 'hint-mark')
-    }
     if (conflictCells.has(cell)) classes.push('conflict')
     return classes.join(' ')
   }
@@ -306,6 +306,7 @@ export function InteractiveBoard({
       key={cell}
       role="gridcell"
       data-cell={cell}
+      data-hint={hint?.cell === cell ? 'target' : support.has(cell) ? 'support' : undefined}
       aria-label={labelFor(cell)}
       className={classNameFor(cell)}
       style={styles[region]}
@@ -340,6 +341,7 @@ export function InteractiveBoard({
       ref={gridRef}
       className={painting ? 'board playable painting' : 'board playable'}
       role="grid"
+      aria-describedby={hintId}
       aria-label={`${board.size} by ${board.size} ${puzzleName} puzzle with ${board.regionCount} regions`}
       style={{ gridTemplateColumns: `repeat(${board.size}, 1fr)` }}
       onKeyDown={onKeyDown}
