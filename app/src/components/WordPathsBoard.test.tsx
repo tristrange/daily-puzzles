@@ -7,7 +7,7 @@ const grid = new WordGrid(4, 2, ['C','A','T',null,'L','I','O','N'], [3,4])
 const noop = () => {}
 const render = (accepted: boolean) => renderToStaticMarkup(
   <WordPathsBoard game={accepted ? submitWord({ ...createWordGame(grid), trace: [0,1,2] }).game : { ...createWordGame(grid), trace: [4,5] }}
-    onSelect={() => []} onRestoreTrace={noop} onSubmit={noop} onUndo={noop} instructionsId="help" />,
+    onSelect={() => []} onRestoreTrace={noop} onSubmit={noop} onUndo={noop} onRedo={noop} instructionsId="help" />,
 )
 describe('Word Paths board markup', () => {
   it('names letters, blockers and trace order with one tab stop', () => {

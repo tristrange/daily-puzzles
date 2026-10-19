@@ -30,6 +30,7 @@ function render(game: TracksGame): string {
       onBrush={NOOP}
       onClear={NOOP}
       onUndo={NOOP}
+      onRedo={NOOP}
       onGestureStart={NOOP}
       onPaint={NOOP}
       onGestureEnd={NOOP}
@@ -98,6 +99,7 @@ describe('TracksBoard', () => {
           onBrush={NOOP}
           onClear={NOOP}
           onUndo={NOOP}
+          onRedo={NOOP}
           onGestureStart={NOOP}
           onPaint={NOOP}
           onGestureEnd={NOOP}

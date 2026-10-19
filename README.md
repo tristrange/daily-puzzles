@@ -53,7 +53,7 @@ givens, and have a proven unique solution; no logic-only guarantee is claimed.
 Historical 7×7 boards remain playable with their original rules and contents.
 
 Unfinished Train Tracks boards and elapsed time save independently in this browser.
-Time pauses between page visits; undo belongs to the current visit. Finished boards
+Time pauses between page visits; Undo and Redo belong to the current visit. Finished boards
 start fresh for replay while the original solve stays in stats. Appearance defaults
 to Auto, following the system, with Light and Dark overrides.
 
@@ -70,7 +70,7 @@ Daily progress and results are separate from the [ten-board preview](https://tri
 row and column, no three identical symbols consecutively, and adjacent same/different
 clues. [Play the daily archive](https://tristrange.github.io/daily-puzzles/#/archive?game=trio).
 Each daily board is uniquely solvable and completes through direct deductions.
-It includes pencil notes, undo/reset, explained hints and saved attempts.
+It includes pencil notes, Undo/Redo, confirmed Reset, explained hints and saved attempts.
 Hints highlight their target and supporting cells; Apply move places a forced
 symbol or updates one cell's candidate notes, with Undo available until solved.
 The [five-board preview](https://tristrange.github.io/daily-puzzles/#/preview/trio)

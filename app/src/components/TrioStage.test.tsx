@@ -11,6 +11,7 @@ import { TrioStage } from './TrioStage'
 import { TrioBoard } from './TrioBoard'
 import { TrioHintPanel } from './TrioHintPanel'
 import { SolvedPanel } from './SolvedPanel'
+import { ResetButton } from './ResetButton'
 
 // Run real handlers with persistent hook state, without adding a DOM dependency.
 const hooks = vi.hoisted(() => ({ values: [] as unknown[], cursor: 0 }))
@@ -56,6 +57,73 @@ function finish(playing: ReactElement<Record<string, unknown>>) {
   ;(playing.props['onEnd'] as (cancel: boolean) => void)(false)
 }
 afterEach(() => { hooks.values = []; hooks.cursor = 0; vi.unstubAllGlobals(); vi.clearAllMocks() })
+
+it('recovers multiple undos and drops redo after a new move', () => {
+  storage()
+  const board = parseTrioBoard(raw[0])
+  const render = () => { hooks.cursor = 0; return children(TrioStage({ board })) }
+  const button = (name: string) => render().find((element) => element.type === 'button' && element.props['children'] === name)!
+  const playing = () => render().find((element) => element.type === TrioBoard)!
+  const edit = (value: number) => {
+    const props = playing().props
+    ;(props['onBegin'] as () => void)()
+    ;(props['onApply'] as (cell: number, action: { value: number }) => void)(cell, { value })
+    ;(props['onEnd'] as (cancel: boolean) => void)(false)
+  }
+  const value = () => (playing().props['game'] as { cells: number[] }).cells[cell]
+  expect(button('Redo')).toBeDefined()
+  expect(button('Redo').props['disabled']).toBe(true)
+  edit(1)
+  edit(2)
+  ;(button('Undo').props['onClick'] as () => void)()
+  ;(button('Undo').props['onClick'] as () => void)()
+  expect(value()).toBe(0)
+  ;(button('Redo').props['onClick'] as () => void)()
+  expect(value()).toBe(1)
+  ;(button('Redo').props['onClick'] as () => void)()
+  expect(value()).toBe(2)
+  ;(button('Undo').props['onClick'] as () => void)()
+  edit(3)
+  expect(button('Redo').props['disabled']).toBe(true)
+  expect(value()).toBe(3)
+})
+
+it('preserves redo when Reset is cancelled and can undo and redo a confirmed reset', () => {
+  storage()
+  const confirm = vi.fn(() => false)
+  vi.stubGlobal('window', { confirm })
+  const board = parseTrioBoard(raw[0])
+  const render = () => { hooks.cursor = 0; return children(TrioStage({ board })) }
+  const click = (name: string) => {
+    const button = name === 'Reset'
+      ? ResetButton(render().find((element) => element.type === ResetButton)!.props as Parameters<typeof ResetButton>[0])
+      : render().find((element) => element.type === 'button' && element.props['children'] === name)!
+    ;(button.props['onClick'] as () => void)()
+  }
+  const playing = () => render().find((element) => element.type === TrioBoard)!.props
+  const edit = (value: number) => {
+    const props = playing()
+    ;(props['onBegin'] as () => void)()
+    ;(props['onApply'] as (cell: number, action: { value: number }) => void)(cell, { value })
+    ;(props['onEnd'] as (cancel: boolean) => void)(false)
+  }
+  const value = () => (playing()['game'] as { cells: number[] }).cells[cell]
+  edit(1)
+  edit(2)
+  click('Undo')
+  click('Reset')
+  expect(value()).toBe(1)
+  click('Redo')
+  expect(value()).toBe(2)
+  click('Undo')
+  confirm.mockReturnValue(true)
+  click('Reset')
+  expect(value()).toBe(0)
+  click('Undo')
+  expect(value()).toBe(1)
+  click('Redo')
+  expect(value()).toBe(0)
+})
 
 it('persists shown hints, records the first daily solve and shares it on replay', async () => {
   storage()

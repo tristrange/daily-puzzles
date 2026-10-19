@@ -42,6 +42,7 @@ import type { Board } from '../domain/board'
 import type { GameState } from '../domain/game'
 import { cellState } from '../domain/game'
 import { PUZZLE_PIECE, PUZZLE_TYPE_LABEL } from '../domain/games'
+import { historyCommand } from '../lib/useMoveHistory'
 import type { Hint } from '../domain/hints'
 import { markInk, regionColours } from '../lib/colours'
 
@@ -56,6 +57,7 @@ export interface CellActionProps {
   onClear: (cell: number) => void
   onRequestHint: () => void
   onUndo: () => void
+  onRedo: () => void
   /** A left press landed: snapshot the state so the stroke is one undo step. */
   onGestureStart: () => void
   /** A cell entered mid-drag; `target` is fixed for the whole stroke. */
@@ -83,6 +85,7 @@ export function InteractiveBoard({
   onClear,
   onRequestHint,
   onUndo,
+  onRedo,
   onGestureStart,
   onPaintCell,
   onGestureEnd,
@@ -190,9 +193,13 @@ export function InteractiveBoard({
     // board while the clock stays frozen and the solve transition cannot run
     // again.
     if (locked) return
-    if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
+    const command = historyCommand(event)
+    if (command) {
       event.preventDefault()
-      onUndo()
+      if (stroke.current === null) {
+        if (command === 'undo') onUndo()
+        else onRedo()
+      }
       return
     }
     const { row, col } = board.coords(focusIndex)

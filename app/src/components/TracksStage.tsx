@@ -40,6 +40,8 @@ import {
 import { TrackPicker } from './TrackPicker'
 import { TracksBoard } from './TracksBoard'
 import { SolvedPanel } from './SolvedPanel'
+import { ResetButton } from './ResetButton'
+import { useMoveHistory } from '../lib/useMoveHistory'
 
 export function TracksStage({
   puzzle,
@@ -52,7 +54,7 @@ export function TracksStage({
 }) {
   const [initialProgress] = useState(() => readTrackProgress(puzzle.id, grid))
   const [game, setGame] = useState<TracksGame>(() => initialProgress?.game ?? createTracksGame(grid))
-  const [history, setHistory] = useState<TracksGame[]>([])
+  const history = useMoveHistory<TracksGame>()
   const [announcement, setAnnouncement] = useState('')
   const [solvedAt, setSolvedAt] = useState<number | null>(null)
   const [startedAt] = useState(() => Date.now() - (initialProgress?.elapsedMs ?? 0))
@@ -147,7 +149,7 @@ export function TracksStage({
     // move from the bounded history — and an Undo that appears to do nothing is
     // worse than no Undo at all. The marks board has the same rule in `endStroke`.
     if (next === before) return
-    setHistory((past) => [...past.slice(1 - HISTORY_LIMIT), before])
+    history.remember(before)
     currentGame.current = next
     setGame(next)
     setSavingAvailable(storeTrackProgress(puzzle.id, next, Math.max(0, Date.now() - startedAt)))
@@ -185,17 +187,27 @@ export function TracksStage({
   }
 
   const undo = () => {
-    const previous = history[history.length - 1]
+    if (solved || strokeStart.current !== null) return
+    const previous = history.undo(game)
     if (previous === undefined) return
-    setHistory(history.slice(0, -1))
     currentGame.current = previous
     setGame(previous)
     setSavingAvailable(storeTrackProgress(puzzle.id, previous, Math.max(0, Date.now() - startedAt)))
     setAnnouncement('Undid the last move.')
   }
 
+  const redo = () => {
+    if (solved || strokeStart.current !== null) return
+    const next = history.redo(game)
+    if (next === undefined) return
+    currentGame.current = next
+    setGame(next)
+    setSavingAvailable(storeTrackProgress(puzzle.id, next, Math.max(0, Date.now() - startedAt)))
+    setAnnouncement('Redid the last move.')
+  }
+
   const reset = () => {
-    if (isEmpty(game)) return
+    if (solved || strokeStart.current !== null || isEmpty(game)) return
     applyGame(resetGame(game))
     setAnnouncement('Board cleared. Undo brings it back.')
   }
@@ -255,20 +267,14 @@ export function TracksStage({
               type="button"
               className="tool-button"
               onClick={undo}
-              disabled={history.length === 0 || solved}
+              disabled={!history.canUndo || solved}
               aria-label="Undo last move"
             >
               Undo
             </button>
-            <button
-              type="button"
-              className="tool-button"
-              onClick={reset}
-              disabled={isEmpty(game) || solved}
-              title="Clears the board. The clock keeps running, and Undo brings it all back."
-            >
-              Reset
-            </button>
+            <button type="button" className="tool-button" onClick={redo}
+              disabled={!history.canRedo || solved} aria-label="Redo last move">Redo</button>
+            <ResetButton onReset={reset} disabled={isEmpty(game) || solved} />
           </div>
           {!savingAvailable && !solved && (
             <p className="status error" role="status">
@@ -286,6 +292,7 @@ export function TracksStage({
           onBrush={(cell, withBrush) => applyGame(applyBrush(game, cell, withBrush))}
           onClear={(cell) => applyGame(clearCell(game, cell))}
           onUndo={undo}
+          onRedo={redo}
           onGestureStart={beginStroke}
           onPaint={paint}
           onGestureEnd={endStroke}
@@ -312,5 +319,3 @@ export function TracksStage({
     </>
   )
 }
-
-const HISTORY_LIMIT = 100

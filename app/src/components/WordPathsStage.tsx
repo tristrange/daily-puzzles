@@ -10,6 +10,8 @@ import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } 
 import { buildShareText, buildWordSolutionShareText, copyText, puzzleShareLink, type ShareResult } from '../lib/share'
 import { SolvedPanel } from './SolvedPanel'
 import { WordPathsBoard } from './WordPathsBoard'
+import { ResetButton } from './ResetButton'
+import { useMoveHistory } from '../lib/useMoveHistory'
 
 export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
   puzzle: Puzzle; grid: WordGrid; timeZone: string; previewBoard?: number
@@ -18,7 +20,7 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
   const [initial] = useState(() => readWordProgress(puzzle.id, grid, preview))
   const [game, setGame] = useState<WordGame>(() => initial?.game ?? createWordGame(grid))
   const current = useRef(game)
-  const [history, setHistory] = useState<WordGame[]>([])
+  const history = useMoveHistory<WordGame>()
   const clock = useRef({ elapsedMs: initial?.elapsedMs ?? 0, lastAt: 0, visible: false })
   const [elapsed, setElapsed] = useState(initial?.elapsedMs ?? 0)
   const [saving, setSaving] = useState(true)
@@ -60,7 +62,6 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
     setGame(next)
     setSaving(storeWordProgress(puzzle.id, next, Math.floor(clock.current.elapsedMs), preview))
   }
-  const remember = (before: WordGame) => setHistory((past) => [...past.slice(-99), before])
   const select = (cell: number): readonly number[] => {
     if (completed.current) return current.current.trace
     const next = traceCell(current.current, cell)
@@ -76,7 +77,7 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
     const result = submitWord(before)
     setMessage(result.message)
     if (!result.accepted) return
-    remember(clearTrace(before))
+    history.remember(clearTrace(before))
     change(result.game)
     if (!isWordSolved(result.game)) return
     const time = settle()
@@ -96,14 +97,21 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
   }
   const undo = () => {
     if (completed.current) return
-    const previous = history.at(-1)
-    setHistory(history.slice(0, -1))
-    change(previous ?? undoWord(current.current))
+    const previous = history.undo(current.current, undoWord(current.current))
+    if (!previous) return
+    change(previous)
     setMessage('Undid the last move.')
+  }
+  const redo = () => {
+    if (completed.current) return
+    const next = history.redo(current.current)
+    if (!next) return
+    change(next)
+    setMessage('Redid the last move.')
   }
   const reset = () => {
     if (completed.current) return
-    remember(current.current)
+    history.remember(current.current)
     change(resetWordGame(current.current))
     setMessage('Board cleared. Undo brings it back; the clock keeps running.')
   }
@@ -125,14 +133,15 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
     <div className="word-game">
       <div className="puzzle-tools">
         <span className="timer" role="timer" aria-label="Elapsed active time">{formatTime(elapsed)}</span>
-        <button className="tool-button" type="button" onClick={undo} disabled={solved || (history.length === 0 && game.words.length === 0)}>Undo</button>
-        <button className="tool-button" type="button" onClick={reset} disabled={solved || (game.words.length === 0 && game.trace.length === 0)}>Reset</button>
+        <button className="tool-button" type="button" onClick={undo} disabled={solved || (!history.canUndo && game.words.length === 0)}>Undo</button>
+        <button className="tool-button" type="button" onClick={redo} disabled={solved || !history.canRedo}>Redo</button>
+        <ResetButton onReset={reset} disabled={solved || (game.words.length === 0 && game.trace.length === 0)} />
       </div>
       {!saving && !solved && <p className="status error" role="status">Progress can&rsquo;t be saved in this browser. Keep this page open to retain it.</p>}
       <div className="word-workspace">
         <div className="word-play-area">
           <WordPathsBoard game={game} locked={solved} instructionsId={instructionsId} onSelect={select}
-            onRestoreTrace={restoreTrace} onSubmit={submit} onUndo={undo} />
+            onRestoreTrace={restoreTrace} onSubmit={submit} onUndo={undo} onRedo={redo} />
           <div className="word-selection">
             <output aria-live="polite" aria-label="Selected word">{traced || (solved ? 'All letters used' : 'Select letters')}</output>
             <div className="word-actions">

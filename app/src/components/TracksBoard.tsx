@@ -1,3 +1,4 @@
+import { historyCommand } from '../lib/useMoveHistory'
 /**
  * The playable Train Tracks board: a semantic ARIA grid a keyboard user can drive
  * end to end. The focused cell uses a roving tabindex (exactly one cell is in the
@@ -67,6 +68,7 @@ export interface TracksBoardProps {
   onBrush: (cell: number, brush: TrackBrush) => void
   onClear: (cell: number) => void
   onUndo: () => void
+  onRedo: () => void
   /** A press landed: snapshot the state so the whole stroke is one undo step. */
   onGestureStart: () => void
   /** A cell entered mid-drag. Changes nothing in the history yet. */
@@ -119,6 +121,7 @@ export function TracksBoard({
   onBrush,
   onClear,
   onUndo,
+  onRedo,
   onGestureStart,
   onPaint,
   onGestureEnd,
@@ -203,9 +206,13 @@ export function TracksBoard({
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (locked) return
-    if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
+    const command = historyCommand(event)
+    if (command) {
       event.preventDefault()
-      onUndo()
+      if (stroke.current === null) {
+        if (command === 'undo') onUndo()
+        else onRedo()
+      }
       return
     }
     const { row, col } = grid.coords(focusIndex)
