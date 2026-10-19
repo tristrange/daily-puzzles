@@ -1427,3 +1427,31 @@ independent review found no actionable issues. These local timings are not a
 promise about GitHub runner performance; compare the PR's actual run before
 considering further CI changes. Puzzle recipes, archive files and player data
 are unchanged.
+
+## 2026-10-19 — Compact Today and more room for Trio
+
+Today's heading now shares its first desktop row with the date. Smaller motif
+tiles sit beside game names. Every card uses ordinary grid placement, so adding
+a sixth game fills the second row instead of opening an unnecessary third row.
+Train Tracks keeps three full-width size choices; every label stays on one line.
+The first row grows to fit those choices: at 1280×800, all five unplayed cards
+end at 767px. Shorter screens can scroll. Phones retain full-width choices and
+a single-column layout.
+
+Removed the sticky header's decorative fade: it extended over the offline
+status text and made the first line look clipped. No extra header height was
+needed. Desktop Trio reuses the side-control pattern from Train Tracks; at
+1440×900, its board grows from 500px to 612px wide and all nine rows fit.
+Below 48rem the original controls-above-board layout remains.
+
+All 665 app tests and the TypeScript/production build pass. Lint retains the
+existing TracksStage warning. Production browser checks cover 320×667,
+375×667, 768×900, 1024×768 and 1440×900 layouts, notes, Undo, keyboard placement,
+hint application, light mode and the offline status. A fresh independent review
+found no actionable issues. No new tests or dependencies were added for these
+presentation changes; no rules, hints, publication or saved data changed.
+Physical iPhone/Safari testing remains unverified. Train Tracks still has no
+deduction hint engine; adding explained hints remains separate work.
+
+[Compact Today](images/compact-today-desktop.png) ·
+[Trio side controls](images/trio-side-controls-desktop.png)
