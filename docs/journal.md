@@ -1574,3 +1574,41 @@ hints across reload. Physical iPhone/Safari testing remains unverified. No new
 dependencies or published puzzle files; the full Python suite was not rerun.
 
 [Phone explanation](images/tracks-hint-phone.png)
+
+## 2026-10-19 — Progressive Word Paths hints
+
+Word Paths now reveals a starting cell for a remaining word, then one additional
+letter and position per request. The bounded client search uses the board's
+frozen vocabulary and finds a complete cover while keeping accepted words fixed.
+It ignores an unfinished trace and never changes or submits it. An exhaustive
+dead end recommends Undo; reaching the search budget makes no such claim.
+
+The existing HintPanel has a word variant, with numbered bottom badges on the
+board distinct from current trace order. H opens or returns to the panel;
+location focuses the start and Escape returns to Hint. Accepted words and
+Undo/Redo/Reset clear stale hints. Reveals count individually and survive these
+actions and reload, with legacy snapshots defaulting to zero. Counts reach
+first-solve stats and shares; preview attempts remain separate. Phone controls
+stay on one row without reducing their touch height.
+
+All 698 app tests, TypeScript and the Pages production build pass. Lint retains
+the existing TracksStage warning. Ten focused tests cover viable completions,
+dead ends, vocabulary versions, high cell indices, budget exhaustion, progressive
+reveals, trace preservation, history, persistence, solve/share counts and reversed
+trace numbering. Independent review caught ambiguous numbering and missing
+keyboard focus indication; both were fixed and the reviewer verified the fixes.
+
+A temporary oracle compared 691 positions across 28 daily, original and expanded
+preview boards with the independent Python reference cover solver. Every hint
+preserved a reference completion, and 131 dead ends were recognized correctly.
+Cold search took 4.4 ms on this Mac; the 691 calls totalled about 11 ms. The
+runner and answers were not added to the repository or default suite.
+
+Production browser checks cover desktop, 375×667 and 320×667, light/dark, H,
+location/Escape, independent trace/hint order, and a full daily solve. Stats kept
+all 21 reveals through reload and Undo/Redo. A legal but stranding preview word
+produced the expected dead-end message. Physical iPhone/Safari performance is
+unverified. No dependencies, puzzle content or Python code changed; the full
+Python suite was not rerun.
+
+[Phone word hint](images/words-hint-phone.png)

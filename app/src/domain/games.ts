@@ -78,7 +78,7 @@ export const PUZZLE_TYPE_HAS_HINTS: Record<PuzzleType, boolean> = {
   queens: true,
   'star-battle': true,
   'train-tracks': true,
-  'word-paths': false,
+  'word-paths': true,
   trio: true,
 }
 

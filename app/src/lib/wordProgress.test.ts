@@ -21,7 +21,7 @@ describe('Word Paths progress', () => {
   it('restores accepted words, unfinished trace and active time', () => {
     memory()
     expect(storeWordProgress(id, partial(), 4321)).toBe(true)
-    expect(readWordProgress(id, grid)).toEqual({ game: partial(), elapsedMs: 4321 })
+    expect(readWordProgress(id, grid)).toEqual({ game: partial(), elapsedMs: 4321, hints: 0 })
   })
   it('keeps preview progress separate from a daily attempt', () => {
     const values = memory()
@@ -61,6 +61,22 @@ describe('Word Paths progress', () => {
     expect(values.size).toBe(0)
     expect(storeWordProgress('2026-10-14-tracks', partial(), 1000)).toBe(false)
   })
+})
+
+it('restores shown hints, reads legacy attempts as zero, and rejects corrupt counts', () => {
+  const values = memory()
+  expect(storeWordProgress(id, partial(), 1000, false, 3)).toBe(true)
+  expect(readWordProgress(id, grid)?.hints).toBe(3)
+  const [key, raw] = [...values][0]!
+  const legacy = JSON.parse(raw)
+  delete legacy.hints
+  values.set(key, JSON.stringify(legacy))
+  expect(readWordProgress(id, grid)?.hints).toBe(0)
+  for (const hints of [-1, 0.5, '2', null, Number.MAX_SAFE_INTEGER + 1]) {
+    values.set(key, JSON.stringify({ ...legacy, hints }))
+    expect(readWordProgress(id, grid)).toBeNull()
+  }
+  expect(storeWordProgress(id, partial(), 1000, false, -1)).toBe(false)
 })
 
 

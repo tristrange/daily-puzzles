@@ -78,7 +78,12 @@ A legal word can lead to a dead end; Undo lets you try another path. Each board
 has one complete cover against its versioned vocabulary. New boards accept
 16,781 words from SCOWL while answers use a familiar 748-word pool; original
 boards retain their frozen vocabulary. Uniqueness is not claimed across every
-English word. No difficulty rating or hints are claimed.
+English word. No difficulty rating is claimed. Hint reveals a starting cell for
+a remaining word; Reveal next letter uncovers more of its path only when asked.
+Each revealed letter counts as a hint, including after reloading or resetting.
+Hints preserve your accepted words and check that the rest of the board can
+still be completed. A dead end prompts Undo; an unfinished search is reported
+separately. Your current selection stays unchanged; trace and submit as usual.
 Daily progress and results are separate from the [ten-board preview](https://tristrange.github.io/daily-puzzles/#/preview/word-paths).
 
 **Trio** — balance sun, moon and star on a 9×9 board: three of each per

@@ -141,6 +141,16 @@ export function RulesPage() {
       <p>Drag through letters and release to submit, or tap letters and press Submit.
         Space selects the focused letter; Enter submits. Backspace removes the last
         selected letter; Escape clears the selection. Undo removes the last accepted word.</p>
+      <h3>Hints</h3>
+      <p>Hint, or H while on the board, highlights a starting cell for a remaining word.
+        Reveal next letter uncovers one more letter and its position. Solid outlines
+        mark the start; dashed outlines and numbers show the continuation in order.
+        Trace and submit the word yourself; hints leave your selection unchanged.</p>
+      <p>Hints keep your accepted words and check that all remaining letters can still
+        be used. If those words leave no completion, use Undo to try another word or path.
+        A search limit is reported separately and does not prove a dead end.
+        Each revealed letter counts as a hint, even after Undo, Reset or reloading.
+        Dismiss or Escape closes the panel; its location link returns to the starting cell.</p>
       <p>The vocabulary is finite and does not recognize every English word.
         Newer boards use a broader acceptance list while generated answers stay familiar.
         See the <a href={`${import.meta.env.BASE_URL}word-paths-vocabulary-notice.txt`}>word list credits</a>.</p>

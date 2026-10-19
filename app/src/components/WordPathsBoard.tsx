@@ -11,9 +11,12 @@ export interface WordPathsBoardProps {
   onSubmit: () => void
   onUndo: () => void
   onRedo: () => void
+  onRequestHint: () => void
+  hintPath?: readonly number[]
+  hintId?: string | undefined
 }
 
-export function WordPathsBoard({ game, locked = false, instructionsId, onSelect, onRestoreTrace, onSubmit, onUndo, onRedo }: WordPathsBoardProps) {
+export function WordPathsBoard({ game, locked = false, instructionsId, onSelect, onRestoreTrace, onSubmit, onUndo, onRedo, onRequestHint, hintPath = [], hintId }: WordPathsBoardProps) {
   const { grid } = game
   const board = useRef<HTMLDivElement>(null)
   const [focus, setFocus] = useState(() => grid.letters.findIndex((letter) => letter !== null))
@@ -81,6 +84,11 @@ export function WordPathsBoard({ game, locked = false, instructionsId, onSelect,
       if (!locked) { if (command === 'undo') onUndo(); else onRedo() }
       return
     }
+    if (event.key.toLowerCase() === 'h' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      event.preventDefault()
+      if (!locked && !stroke.current) onRequestHint()
+      return
+    }
     const row = Math.floor(focus / grid.width), col = focus % grid.width
     let next = focus
     switch (event.key) {
@@ -102,7 +110,7 @@ export function WordPathsBoard({ game, locked = false, instructionsId, onSelect,
 
   return (
     <div ref={board} className="board playable word-board" role="grid" aria-label="Word Paths board"
-      aria-rowcount={grid.height} aria-colcount={grid.width} aria-describedby={instructionsId}
+      aria-rowcount={grid.height} aria-colcount={grid.width} aria-describedby={[instructionsId, hintId].filter(Boolean).join(' ')}
       style={{ '--word-columns': grid.width } as CSSProperties}
       onPointerDown={down} onPointerMove={move} onPointerUp={up}
       onPointerCancel={(event) => { if (stroke.current?.id === event.pointerId) cancel() }}
@@ -115,16 +123,19 @@ export function WordPathsBoard({ game, locked = false, instructionsId, onSelect,
             const letter = grid.letters[cell]
             const accepted = game.words.find((path) => path.includes(cell))
             const selected = game.trace.indexOf(cell)
+            const hinted = hintPath.indexOf(cell)
             const unavailable = locked || letter === null || accepted !== undefined
-            const label = `Row ${row + 1}, column ${col + 1}, ${letter ?? 'blocked'}${selected >= 0 ? `, selected letter ${selected + 1}` : ''}${accepted ? `, accepted ${accepted.length}-letter word ${spellPath(grid, accepted)}` : ''}`
+            const label = `Row ${row + 1}, column ${col + 1}, ${letter ?? 'blocked'}${selected >= 0 ? `, selected letter ${selected + 1}` : ''}${accepted ? `, accepted ${accepted.length}-letter word ${spellPath(grid, accepted)}` : ''}${hinted >= 0 ? `, hint letter ${hinted + 1}${hinted === 0 ? ', start here' : ''}` : ''}`
             return (
               <button key={cell} type="button" role="gridcell" data-cell={cell} data-length={accepted?.length}
+                data-hint={hinted === 0 ? 'target' : hinted > 0 ? 'support' : undefined}
                 className={`word-cell${letter === null ? ' blocked' : ''}${selected >= 0 ? ' selected' : ''}${accepted ? ' accepted' : ''}`}
                 tabIndex={focus === cell ? 0 : -1} aria-label={label} aria-selected={selected >= 0 || accepted !== undefined}
                 aria-disabled={unavailable} onFocus={() => setFocus(cell)}
                 onClick={(event) => { if (event.detail === 0 && !unavailable) onSelect(cell) }}>
                 <span aria-hidden="true">{letter ?? ''}</span>
                 {(selected >= 0 || accepted) && <small aria-hidden="true">{accepted?.length ?? selected + 1}</small>}
+                {hinted >= 0 && <small className="word-hint-order" aria-hidden="true">{hinted + 1}</small>}
               </button>
             )
           })}
