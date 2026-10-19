@@ -150,23 +150,27 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
   }
 
   return <div className="trio-game" ref={stage}>
-    <div className="puzzle-tools">
-      <span className="timer" role="timer" aria-label="Elapsed active time">{formatTime(elapsed)}</span>
-      <button className="tool-button" type="button" onClick={undo} disabled={solved || history.length === 0}>Undo</button>
-      <button className="tool-button" type="button" onClick={reset} disabled={solved || game.cells.every((v, i) => v === board.givens[i] && game.notes[i] === 0)}>Reset</button>
-      <button className="tool-button" type="button" aria-pressed={pencil} disabled={solved} onClick={() => setPencil(!pencil)}>Notes</button>
-      <button ref={hintButton} className="tool-button" type="button" aria-label="Get an explained hint" aria-expanded={hint !== null}
-        aria-controls={hint ? hintId : undefined} disabled={solved} onClick={requestHint}>Hint</button>
+    <div className="trio-workspace">
+      <div className="trio-controls">
+        <div className="puzzle-tools">
+          <span className="timer" role="timer" aria-label="Elapsed active time">{formatTime(elapsed)}</span>
+          <button className="tool-button" type="button" onClick={undo} disabled={solved || history.length === 0}>Undo</button>
+          <button className="tool-button" type="button" onClick={reset} disabled={solved || game.cells.every((v, i) => v === board.givens[i] && game.notes[i] === 0)}>Reset</button>
+          <button className="tool-button" type="button" aria-pressed={pencil} disabled={solved} onClick={() => setPencil(!pencil)}>Notes</button>
+          <button ref={hintButton} className="tool-button" type="button" aria-label="Get an explained hint" aria-expanded={hint !== null}
+            aria-controls={hint ? hintId : undefined} disabled={solved} onClick={requestHint}>Hint</button>
+        </div>
+        <div className="trio-picker" role="radiogroup" aria-label="Symbol to place">
+          {([1, 2, 3, 0] as const).map((value) => <label key={value} className="trio-pick">
+            <input className="sr-only" type="radio" name={pickerId} checked={brush === value} disabled={solved} onChange={() => setBrush(value)} aria-label={value ? TRIO_NAMES[value] : 'Eraser'} />
+            <span className="trio-pick-face">{value ? <TrioSymbol value={value} /> : <span aria-hidden="true">⌫</span>}<span>{value ? TRIO_NAMES[value] : 'Erase'}</span></span>
+          </label>)}
+        </div>
+        <p className="trio-mode">{solved ? `Solved in ${formatTime(elapsed)}!` : pencil && brush ? `Notes · tap to mark a possible ${TRIO_NAMES[brush].toLowerCase()}` : brush ? `Place ${TRIO_NAMES[brush].toLowerCase()} · tap again to clear` : 'Erase symbols and notes'}</p>
+      </div>
+      <TrioBoard board={board} game={game} brush={brush} pencil={pencil} locked={solved} conflicts={conflicts} instructionsId={hint ? `${instructionsId} ${hintId}` : instructionsId} hint={hint}
+        onApply={apply} onBegin={begin} onEnd={end} onUndo={undo} onPencil={() => setPencil(!pencil)} />
     </div>
-    <div className="trio-picker" role="radiogroup" aria-label="Symbol to place">
-      {([1, 2, 3, 0] as const).map((value) => <label key={value} className="trio-pick">
-        <input className="sr-only" type="radio" name={pickerId} checked={brush === value} disabled={solved} onChange={() => setBrush(value)} aria-label={value ? TRIO_NAMES[value] : 'Eraser'} />
-        <span className="trio-pick-face">{value ? <TrioSymbol value={value} /> : <span aria-hidden="true">⌫</span>}<span>{value ? TRIO_NAMES[value] : 'Erase'}</span></span>
-      </label>)}
-    </div>
-    <p className="trio-mode">{solved ? `Solved in ${formatTime(elapsed)}!` : pencil && brush ? `Notes · tap to mark a possible ${TRIO_NAMES[brush].toLowerCase()}` : brush ? `Place ${TRIO_NAMES[brush].toLowerCase()} · tap again to clear` : 'Erase symbols and notes'}</p>
-    <TrioBoard board={board} game={game} brush={brush} pencil={pencil} locked={solved} conflicts={conflicts} instructionsId={hint ? `${instructionsId} ${hintId}` : instructionsId} hint={hint}
-      onApply={apply} onBegin={begin} onEnd={end} onUndo={undo} onPencil={() => setPencil(!pencil)} />
     <p className={`trio-feedback${conflicts.size ? ' error' : ''}`} role="status">
       {solved ? message || `Solved in ${formatTime(elapsed)}!${daily ? '' : ' Choose another board to keep playing.'}` : conflicts.size ? `${conflicts.size} cells conflict with the rules. You can keep editing or Undo.` : message || '\u00a0'}
     </p>
