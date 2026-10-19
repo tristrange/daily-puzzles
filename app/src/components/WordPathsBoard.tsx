@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react'
+import { historyCommand } from '../lib/useMoveHistory'
 import { spellPath, type WordGame } from '../domain/wordGame'
 
 export interface WordPathsBoardProps {
@@ -9,9 +10,10 @@ export interface WordPathsBoardProps {
   onRestoreTrace: (path: readonly number[]) => void
   onSubmit: () => void
   onUndo: () => void
+  onRedo: () => void
 }
 
-export function WordPathsBoard({ game, locked = false, instructionsId, onSelect, onRestoreTrace, onSubmit, onUndo }: WordPathsBoardProps) {
+export function WordPathsBoard({ game, locked = false, instructionsId, onSelect, onRestoreTrace, onSubmit, onUndo, onRedo }: WordPathsBoardProps) {
   const { grid } = game
   const board = useRef<HTMLDivElement>(null)
   const [focus, setFocus] = useState(() => grid.letters.findIndex((letter) => letter !== null))
@@ -73,8 +75,11 @@ export function WordPathsBoard({ game, locked = false, instructionsId, onSelect,
     if (active.dragged && !locked) onSubmit()
   }
   const keyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
-      event.preventDefault(); cancel(); if (!locked) onUndo(); return
+    const command = historyCommand(event)
+    if (command) {
+      event.preventDefault(); cancel()
+      if (!locked) { if (command === 'undo') onUndo(); else onRedo() }
+      return
     }
     const row = Math.floor(focus / grid.width), col = focus % grid.width
     let next = focus

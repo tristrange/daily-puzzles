@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { relationBroken, TRIO_NAMES, trioAction, type TrioAction, type TrioBoard as Board, type TrioGame, type TrioSymbol as SymbolValue, type TrioValue } from '../domain/trio'
+import { historyCommand } from '../lib/useMoveHistory'
 import { TrioSymbol } from './TrioSymbol'
 import type { TrioHint } from '../domain/trioHints'
 
@@ -8,10 +9,10 @@ interface Props {
   conflicts: ReadonlySet<number>; instructionsId: string
   hint?: TrioHint | null
   onApply: (cell: number, action: TrioAction) => void
-  onBegin: () => void; onEnd: (cancel: boolean) => void; onUndo: () => void; onPencil: () => void
+  onBegin: () => void; onEnd: (cancel: boolean) => void; onUndo: () => void; onRedo: () => void; onPencil: () => void
 }
 
-export function TrioBoard({ board, game, brush, pencil, locked, conflicts, instructionsId, hint, onApply, onBegin, onEnd, onUndo, onPencil }: Props) {
+export function TrioBoard({ board, game, brush, pencil, locked, conflicts, instructionsId, hint, onApply, onBegin, onEnd, onUndo, onRedo, onPencil }: Props) {
   const grid = useRef<HTMLDivElement>(null)
   const [focus, setFocus] = useState(() => Math.max(0, board.givens.indexOf(0)))
   const stroke = useRef<{ id: number; action: TrioAction; visited: Set<number> } | null>(null)
@@ -58,7 +59,8 @@ export function TrioBoard({ board, game, brush, pencil, locked, conflicts, instr
       ArrowLeft: row * 9 + Math.max(0, col - 1), ArrowRight: row * 9 + Math.min(8, col + 1), Home: row * 9, End: row * 9 + 8 }
     if (navigation[event.key] !== undefined) { event.preventDefault(); setFocus(navigation[event.key]!); return }
     if (locked) return
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); finish(true); onUndo(); return }
+    const command = historyCommand(event)
+    if (command) { event.preventDefault(); finish(true); if (command === 'undo') onUndo(); else onRedo(); return }
     if (event.ctrlKey || event.metaKey || event.altKey) return
     if (event.key.toLowerCase() === 'n') { event.preventDefault(); onPencil(); return }
     if (['1', '2', '3', '0', 'Delete', 'Backspace', 'Enter', ' '].includes(event.key)) {

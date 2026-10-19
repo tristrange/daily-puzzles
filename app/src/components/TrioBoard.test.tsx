@@ -19,7 +19,7 @@ it('keeps a held stroke isolated from keyboard edits and cancels it before Undo'
   const element = TrioBoard({ board, game: createTrioGame(board), brush: 1, pencil: false, locked: false,
     conflicts: new Set(), instructionsId: 'rules', onBegin: () => events.push('begin'),
     onApply: () => events.push('apply'), onEnd: (cancel) => events.push(cancel ? 'cancel' : 'commit'),
-    onUndo: () => events.push('undo'), onPencil: vi.fn(),
+    onUndo: () => events.push('undo'), onRedo: () => events.push('redo'), onPencil: vi.fn(),
   }) as ReactElement<ComponentProps<'div'>>
   const props = element.props
   const grid = { contains: () => true, querySelector: () => ({ focus: vi.fn() }),
@@ -27,7 +27,7 @@ it('keeps a held stroke isolated from keyboard edits and cancels it before Undo'
   ;(props.ref as RefObject<unknown>).current = grid
   vi.stubGlobal('document', { elementFromPoint: () => ({ closest: () => ({ dataset: { cell: '0' } }) }) })
   const down = { pointerId: 1, button: 0, clientX: 0, clientY: 0 }
-  const key = (value: string, ctrlKey = false) => props.onKeyDown!({ key: value, ctrlKey, preventDefault: vi.fn() } as unknown as Parameters<NonNullable<typeof props.onKeyDown>>[0])
+  const key = (value: string, ctrlKey = false, shiftKey = false) => props.onKeyDown!({ key: value, ctrlKey, shiftKey, preventDefault: vi.fn() } as unknown as Parameters<NonNullable<typeof props.onKeyDown>>[0])
   const pointerDown = () => props.onPointerDown!(down as unknown as Parameters<NonNullable<typeof props.onPointerDown>>[0])
   const pointerUp = () => props.onPointerUp!(down as unknown as Parameters<NonNullable<typeof props.onPointerUp>>[0])
 
@@ -42,4 +42,10 @@ it('keeps a held stroke isolated from keyboard edits and cancels it before Undo'
   key('z', true)
   pointerUp()
   expect(events).toEqual(['begin', 'apply', 'cancel', 'undo'])
+
+  events.length = 0
+  pointerDown()
+  key('Z', true, true)
+  pointerUp()
+  expect(events).toEqual(['begin', 'apply', 'cancel', 'redo'])
 })

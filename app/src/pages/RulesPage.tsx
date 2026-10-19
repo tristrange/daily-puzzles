@@ -37,9 +37,11 @@ export function RulesPage() {
           <tr><th scope="row">Tab, then arrow keys</th><td>Enter the board, then move between cells.</td></tr>
           <tr><th scope="row">Home / End</th><td>Move to the first or last cell in the row.</td></tr>
           <tr><th scope="row">Ctrl / Cmd + Z</th><td>Undo, just like the Undo button. A whole drag counts as one move.</td></tr>
+          <tr><th scope="row">Ctrl / Cmd + Shift + Z<br />Ctrl + Y</th><td>Redo an undone move. Making a new move clears Redo.</td></tr>
         </tbody>
       </table>
-      <p>Reset clears your attempt; the timer keeps running. You can Undo a reset.
+      <p>Reset asks for confirmation before clearing your attempt; the timer keeps running. You can Undo a reset.
+        Undo and Redo history lasts while the puzzle is open and is cleared by reloading or leaving it.
         Rules links inside a game open a new tab so you can consult them without leaving your board.</p>
 
       <h2 id="queens" tabIndex={-1}>Queens</h2>
@@ -141,7 +143,7 @@ export function RulesPage() {
         and are not checked. Placing a symbol clears that cell&rsquo;s notes.</p>
       <p>Keys 1, 2 and 3 place sun, moon and star; Enter or Space uses the picker.
         N toggles Notes. Delete, Backspace or 0 erases. Arrow keys and Home/End move
-        around the board; Ctrl/Cmd+Z undoes. Reset keeps the timer running and can be undone.</p>
+        around the board; Ctrl/Cmd+Z undoes and Ctrl/Cmd+Shift+Z redoes. Reset asks for confirmation, keeps the timer running and can be undone.</p>
       <p>Hint explains a deduction and highlights its target with a solid outline and supporting cells with dashed outlines.
         Apply move places a forced symbol or updates one cell&rsquo;s notes to the remaining possibilities.
         Nothing changes until you apply; Undo restores the previous move. Hints ignore your notes as evidence.

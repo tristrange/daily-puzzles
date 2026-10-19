@@ -1455,3 +1455,29 @@ deduction hint engine; adding explained hints remains separate work.
 
 [Compact Today](images/compact-today-desktop.png) ·
 [Trio side controls](images/trio-side-controls-desktop.png)
+
+## 2026-10-19 — Redo and confirmed resets
+
+All five games now offer Redo. Ctrl/Cmd+Shift+Z and Ctrl/Cmd+Y redo from the
+board; a new committed move clears the redo branch. Drag gestures remain one
+history step. A shared history hook retains the most recent 100 states for the
+current visit, preserving the existing lifetime of Undo. Word Paths can also
+undo and redo accepted words restored from saved progress.
+
+Reset asks for native browser confirmation before changing anything. Cancel
+preserves the board and its history; confirming creates one undoable reset.
+The timer keeps running and completed puzzles remain locked. Trio's mobile
+toolbar spacing accommodates the extra button without shrinking touch targets.
+
+All 670 app tests, TypeScript and the production build pass. Lint retains the
+existing TracksStage warning. Regression checks cover repeated Undo/Redo,
+branching, the 100-state limit, confirmation cancellation and reset recovery.
+Production browser checks exercised Redo in all five games and Word Paths
+recovery after reload; Trio's six toolbar entries fit at 320px. An independent
+review found no actionable issues. Native confirmation opened but blocked the
+automation browser; the user dismissed it by confirming Reset, and the cleared
+board was observed afterward. Automated native-dialog acceptance/cancellation
+and physical iPhone testing remain unverified; handler behavior is unit tested.
+No dependencies, engine rules or saved-progress formats changed.
+
+[Trio history controls](images/trio-redo-desktop.png)

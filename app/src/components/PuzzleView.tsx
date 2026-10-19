@@ -31,6 +31,8 @@ import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } 
 import { readStoredAutoMark, storeAutoMark } from '../lib/autoMark'
 import { buildShareText, buildSolutionShareText, copyText, puzzleShareLink } from '../lib/share'
 import { InteractiveBoard } from './InteractiveBoard'
+import { ResetButton } from './ResetButton'
+import { useMoveHistory } from '../lib/useMoveHistory'
 
 const WordPathsStage = lazy(() => import('./WordPathsStage').then((module) => ({ default: module.WordPathsStage })))
 
@@ -38,9 +40,6 @@ type LoadState =
   | { status: 'loading' }
   | { status: 'ready'; puzzle: Puzzle }
   | { status: 'error'; message: string }
-
-/** Keep the most recent moves so undo is bounded and cheap. */
-const HISTORY_LIMIT = 100
 
 /** Whether two states hold exactly the same pieces and marks. */
 function sameState(a: GameState, b: GameState): boolean {
@@ -66,7 +65,7 @@ function PuzzleStage({
   timeZone: string
 }) {
   const [game, setGame] = useState<GameState>(() => createGame(board))
-  const [history, setHistory] = useState<GameState[]>([])
+  const history = useMoveHistory<GameState>()
   const [hint, setHint] = useState<Hint | null>(null)
   const [announcement, setAnnouncement] = useState('')
   const [autoMark, setAutoMark] = useState(readStoredAutoMark)
@@ -126,7 +125,8 @@ function PuzzleStage({
   }
 
   const applyGame = (next: GameState, before: GameState = game) => {
-    setHistory((past) => [...past.slice(1 - HISTORY_LIMIT), before])
+    if (sameState(next, before)) return
+    history.remember(before)
     setGame(next)
     resetHint()
     if (solvedAt === null && isSolved(next)) {
@@ -196,29 +196,36 @@ function PuzzleStage({
   }
 
   const undo = () => {
-    const previous = history[history.length - 1]
+    if (solved || strokeStart.current !== null) return
+    const previous = history.undo(game)
     if (previous === undefined) return
-    setHistory(history.slice(0, -1))
     setGame(previous)
     resetHint()
     setAnnouncement('Undid the last move.')
+  }
+
+  const redo = () => {
+    if (solved || strokeStart.current !== null) return
+    const next = history.redo(game)
+    if (next === undefined) return
+    setGame(next)
+    resetHint()
+    setAnnouncement('Redid the last move.')
   }
 
   /**
    * Every piece and mark off the board at once.
    *
    * Routed through `applyGame`, so the state on screen becomes one step of history
-   * and a single Undo brings the whole board back. That is why this needs no
-   * confirmation: the thing stats-clearing asks twice about is the one that cannot
-   * be undone, and this can. It also keeps the hint panel from still describing a
-   * board that no longer exists.
+   * and a single Undo brings the whole board back after confirmation. It also
+   * clears the hint panel so it cannot describe a board that no longer exists.
    *
    * The clock is untouched. Elapsed time is measured from when the puzzle was
    * opened, so a reset mid-attempt leaves the timer running — the work already done
    * was still done, and a reset is a correction rather than a new attempt.
    */
   const reset = () => {
-    if (isEmpty(game)) return
+    if (solved || strokeStart.current !== null || isEmpty(game)) return
     applyGame(resetGame(game))
     setAnnouncement('Board cleared. Undo brings it back.')
   }
@@ -320,11 +327,13 @@ function PuzzleStage({
           type="button"
           className="tool-button"
           onClick={undo}
-          disabled={history.length === 0 || solved}
+          disabled={!history.canUndo || solved}
           aria-label="Undo last move"
         >
           Undo
         </button>
+        <button type="button" className="tool-button" onClick={redo}
+          disabled={!history.canRedo || solved} aria-label="Redo last move">Redo</button>
         <button
           type="button"
           className="tool-button auto-mark"
@@ -333,15 +342,7 @@ function PuzzleStage({
         >
           Auto-mark {autoMark ? 'on' : 'off'}
         </button>
-        <button
-          type="button"
-          className="tool-button"
-          onClick={reset}
-          disabled={isEmpty(game) || solved}
-          title="Clears the board. The clock keeps running, and Undo brings it all back."
-        >
-          Reset
-        </button>
+        <ResetButton onReset={reset} disabled={isEmpty(game) || solved} />
         {hintsAvailable && (
           <button type="button" className="tool-button" onClick={requestHint} disabled={solved}>
             Hint
@@ -361,6 +362,7 @@ function PuzzleStage({
         onClear={(cell) => applyGame(clearCell(game, cell))}
         onRequestHint={requestHint}
         onUndo={undo}
+        onRedo={redo}
         onGestureStart={beginStroke}
         onPaintCell={paintCell}
         onGestureEnd={endStroke}
