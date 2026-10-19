@@ -1,6 +1,6 @@
 # Account-free leaderboards
 
-Status: proposed; implementation and hosted setup have not started.
+Status: design approved on October 19, 2026; implementation and hosted setup have not started.
 
 ## Purpose and constraints
 
@@ -74,13 +74,16 @@ optional publishing. Turnstile loads only during joining, not ordinary play.
 
 ## Shared data and access
 
-Use two tables:
+Use two feature tables:
 
 1. `leaderboard_puzzles`: exact published puzzle ID, game type, puzzle date,
    dimensions and optional size label. Populate it from committed puzzle files.
 2. `leaderboard_results`: result ID, authenticated user ID, puzzle ID, nickname
    snapshot, elapsed milliseconds, hints and server receipt time. Enforce a unique
    constraint on `(user_id, puzzle_id)` and index the puzzle/hints/time ordering.
+
+A private per-identity rate counter retains the current submission window across
+result deletion. It has no browser read access and is not part of public results.
 
 All result reads and mutations go through narrow database functions. Enable row
 security and deny direct browser table writes. Explicitly revoke default function
