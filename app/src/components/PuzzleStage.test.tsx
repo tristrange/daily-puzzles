@@ -47,6 +47,7 @@ function playing(raw: unknown, seed?: (puzzle: Puzzle, board: Board) => void) {
     board: () => render().find((element) => element.type === InteractiveBoard)!.props,
     click: (name: string) => { (render().find((element) => element.type === 'button' && element.props['children'] === name)!.props['onClick'] as () => void)() },
     panel: () => render().find((element) => typeof element.type === 'function' && element.type.name === 'HintPanel'),
+    warning: () => render().find((element) => typeof element.type === 'function' && element.type.name === 'MistakeWarning'),
     render,
     puzzle,
     markBoard: board,
@@ -57,11 +58,17 @@ afterEach(() => {
   vi.unstubAllGlobals(); vi.clearAllMocks()
 })
 
-it('shows a wrong star before progressing and applies its removal with Undo/Redo', () => {
-  const { board, click, panel, puzzle, markBoard } = playing(star, (puzzle, board) => {
+it('warns before revealing a wrong star and applies its removal with Undo/Redo', () => {
+  const { board, click, panel, warning, puzzle, markBoard } = playing(star, (puzzle, board) => {
     storeMarksProgress(puzzle.id, { board, queens: new Set([0]), marks: new Set([1]) }, 1000, 2)
   })
   click('Hint')
+  expect(warning()).toBeDefined()
+  expect(panel()).toBeUndefined()
+  expect(board()['hint']).toBeNull()
+  expect(readMarksProgress(puzzle.id, markBoard)?.hints).toBe(2)
+  ;(warning()!.props['onReveal'] as () => void)()
+  expect(warning()).toBeUndefined()
   expect(panel()!.props['title']).toBe('Remove this star')
   expect(board()['hint']).toMatchObject({ cell: 0, action: 'clear' })
   expect((board()['game'] as { queens: Set<number> }).queens).toEqual(new Set([0]))
@@ -76,16 +83,49 @@ it('shows a wrong star before progressing and applies its removal with Undo/Redo
 })
 
 it('clears one wrong cross without placing a queen or changing other marks', () => {
-  const { board, click, panel } = playing(queen, (puzzle, board) => {
+  const { board, click, panel, warning, puzzle, markBoard } = playing(queen, (puzzle, board) => {
     storeMarksProgress(puzzle.id, { board, queens: new Set([3]), marks: new Set([0, 5]) }, 0, 0)
   })
   click('Hint')
+  expect(warning()).toBeDefined()
+  expect(panel()).toBeUndefined()
+  expect(board()['hint']).toBeNull()
+  expect(readMarksProgress(puzzle.id, markBoard)?.hints).toBe(0)
+  ;(warning()!.props['onReveal'] as () => void)()
   expect(panel()!.props['title']).toBe('Clear this cross')
+  expect(readMarksProgress(puzzle.id, markBoard)?.hints).toBe(1)
   ;(panel()!.props['onApply'] as () => void)()
   expect(board()['game']).toMatchObject({ queens: new Set([3]), marks: new Set([0]) })
   click('Undo')
   expect(board()['game']).toMatchObject({ queens: new Set([3]), marks: new Set([0, 5]) })
 })
+
+it.each([['Queens', queen], ['Star Battle', star]] as const)(
+  '%s can dismiss a warning or keep playing without revealing or counting a correction', (_, raw) => {
+    const { board, click, panel, warning, puzzle, markBoard, render } = playing(raw, (puzzle, board) => {
+      storeMarksProgress(puzzle.id, { board, queens: new Set([0]), marks: new Set() }, 0, 0)
+    })
+    click('Hint')
+    click('Hint')
+    expect(warning()).toBeDefined()
+    expect(render().find(element => element.props['aria-label'] === 'Get an explained hint')!.props).toMatchObject({
+      'aria-expanded': true, 'aria-controls': 'hint-id',
+    })
+    expect(render().find(element => element.props['aria-live'] === 'polite')!.props['children']).not.toContain('row ')
+    ;(warning()!.props['onDismiss'] as () => void)()
+    expect(warning()).toBeUndefined()
+    expect(board()['game']).toMatchObject({ queens: new Set([0]), marks: new Set() })
+    click('Hint')
+    ;(board()['onClear'] as (cell: number) => void)(0)
+    expect(warning()).toBeUndefined()
+    expect(panel()).toBeUndefined()
+    expect(board()['hint']).toBeNull()
+    expect(readMarksProgress(puzzle.id, markBoard)?.hints).toBe(0)
+    click('Hint')
+    expect(warning()).toBeUndefined()
+    expect(panel()).toBeDefined()
+  },
+)
 
 it('does not count or display a hint when the solution cannot be verified', () => {
   const raw = { ...queen, board: { size: 4, regions: Array.from({ length: 16 }, (_, i) => Math.floor(i / 4)) } }

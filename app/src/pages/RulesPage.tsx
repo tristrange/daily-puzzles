@@ -83,8 +83,10 @@ export function RulesPage() {
       <h3>Hints</h3>
       <p>Use Hint or H to ask for help. It checks for a misplaced queen first, then a
         cross that blocks a required queen, before explaining a forced move.
+        If your entries lead to a contradiction, it warns without identifying a cell.
+        Choose Show the mistake to reveal one correction, or dismiss it and keep solving.
         If verification or deduction cannot finish, the app says so rather than guessing.
-        Hints actually shown count in your result.</p>
+        Revealed corrections and deductions count as hints; the initial warning does not.</p>
       <p>The solid outline marks the target; dashed outlines show supporting cells.
         Apply move clears the highlighted mistake, places the queen or adds a cross as one undoable move. Use the
         location link to return to the target, or Escape to dismiss the explanation.
@@ -105,8 +107,10 @@ export function RulesPage() {
       <h3>Hints</h3>
       <p>Use Hint or H for an explained, forced move, just as in Queens.
         It checks misplaced stars before crosses that block required stars, then
-        reasons about regions needing multiple stars. Corrections and deductions
-        actually shown count in your result.</p>
+        reasons about regions needing multiple stars. A contradiction first shows
+        a general warning. Choose Show the mistake to highlight one incorrect entry,
+        then Apply move to clear it. Revealed corrections and deductions count as
+        hints; the initial warning does not.</p>
       <p>Target and support highlights show the reasoning. Apply move places a star
         or crosses out one cell, or clears the highlighted mistake; Undo restores
         the previous board until solved. Mistakes are checked against the unique
