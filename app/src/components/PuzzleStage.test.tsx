@@ -8,6 +8,9 @@ import { readStoredStats } from '../lib/stats'
 import { PuzzleStage } from './PuzzleView'
 import { InteractiveBoard } from './InteractiveBoard'
 
+const publication = vi.hoisted(() => ({ offerSolve: vi.fn() }))
+vi.mock('../lib/useLeaderboard', () => ({ useLeaderboard: () => ({ offerSolve: publication.offerSolve }) }))
+
 // Real stage handlers and game rules; persistent hook state avoids a DOM dependency.
 const hooks = vi.hoisted(() => ({ values: [] as unknown[], cursor: 0 }))
 vi.mock('react', async (original) => ({ ...await original<typeof import('react')>(),
@@ -39,7 +42,7 @@ function playing(raw: unknown) {
   const panel = () => render().find((element) => typeof element.type === 'function' && element.type.name === 'HintPanel')
   return { board, click, panel }
 }
-afterEach(() => { hooks.values = []; hooks.cursor = 0; vi.unstubAllGlobals() })
+afterEach(() => { hooks.values = []; hooks.cursor = 0; vi.unstubAllGlobals(); vi.clearAllMocks() })
 
 it.each([['Queens', queen, 'queens', 5], ['Star Battle', star, 'marks', 0]] as const)(
   '%s shows the deduction before applying one undoable move', (_, raw, kind, target) => {
@@ -68,4 +71,21 @@ it('records a solve and its shown hint when Apply move fills the last cell', () 
   ;(panel()!.props['onApply'] as () => void)()
   expect(board()['locked']).toBe(true)
   expect(readStoredStats()).toMatchObject([{ id: '2026-05-11', hints: 1 }])
+  expect(publication.offerSolve).toHaveBeenCalledExactlyOnceWith(readStoredStats()[0])
+})
+
+it('hands off the Star Battle first result with its actual family and prevents replay uploads', () => {
+  const raw = { ...star, board: { size: 9, regions: Array.from({ length: 81 }, (_, i) => Math.floor(i / 9)), regionCapacity: Array(9).fill(2) } }
+  const { board } = playing(raw)
+  for (const cell of [0, 2, 13, 15, 18, 26, 29, 31, 42, 44, 46, 48, 59, 61, 64, 66, 77, 79]) (board()['onToggleQueen'] as (cell: number) => void)(cell)
+  expect(board()['locked']).toBe(true)
+  expect(publication.offerSolve).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ id: '2026-10-08-star', puzzleType: 'star-battle', hints: 0 }))
+  hooks.values = []; hooks.cursor = 0
+  const puzzle = parsePuzzle(raw)
+  const render = () => { hooks.cursor = 0; return children(PuzzleStage({ puzzle, board: marksBoard(puzzle), timeZone: 'UTC' })) }
+  for (const cell of [0, 2, 13, 15, 18, 26, 29, 31, 42, 44, 46, 48, 59, 61, 64, 66, 77, 79]) {
+    const props = render().find(el => el.type === InteractiveBoard)!.props
+    ;(props['onToggleQueen'] as (cell: number) => void)(cell)
+  }
+  expect(publication.offerSolve).toHaveBeenCalledTimes(1)
 })

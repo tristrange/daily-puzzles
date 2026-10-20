@@ -10,6 +10,9 @@ import { WordPathsStage } from './WordPathsStage'
 import { WordPathsBoard } from './WordPathsBoard'
 import { HintPanel } from './HintPanel'
 
+const publication = vi.hoisted(() => ({ offerSolve: vi.fn() }))
+vi.mock('../lib/useLeaderboard', () => ({ useLeaderboard: () => ({ offerSolve: publication.offerSolve }) }))
+
 // Same persistent-hook harness as TracksStage: real rules, storage and handlers, no DOM dependency.
 const hooks = vi.hoisted(() => ({ values: [] as unknown[], cursor: 0 }))
 vi.mock('react', async (original) => ({ ...await original<typeof import('react')>(),
@@ -81,6 +84,7 @@ it('counts restored and newly revealed letters in the solved result and share', 
   expect(board()['locked']).toBe(true)
   expect(readStoredStats()).toMatchObject([{ id, hints: 4 }])
   expect(readWordProgress(id, grid)).toBeNull()
+  expect(publication.offerSolve).toHaveBeenCalledExactlyOnceWith(readStoredStats()[0])
   const solved = render().find((el) => typeof el.type === 'function' && el.type.name === 'SolvedPanel')!
   await (solved.props['onShare'] as (variant: string) => Promise<void>)('result')
   expect(copyText).toHaveBeenLastCalledWith(expect.stringContaining('4 hints'))

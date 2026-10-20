@@ -1,3 +1,4 @@
+import { useLeaderboard } from '../lib/useLeaderboard'
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { createTrioGame, editTrio, isTrioSolved, TRIO_NAMES, trioConflicts, type TrioAction, type TrioBoard as Board, type TrioGame, type TrioValue } from '../domain/trio'
 import { advanceWordClock } from '../domain/wordClock'
@@ -21,6 +22,8 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
   const hintsUsed = useRef(initial?.hints ?? 0)
   const [stats, setStats] = useState<Stats | null>(null)
   const [firstSolve, setFirstSolve] = useState<SolveRecord | null>(null)
+  const [candidate, setCandidate] = useState<SolveRecord | null>(null)
+  const { offerSolve } = useLeaderboard()
   const [copied, setCopied] = useState<'idle' | 'result' | 'solution' | 'failed'>('idle')
   const [shareText, setShareText] = useState<string | null>(null)
   const [game, setGame] = useState(() => initial?.game ?? createTrioGame(board))
@@ -82,10 +85,12 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
         setElapsed(elapsedMs)
         if (puzzle) {
           const when = Date.now()
-          setFirstSolve(readStoredStats().find((record) => record.id === puzzle.id) ?? null)
-          setStats(summarise(storeSolve({ id: puzzle.id, puzzleType: 'trio', size: 9,
-            elapsedMs, hints: hintsUsed.current, solvedAt: when }),
-            puzzleOfToday(new Date(when), Intl.DateTimeFormat().resolvedOptions().timeZone)))
+          const earlier = readStoredStats().find(record => record.id === puzzle.id)
+          setFirstSolve(earlier ?? null)
+          const record: SolveRecord = { id: puzzle.id, puzzleType: 'trio', size: 9,
+            elapsedMs, hints: hintsUsed.current, solvedAt: when }
+          setStats(summarise(storeSolve(record), puzzleOfToday(new Date(when), Intl.DateTimeFormat().resolvedOptions().timeZone)))
+          if (!earlier) { setCandidate(record); offerSolve(record) }
         }
         completed.current = true
         clock.current.visible = false
@@ -185,7 +190,7 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
     <p className={`trio-feedback${conflicts.size ? ' error' : ''}`} role="status">
       {solved ? message || `Solved in ${formatTime(elapsed)}!${daily ? '' : ' Choose another board to keep playing.'}` : conflicts.size ? `${conflicts.size} cells conflict with the rules. You can keep editing or Undo.` : message || '\u00a0'}
     </p>
-    {daily && <SolvedPanel solved={solved} firstSolve={firstSolve} streak={stats?.currentStreak ?? 0} copied={copied} shareText={shareText} onShare={share} />}
+    {daily && <SolvedPanel puzzleId={puzzle?.id} candidate={candidate} solved={solved} firstSolve={firstSolve} streak={stats?.currentStreak ?? 0} copied={copied} shareText={shareText} onShare={share} />}
     {hint && <TrioHintPanel hint={hint} id={hintId} onApply={acceptHint} onDismiss={dismissHint} onShowCell={showHintCell} />}
     {!saving && !solved && <p className="status error" role="status">Progress can&rsquo;t be saved. Keep this page open to retain your attempt.</p>}
     <p className="word-note" id={instructionsId}>Three of each symbol in every row and column. No three identical symbols consecutively.

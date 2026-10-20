@@ -13,6 +13,9 @@ import { TrioHintPanel } from './TrioHintPanel'
 import { SolvedPanel } from './SolvedPanel'
 import { ResetButton } from './ResetButton'
 
+const publication = vi.hoisted(() => ({ offerSolve: vi.fn() }))
+vi.mock('../lib/useLeaderboard', () => ({ useLeaderboard: () => ({ offerSolve: publication.offerSolve }) }))
+
 // Run real handlers with persistent hook state, without adding a DOM dependency.
 const hooks = vi.hoisted(() => ({ values: [] as unknown[], cursor: 0 }))
 vi.mock('react', async (original) => ({
@@ -138,12 +141,14 @@ it('persists shown hints, records the first daily solve and shares it on replay'
   finish(render().find((element) => element.type === TrioBoard)!)
   const first = readStoredStats()[0]!
   expect(first).toMatchObject({ id: board.id, puzzleType: 'trio', size: 9, elapsedMs: 5000, hints: 3 })
+  expect(publication.offerSolve).toHaveBeenCalledExactlyOnceWith(first)
   expect(readTrioProgress(board, true)).toBeNull()
   expect(render().find((element) => element.type === SolvedPanel)!.props['solved']).toBe(true)
   hooks.values = []
   nearlySolved(board, 9000, true)
   finish(render().find((element) => element.type === TrioBoard)!)
   expect(readStoredStats()).toEqual([first])
+  expect(publication.offerSolve).toHaveBeenCalledTimes(1)
   await (render().find((element) => element.type === SolvedPanel)!.props['onShare'] as (variant: string) => Promise<void>)('result')
   expect(copyText).toHaveBeenLastCalledWith(expect.stringContaining('0:05 · 3 hints'))
   expect(copyText).toHaveBeenLastCalledWith(expect.stringContaining(`/#/archive/${board.id}`))
@@ -164,5 +169,6 @@ it('leaves daily stats untouched when completing a preview', () => {
   expect(render().find((element) => element.type === TrioBoard)!.props['locked']).toBe(true)
   expect(render().find((element) => element.props['role'] === 'status')!.props['children']).toContain('Solved in')
   expect(values.get(STATS_STORAGE_KEY)).toBe('existing daily history')
+  expect(publication.offerSolve).not.toHaveBeenCalled()
   expect(readTrioProgress(board)).toBeNull()
 })

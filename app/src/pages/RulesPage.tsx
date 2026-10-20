@@ -185,8 +185,14 @@ export function RulesPage() {
       <p>A solved board locks and offers a result to share, optionally including the finished
         board as a spoiler. Your first solve of each puzzle is recorded; replaying it does
         not overwrite that time. Each Train Tracks size counts as its own puzzle.</p>
-      <p>Stats stay in this browser, with no account or uploads. Clearing site data removes
+      <p>Stats stay in this browser. Clearing site data removes
         them. A streak counts each day once, however many puzzles you solve.</p>
+      <p><Link to="/leaderboards">Leaderboards</Link> are optional. Joining publishes your
+        nickname, exact puzzle, time and hints to Supabase for this and future first solves.
+        Earlier history and previews are not uploaded. Supabase keeps an anonymous player
+        identity; Cloudflare verifies joining. You can stop publishing or remove your own
+        published results there. Clearing browser data loses that identity and access to its
+        results; identities do not sync between devices. Scores are community-reported.</p>
 
       <h2>Add to your Home Screen</h2>
       <ol>

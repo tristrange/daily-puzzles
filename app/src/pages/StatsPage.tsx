@@ -69,13 +69,13 @@ export function StatsPage() {
         <>
           <p className="status">Nothing yet — solve a puzzle and it will show up here.</p>
           <p className="status">
-            These stay in this browser. There is no account and nothing is sent anywhere.{' '}
+            These stay in this browser. Leaderboard publishing is optional and managed separately.{' '}
             <Link to="/">Play today&rsquo;s puzzle</Link>.
           </p>
         </>
       ) : (
         <>
-          <p className="status">Kept in this browser only. Nothing is sent anywhere.</p>
+          <p className="status">Kept in this browser only. <Link to="/leaderboards">Optional leaderboards</Link> publish only results you choose to share.</p>
           <h2 className="page-title">All games</h2>
           <dl className="stats-grid">
             {tiles.map((tile) => (

@@ -6,7 +6,7 @@ import { isLeaderboardNickname, isScoreNumber, removeLeaderboardResults, submitL
 type StoragePort = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
 type Progress = { project: string; owner: string | null; enabled: boolean; nickname: string; pending: LeaderboardResult[] }
 export type LeaderboardStatus = 'disabled' | 'loading' | 'off' | 'on' | 'lost'
-export type LeaderboardState = { readonly status: LeaderboardStatus; readonly nickname: string; readonly pendingCount: number; readonly message: string; readonly revision: number }
+export type LeaderboardState = { readonly status: LeaderboardStatus; readonly nickname: string; readonly pendingCount: number; readonly message: string; readonly revision: number; readonly resultsRevision: number; readonly resultsPuzzleId: string | null }
 export function leaderboardProgressKey(url: string): string { return `daily-puzzles:leaderboard:participation:${new URL(url).hostname}` }
 
 function parse(raw: string | null, project: string): Progress {
@@ -36,12 +36,12 @@ export function createLeaderboardStore(config: LeaderboardConfig | null, client:
   let stopped = false, joining = false, removing = false, generation = 0
   let notice = '', overflow = false
   let draining: Promise<void> | null = null
-  let state: LeaderboardState = { status: config && client ? 'loading' : 'disabled', nickname: saved.nickname, pendingCount: saved.pending.length, message: '', revision: 0 }
+  let state: LeaderboardState = { status: config && client ? 'loading' : 'disabled', nickname: saved.nickname, pendingCount: saved.pending.length, message: '', revision: 0, resultsRevision: 0, resultsPuzzleId: null }
   const listeners = new Set<() => void>()
   const emit = () => {
     const status: LeaderboardStatus = !config || !client ? 'disabled' : !saved.enabled || stopped || storageFailed ? 'off'
       : saved.owner === identity && identity !== null ? 'on' : 'lost'
-    state = { status, nickname: saved.nickname, pendingCount: saved.pending.length,
+    state = { ...state, status, nickname: saved.nickname, pendingCount: saved.pending.length,
       message: overflow ? 'Pending uploads are full. This solve was saved locally but not queued.' : notice, revision: state.revision + 1 }
     for (const listener of listeners) listener()
   }
@@ -73,6 +73,7 @@ export function createLeaderboardStore(config: LeaderboardConfig | null, client:
           const latest = load()
           if (!latest.enabled || latest.owner !== owner || stopped || storageFailed) break
           persist({ ...latest, pending: latest.pending.filter(entry => entry.id !== result.id) })
+          state = { ...state, resultsRevision: state.resultsRevision + 1, resultsPuzzleId: result.id }
           notice = 'Result published.'
           emit()
         }
@@ -139,6 +140,7 @@ export function createLeaderboardStore(config: LeaderboardConfig | null, client:
       await verifyIdentity()
       if (!identity || identity !== saved.owner) throw Error('The original player session is required to remove these results.')
       await removeLeaderboardResults(client, saved.owner!)
+      state = { ...state, resultsRevision: state.resultsRevision + 1, resultsPuzzleId: null }
       notice = 'Your published results have been removed.'; emit()
     } catch (error) { notice = error instanceof Error ? error.message : 'Could not remove results. Please retry.'; emit(); throw error }
     finally { removing = false }

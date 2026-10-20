@@ -10,6 +10,9 @@ import { TracksStage } from './TracksStage'
 import { TracksBoard } from './TracksBoard'
 import { HintPanel } from './HintPanel'
 
+const publication = vi.hoisted(() => ({ offerSolve: vi.fn() }))
+vi.mock('../lib/useLeaderboard', () => ({ useLeaderboard: () => ({ offerSolve: publication.offerSolve }) }))
+
 // Real stage handlers and game rules; persistent hook state avoids a DOM dependency.
 const hooks = vi.hoisted(() => ({ values: [] as unknown[], cursor: 0 }))
 vi.mock('react', async (original) => ({ ...await original<typeof import('react')>(),
@@ -76,6 +79,7 @@ it('counts restored hints when Apply finishes a puzzle and when sharing the firs
   expect(board()['locked']).toBe(true)
   expect(readStoredStats()).toMatchObject([{ id, hints: 3 }])
   expect(readTrackProgress(id, grid)).toBeNull()
+  expect(publication.offerSolve).toHaveBeenCalledExactlyOnceWith(readStoredStats()[0])
   const solved = render().find((el) => typeof el.type === 'function' && el.type.name === 'SolvedPanel')!
   await (solved.props['onShare'] as (variant: string) => Promise<void>)('result')
   expect(copyText).toHaveBeenLastCalledWith(expect.stringContaining('3 hints'))
