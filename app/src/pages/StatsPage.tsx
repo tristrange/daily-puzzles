@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { PUZZLE_TYPES } from '../domain/board'
-import { formatPuzzleLabel, puzzleOfToday } from '../domain/dates'
+import { formatPuzzleLabel } from '../domain/dates'
 import { DEFAULT_PUZZLE_TYPE, PUZZLE_TYPE_LABEL, PUZZLE_TYPE_PUBLISHED } from '../domain/games'
 import { trackVariantOf } from '../domain/trackSizes'
 import { formatTime } from '../domain/game'
@@ -12,6 +12,7 @@ import {
   readStoredStats,
   summarise,
 } from '../lib/stats'
+import { useToday } from '../lib/useToday'
 
 /** How many solves the page lists under "Recent solves". */
 const RECENT_LIMIT = 10
@@ -33,7 +34,7 @@ export function StatsPage() {
   // be able to throw away a streak.
   const [confirming, setConfirming] = useState(false)
   const [notice, setNotice] = useState('')
-  const [todayId] = useState(() => puzzleOfToday(new Date(), timeZone))
+  const todayId = useToday(timeZone)
   const stats = summarise(records, todayId)
   const recent = mostRecentSolves(records.filter(record => record.puzzleType === type), RECENT_LIMIT)
   // Which families the history actually spans: never padded out with one the

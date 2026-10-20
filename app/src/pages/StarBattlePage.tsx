@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { puzzleIdFor, puzzleOfToday } from '../domain/dates'
+import { puzzleIdFor } from '../domain/dates'
 import { PuzzleView } from '../components/PuzzleView'
+import { useToday } from '../lib/useToday'
 
 /**
  * Today's Star Battle companion, as its own game rather than a variation of the
@@ -9,7 +9,7 @@ import { PuzzleView } from '../components/PuzzleView'
  */
 export function StarBattlePage() {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
-  const [id] = useState(() => puzzleIdFor(puzzleOfToday(new Date(), timeZone), 'star-battle'))
+  const id = puzzleIdFor(useToday(timeZone), 'star-battle')
   return (
     <section>
       <PuzzleView

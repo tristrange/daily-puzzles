@@ -1,14 +1,14 @@
-import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { PUZZLE_TYPES, type PuzzleType } from '../domain/board'
-import { puzzleIdParts, puzzleIdFor, puzzleOfToday } from '../domain/dates'
+import { puzzleIdParts, puzzleIdFor } from '../domain/dates'
 import { PUZZLE_TYPE_LABEL, PUZZLE_TYPE_PUBLISHED } from '../domain/games'
 import { TRACK_SIZES_START, TRACK_VARIANTS, trackVariantOf, type TrackSize } from '../domain/trackSizes'
 import { LeaderboardPanel } from '../components/LeaderboardPanel'
+import { useToday } from '../lib/useToday'
 
 export function LeaderboardsPage() {
   const [params, setParams] = useSearchParams()
-  const [today] = useState(() => puzzleOfToday(new Date(), Intl.DateTimeFormat().resolvedOptions().timeZone))
+  const today = useToday(Intl.DateTimeFormat().resolvedOptions().timeZone)
   const requested = params.get('id') ?? today
   const parsed = puzzleIdParts(requested)
   const valid = parsed !== null && parsed.day <= today

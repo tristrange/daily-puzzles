@@ -1713,3 +1713,22 @@ A real-browser reload and page-exit check was not run in this environment; the
 DOM-free stage harness executes restore and solve paths, and the page-exit test
 runs the actual effect with stubbed browser globals. No puzzle content, schema or
 Python code changed.
+
+## 2026-10-20 — Roll the day over at local midnight
+
+`useToday` now owns the player's current puzzle day for the landing chooser,
+archive, stats, leaderboards and the Star Battle shortcut. It seeds from
+`puzzleOfToday`, schedules the next local midnight, and rereads the clock on
+visibility, focus and pageshow for throttled tabs and bfcache restores. Each
+refresh resolves the browser's current time zone again, so moving the device
+across zones cannot advance the day at the old zone's midnight. Home and Archive
+tag fetched results with the day they belong to, so a rollover shows the loading
+state instead of yesterday's cards under the new date.
+
+All 755 app tests, TypeScript and the Pages production build pass. Lint retains
+the existing TracksStage warning. Three hook tests cover the midnight timer,
+throttled visibility/focus/pageshow recovery, and a device time-zone change before
+the timer fires, including timer and listener cleanup. The main bundle is 748.5 kB
+(222.5 kB gzip). No new dependencies, puzzle content, schema or Python code
+changed. A real-browser overnight check was not run; the hook tests use fake
+timers and stubbed browser globals.
