@@ -1732,3 +1732,21 @@ the timer fires, including timer and listener cleanup. The main bundle is 748.5 
 (222.5 kB gzip). No new dependencies, puzzle content, schema or Python code
 changed. A real-browser overnight check was not run; the hook tests use fake
 timers and stubbed browser globals.
+
+## 2026-10-20 — Split routes and defer the leaderboard client
+
+Every non-landing route is now a lazy chunk, and the leaderboard provider sits
+behind a pathless gate around the puzzle, Star Battle and leaderboard routes.
+Home, Archive, Stats and Rules no longer mount a provider, and Supabase is no
+longer in the entry or their route chunks; the play screen and leaderboard load
+the 222.5 kB SDK chunk when they need it. The entry chunk falls from 748.5 kB to
+427.5 kB (222.5 kB to 134.6 kB gzip), and the 500 kB build warning is gone.
+
+All 755 app tests, TypeScript and the production build pass; lint retains the
+existing TracksStage warning. The offline worker precaches the new lazy chunks,
+so route code is still available offline after install; the SDK may arrive in
+that background install but is not parsed until a gated route mounts it. No tests
+were added or changed: the route modules and provider behavior they cover are the
+same. No dependencies, puzzle content, schema or Python code changed. A
+real-browser navigation check was not run; the route tree and chunk split are
+covered by the build output and the existing route tests.
