@@ -10,10 +10,10 @@ import { ArchiveGroups, ArchivePage } from './ArchivePage'
 const UTC = 'UTC'
 
 /** Render the archive body the way the page does, for a set of published entries. */
-function render(puzzles: readonly PublishedPuzzle[]): string {
+function render(puzzles: readonly PublishedPuzzle[], page = 0): string {
   return renderToStaticMarkup(
     <MemoryRouter>
-      <ArchiveGroups groups={groupPublishedPuzzles(puzzles)} timeZone={UTC} />
+      <ArchiveGroups groups={groupPublishedPuzzles(puzzles)} timeZone={UTC} page={page} />
     </MemoryRouter>,
   )
 }
@@ -75,6 +75,11 @@ describe('ArchiveGroups', () => {
     const html = render([queens('2026-10-03'), starBattle('2026-10-03-star')])
     expect(html).toContain('href="/archive/2026-10-03"')
     expect(html).toContain('href="/archive/2026-10-03-star"')
+  })
+
+  it('carries an older archive page into its puzzle links', () => {
+    const html = render([queens('2026-10-03')], 2)
+    expect(html).toContain('href="/archive/2026-10-03?page=2"')
   })
 
   it('shows the band beside the date, and nothing at all when there is none', () => {

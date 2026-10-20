@@ -37,11 +37,11 @@ afterEach(async () => {
 })
 
 async function click(label: string) {
-  const button = [...container.querySelectorAll('button')]
+  const control = [...container.querySelectorAll<HTMLElement>('a, button')]
     .find(element => element.textContent?.includes(label))
-  if (!button) throw Error(`missing button ${label}`)
+  if (!control) throw Error(`missing control ${label}`)
   await act(async () => {
-    button.click()
+    control.click()
     await Promise.resolve()
   })
 }
@@ -52,16 +52,17 @@ it('loads older 30-day windows on demand and can return to the latest', async ()
     await Promise.resolve()
   })
   expect(container.querySelector('a[href="/archive/2026-10-19"]')).not.toBeNull()
+  expect(container.querySelector('a[href="/archive?game=queens&page=1"]')).not.toBeNull()
   expect(archive.list).toHaveBeenNthCalledWith(1, '2026-10-20', expect.any(Function), 0)
 
   await click('Older')
   expect(archive.list).toHaveBeenLastCalledWith('2026-10-20', expect.any(Function), 30)
-  expect(container.querySelector('a[href="/archive/2026-09-15"]')).not.toBeNull()
+  expect(container.querySelector('a[href="/archive/2026-09-15?page=1"]')).not.toBeNull()
   expect(container.querySelector('a[href="/archive/2026-10-19"]')).toBeNull()
-  expect(container.querySelector('button[aria-label="Show newer puzzles"]')).not.toBeNull()
+  expect(container.querySelector('a[aria-label="Show newer puzzles"]')).not.toBeNull()
 
   await click('Newer')
   expect(archive.list).toHaveBeenLastCalledWith('2026-10-20', expect.any(Function), 0)
   expect(container.querySelector('a[href="/archive/2026-10-19"]')).not.toBeNull()
-  expect(container.querySelector('button[aria-label="Show newer puzzles"]')).toBeNull()
+  expect(container.querySelector('a[aria-label="Show newer puzzles"]')).toBeNull()
 })

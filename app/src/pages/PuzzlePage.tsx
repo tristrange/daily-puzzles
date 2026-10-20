@@ -1,10 +1,13 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { isPuzzleId, puzzleTypeOf } from '../domain/dates'
 import { PUZZLE_TYPE_PUBLISHED, PUZZLE_TYPE_LABEL } from '../domain/games'
 import { PuzzleView } from '../components/PuzzleView'
+import { archiveHref, parseArchivePage } from '../lib/archive'
 
 export function PuzzlePage() {
   const params = useParams<'id'>()
+  const [search] = useSearchParams()
+  const page = parseArchivePage(search.get('page'))
   const id = params.id
   if (id === undefined || !isPuzzleId(id)) {
     return (
@@ -26,7 +29,7 @@ export function PuzzlePage() {
   }
   return (
     <section className="puzzle-page">
-      <Link to={`/archive?game=${type}`} className="back-link" aria-label="All puzzles">
+      <Link to={archiveHref(type, page)} className="back-link" aria-label="All puzzles">
         <span aria-hidden="true">←</span> <span className="back-label">All puzzles</span>
       </Link>
       <PuzzleView key={id} id={id} />

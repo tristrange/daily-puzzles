@@ -4,6 +4,7 @@ import { PUZZLE_TYPES, type PuzzleType } from '../domain/board'
 import { formatPuzzleLabel, puzzleDay } from '../domain/dates'
 import { DEFAULT_PUZZLE_TYPE, DIFFICULTY_LABEL, PUZZLE_TYPE_LABEL, PUZZLE_TYPE_PUBLISHED } from '../domain/games'
 import { trackVariantOf } from '../domain/trackSizes'
+import { archiveHref, MAX_ARCHIVE_PAGE, parseArchivePage, puzzleHref } from '../lib/archive'
 import {
   ARCHIVE_WINDOW_DAYS,
   groupPublishedPuzzles,
@@ -22,28 +23,25 @@ type LoadState =
 export function ArchivePage() {
   const [params] = useSearchParams()
   const type = PUZZLE_TYPES.find(type => type === params.get('game') && PUZZLE_TYPE_PUBLISHED[type]) ?? DEFAULT_PUZZLE_TYPE
+  const page = parseArchivePage(params.get('page'))
   return (
     <section className="archive-page">
       <h1 className="page-title">Archive</h1>
       <nav className="game-picker" aria-label="Archive game">
         {PUZZLE_TYPES.filter(type => PUZZLE_TYPE_PUBLISHED[type]).map(game => (
-          <Link key={game} to={`/archive?game=${game}`} aria-current={game === type ? 'page' : undefined}>
+          <Link key={game} to={archiveHref(game, page)} aria-current={game === type ? 'page' : undefined}>
             {PUZZLE_TYPE_LABEL[game]}
           </Link>
         ))}
       </nav>
-      <ArchiveGame type={type} />
+      <ArchiveGame type={type} page={page} />
     </section>
   )
 }
 
-function ArchiveGame({ type }: { readonly type: PuzzleType }) {
+function ArchiveGame({ type, page }: { readonly type: PuzzleType; readonly page: number }) {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
   const todayId = useToday(timeZone)
-  // The page is relative to the current day, so a rollover starts at the latest
-  // window again instead of shifting the old page under the player's feet.
-  const [view, setView] = useState({ day: todayId, page: 0 })
-  const page = view.day === todayId ? view.page : 0
   const [state, setState] = useState<LoadState>({ status: 'loading' })
 
   useEffect(() => {
@@ -78,26 +76,28 @@ function ArchiveGame({ type }: { readonly type: PuzzleType }) {
       {current.status === 'error' && (
         <p className="status error">Could not read the archive.</p>
       )}
-      {current.status === 'ready' && <ArchiveGroups groups={groups} timeZone={timeZone} />}
-      <ArchivePager page={page} onPage={(next) => setView({ day: todayId, page: next })} />
+      {current.status === 'ready' && <ArchiveGroups groups={groups} timeZone={timeZone} page={page} />}
+      <ArchivePager game={type} page={page} />
     </div>
   )
 }
 
-function ArchivePager({ page, onPage }: {
+function ArchivePager({ game, page }: {
+  readonly game: PuzzleType
   readonly page: number
-  readonly onPage: (page: number) => void
 }) {
   return (
     <nav className="archive-pager" aria-label="Archive pages">
       {page > 0 && (
-        <button type="button" className="tool-button" aria-label="Show newer puzzles" onClick={() => onPage(page - 1)}>
+        <Link className="tool-button" aria-label="Show newer puzzles" to={archiveHref(game, page - 1)}>
           ← Newer
-        </button>
+        </Link>
       )}
-      <button type="button" className="tool-button" aria-label="Show older puzzles" onClick={() => onPage(page + 1)}>
-        Older →
-      </button>
+      {page < MAX_ARCHIVE_PAGE && (
+        <Link className="tool-button" aria-label="Show older puzzles" to={archiveHref(game, page + 1)}>
+          Older →
+        </Link>
+      )}
     </nav>
   )
 }
@@ -106,9 +106,11 @@ function ArchivePager({ page, onPage }: {
 export function ArchiveGroups({
   groups,
   timeZone,
+  page,
 }: {
   readonly groups: readonly PublishedGroup[]
   readonly timeZone: string
+  readonly page: number
 }) {
   if (groups.length === 0) {
     return <p className="status">No puzzles in this archive window. Connect to load puzzles that are not saved on this device.</p>
@@ -136,13 +138,13 @@ export function ArchiveGroups({
                         const variant = trackVariantOf(puzzle.id)
                         const dimensions = puzzle.width != null && puzzle.height != null ? `${puzzle.width}×${puzzle.height}` : ''
                         const label = variant ? `${variant.label}${dimensions ? ` · ${dimensions}` : ''}` : dimensions || 'Original'
-                        return <Link key={puzzle.id} to={`/archive/${puzzle.id}`} aria-label={`${formatPuzzleLabel(day, timeZone)}, Train Tracks ${label}`}>
+                        return <Link key={puzzle.id} to={puzzleHref(puzzle.id, page)} aria-label={`${formatPuzzleLabel(day, timeZone)}, Train Tracks ${label}`}>
                           {variant ? <>{variant.label}<span className="archive-dimensions">{dimensions && ` · ${dimensions}`}</span></> : label}
                         </Link>
                       })}
                     </div>
                   </> : puzzles.map(puzzle => (
-                    <Link key={puzzle.id} to={`/archive/${puzzle.id}`}>
+                    <Link key={puzzle.id} to={puzzleHref(puzzle.id, page)}>
                       <time dateTime={day}>{formatPuzzleLabel(day, timeZone)}</time>
                       {puzzle.difficulty != null && <span className="stat-detail">{DIFFICULTY_LABEL[puzzle.difficulty]}</span>}
                     </Link>
