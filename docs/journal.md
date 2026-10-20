@@ -1769,11 +1769,12 @@ page's All puzzles link all return to the same window. The loaded result is
 tagged with the day and page, so a rollover or page change shows loading until
 the requested window lands.
 
-All 762 app tests across 62 files, TypeScript and the production build pass; lint
+All 763 app tests across 62 files, TypeScript and the production build pass; lint
 retains the existing TracksStage warning. A jsdom integration test clicks Older
 and Newer and asserts the URL, offset and returned links; a loader test proves
 the older window's newest day is one day older than the latest window's oldest
-day and does not probe the latest day. The entry bundle is 428.0 kB (134.8 kB
-gzip); the shared archive URL helper is a 0.26 kB chunk. No new dependencies,
-puzzle content, schema or Python code changed. A real-browser check of the pager
-was not run.
+day and does not probe the latest day. The date helper applies the offset to its
+cursor, so a deep page still formats only 30 dates. The entry bundle is 428.0 kB
+(134.8 kB gzip); the shared archive URL helper is a 0.26 kB chunk. No new
+dependencies, puzzle content, schema or Python code changed. A real-browser check
+of the pager was not run.

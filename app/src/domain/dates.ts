@@ -185,11 +185,15 @@ export function formatPuzzleLabel(id: string, timeZone: string): string {
   }).format(parsePuzzleDate(id))
 }
 
-/** The previous `count` puzzle ids ending at `last` (inclusive), newest first. */
-export function previousPuzzleIds(last: string, count: number): string[] {
+/**
+ * The previous `count` puzzle ids ending `offset` days before `last` (inclusive),
+ * newest first. Only `count` dates are generated; the offset is applied to the
+ * cursor rather than used as a prefix to discard.
+ */
+export function previousPuzzleIds(last: string, count: number, offset = 0): string[] {
   const ids: string[] = []
   const cursor = parsePuzzleDate(last)
-  for (let index = 0; index < count; index += 1) {
+  for (let index = offset; index < offset + count; index += 1) {
     ids.push(puzzleOfToday(new Date(cursor.getTime() - index * 86_400_000), 'UTC'))
   }
   return ids

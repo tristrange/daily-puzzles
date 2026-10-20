@@ -158,8 +158,7 @@ export async function listPublishedPuzzles(
 ): Promise<readonly PublishedPuzzle[]> {
   const offset = Number.isSafeInteger(olderDays) && olderDays > 0 ? olderDays : 0
   // Queued legacy boards remain accessible even after the daily slots change.
-  const candidates = previousPuzzleIds(todayId, offset + ARCHIVE_WINDOW_DAYS)
-    .slice(offset)
+  const candidates = previousPuzzleIds(todayId, ARCHIVE_WINDOW_DAYS, offset)
     .flatMap((day) =>
       [...new Set([...puzzleIdsForDay(day), puzzleIdFor(day, 'train-tracks')])],
     )
