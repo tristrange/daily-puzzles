@@ -10,7 +10,7 @@ function getBrowserStore(): LeaderboardStore {
     const config = parseLeaderboardConfig(import.meta.env)
     let storage: Storage | null = null
     try { storage = localStorage } catch { /* Local games remain available without publishing. */ }
-    browserStore = createLeaderboardStore(config, config ? createLeaderboardClient(config) : null, storage)
+    browserStore = createLeaderboardStore(config, config ? createLeaderboardClient(config, storage ?? undefined) : null, storage)
   }
   return browserStore
 }

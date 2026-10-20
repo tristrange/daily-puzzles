@@ -18,9 +18,9 @@ export function leaderboardSessionKey(url: string): string {
   return `daily-puzzles:leaderboard:auth:${new URL(url).hostname}`
 }
 
-export function createLeaderboardClient(config: LeaderboardConfig): SupabaseClient {
+export function createLeaderboardClient(config: LeaderboardConfig, storage?: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>): SupabaseClient {
   return createClient(config.url, config.publishableKey, {
-    auth: { detectSessionInUrl: false, storageKey: leaderboardSessionKey(config.url) },
+    auth: { detectSessionInUrl: false, storageKey: leaderboardSessionKey(config.url), ...(storage ? { storage } : {}) },
     global: { fetch: (input, init) => fetch(input, { ...init,
       signal: init?.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(15_000)]) : AbortSignal.timeout(15_000) }) },
   })

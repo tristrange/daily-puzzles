@@ -103,3 +103,21 @@ it('keeps the checked owner token on the request if Auth changes before fetch', 
   await submitLeaderboardResult(client, { id: '2026-10-19', nickname: 'Alice', elapsedMs: 1, hints: 0 }, 'player-a')
   expect(requests[0]?.authorization).toBe('Bearer owner-token')
 })
+
+it('uses the supplied durable storage after startup storage failure recovers', async () => {
+  const values = new Map<string, string>()
+  let blocked = true
+  const storage = { getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => { if (blocked) throw Error('temporarily blocked'); values.set(key, value) },
+    removeItem: (key: string) => { values.delete(key) } }
+  const client = createLeaderboardClient(config, storage)
+  await client.auth.getSession()
+  blocked = false
+  const user = { id: 'persistent-player', aud: 'authenticated', app_metadata: {}, user_metadata: {}, created_at: '', is_anonymous: true }
+  const token = `eyJhbGciOiJIUzI1NiJ9.${Buffer.from(JSON.stringify({ sub: user.id, exp: Math.floor(Date.now() / 1000) + 3600 })).toString('base64url')}.signature`
+  vi.stubGlobal('fetch', async () => new Response(JSON.stringify({ access_token: token, refresh_token: 'refresh', token_type: 'bearer', expires_in: 3600, user }), { headers: { 'content-type': 'application/json' } }))
+  const signed = await client.auth.signInAnonymously({ options: { captchaToken: 'verified' } })
+  expect(signed.error).toBeNull()
+  expect(JSON.parse(values.get('daily-puzzles:leaderboard:auth:example.supabase.co') ?? 'null')?.user.id).toBe('persistent-player')
+  await client.auth.stopAutoRefresh()
+})

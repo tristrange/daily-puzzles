@@ -25,6 +25,11 @@ function parse(raw: string | null, project: string): Progress {
 
 export function createLeaderboardStore(config: LeaderboardConfig | null, client: SupabaseClient | null, storage: StoragePort | null) {
   const key = config ? leaderboardProgressKey(config.url) : ''
+  const locks = typeof navigator !== 'undefined' ? navigator.locks : undefined
+  const locked = <T,>(work: () => T | Promise<T>): Promise<T> => {
+    if (!locks) return Promise.reject(Error('This browser cannot safely coordinate publishing. Update your browser to join.'))
+    return locks.request(key, work)
+  }
   let saved = parse(null, config?.url ?? '')
   let storageFailed = false
   const load = () => {
@@ -33,6 +38,7 @@ export function createLeaderboardStore(config: LeaderboardConfig | null, client:
   }
   saved = load()
   let identity: string | null = null
+  let verified = false
   let stopped = false, joining = false, removing = false, generation = 0
   let notice = '', overflow = false
   let draining: Promise<void> | null = null
@@ -55,6 +61,7 @@ export function createLeaderboardStore(config: LeaderboardConfig | null, client:
     if (!client) return
     const { data, error } = await client.auth.getSession()
     identity = error ? null : data.session?.user.id ?? null
+    verified = true
     saved = load()
     if (saved.enabled && identity !== saved.owner) notice = 'Your player session is unavailable. Join again to publish; old pending results will not move to a new identity.'
     emit()
@@ -66,16 +73,19 @@ export function createLeaderboardStore(config: LeaderboardConfig | null, client:
       try {
         await verifyIdentity()
         while (!stopped && !storageFailed) {
-          saved = load()
-          if (!saved.enabled || !identity || saved.owner !== identity || !saved.pending.length) break
-          const result = saved.pending[0]!, owner = saved.owner
-          await submitLeaderboardResult(client, result, owner)
-          const latest = load()
-          if (!latest.enabled || latest.owner !== owner || stopped || storageFailed) break
-          persist({ ...latest, pending: latest.pending.filter(entry => entry.id !== result.id) })
-          state = { ...state, resultsRevision: state.resultsRevision + 1, resultsPuzzleId: result.id }
-          notice = 'Result published.'
-          emit()
+          const sent = await locked(async () => {
+            saved = load()
+            if (stopped || storageFailed || !saved.enabled || !identity || saved.owner !== identity || !saved.pending.length) return false
+            const result = saved.pending[0]!, owner = saved.owner
+            await submitLeaderboardResult(client, result, owner)
+            const latest = load()
+            if (!latest.enabled || latest.owner !== owner || stopped || storageFailed) return false
+            persist({ ...latest, pending: latest.pending.filter(entry => entry.id !== result.id) })
+            state = { ...state, resultsRevision: state.resultsRevision + 1, resultsPuzzleId: result.id }
+            notice = 'Result published.'; emit()
+            return true
+          })
+          if (!sent) break
         }
       } catch {
         if (!stopped && saved.enabled && !storageFailed) notice = 'Results are pending. Connect and use Retry to publish them.'
@@ -84,28 +94,40 @@ export function createLeaderboardStore(config: LeaderboardConfig | null, client:
     })().finally(() => { draining = null })
     return draining
   }
-  const offerSolve = (record: SolveRecord) => {
+  const offerSolve = async (record: SolveRecord) => {
     if (!config || !client || stopped || removing || storageFailed) return
-    saved = load()
-    if (!saved.enabled || saved.owner !== identity || !identity || saved.pending.some(result => result.id === record.id)) return
     if (!isPuzzleId(record.id) || !isScoreNumber(record.elapsedMs) || !isScoreNumber(record.hints)) return
-    if (saved.pending.length >= 100) { overflow = true; emit(); return }
+    const owner = saved.owner, restoring = !verified
     try {
-      persist({ ...saved, pending: [...saved.pending, { id: record.id, nickname: saved.nickname, elapsedMs: record.elapsedMs, hints: record.hints }] })
-      notice = 'Result queued.'; emit()
+      await locked(() => {
+        saved = load()
+        if (stopped || removing || storageFailed || !saved.enabled || !owner || saved.owner !== owner
+          || (!restoring && owner !== identity) || saved.pending.some(result => result.id === record.id)) return
+        if (saved.pending.length >= 100) { overflow = true; emit(); return }
+        persist({ ...saved, pending: [...saved.pending, { id: record.id, nickname: saved.nickname, elapsedMs: record.elapsedMs, hints: record.hints }] })
+        notice = 'Result queued.'; emit()
+      })
       void retry()
     } catch { storageError() }
   }
-  const stop = () => {
+  const beginStop = () => {
     generation++; stopped = true; overflow = false
-    saved = { ...load(), enabled: false, pending: [] }
-    try { persist(saved); notice = 'Publishing stopped. Already published results remain; an in-flight request may still finish.' }
-    catch { notice = 'Publishing stopped here, but browser storage could not save that setting.' }
+    notice = 'Stopping publishing…'; emit()
+  }
+  const persistStop = () => {
+    persist({ ...load(), enabled: false, pending: [] })
+    notice = 'Publishing stopped. Already published results remain; an in-flight request may still finish.'
     emit()
+  }
+  const stop = async () => {
+    beginStop()
+    try { await locked(persistStop) }
+    catch { notice = 'Publishing stopped here, but browser storage could not save that setting.'; emit() }
   }
   const join = async (nickname: string, captchaToken: string, candidate?: SolveRecord) => {
     const name = nickname.trim()
     if (!client || !config || !isLeaderboardNickname(name) || !captchaToken || joining || removing) throw Error('Enter a valid nickname and complete verification.')
+    if (!locks) throw Error('This browser cannot safely coordinate publishing. Update your browser to join.')
     try {
       if (!storage) throw Error()
       storage.setItem(`${key}:check`, '1')
@@ -114,19 +136,24 @@ export function createLeaderboardStore(config: LeaderboardConfig | null, client:
     } catch { throw Error('Browser storage is unavailable. Publishing cannot be enabled.') }
     joining = true
     const attempt = ++generation
+    const priorDrain = draining
     try {
-      const current = await client.auth.getSession()
-      if (current.error) throw Error('Player session unavailable. Reconnect and try again.')
-      const signed = current.data.session ? { data: current.data, error: null }
-        : await client.auth.signInAnonymously({ options: { captchaToken } })
-      if (signed.error || !signed.data.session) throw Error('Could not join. Complete verification again and retry.')
+      await locked(async () => {
+        const current = await client.auth.getSession()
+        if (current.error) throw Error('Player session unavailable. Reconnect and try again.')
+        const signed = current.data.session ? { data: current.data, error: null }
+          : await client.auth.signInAnonymously({ options: { captchaToken } })
+        if (signed.error || !signed.data.session) throw Error('Could not join. Complete verification again and retry.')
+        if (attempt !== generation) return
+        identity = signed.data.session.user.id; verified = true
+        const latest = load()
+        persist({ project: config.url, owner: identity, enabled: true, nickname: name,
+          pending: latest.owner === identity ? latest.pending : [] })
+        stopped = false; storageFailed = false; overflow = false; notice = 'Publishing enabled for future first solves.'; emit()
+      })
       if (attempt !== generation) return
-      identity = signed.data.session.user.id
-      const latest = load()
-      persist({ project: config.url, owner: identity, enabled: true, nickname: name,
-        pending: latest.owner === identity ? latest.pending : [] })
-      stopped = false; storageFailed = false; overflow = false; notice = 'Publishing enabled for future first solves.'; emit()
-      if (candidate) offerSolve(candidate)
+      if (candidate) await offerSolve(candidate)
+      if (priorDrain) await priorDrain
       await retry()
     } catch (error) { emit(); throw error }
     finally { joining = false }
@@ -134,14 +161,16 @@ export function createLeaderboardStore(config: LeaderboardConfig | null, client:
   const removeResults = async () => {
     if (!client || removing) return
     removing = true
-    stop()
+    beginStop()
     try {
-      if (draining) await draining
-      await verifyIdentity()
-      if (!identity || identity !== saved.owner) throw Error('The original player session is required to remove these results.')
-      await removeLeaderboardResults(client, saved.owner!)
-      state = { ...state, resultsRevision: state.resultsRevision + 1, resultsPuzzleId: null }
-      notice = 'Your published results have been removed.'; emit()
+      await locked(async () => {
+        persistStop()
+        await verifyIdentity()
+        if (!identity || identity !== saved.owner) throw Error('The original player session is required to remove these results.')
+        await removeLeaderboardResults(client, saved.owner!)
+        state = { ...state, resultsRevision: state.resultsRevision + 1, resultsPuzzleId: null }
+        notice = 'Your published results have been removed.'; emit()
+      })
     } catch (error) { notice = error instanceof Error ? error.message : 'Could not remove results. Please retry.'; emit(); throw error }
     finally { removing = false }
   }
