@@ -69,6 +69,11 @@ export function HomePage() {
         <TodayCards probes={ready.probes} solved={solved} />
       )}
       <div className="today-more">
+        <p>Meet Tents</p>
+        <Link to="/preview/tents">Try three preview boards <span aria-hidden="true">→</span></Link>
+        <span>Pair trees and tents. Match the counts. Keep tents apart.</span>
+      </div>
+      <div className="today-more">
         <p>Another round?</p>
         <Link to="/archive">Explore the archive <span aria-hidden="true">→</span></Link>
         <Link to="/stats">Your progress <span aria-hidden="true">→</span></Link>

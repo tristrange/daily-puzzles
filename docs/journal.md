@@ -1823,3 +1823,37 @@ existing TracksStage warning. Three new stage cases cover daily/preview saving,
 symbol preservation, gesture protection, Undo/Redo and empty-action behavior.
 Browser verification covers clearing notes, Undo/Redo, persistence after reload
 and desktop/phone layout. No dependencies, puzzle content or Python code changed.
+
+## 2026-10-20 — Playable Tents preview
+
+Three 8×8 Tents boards are available from Today and How to play, with a lazy
+preview route. Tents cannot touch, line counts must match, and the final layout
+must admit a one-to-one orthogonal tree pairing. A tent may border several trees;
+the checker finds a matching rather than requiring exactly one adjacent tree.
+An isolated Python row-pattern counter proves one distinct tent placement for
+each board; alternative pairings do not count as alternative solutions.
+Search exhaustion raises instead of certifying uniqueness. No daily family,
+shared schema, publisher, Stats or leaderboard changes are included.
+
+Tent, Grass and Erase brushes work with tap/drag and keyboard controls. A whole
+stroke, explained hint or confirmed Reset is one Undo/Redo move. Cancelled strokes
+restore the starting state. Attempts save separately per preview with active
+time and shown-hint counts. Direct hints explain adjacency, non-touching and
+line-count deductions, highlight target/support cells and offer Apply move.
+All three boards finish through these rules; every suggested move is compared
+with the independent Python answer in tests. Grass marks are assumptions, not
+validated notes. No difficulty rating or general logic-only generator promise.
+
+All 790 app tests and 665 engine tests pass. TypeScript, pyright, ruff, formatting,
+production build and all 144 published-puzzle replay checks pass; app lint keeps
+only the existing TracksStage warning. The nine new Python cases take about
+0.1 s locally; verifying the three previews takes about 1 ms. The preview is a
+16.3 kB lazy chunk (6.3 kB gzip), with no new dependencies. Independent review
+found no issues and cross-checked the counter against small brute-force boards.
+
+Browser checks cover desktop and 320/375 px, light/dark/Auto, keyboard completion,
+vertical painting and one-step Undo, hints, reload and separate board attempts.
+With the preview server stopped, cached reload, Stats, Archive, rules and Tents
+navigation still work. Phone gesture cancellation is covered by DOM tests;
+physical iPhone playtesting remains for the maintainer. The local preview server
+was restarted after this check. [Phone preview](images/tents-preview-phone.png).

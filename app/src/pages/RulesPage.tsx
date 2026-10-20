@@ -26,6 +26,7 @@ export function RulesPage() {
             {PUZZLE_TYPE_LABEL[type]}
           </Link>
         ))}
+        <Link to={{ pathname: '/how-to-play', hash: '#tents' }}>Tents preview</Link>
       </nav>
 
       <h2 id="controls" tabIndex={-1}>Shared controls</h2>
@@ -43,6 +44,28 @@ export function RulesPage() {
       <p>Reset asks for confirmation before clearing your attempt; the timer keeps running. You can Undo a reset.
         Undo and Redo history lasts while the puzzle is open and is cleared by reloading or leaving it.
         Rules links inside a game open a new tab so you can consult them without leaving your board.</p>
+
+      <h2 id="tents" tabIndex={-1}>Tents preview</h2>
+      <h3>Rules</h3>
+      <ul>
+        <li>Pair every tree with one tent directly above, below, left or right of it. Every tent needs its own tree.</li>
+        <li>Tents cannot touch, including diagonally.</li>
+        <li>Match the tent count beside every row and column. A zero means no tents in that line.</li>
+        <li>A tent can border several trees, as long as all trees and tents can be paired one-to-one.
+          You do not need to draw the pairings.</li>
+        <li>Grass means no tent here. Grass marks are optional for completing the board.</li>
+      </ul>
+      <h3>Controls and hints</h3>
+      <p>Pick Tent, Grass or Erase, then tap or drag. Tapping the selected mark again clears it.
+        Right-click erases. Trees are fixed. 1 or T places a tent; 2 or G marks grass;
+        Enter or Space applies the picker; Delete or Backspace erases.</p>
+      <p>Hint or H explains a deduction from tree adjacency, non-touching or line counts.
+        Apply move places a tent or grass as one undoable move. Target and support cells
+        are highlighted. Your tents and grass are assumptions; a mistaken mark can mislead hints.
+        A stall is reported without guessing. Shown hints are counted even if undone or reset.</p>
+      <p><Link to="/preview/tents">Try three 8×8 Tents boards</Link>. Each has a verified unique
+        tent placement. Preview attempts save separately and do not affect daily stats or leaderboards.
+        These boards are for playtesting; no difficulty rating is claimed.</p>
 
       <h2 id="queens" tabIndex={-1}>Queens</h2>
       <h3>Rules</h3>
