@@ -166,10 +166,13 @@ Apply move uses the ordinary history and solve path. Escape/Dismiss returns focu
 to Hint, and the location button returns to the target. Stable explanation props
 keep timer renders from stealing focus. Board edits and Undo/Redo dismiss stale
 hints. Queens/Star Battle use `checkedHints.ts` before the pure deduction rules:
-first correct one misplaced piece, then one cross blocking a required piece.
+first check misplaced pieces, then crosses blocking required pieces. A contradiction
+opens a generic warning without a cell location, highlight or hint charge.
+Show the mistake reveals one correction and counts/persists one hint; Apply move
+then clears that cell. Dismiss/Escape and board edits clear the warning.
 The bounded row search independently proves a unique solution and caches it per
 board in memory. A zero/multiple-solution board or exhausted budget produces no
-hint or accusation. Correction copy explicitly names this solution check;
+hint or accusation. Revealed correction copy explicitly names this solution check;
 Apply clears only that cell through normal history. Ordinary play still shows
 only local conflicts, and the shared engine/app deduction contract is unchanged.
 

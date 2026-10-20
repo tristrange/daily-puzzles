@@ -1996,3 +1996,21 @@ wrong-cross correction, Undo/Redo, saved reload and subsequent deductions at
 desktop and 393px phone widths. See [desktop](images/star-hint-correction-desktop.png)
 and [phone](images/star-hint-correction-phone.png). Physical iPhone timing and
 the unchanged Python suite were not rerun for this app-only change.
+
+## 2026-10-21 — Reveal mistakes in stages
+
+Queens and Star Battle now warn about contradictory entries without identifying
+a cell. Players can dismiss the warning and keep solving, choose Show the mistake
+to reveal one highlighted correction, then Apply move to clear that cell.
+The general warning is free; revealing the correction counts and immediately
+saves one hint. Board edits, Undo/Redo, gestures and dismissal clear the warning.
+Escape returns focus to Hint. Ordinary deductions and all other games retain
+their existing behavior; the exact solution verifier is unchanged.
+
+All 828 app tests, build and typecheck pass. Lint retains the existing TracksStage
+warning; independent review found no issues. Browser checks confirm no target,
+location or Apply button before reveal, keyboard dismissal/focus, clearing a
+warning by editing, reveal without applying, correction Undo/Redo, and normal
+deductions after correction. See the [Star Battle desktop warning](images/mistake-warning-desktop.png)
+and [Queens phone warning](images/mistake-warning-phone.png). Physical iPhone and
+screen-reader testing were not performed.

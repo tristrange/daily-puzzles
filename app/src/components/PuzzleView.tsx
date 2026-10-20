@@ -36,7 +36,7 @@ import { readStoredAutoMark, storeAutoMark } from '../lib/autoMark'
 import { clearMarksProgress, readMarksProgress, storeMarksProgress } from '../lib/marksProgress'
 import { buildShareText, buildSolutionShareText, copyText, puzzleShareLink } from '../lib/share'
 import { InteractiveBoard } from './InteractiveBoard'
-import { HintPanel } from './HintPanel'
+import { HintPanel, MistakeWarning } from './HintPanel'
 import { ResetButton } from './ResetButton'
 import { useMoveHistory } from '../lib/useMoveHistory'
 
@@ -79,6 +79,7 @@ export function PuzzleStage({
   const hintButton = useRef<HTMLButtonElement>(null)
   const hintId = useId()
   const [hint, setHint] = useState<CheckedHint | null>(null)
+  const [mistakeWarning, setMistakeWarning] = useState(false)
   const hintReasons = useMemo(() => hint ? [hint.reason] : [], [hint])
   const [announcement, setAnnouncement] = useState('')
   const [autoMark, setAutoMark] = useState(readStoredAutoMark)
@@ -155,11 +156,12 @@ export function PuzzleStage({
 
   const announce = (message: string) => {
     setAnnouncement(message)
-    setHint(null)
+    resetHint()
   }
 
   const resetHint = () => {
     setHint(null)
+    setMistakeWarning(false)
   }
 
   const recordSolve = (when: number) => {
@@ -280,25 +282,8 @@ export function PuzzleStage({
     setAnnouncement('Board cleared. Undo brings it back.')
   }
 
-  const requestHint = () => {
-    if (!hintsAvailable || solved || strokeStart.current !== null) return
-    const result = checkedHint(game)
-    if (result.kind === 'unverified') {
-      announce('Could not verify a unique solution within the hint check. No correction or deduction was made.')
-      return
-    }
-    if (result.kind === 'none') {
-      // The same count the win check uses. A board is complete when it holds
-      // `size * starsPerRow` pieces, so anything less is a stalled position and
-      // saying otherwise would end the game from inside a hint button.
-      if (game.queens.size === piecesNeeded(board)) {
-        announce(`All ${piecePlural} are placed.`)
-      } else {
-        announce(`These rules found no further deduction. This does not prove that guessing is necessary.`)
-      }
-      return
-    }
-    const next = result.hint
+  const showHint = (next: CheckedHint) => {
+    setMistakeWarning(false)
     setHint(next)
     hintsUsed.current += 1
     setSavingAvailable(storeMarksProgress(
@@ -312,6 +297,38 @@ export function PuzzleStage({
         ? `Hint: place a ${piece} at ${position}.`
         : `Hint: ${position} is dead — mark it.`,
     )
+  }
+
+  const requestHint = () => {
+    if (!hintsAvailable || solved || strokeStart.current !== null) return
+    const result = checkedHint(game)
+    if (result.kind === 'unverified') {
+      announce('Could not verify a unique solution within the hint check. No correction or deduction was made.')
+      return
+    }
+    if (result.kind === 'none') {
+      // The same count the win check uses; anything less is a stalled position.
+      if (game.queens.size === piecesNeeded(board)) {
+        announce(`All ${piecePlural} are placed.`)
+      } else {
+        announce('These rules found no further deduction. This does not prove that guessing is necessary.')
+      }
+      return
+    }
+    if (result.hint.action === 'clear') {
+      setHint(null)
+      setMistakeWarning(true)
+      setAnnouncement('Your entries lead to a contradiction. Check them or choose Show the mistake.')
+      return
+    }
+    showHint(result.hint)
+  }
+
+  const revealMistake = () => {
+    if (solved || strokeStart.current !== null) return
+    const result = checkedHint(currentGame.current)
+    if (result.kind !== 'hint' || result.hint.action !== 'clear') { resetHint(); return }
+    showHint(result.hint)
   }
 
   const dismissHint = () => { resetHint(); hintButton.current?.focus({ preventScroll: true }) }
@@ -420,7 +437,7 @@ export function PuzzleStage({
         <ResetButton onReset={reset} disabled={isEmpty(game) || solved} />
         {hintsAvailable && (
           <button ref={hintButton} type="button" className="tool-button" onClick={requestHint} disabled={solved}
-            aria-label="Get an explained hint" aria-expanded={hint !== null} aria-controls={hint ? hintId : undefined}>
+            aria-label="Get an explained hint" aria-expanded={hint !== null || mistakeWarning} aria-controls={hint || mistakeWarning ? hintId : undefined}>
             Hint
           </button>
         )}
@@ -450,6 +467,7 @@ export function PuzzleStage({
         onGestureEnd={endStroke}
       />
       <p className="hint-text">{statusText}</p>
+      {mistakeWarning && <MistakeWarning id={hintId} onReveal={revealMistake} onDismiss={dismissHint} />}
       {hint && <HintPanel id={hintId} location={hintCellName(board, hint.cell)}
         title={hint.action === 'clear' ? hint.rule === 'wrong-piece' ? `Remove this ${piece}` : 'Clear this cross'
           : hint.action === 'queen' ? `Place a ${piece}` : `Rule out a ${piece}`}
