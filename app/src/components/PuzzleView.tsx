@@ -21,7 +21,8 @@ import {
   type GameState,
 } from '../domain/game'
 import { DIFFICULTY_LABEL, PUZZLE_PIECE, PUZZLE_TYPE_HAS_HINTS, PUZZLE_TYPE_LABEL } from '../domain/games'
-import { firstHint, hintCellName, type Hint } from '../domain/hints'
+import { hintCellName } from '../domain/hints'
+import { checkedHint, type CheckedHint } from '../domain/checkedHints'
 import type { Board } from '../domain/board'
 import { isMarksPuzzle, isTracksPuzzle, isTrioPuzzle, isTentsPuzzle, type Puzzle } from '../domain/puzzle'
 import { trackVariantOf } from '../domain/trackSizes'
@@ -77,7 +78,7 @@ export function PuzzleStage({
   const stage = useRef<HTMLDivElement>(null)
   const hintButton = useRef<HTMLButtonElement>(null)
   const hintId = useId()
-  const [hint, setHint] = useState<Hint | null>(null)
+  const [hint, setHint] = useState<CheckedHint | null>(null)
   const hintReasons = useMemo(() => hint ? [hint.reason] : [], [hint])
   const [announcement, setAnnouncement] = useState('')
   const [autoMark, setAutoMark] = useState(readStoredAutoMark)
@@ -281,12 +282,12 @@ export function PuzzleStage({
 
   const requestHint = () => {
     if (!hintsAvailable || solved || strokeStart.current !== null) return
-    if (conflictList.length > 0) {
-      announce(`Remove the conflicting ${piece} before asking for a hint.`)
+    const result = checkedHint(game)
+    if (result.kind === 'unverified') {
+      announce('Could not verify a unique solution within the hint check. No correction or deduction was made.')
       return
     }
-    const next = firstHint(board, game.queens, game.marks)
-    if (next === null) {
+    if (result.kind === 'none') {
       // The same count the win check uses. A board is complete when it holds
       // `size * starsPerRow` pieces, so anything less is a stalled position and
       // saying otherwise would end the game from inside a hint button.
@@ -297,6 +298,7 @@ export function PuzzleStage({
       }
       return
     }
+    const next = result.hint
     setHint(next)
     hintsUsed.current += 1
     setSavingAvailable(storeMarksProgress(
@@ -304,7 +306,9 @@ export function PuzzleStage({
     ))
     const position = hintCellName(board, next.cell)
     setAnnouncement(
-      next.action === 'queen'
+      next.action === 'clear'
+        ? `Hint: clear ${position}. ${next.reason}`
+        : next.action === 'queen'
         ? `Hint: place a ${piece} at ${position}.`
         : `Hint: ${position} is dead — mark it.`,
     )
@@ -317,13 +321,14 @@ export function PuzzleStage({
     cell?.scrollIntoView({ block: 'center' })
   }
   const acceptHint = () => {
-    if (!hint || solved || strokeStart.current !== null || conflictList.length) return
-    const latest = firstHint(board, game.queens, game.marks)
+    if (!hint || solved || strokeStart.current !== null) return
+    const result = checkedHint(game)
+    const latest = result.kind === 'hint' ? result.hint : null
     if (!latest || latest.cell !== hint.cell || latest.action !== hint.action || latest.rule !== hint.rule) {
       dismissHint()
       return
     }
-    const next = hint.action === 'queen'
+    const next = hint.action === 'clear' ? clearCell(game, hint.cell) : hint.action === 'queen'
       ? autoMark ? placeQueenAutoMark(game, hint.cell) : toggleQueen(game, hint.cell)
       : toggleMark(game, hint.cell)
     applyGame(next)
@@ -446,8 +451,11 @@ export function PuzzleStage({
       />
       <p className="hint-text">{statusText}</p>
       {hint && <HintPanel id={hintId} location={hintCellName(board, hint.cell)}
-        title={hint.action === 'queen' ? `Place a ${piece}` : `Rule out a ${piece}`}
-        reasons={hintReasons} effect={`Uses your placed ${piecePlural} and crosses. Crosses are treated as ruled-out cells.`}
+        title={hint.action === 'clear' ? hint.rule === 'wrong-piece' ? `Remove this ${piece}` : 'Clear this cross'
+          : hint.action === 'queen' ? `Place a ${piece}` : `Rule out a ${piece}`}
+        reasons={hintReasons} effect={hint.action === 'clear'
+          ? 'Checked against the unique solution, independently of your other entries. Clears only this cell.'
+          : `Your placed ${piecePlural} and crosses were checked against the unique solution before this deduction.`}
         onApply={acceptHint} onDismiss={dismissHint} onShowCell={showHintCell} />}
       <SolvedPanel solved={solved} firstSolve={firstSolve} streak={stats?.currentStreak ?? 0}
         copied={copied} shareText={shareText} onShare={share} puzzleId={puzzle.id} candidate={candidate} />

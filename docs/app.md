@@ -165,8 +165,13 @@ Queens, Star Battle, Trio and Train Tracks share `HintPanel`: requesting a hint 
 Apply move uses the ordinary history and solve path. Escape/Dismiss returns focus
 to Hint, and the location button returns to the target. Stable explanation props
 keep timer renders from stealing focus. Board edits and Undo/Redo dismiss stale
-hints. Queens/Star Battle treat player crosses as exclusions; the panel discloses
-that assumption rather than claiming to validate them against a solution.
+hints. Queens/Star Battle use `checkedHints.ts` before the pure deduction rules:
+first correct one misplaced piece, then one cross blocking a required piece.
+The bounded row search independently proves a unique solution and caches it per
+board in memory. A zero/multiple-solution board or exhausted budget produces no
+hint or accusation. Correction copy explicitly names this solution check;
+Apply clears only that cell through normal history. Ordinary play still shows
+only local conflicts, and the shared engine/app deduction contract is unchanged.
 
 Train Tracks uses `trackHints.ts` instead of the marks deduction port. A cell's
 domain contains empty or one of six track shapes: a cross fixes empty, ? excludes

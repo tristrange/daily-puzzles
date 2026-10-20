@@ -57,6 +57,45 @@ afterEach(() => {
   vi.unstubAllGlobals(); vi.clearAllMocks()
 })
 
+it('shows a wrong star before progressing and applies its removal with Undo/Redo', () => {
+  const { board, click, panel, puzzle, markBoard } = playing(star, (puzzle, board) => {
+    storeMarksProgress(puzzle.id, { board, queens: new Set([0]), marks: new Set([1]) }, 1000, 2)
+  })
+  click('Hint')
+  expect(panel()!.props['title']).toBe('Remove this star')
+  expect(board()['hint']).toMatchObject({ cell: 0, action: 'clear' })
+  expect((board()['game'] as { queens: Set<number> }).queens).toEqual(new Set([0]))
+  expect(readMarksProgress(puzzle.id, markBoard)?.hints).toBe(3)
+  ;(panel()!.props['onApply'] as () => void)()
+  expect((board()['game'] as { queens: Set<number>; marks: Set<number> })).toMatchObject({ queens: new Set(), marks: new Set([1]) })
+  click('Undo')
+  expect((board()['game'] as { queens: Set<number> }).queens).toEqual(new Set([0]))
+  click('Redo')
+  expect((board()['game'] as { queens: Set<number> }).queens.size).toBe(0)
+  expect(readMarksProgress(puzzle.id, markBoard)?.hints).toBe(3)
+})
+
+it('clears one wrong cross without placing a queen or changing other marks', () => {
+  const { board, click, panel } = playing(queen, (puzzle, board) => {
+    storeMarksProgress(puzzle.id, { board, queens: new Set([3]), marks: new Set([0, 5]) }, 0, 0)
+  })
+  click('Hint')
+  expect(panel()!.props['title']).toBe('Clear this cross')
+  ;(panel()!.props['onApply'] as () => void)()
+  expect(board()['game']).toMatchObject({ queens: new Set([3]), marks: new Set([0]) })
+  click('Undo')
+  expect(board()['game']).toMatchObject({ queens: new Set([3]), marks: new Set([0, 5]) })
+})
+
+it('does not count or display a hint when the solution cannot be verified', () => {
+  const raw = { ...queen, board: { size: 4, regions: Array.from({ length: 16 }, (_, i) => Math.floor(i / 4)) } }
+  const { click, panel, puzzle, markBoard, render } = playing(raw)
+  click('Hint')
+  expect(panel()).toBeUndefined()
+  expect(readMarksProgress(puzzle.id, markBoard)?.hints ?? 0).toBe(0)
+  expect(render().find(element => element.props['aria-live'] === 'polite')!.props['children']).toContain('Could not verify')
+})
+
 it.each([['Queens', queen, 'queens', 5], ['Star Battle', star, 'marks', 0]] as const)(
   '%s shows the deduction before applying one undoable move', (_, raw, kind, target) => {
     const { board, click, panel } = playing(raw)
