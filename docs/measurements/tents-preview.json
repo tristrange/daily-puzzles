@@ -17,7 +17,7 @@
         58,
         62
       ],
-      "verifySeconds": 0.000143
+      "verifySeconds": 0.000164
     },
     {
       "id": "tents-preview-2",
@@ -36,7 +36,7 @@
         54,
         57
       ],
-      "verifySeconds": 0.000137
+      "verifySeconds": 0.000161
     },
     {
       "id": "tents-preview-3",
@@ -55,8 +55,65 @@
         61,
         63
       ],
-      "verifySeconds": 0.000398
+      "verifySeconds": 0.000397
+    },
+    {
+      "id": "tents-preview-4",
+      "seed": 148,
+      "solution": [
+        4,
+        6,
+        10,
+        21,
+        23,
+        24,
+        34,
+        40,
+        47,
+        51,
+        53,
+        57
+      ],
+      "verifySeconds": 0.000541
+    },
+    {
+      "id": "tents-preview-5",
+      "seed": 866,
+      "solution": [
+        0,
+        5,
+        10,
+        15,
+        16,
+        27,
+        33,
+        39,
+        44,
+        54,
+        57,
+        59
+      ],
+      "verifySeconds": 0.000165
+    },
+    {
+      "id": "tents-preview-6",
+      "seed": 916,
+      "solution": [
+        6,
+        10,
+        12,
+        23,
+        25,
+        36,
+        38,
+        42,
+        48,
+        53,
+        55,
+        59
+      ],
+      "verifySeconds": 0.000237
     }
   ],
-  "totalSeconds": 0.001481
+  "totalSeconds": 0.00229
 }

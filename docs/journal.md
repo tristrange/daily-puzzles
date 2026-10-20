@@ -1878,3 +1878,29 @@ Local proof uses actionlint, the seven existing routing tests and nine execution
 of the aggregate gate extracted from the workflow, including failure,
 cancellation, unexpected skips and missing routing data. No application code,
 puzzle files, dependencies, permissions or verification checks change.
+
+## 2026-10-20 — Three more challenging Tents previews
+
+Append Boards 4–6 using seeds 148, 866 and 916. All row/column clues are nonzero;
+each board has one immediately forced tent from singleton tree choices or a line
+needing all its remaining candidates, compared with two in each original board.
+After these opening exclusions, 31/30/31 cells remain eligible for tents, compared
+with 23/27/25 originally. These are selection signals, not a difficulty rating.
+The maintainer's playtesting decides whether the batch feels challenging enough.
+
+The original three board definitions and their save fingerprints are unchanged.
+Today links straight to Board 4; all six remain in the selector. The isolated
+generator now reproduces these six curated seeds rather than replacing the
+batch with the first three unique candidates. Answers remain in test-only proof
+data. Every board has an independently verified unique tent placement and solves
+through the existing explained hints without guessing. No daily publication or
+hint rule changes are included.
+
+All 790 app tests, nine focused engine tests, production build, pyright, ruff and
+format checks pass; app lint retains its existing TracksStage warning. Existing
+hint tests now replay all six boards, without a new CI seed sweep. Independent
+review found no issues. Browser checks cover Boards 4–6, Today navigation,
+save/reload, hint application and Undo, plus the 375 px layout.
+[Phone preview](images/tents-challenge-phone.png). Physical iPhone playtesting and
+subjective difficulty remain for the maintainer; full engine/archive checks run
+in GitHub CI.
