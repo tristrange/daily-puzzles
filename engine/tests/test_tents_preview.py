@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
-from tools.tents_preview import Tents, pairable, solutions
+from tools.tents_preview import PREVIEW_SEEDS, Tents, candidate, pairable, solutions
 
 
 def test_counts_placements_not_alternative_tree_pairings():
@@ -44,12 +44,15 @@ def test_rejects_malformed_boards(
         Tents(2, trees, rows, cols)
 
 
-def test_the_three_shipped_previews_have_exactly_one_placement():
+def test_shipped_previews_are_reproducible_unique_and_new_boards_use_every_line():
     path = Path(__file__).resolve().parents[2] / "app/src/data/tents-previews.json"
     boards = json.loads(path.read_text())
-    assert len(boards) == 3
-    for raw in boards:
+    assert len(boards) == len(PREVIEW_SEEDS) == 6
+    for index, raw in enumerate(boards):
         board = Tents(
             raw["size"], tuple(raw["trees"]), tuple(raw["rowClues"]), tuple(raw["colClues"])
         )
         assert len(solutions(board)) == 1
+        assert candidate(PREVIEW_SEEDS[index]) == board
+        if index >= 3:
+            assert min(*board.rows, *board.cols) > 0

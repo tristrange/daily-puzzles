@@ -63,8 +63,9 @@ export function RulesPage() {
         Apply move places a tent or grass as one undoable move. Target and support cells
         are highlighted. Your tents and grass are assumptions; a mistaken mark can mislead hints.
         A stall is reported without guessing. Shown hints are counted even if undone or reset.</p>
-      <p><Link to="/preview/tents">Try three 8×8 Tents boards</Link>. Each has a verified unique
+      <p><Link to="/preview/tents">Try six 8×8 Tents boards</Link>. Each has a verified unique
         tent placement. Preview attempts save separately and do not affect daily stats or leaderboards.
+        Boards 4–6 use every row and column and are intended as a bigger challenge.
         These boards are for playtesting; no difficulty rating is claimed.</p>
 
       <h2 id="queens" tabIndex={-1}>Queens</h2>

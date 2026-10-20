@@ -41,6 +41,7 @@ it('accepts alternative pairings but rejects a local-neighbour-only false soluti
 it('explains only sound moves across the verified preview boards', () => {
   for (const [index, entry] of raw.entries()) {
     const board = parseTentsBoard(entry), answer = proof.samples[index]!.solution
+    expect(proof.samples[index]!.id).toBe(board.id)
     let game = createTentsGame(board), shown = 0
     while (!isTentsSolved(board, game) && shown < 64) {
       const result = findTentsHint(board, game)

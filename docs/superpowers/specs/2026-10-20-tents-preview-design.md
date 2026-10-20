@@ -48,3 +48,12 @@ boards, hint soundness, saved attempts and real playing controls. Run existing
 checks and browser-check phone/desktop, light/dark, reload, hints and completion.
 Stop at a playable preview PR; generation quality and physical iPhone playtesting
 inform a later daily rollout.
+
+## Follow-up: a more challenging batch
+
+After playing the first batch, the user requested three harder candidates as
+previews. Append Boards 4–6, retaining Boards 1–3 and their saved attempts.
+Use nonzero clues throughout, fewer immediate tent placements and verified
+uniqueness. Existing explained hints must finish every new board without guessing.
+Link Today directly to Board 4; retain the selector for all six. Difficulty is
+still a playtesting question, with no daily rollout in this change.

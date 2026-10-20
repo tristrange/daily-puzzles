@@ -19,7 +19,8 @@ MAX_SIDE = 8
 MIN_SIDE = 2
 SOLUTION_LIMIT = 2
 TENT_TARGET = 12
-PREVIEW_COUNT = 3
+# Keep existing board IDs stable; new playtest boards are appended after seeds 1-3.
+PREVIEW_SEEDS = (1, 2, 3, 148, 866, 916)
 ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "app/src/data/tents-previews.json"
 REPORT = ROOT / "docs/measurements/tents-preview.json"
@@ -158,7 +159,7 @@ def candidate(seed: int) -> Tents | None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--generate", action="store_true", help="Replace the unpublished preview batch"
+        "--generate", action="store_true", help="Reproduce the six curated preview boards"
     )
     args = parser.parse_args()
     started = perf_counter()
@@ -174,17 +175,14 @@ def main() -> None:
         return
     boards: list[dict[str, object]] = []
     samples: list[dict[str, object]] = []
-    for seed in range(2000):
+    for seed in PREVIEW_SEEDS:
         board = candidate(seed)
         if board is None:
-            continue
+            raise ValueError(f"Cannot construct preview seed {seed}")
         begin = perf_counter()
-        try:
-            answers = solutions(board)
-        except RuntimeError:
-            continue
+        answers = solutions(board)
         if len(answers) != 1:
-            continue
+            raise ValueError(f"Preview seed {seed} does not have one solution")
         generated: dict[str, object] = {
             "id": f"tents-preview-{len(boards) + 1}",
             "size": board.size,
@@ -201,10 +199,6 @@ def main() -> None:
                 "verifySeconds": round(perf_counter() - begin, 6),
             }
         )
-        if len(boards) == PREVIEW_COUNT:
-            break
-    if len(boards) != PREVIEW_COUNT:
-        raise RuntimeError("Could not construct three unique previews in 2000 attempts")
     DATA.write_text(json.dumps(boards, indent=2) + "\n")
     REPORT.write_text(
         json.dumps(
@@ -212,7 +206,7 @@ def main() -> None:
         )
         + "\n"
     )
-    print(f"Constructed three unique Tents previews in {perf_counter() - started:.3f}s")
+    print(f"Constructed {len(boards)} unique Tents previews in {perf_counter() - started:.3f}s")
 
 
 if __name__ == "__main__":
