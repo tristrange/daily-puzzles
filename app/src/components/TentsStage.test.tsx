@@ -26,7 +26,8 @@ async function key(index: number, value: string) {
   await act(async () => cell(index).dispatchEvent(new KeyboardEvent('keydown', { key: value, bubbles: true })))
 }
 
-it('plays with keyboard, preserves trees, persists Undo/Redo and confirms Reset', async () => {
+it.each([0, 6])('plays preview %s with keyboard, saved Undo/Redo and confirmed Reset', async index => {
+  const board = parseTentsBoard(raw[index])
   await act(async () => root.render(<TentsStage board={board} />))
   await key(board.trees[0]!, '1')
   expect(button('Undo').disabled).toBe(true)
@@ -87,12 +88,16 @@ it('treats a drag as one move and restores cancelled strokes', async () => {
   expect(button('Undo').disabled).toBe(true)
 })
 
-it('completes without adding daily stats and starts fresh when reopened', async () => {
-  const solution = proof.samples[0]!.solution, last = solution[0]!
+it.each([0, 6])('completes preview %s without adding daily stats', async index => {
+  const board = parseTentsBoard(raw[index])
+  const solution = proof.samples[index]!.solution, last = solution.at(-1)!
   const game = createTentsGame(board).map((_, cell) => cell !== last && solution.includes(cell) ? 1 as const : 0 as const)
   localStorage.setItem(STATS_STORAGE_KEY, '[]')
   storeTentsProgress(board, game, 5000, 2)
   await act(async () => root.render(<TentsStage board={board} />))
+  expect(container.querySelectorAll('[role="gridcell"]')).toHaveLength(board.size ** 2)
+  await key(last, 'End')
+  expect(document.activeElement).toBe(cell(board.size ** 2 - 1))
   await key(last, '1')
   expect(container.querySelector('[role="status"]')?.textContent).toContain('Solved')
   expect(button('Hint').disabled).toBe(true)

@@ -57,3 +57,14 @@ Use nonzero clues throughout, fewer immediate tent placements and verified
 uniqueness. Existing explained hints must finish every new board without guessing.
 Link Today directly to Board 4; retain the selector for all six. Difficulty is
 still a playtesting question, with no daily rollout in this change.
+
+## Follow-up: 10×10 playtest
+
+The maintainer solved all six boards without hints, with clean solves under four
+minutes, and requested a 10×10 batch. Append Boards 7–9 while retaining all
+existing definitions and save keys. Keep the same rules and controls, 18 tents
+per new board, nonzero clues and verified unique tent placements. Do not require
+the basic hint system to finish these boards; let it honestly report a stall.
+No hint upgrades, difficulty labels or daily publishing are part of this slice.
+Make parsing, grid columns, accessible labels and selector dimensions match the
+board size. Check phone/desktop play, saves, history and 100-cell completion.

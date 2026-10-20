@@ -1412,7 +1412,7 @@
 .apply-hint:hover { color: var(--primary-ink); background: var(--primary-bg); filter: brightness(0.95); }
 .trio-preview .word-preview-picker { margin-bottom: 0.75rem; }
 .tents-board-shell { width: min(100%, 38rem, max(19rem, 100svh - 24rem)); margin: auto; }
-.tents-head, .tents-row { display: grid; grid-template-columns: 1.25rem repeat(8, minmax(0, 1fr)); gap: 3px; align-items: center; }
+.tents-head, .tents-row { display: grid; grid-template-columns: 1.25rem repeat(var(--tents-size), minmax(0, 1fr)); gap: 3px; align-items: center; }
 .tents-head { margin-bottom: 4px; }
 .tents-board { display: grid; gap: 3px; touch-action: pinch-zoom; user-select: none; -webkit-user-select: none; }
 .tents-clue { text-align: center; font-size: 0.875rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.25; color: var(--text-h); }

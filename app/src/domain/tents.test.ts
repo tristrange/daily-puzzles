@@ -12,6 +12,19 @@ it('rejects malformed preview boards and inconsistent totals', () => {
   }
 })
 
+it('validates 10×10 boundaries and completes a 100-cell placement', () => {
+  const raw = { id: 'tents-preview-7', size: 10, trees: [99],
+    rowClues: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1], colClues: [0, 0, 0, 0, 0, 0, 0, 0, 1, 0] }
+  const board = parseTentsBoard(raw), game = createTentsGame(board)
+  expect(game).toHaveLength(100)
+  expect(editTent(board, game, 99, 1)).toBe(game)
+  expect(isTentsSolved(board, editTent(board, game, 98, 1))).toBe(true)
+  for (const change of [{ size: 12 }, { trees: [100] }, { rowClues: Array(8).fill(0) },
+    { colClues: [0, 0, 0, 0, 0, 0, 0, 0, 11, 0] }]) {
+    expect(() => parseTentsBoard({ ...raw, ...change })).toThrow()
+  }
+})
+
 it('preserves trees, ignores no-op edits, and checks complete placements independently', () => {
   const board = parseTentsBoard(raw[0])
   const game = createTentsGame(board)
@@ -42,10 +55,11 @@ it('explains only sound moves across the verified preview boards', () => {
   for (const [index, entry] of raw.entries()) {
     const board = parseTentsBoard(entry), answer = proof.samples[index]!.solution
     expect(proof.samples[index]!.id).toBe(board.id)
+    expect(isTentsSolved(board, createTentsGame(board).map((_, cell) => answer.includes(cell) ? 1 : 0))).toBe(true)
     let game = createTentsGame(board), shown = 0
-    while (!isTentsSolved(board, game) && shown < 64) {
+    while (!isTentsSolved(board, game) && shown < board.size ** 2) {
       const result = findTentsHint(board, game)
-      expect(result.kind, `${board.id} stalled after ${shown} moves`).toBe('hint')
+      expect(result.kind, `${board.id} contradicted its solution after ${shown} moves`).not.toBe('contradiction')
       if (result.kind !== 'hint') break
       const hint = result.hint
       expect(hint.reason.length).toBeGreaterThan(10)
@@ -55,7 +69,8 @@ it('explains only sound moves across the verified preview boards', () => {
       game = next
       shown++
     }
-    expect(isTentsSolved(board, game)).toBe(true)
+    // Larger playtests deliberately exceed the current basic hint rules.
+    expect(isTentsSolved(board, game), board.id).toBe(board.size === 8)
     expect(findTentsHint(board, game).kind).toBe('none')
   }
 })
