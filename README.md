@@ -244,6 +244,10 @@ paths still require engine tests and archive verification. Missing diff history
 falls back to full checks. Main pushes and manual/publisher dispatches always
 run full validation before deployment.
 
+Engine tests and full archive replay run in parallel on separate GitHub runners.
+The existing `engine` gate requires both to pass; deployment still waits for that
+gate and the app checks. No tests or archive verification are skipped to gain speed.
+
 New commits cancel older CI runs for that PR; main/deployment runs are preserved.
 The engine test output includes its slowest cases to guide further improvements.
 Check routing locally with `python3 -m unittest discover -s .github/scripts`.

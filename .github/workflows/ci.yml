@@ -38,10 +38,15 @@ jobs:
           HEAD_SHA: ${{ github.sha }}
         run: python3 .github/scripts/ci_scope.py >> "$GITHUB_OUTPUT"
 
-  engine:
+  engine_checks:
+    name: engine (${{ matrix.check }})
     needs: changes
     if: needs.changes.outputs.engine == 'true'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [tests, archive]
     defaults:
       run:
         working-directory: engine
@@ -53,17 +58,37 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
       - name: Test
+        if: matrix.check == 'tests'
         run: uv run pytest -q --durations=15
       - name: Typecheck
+        if: matrix.check == 'tests'
         run: uv run pyright
       - name: Lint
+        if: matrix.check == 'tests'
         run: uv run ruff check .
       - name: Format check
+        if: matrix.check == 'tests'
         run: uv run ruff format --check .
       - name: Verify published puzzles
+        if: matrix.check == 'archive'
         run: uv run python -m tools.verify --dir ../app/public/puzzles
       - name: Schema id pattern matches the manifest
+        if: matrix.check == 'archive'
         run: uv run python -m tools.schema_ids --check
+
+  # Preserve the required check name and fail closed unless routing explicitly skips engine work.
+  engine:
+    needs: [changes, engine_checks]
+    if: always() && (needs.changes.result != 'success' || needs.changes.outputs.engine != 'false')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require successful routing and both engine checks
+        env:
+          ROUTING_RESULT: ${{ needs.changes.result }}
+          CHECKS_RESULT: ${{ needs.engine_checks.result }}
+        run: |
+          test "$ROUTING_RESULT" = success
+          test "$CHECKS_RESULT" = success
 
   app:
     runs-on: ubuntu-latest
@@ -89,8 +114,8 @@ jobs:
         run: npm run build
 
   deploy:
-    # Main only, and only after both gates are green. The engine job re-verifies
-    # every published puzzle, and shipping a site whose puzzle files do not
+    # Main only, and only after both gates are green. The engine gate requires
+    # tests and full archive replay, and shipping a site whose puzzle files do not
     # verify is the one failure worth waiting for — so this waits rather than
     # repeating the verification.
     #

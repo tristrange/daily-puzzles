@@ -14,11 +14,18 @@ https://<user>.github.io/daily-puzzles/
 
 Three things about that arrangement are worth knowing.
 
-**The deploy waits for the other two jobs.** `needs: [engine, app]` means the puzzle
+**The deploy waits for both gates.** `needs: [engine, app]` means the puzzle
 verification has to pass before anything is published, so a malformed puzzle file can be
 committed to `main` without a site going out that serves it. That is the reason the job
 lives in `ci.yml` rather than in a workflow of its own: it reuses the verification instead
 of repeating it.
+
+The engine's `tests` and `archive` matrix jobs run on separate runners in parallel.
+The first runs pytest, pyright and ruff; the second replays the full archive and
+checks the schema ID pattern. Both must succeed for the stable `engine` gate to
+pass. Failure, cancellation, unexpected skips or routing failure cannot produce
+a green gate. Known frontend-only PRs skip both legs and the gate, as before;
+main and publisher dispatches always require the full checks.
 
 **The daily publisher has to ask for the deploy explicitly.** This is the one part of the
 arrangement that is counter-intuitive. A commit made with the default `GITHUB_TOKEN`
