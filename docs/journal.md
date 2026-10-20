@@ -1690,3 +1690,26 @@ unreachable. That solve remained in local Stats. Physical iPhone/Safari testing
 of this feature is unverified. No puzzle content, schema or Python code changed;
 the engine suite is left to GitHub. The optional service activates only after
 the app PR is merged and the trusted main deployment completes.
+
+## 2026-10-20 — Resume Queens and Star Battle attempts
+
+Unfinished Queens and Star Battle boards now survive reloads. `lib/marksProgress.ts`
+stores pieces, crosses, shown hints and elapsed milliseconds under
+`daily-puzzles.marks-progress.<id>`, behind a version and board fingerprint. Reads
+reject a different board, family or puzzle ID, malformed cells, overlaps and bad
+durations; a solved snapshot is cleared. The stage restores the clock from the
+saved duration and flushes on moves, hints, undo/redo, visibility change, page
+exit and unmount. Undo history deliberately starts empty. Storage denial leaves
+play available and uses the existing warning treatment.
+
+All 752 app tests, TypeScript and the Pages production build pass. Lint retains
+the existing TracksStage warning. New tests cover both families, round trips,
+board/family/ID isolation, the legacy hint default, malformed snapshots, solved
+cleanup, unavailable storage, a restored four-queen board that finishes with its
+saved hint count, and the page-exit flush. The main bundle is 748.0 kB (222.4 kB
+gzip), up from 745.6 kB because of the new module.
+
+A real-browser reload and page-exit check was not run in this environment; the
+DOM-free stage harness executes restore and solve paths, and the page-exit test
+runs the actual effect with stubbed browser globals. No puzzle content, schema or
+Python code changed.

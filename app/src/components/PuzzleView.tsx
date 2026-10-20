@@ -31,6 +31,7 @@ import { WordGrid } from '../domain/wordPaths'
 import { PuzzleNotFoundError, PuzzleUnavailableError, loadPuzzle } from '../lib/puzzles'
 import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } from '../lib/stats'
 import { readStoredAutoMark, storeAutoMark } from '../lib/autoMark'
+import { clearMarksProgress, readMarksProgress, storeMarksProgress } from '../lib/marksProgress'
 import { buildShareText, buildSolutionShareText, copyText, puzzleShareLink } from '../lib/share'
 import { InteractiveBoard } from './InteractiveBoard'
 import { HintPanel } from './HintPanel'
@@ -53,9 +54,9 @@ function sameState(a: GameState, b: GameState): boolean {
 }
 
 /**
- * The playing area for one loaded puzzle. Keyed by puzzle id so the game state
- * (board, timer, undo history) starts fresh whenever a different puzzle is
- * shown.
+ * The playing area for one loaded puzzle. Keyed by puzzle id so a different
+ * puzzle starts a fresh attempt rather than inheriting the previous board.
+ * An unfinished attempt is restored from local storage, without undo history.
  */
 export function PuzzleStage({
   puzzle,
@@ -67,7 +68,10 @@ export function PuzzleStage({
   board: Board
   timeZone: string
 }) {
-  const [game, setGame] = useState<GameState>(() => createGame(board))
+  const [initialProgress] = useState(() => readMarksProgress(puzzle.id, board))
+  const [game, setGame] = useState<GameState>(() => initialProgress?.game ?? createGame(board))
+  const currentGame = useRef(game)
+  const completed = useRef(false)
   const history = useMoveHistory<GameState>()
   const stage = useRef<HTMLDivElement>(null)
   const hintButton = useRef<HTMLButtonElement>(null)
@@ -77,11 +81,12 @@ export function PuzzleStage({
   const [announcement, setAnnouncement] = useState('')
   const [autoMark, setAutoMark] = useState(readStoredAutoMark)
   const [solvedAt, setSolvedAt] = useState<number | null>(null)
-  const [startedAt] = useState(() => Date.now())
-  const [elapsed, setElapsed] = useState(0)
+  const [startedAt] = useState(() => Date.now() - (initialProgress?.elapsedMs ?? 0))
+  const [elapsed, setElapsed] = useState(initialProgress?.elapsedMs ?? 0)
+  const [savingAvailable, setSavingAvailable] = useState(true)
   // Hints actually shown, not hints asked for: a request that had nothing forced
   // to say is not help, and counting it would make the stat a measure of nerves.
-  const [hintsUsed, setHintsUsed] = useState(0)
+  const hintsUsed = useRef(initialProgress?.hints ?? 0)
   // Set once this puzzle has been solved, so the banner can show what the solve
   // did to the history without re-reading storage on every render.
   const [stats, setStats] = useState<Stats | null>(null)
@@ -96,13 +101,35 @@ export function PuzzleStage({
   // as one step instead of one step per cell painted.
   const strokeStart = useRef<GameState | null>(null)
 
+  // Save with the timer, and flush on the way out. The start is offset by the
+  // saved duration, so a reload resumes from the same elapsed time rather than
+  // counting the time the app was closed.
   useEffect(() => {
     if (solvedAt !== null) return
+    const save = () => {
+      if (completed.current) return
+      setSavingAvailable(storeMarksProgress(
+        puzzle.id, currentGame.current, Math.max(0, Date.now() - startedAt), hintsUsed.current,
+      ))
+    }
     const timer = setInterval(() => {
-      setElapsed(Date.now() - startedAt)
+      setElapsed(Math.max(0, Date.now() - startedAt))
+      save()
     }, 500)
-    return () => clearInterval(timer)
-  }, [solvedAt, startedAt])
+    const flush = () => { save() }
+    document.addEventListener('visibilitychange', flush)
+    window.addEventListener('pagehide', flush)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', flush)
+      window.removeEventListener('pagehide', flush)
+      if (!completed.current) {
+        storeMarksProgress(
+          puzzle.id, currentGame.current, Math.max(0, Date.now() - startedAt), hintsUsed.current,
+        )
+      }
+    }
+  }, [puzzle.id, solvedAt, startedAt])
 
   const conflictList = useMemo(() => conflicts(game), [game])
   const conflictCells = useMemo(() => {
@@ -133,25 +160,35 @@ export function PuzzleStage({
     setHint(null)
   }
 
+  const recordSolve = (when: number) => {
+    completed.current = true
+    clearMarksProgress(puzzle.id)
+    setSolvedAt(when)
+    // Read before storing, so a replay can be told why its time was not kept.
+    const earlier = readStoredStats().find((record) => record.id === puzzle.id)
+    // Recorded once, at the moment it happens, and never revised: a replay is
+    // played knowing the answer, so its time would flatter the record.
+    const record: SolveRecord = { id: puzzle.id, puzzleType: puzzle.puzzleType, size: board.size,
+      elapsedMs: when - startedAt, hints: hintsUsed.current, solvedAt: when }
+    setStats(summarise(storeSolve(record), puzzleOfToday(new Date(when), timeZone)))
+    if (!earlier) { setCandidate(record); offerSolve(record) }
+    setFirstSolve(earlier ?? null)
+    setAnnouncement(`Solved in ${formatTime(when - startedAt)}!`)
+  }
+
   const applyGame = (next: GameState, before: GameState = game) => {
     if (sameState(next, before)) return
     history.remember(before)
+    currentGame.current = next
     setGame(next)
     resetHint()
     if (solvedAt === null && isSolved(next)) {
-      const when = Date.now()
-      setSolvedAt(when)
-      // Read before storing, so a replay can be told why its time was not kept.
-      const earlier = readStoredStats().find((record) => record.id === puzzle.id)
-      // Recorded once, at the moment it happens, and never revised: a replay is
-      // played knowing the answer, so its time would flatter the record.
-      const record: SolveRecord = { id: puzzle.id, puzzleType: puzzle.puzzleType, size: board.size,
-        elapsedMs: when - startedAt, hints: hintsUsed, solvedAt: when }
-      setStats(summarise(storeSolve(record), puzzleOfToday(new Date(when), timeZone)))
-      if (!earlier) { setCandidate(record); offerSolve(record) }
-      setFirstSolve(earlier ?? null)
-      setAnnouncement(`Solved in ${formatTime(when - startedAt)}!`)
+      recordSolve(Date.now())
+      return
     }
+    setSavingAvailable(storeMarksProgress(
+      puzzle.id, next, Math.max(0, Date.now() - startedAt), hintsUsed.current,
+    ))
   }
 
   const beginStroke = () => {
@@ -161,7 +198,9 @@ export function PuzzleStage({
 
   /** Live feedback while dragging: no history, the stroke is not over yet. */
   const paintCell = (cell: number, target: 'mark' | 'empty') => {
-    setGame((current) => paintStroke(current, cell, target))
+    const next = paintStroke(currentGame.current, cell, target)
+    currentGame.current = next
+    setGame(next)
   }
 
   /**
@@ -177,7 +216,7 @@ export function PuzzleStage({
     if (clickedCell === null) {
       // A stroke that painted cells already in the target state changed nothing,
       // and an undo step that appears to do nothing is worse than no step.
-      if (!sameState(before, game)) applyGame(game, before)
+      if (!sameState(before, currentGame.current)) applyGame(currentGame.current, before)
       return
     }
     const placing = nextCellState(before, clickedCell) === 'queen'
@@ -200,18 +239,26 @@ export function PuzzleStage({
     if (solved || strokeStart.current !== null) return
     const previous = history.undo(game)
     if (previous === undefined) return
+    currentGame.current = previous
     setGame(previous)
     resetHint()
     setAnnouncement('Undid the last move.')
+    setSavingAvailable(storeMarksProgress(
+      puzzle.id, previous, Math.max(0, Date.now() - startedAt), hintsUsed.current,
+    ))
   }
 
   const redo = () => {
     if (solved || strokeStart.current !== null) return
     const next = history.redo(game)
     if (next === undefined) return
+    currentGame.current = next
     setGame(next)
     resetHint()
     setAnnouncement('Redid the last move.')
+    setSavingAvailable(storeMarksProgress(
+      puzzle.id, next, Math.max(0, Date.now() - startedAt), hintsUsed.current,
+    ))
   }
 
   /**
@@ -221,9 +268,9 @@ export function PuzzleStage({
    * and a single Undo brings the whole board back after confirmation. It also
    * clears the hint panel so it cannot describe a board that no longer exists.
    *
-   * The clock is untouched. Elapsed time is measured from when the puzzle was
-   * opened, so a reset mid-attempt leaves the timer running — the work already done
-   * was still done, and a reset is a correction rather than a new attempt.
+   * The clock is untouched. Elapsed time is measured from when the attempt
+   * began, so a reset mid-attempt leaves the timer running — the work already
+   * done was still done, and a reset is a correction rather than a new attempt.
    */
   const reset = () => {
     if (solved || strokeStart.current !== null || isEmpty(game)) return
@@ -250,7 +297,10 @@ export function PuzzleStage({
       return
     }
     setHint(next)
-    setHintsUsed((count) => count + 1)
+    hintsUsed.current += 1
+    setSavingAvailable(storeMarksProgress(
+      puzzle.id, currentGame.current, Math.max(0, Date.now() - startedAt), hintsUsed.current,
+    ))
     const position = hintCellName(board, next.cell)
     setAnnouncement(
       next.action === 'queen'
@@ -300,7 +350,7 @@ export function PuzzleStage({
    * believing they have something to paste.
    */
   const share = async (variant: 'result' | 'solution') => {
-    const counted = firstSolve ?? { elapsedMs: shownTime, hints: hintsUsed }
+    const counted = firstSolve ?? { elapsedMs: shownTime, hints: hintsUsed.current }
     const result = {
       puzzleId: puzzle.id,
       width: board.width,
@@ -369,6 +419,11 @@ export function PuzzleStage({
           </button>
         )}
       </div>
+      {!savingAvailable && !solved && (
+        <p className="status error" role="status">
+          Progress can&rsquo;t be saved in this browser. Keep this page open to retain it.
+        </p>
+      )}
       <InteractiveBoard
         board={board}
         game={game}

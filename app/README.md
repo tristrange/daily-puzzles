@@ -149,8 +149,8 @@ responses, which are validated again. A valid network response takes precedence.
 Storage denial/quota errors leave online play usable and show a download warning. Unfetched puzzles require
 internet. Today fetches its slots; Archive fetches its recent window. There is
 no background archive crawl or guarantee against browser cache eviction.
-Player progress keys are unchanged: Tracks/Word Paths resume, while unfinished
-Queens/Star Battle attempts still restart on reload.
+Existing player progress keys are unchanged, and all five games now resume
+unfinished attempts; Undo history remains visit-local.
 
 To verify, build and preview using the same base (`BASE_PATH=/daily-puzzles/`
 for both commands, or omit for `/`). Visit online, wait for readiness, open a

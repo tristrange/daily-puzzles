@@ -174,9 +174,16 @@ the time.
 Every placement, mark and clear is a pure state transition pushed onto a 100-entry undo
 stack — a button and Ctrl/Command+Z pop it. Because the history stores whole states
 rather than inverse actions, undo is exact even for an auto-mark sprawl. The timer is
-zero-cost to the engine: it counts up from when the puzzle appears and freezes at the
+zero-cost to the engine: it counts up while the attempt is open and freezes at the
 solve instant; there is no server to check with, so the only clock that matters is the
 player's.
+
+Unfinished Queens and Star Battle attempts are saved by `lib/marksProgress.ts` under
+`daily-puzzles.marks-progress.<id>`. The snapshot holds the pieces, crosses, shown
+hints and elapsed milliseconds behind a version and board fingerprint, so a board
+republished under the same date cannot resume stale moves. A reload restores the
+board, hint count and clock, but not the undo history. A solved snapshot is cleared,
+and storage denial leaves the board playable with a warning.
 
 ## Local stats
 
