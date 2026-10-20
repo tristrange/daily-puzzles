@@ -1857,3 +1857,24 @@ With the preview server stopped, cached reload, Stats, Archive, rules and Tents
 navigation still work. Phone gesture cancellation is covered by DOM tests;
 physical iPhone playtesting remains for the maintainer. The local preview server
 was restarted after this check. [Phone preview](images/tents-preview-phone.png).
+
+## 2026-10-20 — Parallel engine CI
+
+The engine's test suite and published-archive replay now run as two matrix jobs
+on separate GitHub runners. Dependencies and check commands are unchanged;
+`fail-fast: false` lets both finish for useful diagnostics. The existing `engine`
+check name is retained as an aggregate gate, so deployment still requires both
+checks and successful routing. Failed, cancelled or unexpectedly skipped engine
+work cannot produce a green gate; known frontend-only PRs skip engine work as
+before. Main and publisher dispatches still run every check.
+
+The sequential Tents PR run spent 4m18s on tests and 4m11s on archive verification
+within an 8m46s engine job. Parallel execution targets that accumulated wait;
+actual timings depend on runner availability and are reported in the PR.
+This changes elapsed waiting rather than reducing the verification work, and
+adds a second runner plus a short aggregate job.
+
+Local proof uses actionlint, the seven existing routing tests and nine executions
+of the aggregate gate extracted from the workflow, including failure,
+cancellation, unexpected skips and missing routing data. No application code,
+puzzle files, dependencies, permissions or verification checks change.
