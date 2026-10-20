@@ -126,6 +126,13 @@ describe('recent solves by game', () => {
   })
 })
 
+it('keeps status feedback in a visible live region', () => {
+  const html = renderHistory([])
+  expect(html).toContain('class="stats-notice"')
+  expect(html).toContain('role="status"')
+  expect(html).not.toContain('class="sr-only"')
+})
+
 it('offers import with no history and export once there is a solve', () => {
   const empty = renderHistory([])
   expect(empty).toContain('Import stats')

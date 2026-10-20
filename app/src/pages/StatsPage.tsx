@@ -104,8 +104,10 @@ export function StatsPage() {
       {/* One live region, at a fixed position in a single tree shape, so that clearing
           updates its text instead of swapping the page for a new one carrying the
           notice already set. A screen reader announces a change to a region that is
-          already there; one mounted with its content in place tends to say nothing. */}
-      <p className="sr-only" role="status" aria-live="polite">
+          already there; one mounted with its content in place tends to say nothing.
+          It is visible too, so an import failure is not only announced to assistive
+          technology. */}
+      <p className={notice === '' ? 'stats-notice' : 'stats-notice status'} role="status" aria-live="polite">
         {notice}
       </p>
       {stats.solved === 0 ? (
