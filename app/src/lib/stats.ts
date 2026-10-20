@@ -15,7 +15,7 @@
  */
 
 import { PUZZLE_TYPES, type PuzzleType } from '../domain/board'
-import { isPuzzleId, parsePuzzleDate, previousPuzzleIds, puzzleDay } from '../domain/dates'
+import { isPuzzleId, parsePuzzleDate, previousPuzzleIds, puzzleDay, puzzleTypeOf } from '../domain/dates'
 import { PUZZLE_TYPE_LABEL } from '../domain/games'
 
 /** One finished puzzle. `hints` is how many hints were actually shown, not asked for. */
@@ -54,6 +54,28 @@ function isWholeNumber(value: unknown): value is number {
 }
 
 /**
+ * Ids that were repurposed after the fact, and what they used to name.
+ *
+ * 2026-09-26 shipped as a Star Battle board under the bare date id, long before
+ * every day had a companion. That board moved to `-star` and the bare date now
+ * holds a Queens puzzle, so a record written against the old id would be read as
+ * a solve of the *new* puzzle — and because the first solve of a day wins, the
+ * player's real Queens solve for that date could never be recorded.
+ *
+ * The puzzle's own family is what tells the two apart: a legacy record says
+ * `star-battle`, a Queens solve of that date says `queens`. The migration has to
+ * happen before the id-family check below, or the legacy record would be dropped
+ * as a mismatch instead of moved.
+ */
+const REPURPOSED_IDS: readonly (readonly [string, string])[] = [['2026-09-26', '2026-09-26-star']]
+
+/** The current id for a repurposed legacy record, or the id unchanged. */
+function migratedId(id: string, puzzleType: PuzzleType): string {
+  const moved = REPURPOSED_IDS.find(([was]) => was === id)
+  return moved !== undefined && puzzleType === 'star-battle' ? moved[1] : id
+}
+
+/**
  * One record out of untrusted storage, or `null` if it is not one. Every field is
  * checked rather than cast, because this data is hand-editable and survives
  * across versions: a field that did not exist when the record was written has to
@@ -73,31 +95,9 @@ function toRecord(value: unknown): SolveRecord | null {
   if (!isWholeNumber(elapsedMs)) return null
   if (!isWholeNumber(hints)) return null
   if (!isWholeNumber(solvedAt)) return null
-  return { id, puzzleType: puzzleType as SolveRecord['puzzleType'], size, elapsedMs, hints, solvedAt }
-}
-
-/**
- * Ids that were repurposed after the fact, and what they used to name.
- *
- * 2026-09-26 shipped as a Star Battle board under the bare date id, long before
- * every day had a companion. That board moved to `-star` and the bare date now
- * holds a Queens puzzle, so a record written against the old id would be read as
- * a solve of the *new* puzzle — and because the first solve of a day wins, the
- * player's real Queens solve for that date could never be recorded.
- *
- * The puzzle's own family is what tells the two apart: a legacy record says
- * `star-battle`, a Queens solve of that date says `queens`. That makes this
- * safe to run on every read rather than once behind a migration flag — a record
- * that arrives later with the same id and the other family is left alone.
- */
-const REPURPOSED_IDS: readonly (readonly [string, string])[] = [['2026-09-26', '2026-09-26-star']]
-
-function migrateRecords(records: readonly SolveRecord[]): readonly SolveRecord[] {
-  return records.flatMap((record) => {
-    const moved = REPURPOSED_IDS.find(([was]) => was === record.id)
-    if (moved === undefined || record.puzzleType !== 'star-battle') return [record]
-    return [{ ...record, id: moved[1] as string }]
-  })
+  const canonicalId = migratedId(id, puzzleType)
+  if (puzzleTypeOf(canonicalId) !== puzzleType) return null
+  return { id: canonicalId, puzzleType, size, elapsedMs, hints, solvedAt }
 }
 
 /**
@@ -122,7 +122,7 @@ export function parseStats(value: string | null | undefined): readonly SolveReco
     if (record !== null) records.push(record)
   }
   const earliest = new Map<string, SolveRecord>()
-  for (const record of migrateRecords(records)) {
+  for (const record of records) {
     const held = earliest.get(record.id)
     if (held === undefined || record.solvedAt < held.solvedAt) earliest.set(record.id, record)
   }

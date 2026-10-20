@@ -1787,8 +1787,9 @@ is already waiting or finishes installing while the app is open; activation stay
 on the normal waiting lifecycle, so no board is reloaded mid-game.
 
 Stats can be exported as a JSON backup and merged back on another browser. Import
-validates every record, migrates repurposed ids before de-duplicating them, and
-keeps the earliest solve for each puzzle id. Import is available with an empty
+validates every record, rejects an id that names a different family, migrates
+repurposed ids before de-duplicating them, and keeps the earliest solve for each
+puzzle id. Import is available with an empty
 history; export appears once there is something to save. The two-step clear flow
 remains.
 
@@ -1800,7 +1801,7 @@ catches a publisher or commit that failed after the workflow's local tree looked
 healthy. The stale leaderboard activation wording was corrected separately on
 `main`.
 
-All 772 app tests across 62 files, TypeScript, lint and the production build pass;
+All 774 app tests across 62 files, TypeScript, lint and the production build pass;
 lint retains the existing TracksStage warning. The entry bundle is 428.6 kB
 (135.0 kB gzip), and the Stats chunk is 5.1 kB. The engine suite passes 656 tests;
 pyright, ruff and published-archive verification pass. `publish --check` reports

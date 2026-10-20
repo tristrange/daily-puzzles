@@ -80,6 +80,19 @@ describe('parseStats', () => {
     expect(parsed[0]?.elapsedMs).toBe(0)
   })
 
+  it('drops a record whose id names a different family', () => {
+    const parsed = parseStats(
+      stored(
+        record({ id: '2026-10-01' }),
+        record({ id: '2026-10-01', puzzleType: 'star-battle' }),
+        record({ id: '2026-10-01-star', puzzleType: 'queens' }),
+        record({ id: '2026-10-01-tracks', puzzleType: 'trio' }),
+      ),
+    )
+
+    expect(parsed.map((held) => held.id)).toEqual(['2026-10-01'])
+  })
+
   it('keeps the earliest solve when a day appears twice', () => {
     const parsed = parseStats(
       stored(
@@ -526,6 +539,19 @@ describe('importStoredStats', () => {
     expect(result.records[1]?.solvedAt).toBe(100)
     expect(map.get(STATS_STORAGE_KEY)).toBe(JSON.stringify(result.records))
     expect(readStoredStats()).toEqual(result.records)
+  })
+
+  it('rejects a backup record whose id names another family', () => {
+    const map = stubStorage()
+    storeSolve(record({ id: '2026-10-01', solvedAt: 200 }))
+
+    const result = importStoredStats(stored(
+      record({ id: '2026-10-01', puzzleType: 'star-battle', solvedAt: 100 }),
+    ))
+
+    expect(result.imported).toBe(0)
+    expect(result.records).toEqual([record({ id: '2026-10-01', solvedAt: 200 })])
+    expect(map.get(STATS_STORAGE_KEY)).toContain('"puzzleType":"queens"')
   })
 
   it('leaves storage untouched when the file has no valid records', () => {

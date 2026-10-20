@@ -92,13 +92,13 @@ describe('the family counts', () => {
 describe('recent solves by game', () => {
   it('filters by the recorded game without changing the all-games overview', () => {
     const html = renderHistory([
-      solve('2026-10-05-star', 'queens', 1),
-      solve('2026-10-04-star', 'star-battle', 2),
+      solve('2026-10-05', 'queens', 2),
+      solve('2026-10-04-star', 'star-battle', 1),
     ], '/stats?game=queens')
     const recent = html.slice(html.indexOf('Recent solves'))
     expect(html).toContain('<dt>Solved</dt><dd>2</dd>')
     expect(html).toContain('All games')
-    expect(recent).toContain('href="/archive/2026-10-05-star"')
+    expect(recent).toContain('href="/archive/2026-10-05"')
     expect(recent).not.toContain('href="/archive/2026-10-04-star"')
     expect(html).toContain('Clear all stats')
   })
