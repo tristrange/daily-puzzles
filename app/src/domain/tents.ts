@@ -1,6 +1,6 @@
 /** Preview-only Tents rules. Pairings are existential; only placements must be unique. */
 export interface TentsBoard {
-  readonly id: string; readonly size: 8; readonly trees: readonly number[]
+  readonly id: string; readonly size: 8 | 10; readonly trees: readonly number[]
   readonly rowClues: readonly number[]; readonly colClues: readonly number[]
 }
 export type TentsMark = 0 | 1 | 2 // Empty, tent, grass.
@@ -11,14 +11,16 @@ export const isTentsMark = (value: unknown): value is TentsMark => value === 0 |
 export function parseTentsBoard(raw: unknown): TentsBoard {
   if (!raw || typeof raw !== 'object') throw Error('Invalid Tents board')
   const data = raw as Record<string, unknown>
+  const size = data['size']
+  if (size !== 8 && size !== 10) throw Error('Invalid Tents board size')
   const trees = data['trees'], rows = data['rowClues'], cols = data['colClues']
-  const clue = (values: unknown): values is number[] => Array.isArray(values) && values.length === 8
-    && values.every((n: unknown) => typeof n === 'number' && Number.isInteger(n) && n >= 0 && n <= 8)
-  if (typeof data['id'] !== 'string' || !/^tents-preview-[1-9]\d*$/.test(data['id']) || data['size'] !== 8
-    || !Array.isArray(trees) || !trees.length || !trees.every((cell: unknown) => typeof cell === 'number' && Number.isInteger(cell) && cell >= 0 && cell < 64)
+  const clue = (values: unknown): values is number[] => Array.isArray(values) && values.length === size
+    && values.every((n: unknown) => typeof n === 'number' && Number.isInteger(n) && n >= 0 && n <= size)
+  if (typeof data['id'] !== 'string' || !/^tents-preview-[1-9]\d*$/.test(data['id'])
+    || !Array.isArray(trees) || !trees.length || !trees.every((cell: unknown) => typeof cell === 'number' && Number.isInteger(cell) && cell >= 0 && cell < size ** 2)
     || new Set(trees).size !== trees.length || !clue(rows) || !clue(cols)
     || rows.reduce((a, b) => a + b, 0) !== trees.length || cols.reduce((a, b) => a + b, 0) !== trees.length) throw Error('Invalid Tents preview data')
-  return { id: data['id'], size: 8, trees: [...trees] as number[], rowClues: [...rows], colClues: [...cols] }
+  return { id: data['id'], size, trees: [...trees] as number[], rowClues: [...rows], colClues: [...cols] }
 }
 
 export function tentsNeighbours(board: TentsBoard, cell: number, diagonal = false): number[] {

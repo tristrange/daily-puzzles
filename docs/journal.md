@@ -1904,3 +1904,36 @@ save/reload, hint application and Undo, plus the 375 px layout.
 [Phone preview](images/tents-challenge-phone.png). Physical iPhone playtesting and
 subjective difficulty remain for the maintainer; full engine/archive checks run
 in GitHub CI.
+
+## 2026-10-20 — 10×10 Tents playtest
+
+The maintainer solved all six 8×8 previews without hints, with clean attempts
+under four minutes. Append Boards 7–9 at 10×10, with 18 tents each, nonzero clues
+and seeds 140, 321 and 733. All six existing board objects, IDs and save
+fingerprints are unchanged. Today opens Board 7; the selector lists dimensions
+beside every board. The existing rules, progress, controls and clock are reused.
+Only the parser, grid columns and labels needed dimension changes.
+
+Selection deliberately no longer requires basic hints to finish. Each new board
+starts with no forced tents from singleton trees or lines needing all remaining
+candidates. Exact counting proves one tent placement per board. A throwaway
+offline probe also completed them without branching, using deductions common to
+all feasible row/column patterns: exact totals, non-touching, partial matching
+and retaining a possible tent beside every tree. It took 4/5/6 propagation passes;
+this is selection evidence, not a human difficulty rating or new runtime solver.
+The current hints honestly stall after the obvious grass marks; their logic is
+unchanged and their individual moves remain checked against independent answers.
+
+All 794 app tests, ten focused engine tests, build, pyright, ruff and format
+checks pass; app lint retains the existing TracksStage warning. New coverage
+checks 10×10 boundaries and mixed-size selection, and reuses the existing playing
+tests for 100-cell saves, Undo/Redo, Reset, keyboard movement and completion without
+daily Stats. No seed sweep enters CI. Independent review found no issues and
+cross-checked the counter against 1,447 small brute-force boards.
+
+Browser checks cover Boards 7–9, the existing 8×8 board, Today navigation,
+reload, keyboard movement and phone vertical painting as one undoable move.
+Desktop 1280×900 and phone 375×812 / 320×667 layouts fit without horizontal
+overflow; light and system appearance work. [Phone preview](images/tents-10x10-phone.png).
+Physical phone usability and actual difficulty remain for playtesting. No daily
+publishing, new hint features or dependencies are included.

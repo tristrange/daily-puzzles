@@ -103,13 +103,15 @@ symbol or updates one cell's candidate notes, with Undo available until solved.
 The [five-board preview](https://tristrange.github.io/daily-puzzles/#/preview/trio)
 retains separate attempts and never affects daily stats. No difficulty rating is claimed.
 
-**Tents preview** — [try six 8×8 boards](https://tristrange.github.io/daily-puzzles/#/preview/tents).
+**Tents preview** — [try the new 10×10 boards](https://tristrange.github.io/daily-puzzles/#/preview/tents?board=7).
 Pair every tree with one orthogonally adjacent tent, match the row/column totals,
 and keep tents apart, including diagonally. A tent can border several trees;
 the completed board must allow a one-to-one pairing. Each preview has a verified
-unique tent placement and can be finished using its explained hint rules.
-Boards 4–6 use every row and column and offer a more challenging playtest batch;
-the original three boards and saved attempts remain available. No difficulty rating is claimed.
+unique tent placement. Boards 1–6 are 8×8 and finish through the explained hint rules.
+Boards 7–9 are 10×10 with 18 tents, nonzero clues throughout and no immediately forced
+tent placements from singleton trees or full lines. They go beyond the current hint
+rules, which may stall; no new hint features are included. All six existing boards
+and saved attempts remain available. No difficulty rating is claimed.
 Tent, Grass and Erase brushes support tap/drag and keyboard play, Undo/Redo,
 confirmed Reset and separately saved active-time attempts. Grass is optional for
 completion but is an assumption for hints. Preview solves do not enter daily Stats
@@ -219,7 +221,7 @@ uv run python -m tools.generate --date 2026-10-14-tracks-large --type train-trac
 uv run python -m tools.publish  --out ../app/public/puzzles   # fill the archive
 uv run python -m tools.verify   --dir ../app/public/puzzles   # replay every committed file
 uv run python -m tools.benchmark_tracks --out /tmp/tracks-probe.json # probe 8/10/12 boards
-uv run python -m tools.tents_preview  # independently verify the six Tents previews
+uv run python -m tools.tents_preview  # independently verify all nine Tents previews
 ```
 
 App:

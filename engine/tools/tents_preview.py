@@ -15,12 +15,22 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from queens_engine.prng import Prng
 
-MAX_SIDE = 8
+MAX_SIDE = 10
 MIN_SIDE = 2
 SOLUTION_LIMIT = 2
-TENT_TARGET = 12
-# Keep existing board IDs stable; new playtest boards are appended after seeds 1-3.
-PREVIEW_SEEDS = (1, 2, 3, 148, 866, 916)
+TENT_TARGETS = {8: 12, 10: 18}
+# Recipe order preserves board IDs and saved attempts; append new playtests.
+PREVIEW_RECIPES = (
+    (8, 1),
+    (8, 2),
+    (8, 3),
+    (8, 148),
+    (8, 866),
+    (8, 916),
+    (10, 140),
+    (10, 321),
+    (10, 733),
+)
 ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "app/src/data/tents-previews.json"
 REPORT = ROOT / "docs/measurements/tents-preview.json"
@@ -131,35 +141,38 @@ def solutions(board: Tents, *, budget: int = 100_000) -> list[tuple[int, ...]]:
     return found
 
 
-def candidate(seed: int) -> Tents | None:
+def candidate(seed: int, *, size: int = 8) -> Tents | None:
     """One cheap construction attempt; the exact counter decides acceptance."""
     rng = Prng(seed)
+    target = TENT_TARGETS[size]
     tents: list[int] = []
     blocked: set[int] = set()
-    for cell in rng.shuffled(list(range(MAX_SIDE**2))):
+    for cell in rng.shuffled(list(range(size**2))):
         if cell not in blocked:
             tents.append(cell)
-            blocked.update((cell, *neighbours(MAX_SIDE, cell, diagonal=True)))
-        if len(tents) == TENT_TARGET:
+            blocked.update((cell, *neighbours(size, cell, diagonal=True)))
+        if len(tents) == target:
             break
+    if len(tents) != target:
+        return None
     trees: list[int] = []
     for tent in tents:
-        options = [n for n in neighbours(MAX_SIDE, tent) if n not in tents and n not in trees]
+        options = [n for n in neighbours(size, tent) if n not in tents and n not in trees]
         if not options:
             return None
         trees.append(options[rng.below(len(options))])
     return Tents(
-        MAX_SIDE,
+        size,
         tuple(sorted(trees)),
-        tuple(sum(t // MAX_SIDE == r for t in tents) for r in range(MAX_SIDE)),
-        tuple(sum(t % MAX_SIDE == c for t in tents) for c in range(MAX_SIDE)),
+        tuple(sum(t // size == r for t in tents) for r in range(size)),
+        tuple(sum(t % size == c for t in tents) for c in range(size)),
     )
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--generate", action="store_true", help="Reproduce the six curated preview boards"
+        "--generate", action="store_true", help="Reproduce the curated 8x8 and 10x10 preview boards"
     )
     args = parser.parse_args()
     started = perf_counter()
@@ -175,8 +188,8 @@ def main() -> None:
         return
     boards: list[dict[str, object]] = []
     samples: list[dict[str, object]] = []
-    for seed in PREVIEW_SEEDS:
-        board = candidate(seed)
+    for size, seed in PREVIEW_RECIPES:
+        board = candidate(seed, size=size)
         if board is None:
             raise ValueError(f"Cannot construct preview seed {seed}")
         begin = perf_counter()

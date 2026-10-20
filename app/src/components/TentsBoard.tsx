@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react'
 import { TENTS_NAMES, type TentsBoard as Board, type TentsGame, type TentsMark } from '../domain/tents'
 import type { TentsHint } from '../domain/tentsHints'
 import { historyCommand } from '../lib/useMoveHistory'
@@ -68,12 +68,12 @@ export function TentsBoard({ board, game, brush, locked, conflicts, hint, instru
     }
   }
   const count = (cells: number[]) => cells.filter(cell => game[cell] === 1).length
-  return <div className="tents-board-shell">
+  return <div className="tents-board-shell" style={{ '--tents-size': board.size } as CSSProperties}>
     <div className="tents-head" aria-hidden="true"><span />{board.colClues.map((clue, col) => {
       const actual = count(Array.from({ length: board.size }, (_, row) => row * board.size + col))
       return <span className="tents-clue" data-state={actual > clue ? 'error' : actual === clue ? 'met' : undefined} key={col}>{clue}</span>
     })}</div>
-    <div ref={grid} className="tents-board" role="grid" aria-label="8 by 8 Tents puzzle" aria-describedby={instructionsId}
+    <div ref={grid} className="tents-board" role="grid" aria-label={`${board.size} by ${board.size} Tents puzzle`} aria-describedby={instructionsId}
       onKeyDown={key} onPointerDown={start} onPointerMove={move}
       onPointerUp={event => { if (stroke.current?.id === event.pointerId) finish(false) }}
       onPointerCancel={event => { if (stroke.current?.id === event.pointerId) finish(true) }}
