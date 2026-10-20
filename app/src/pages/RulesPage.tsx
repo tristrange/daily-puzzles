@@ -81,13 +81,14 @@ export function RulesPage() {
       <p>Enter or Space places or removes a queen. X toggles a cross; Delete or Backspace
         clears the cell. See <Link to={{ pathname: '/how-to-play', hash: '#crosses' }}>auto-mark</Link> for optional automatic crosses.</p>
       <h3>Hints</h3>
-      <p>Use Hint or H to ask for a forced move and its explanation. Clear conflicts first.
-        If no move can be explained, the app says so rather than guessing.
+      <p>Use Hint or H to ask for help. It checks for a misplaced queen first, then a
+        cross that blocks a required queen, before explaining a forced move.
+        If verification or deduction cannot finish, the app says so rather than guessing.
         Hints actually shown count in your result.</p>
       <p>The solid outline marks the target; dashed outlines show supporting cells.
-        Apply move places the queen or adds a cross as one undoable move. Use the
+        Apply move clears the highlighted mistake, places the queen or adds a cross as one undoable move. Use the
         location link to return to the target, or Escape to dismiss the explanation.
-        Hints use your placed queens and crosses, so a mistaken cross can mislead them.</p>
+        Checking against the unique solution happens only when you request Hint.</p>
 
       <h2 id="star-battle" tabIndex={-1}>Star Battle</h2>
       <h3>Rules</h3>
@@ -103,14 +104,17 @@ export function RulesPage() {
         Delete or Backspace clears the cell.</p>
       <h3>Hints</h3>
       <p>Use Hint or H for an explained, forced move, just as in Queens.
-        Hints account for regions needing multiple stars. Clear conflicts first;
-        hints actually shown count in your result.</p>
+        It checks misplaced stars before crosses that block required stars, then
+        reasons about regions needing multiple stars. Corrections and deductions
+        actually shown count in your result.</p>
       <p>Target and support highlights show the reasoning. Apply move places a star
-        or crosses out one cell; Undo restores the previous board until solved.
-        Your placed stars and crosses are used as the starting assumptions.</p>
+        or crosses out one cell, or clears the highlighted mistake; Undo restores
+        the previous board until solved. Mistakes are checked against the unique
+        solution only when you request Hint.</p>
       <h3 id="crosses" tabIndex={-1}>Crosses and auto-mark</h3>
       <p>For Queens and Star Battle, a cross marks a cell you have ruled out. The app
-        does not validate crosses, so you can accidentally rule out a correct cell.</p>
+        checks misplaced pieces and crosses when you request Hint. Ordinary play
+        does not flag a cross just because it blocks a correct cell.</p>
       <p>Auto-mark starts off and remembers your choice. In Queens, placing a queen
         crosses the rest of its row, column and region, plus touching cells.
         In Star Battle, placing a star crosses only touching cells.</p>

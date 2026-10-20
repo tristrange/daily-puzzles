@@ -1971,3 +1971,28 @@ navigation, replay, saved reload, desktop/phone layout and cached reload with th
 server stopped. [Today](images/tents-daily-today.png),
 [phone board](images/tents-daily-phone.png). Live Tents leaderboard publication
 and physical iPhone play remain unverified until deployment and playtesting.
+
+## 2026-10-21 — Check entries before Queens and Star Battle hints
+
+A misplaced star can pass local conflict checks while preventing completion.
+Hint now checks the board's unique solution independently of player entries,
+offering removal of one misplaced piece before clearing one cross that blocks
+a required piece. Only then does it run the existing explained deduction rules.
+Corrections explicitly identify the solution check, highlight one cell and use
+the ordinary Apply/Undo/Redo path. Shown corrections count and persist as hints.
+Ordinary play still only flags local rule violations.
+
+The browser computes and caches the solution on first Hint, using a bounded row
+search that stops at two solutions. Ambiguous, impossible or unfinished searches
+produce no accusation or deduction. No answers are added to published files;
+the shared deduction/conformance contract and all other games are unchanged.
+
+All 826 app tests pass, including correction priority, no premature board edit,
+undo/redo, persistence and failed verification. Build/typecheck pass; lint has
+the existing TracksStage warning. Independent review found no issues. The new
+solver matches Python's exact solver on all 56 published marks boards, with a
+slowest local first check of about 2 ms. Browser checks cover wrong-star and
+wrong-cross correction, Undo/Redo, saved reload and subsequent deductions at
+desktop and 393px phone widths. See [desktop](images/star-hint-correction-desktop.png)
+and [phone](images/star-hint-correction-phone.png). Physical iPhone timing and
+the unchanged Python suite were not rerun for this app-only change.

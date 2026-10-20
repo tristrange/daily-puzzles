@@ -49,7 +49,7 @@ import { markInk, regionColours } from '../lib/colours'
 export interface CellActionProps {
   board: Board
   game: GameState
-  hint: Hint | null
+  hint: Pick<Hint, 'cell' | 'support'> | null
   hintId?: string | undefined
   conflictCells: ReadonlySet<number>
   locked?: boolean
