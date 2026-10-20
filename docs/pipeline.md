@@ -113,7 +113,7 @@ The workflows live in [`.github/workflows/`](../.github/workflows):
   and verifies the missing dates, then commits and pushes only when the diff is non-empty,
   so the archive and `git log` tell the whole publishing story.
 - `monitor-publish.yml` runs a few hours after the publisher and checks `main` with
-  `tools.publish --check`: every required slot through the lead horizon must already be
-  committed. It is deliberately separate from `publish.yml`, because a publisher that
+  `tools.publish --check`: every required slot from the archive's fixed first day through
+  the lead horizon must already be committed. It is deliberately separate from `publish.yml`, because a publisher that
   fails before its push leaves the committed archive short while its local working tree
   looks fine. A missing slot fails the scheduled run, which is the alert.

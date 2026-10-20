@@ -1794,14 +1794,15 @@ remains.
 
 A new scheduled `monitor-publish.yml` runs six hours after the nightly publisher
 and calls `tools.publish --check`. The check reads `main`, reports the first
-incomplete day through the lead horizon and exits non-zero without writing. It
+incomplete day from the archive's fixed start through the lead horizon and
+exits non-zero without writing. It
 catches a publisher or commit that failed after the workflow's local tree looked
 healthy. The stale leaderboard activation wording was corrected separately on
 `main`.
 
-All 771 app tests across 62 files, TypeScript, lint and the production build pass;
+All 772 app tests across 62 files, TypeScript, lint and the production build pass;
 lint retains the existing TracksStage warning. The entry bundle is 428.6 kB
-(135.0 kB gzip), and the Stats chunk is 5.0 kB. The engine suite passes 655 tests;
+(135.0 kB gzip), and the Stats chunk is 5.1 kB. The engine suite passes 656 tests;
 pyright, ruff and published-archive verification pass. `publish --check` reports
 the committed archive complete through 2026-10-23. No new dependencies or puzzle
 content changed. A real-browser service-worker update and file-picker flow were

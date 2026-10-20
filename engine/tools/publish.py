@@ -68,6 +68,11 @@ from queens_engine import (
 #: How many days ahead of "today" the archive should stay published.
 DEFAULT_LEAD_DAYS = 3
 
+#: The first day the archive must cover. A monitor cannot infer this from the
+#: files, because deleting every puzzle for the first day would move the minimum
+#: forward and hide the gap.
+ARCHIVE_START = date(2026, 9, 26)
+
 
 def _nearby_star_layouts(
     out_dir: Path, day: date, *, window: int = STAR_LAYOUT_WINDOW_DAYS
@@ -147,20 +152,9 @@ def _first_incomplete_day(existing: set[str], first: date, end: date) -> date | 
     return None
 
 
-def _check_horizon(
-    existing: set[str],
-    days: set[date],
-    start: str | None,
-    today: date,
-    end: date,
-) -> int:
+def _check_horizon(existing: set[str], start: str | None, end: date) -> int:
     """Report the first incomplete day through `end`, without writing anything."""
-    if start is not None:
-        first = date.fromisoformat(start)
-    elif days:
-        first = min(days)
-    else:
-        first = today
+    first = date.fromisoformat(start) if start is not None else ARCHIVE_START
     incomplete = _first_incomplete_day(existing, first, end)
     if incomplete is None:
         print(f"archive complete through {end}")
@@ -251,7 +245,7 @@ def main(argv: list[str] | None = None) -> int:
     end = today + timedelta(days=args.lead)
 
     if args.check:
-        return _check_horizon(existing, days, args.start, today, end)
+        return _check_horizon(existing, args.start, end)
 
     if args.start is not None:
         start = date.fromisoformat(args.start)

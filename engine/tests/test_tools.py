@@ -105,18 +105,32 @@ class TestPublishWindow:
     def test_check_fails_without_publishing_when_a_slot_is_missing(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        lines = _run_publish(tmp_path, None, 0, check=True, expected_exit=1)
+        with patch.object(publish, "ARCHIVE_START", TEST_TODAY):
+            lines = _run_publish(tmp_path, None, 0, check=True, expected_exit=1)
 
         assert lines == []
         assert f"error: {TEST_TODAY} is incomplete" in capsys.readouterr().err
         assert not list(tmp_path.glob("*.json"))
 
     def test_check_passes_through_the_lead_horizon(self, tmp_path: Path) -> None:
-        _run_publish(tmp_path, TEST_TODAY, 1, dry_run=False)
-
-        lines = _run_publish(tmp_path, None, 1, check=True)
+        with patch.object(publish, "ARCHIVE_START", TEST_TODAY):
+            _run_publish(tmp_path, TEST_TODAY, 1, dry_run=False)
+            lines = _run_publish(tmp_path, None, 1, check=True)
 
         assert f"archive complete through {(TEST_TODAY + timedelta(days=1)).isoformat()}" in lines
+
+    def test_check_detects_a_deleted_first_day(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        # With the lower bound taken from the files, deleting every puzzle for
+        # the first day would move the minimum to the next day and hide the gap.
+        with patch.object(publish, "ARCHIVE_START", TEST_TODAY):
+            _run_publish(tmp_path, TEST_TODAY, 1, dry_run=False)
+            for identifier in publish._ids_for_day(TEST_TODAY):  # pyright: ignore[reportPrivateUsage]
+                (tmp_path / f"{identifier}.json").unlink(missing_ok=True)
+            _run_publish(tmp_path, None, 1, check=True, expected_exit=1)
+
+        assert f"error: {TEST_TODAY} is incomplete" in capsys.readouterr().err
 
     def test_a_day_is_skipped_per_puzzle_not_wholesale(self, tmp_path: Path) -> None:
         """A committed Queens board must not stop its Star Battle companion
