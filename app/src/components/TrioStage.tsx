@@ -125,6 +125,14 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
     setMessage('Board cleared. Undo brings it back; the clock keeps running.')
     save()
   }
+  const clearNotes = () => {
+    if (completed.current || before.current || !current.current.notes.some(Boolean)) return
+    setHint(null)
+    history.remember(current.current)
+    change({ ...current.current, notes: current.current.notes.map(() => 0) })
+    setMessage('All notes cleared. Undo brings them back.')
+    save()
+  }
   const requestHint = () => {
     if (completed.current || before.current) return
     const result = findTrioHint(board, current.current)
@@ -182,7 +190,10 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
             <span className="trio-pick-face">{value ? <TrioSymbol value={value} /> : <span aria-hidden="true">⌫</span>}<span>{value ? TRIO_NAMES[value] : 'Erase'}</span></span>
           </label>)}
         </div>
-        <p className="trio-mode">{solved ? `Solved in ${formatTime(elapsed)}!` : pencil && brush ? `Notes · tap to mark a possible ${TRIO_NAMES[brush].toLowerCase()}` : brush ? `Place ${TRIO_NAMES[brush].toLowerCase()} · tap again to clear` : 'Erase symbols and notes'}</p>
+        <div className="trio-mode-actions">
+          <p className="trio-mode">{solved ? `Solved in ${formatTime(elapsed)}!` : pencil && brush ? `Notes · tap to mark a possible ${TRIO_NAMES[brush].toLowerCase()}` : brush ? `Place ${TRIO_NAMES[brush].toLowerCase()} · tap again to clear` : 'Erase symbols and notes'}</p>
+          <button className="tool-button" type="button" onClick={clearNotes} disabled={solved || !game.notes.some(Boolean)}>Clear notes</button>
+        </div>
       </div>
       <TrioBoard board={board} game={game} brush={brush} pencil={pencil} locked={solved} conflicts={conflicts} instructionsId={hint ? `${instructionsId} ${hintId}` : instructionsId} hint={hint}
         onApply={apply} onBegin={begin} onEnd={end} onUndo={undo} onRedo={redo} onPencil={() => setPencil(!pencil)} />
@@ -195,7 +206,7 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
     {!saving && !solved && <p className="status error" role="status">Progress can&rsquo;t be saved. Keep this page open to retain your attempt.</p>}
     <p className="word-note" id={instructionsId}>Three of each symbol in every row and column. No three identical symbols consecutively.
       = means same; × means different. Cells with a corner dot are fixed.</p>
-    <p className="word-note">Pick a symbol, then tap or drag. Notes marks possible symbols in empty cells.
+    <p className="word-note">Pick a symbol, then tap or drag. Notes marks possible symbols in empty cells. Clear notes removes all pencil marks; Undo restores them.
       Arrows move; 1–3 place symbols; N toggles notes; Delete erases; Ctrl/Cmd+Z undoes; Ctrl/Cmd+Shift+Z redoes.</p>
   </div>
 }

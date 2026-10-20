@@ -1358,6 +1358,8 @@
 .trio-pick input:focus-visible + .trio-pick-face { outline: 3px solid var(--accent); outline-offset: 3px; }
 .trio-pick input:disabled + .trio-pick-face { opacity: 0.55; cursor: default; }
 .trio-mode { text-align: center; font-size: 0.8125rem; margin: 0.625rem 0; min-height: 1.25rem; }
+.trio-mode-actions { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.trio-mode-actions .trio-mode { flex: 1; min-width: 0; }
 .trio-symbol { display: block; width: 65%; height: 65%; pointer-events: none; flex-shrink: 0; }
 .trio-symbol-1 { color: light-dark(#946000, #f4c35b); }
 .trio-symbol-2 { color: light-dark(#00629e, #8cc4ff); }
@@ -1416,6 +1418,8 @@
   .trio-controls .puzzle-tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
   .trio-controls .timer { grid-column: 1 / -1; text-align: center; padding-block: 0.35rem; }
   .trio-controls .trio-picker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .trio-controls .trio-mode-actions { flex-direction: column; gap: 0; }
+  .trio-controls .trio-mode-actions .tool-button { width: 100%; }
   .trio-workspace .trio-board { min-width: 0; width: min(100%, 42rem, max(24rem, 100svh - 18rem)); margin: 0; }
 }
 @media (max-width: 47.999rem) {

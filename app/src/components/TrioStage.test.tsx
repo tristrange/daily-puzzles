@@ -61,6 +61,60 @@ function finish(playing: ReactElement<Record<string, unknown>>) {
 }
 afterEach(() => { hooks.values = []; hooks.cursor = 0; vi.unstubAllGlobals(); vi.clearAllMocks() })
 
+it.each([false, true])('clears all notes as one saved, undoable move (daily: %s)', (daily) => {
+  storage()
+  const board = daily ? new TrioGrid('2026-10-20-trio', raw[0]!.givens, raw[0]!.relations) : parseTrioBoard(raw[0])
+  const puzzle: Puzzle | undefined = board instanceof TrioGrid ? { id: board.id, puzzleType: 'trio', seed: 123, generatorVersion: 1, board, difficulty: null } : undefined
+  const empty = board.givens.flatMap((value, index) => value === 0 ? [index] : [])
+  const cells = [...board.givens], notes = Array<number>(81).fill(0)
+  cells[empty[0]!] = 3
+  notes[empty[1]!] = 1
+  notes[empty[2]!] = 7
+  storeTrioProgress(board, { cells, notes }, 5000, daily, 2)
+  const render = () => { hooks.cursor = 0; return children(TrioStage({ board, ...(puzzle ? { puzzle } : {}) })) }
+  const button = (name: string) => render().find(element => element.type === 'button' && element.props['children'] === name)
+  const playing = () => render().find(element => element.type === TrioBoard)!.props
+  const game = () => playing()['game'] as { cells: number[]; notes: number[] }
+  const click = (name: string) => { expect(button(name)).toBeDefined(); (button(name)!.props['onClick'] as () => void)() }
+
+  expect(button('Clear notes')).toBeDefined()
+  expect(button('Clear notes')!.props['disabled']).toBe(false)
+  ;(playing()['onBegin'] as () => void)()
+  click('Clear notes')
+  expect(game().notes).toEqual(notes)
+  ;(playing()['onEnd'] as (cancel: boolean) => void)(true)
+  click('Clear notes')
+  expect(game().notes.every(value => value === 0)).toBe(true)
+  expect(game().cells).toEqual(cells)
+  expect(readTrioProgress(board, daily)).toMatchObject({ elapsedMs: 5000, game: { cells, notes: Array(81).fill(0) }, ...(daily ? { hints: 2 } : {}) })
+  expect(button('Clear notes')!.props['disabled']).toBe(true)
+  click('Undo')
+  expect(game().notes).toEqual(notes)
+  expect(button('Undo')!.props['disabled']).toBe(true)
+  expect(readTrioProgress(board, daily)?.game.notes).toEqual(notes)
+  click('Redo')
+  expect(game().notes.every(value => value === 0)).toBe(true)
+  expect(game().cells).toEqual(cells)
+})
+
+it('does not disturb redo when there are no notes to clear', () => {
+  storage()
+  const board = parseTrioBoard(raw[0])
+  const render = () => { hooks.cursor = 0; return children(TrioStage({ board })) }
+  const button = (name: string) => render().find(element => element.type === 'button' && element.props['children'] === name)!
+  const playing = () => render().find(element => element.type === TrioBoard)!.props
+  ;(playing()['onBegin'] as () => void)()
+  ;(playing()['onApply'] as (cell: number, action: { note: number; enabled: boolean }) => void)(cell, { note: 2, enabled: true })
+  ;(playing()['onEnd'] as (cancel: boolean) => void)(false)
+  ;(button('Undo').props['onClick'] as () => void)()
+  expect(button('Clear notes')).toBeDefined()
+  expect(button('Clear notes').props['disabled']).toBe(true)
+  ;(button('Clear notes').props['onClick'] as () => void)()
+  expect(button('Redo').props['disabled']).toBe(false)
+  ;(button('Redo').props['onClick'] as () => void)()
+  expect((playing()['game'] as { notes: number[] }).notes[cell]).toBe(2)
+})
+
 it('recovers multiple undos and drops redo after a new move', () => {
   storage()
   const board = parseTrioBoard(raw[0])
@@ -167,6 +221,7 @@ it('leaves daily stats untouched when completing a preview', () => {
     ;(render().find((element) => element.type === TrioHintPanel)!.props['onApply'] as () => void)()
   }
   expect(render().find((element) => element.type === TrioBoard)!.props['locked']).toBe(true)
+  expect(render().find((element) => element.type === 'button' && element.props['children'] === 'Clear notes')!.props['disabled']).toBe(true)
   expect(render().find((element) => element.props['role'] === 'status')!.props['children']).toContain('Solved in')
   expect(values.get(STATS_STORAGE_KEY)).toBe('existing daily history')
   expect(publication.offerSolve).not.toHaveBeenCalled()

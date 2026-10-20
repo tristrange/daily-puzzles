@@ -1809,3 +1809,17 @@ the committed archive complete through 2026-10-23. No new dependencies or puzzle
 content changed. A real-browser service-worker update and file-picker flow were
 not run; the tests cover waiting/install detection, the notice text, import
 validation and merged storage.
+
+## 2026-10-20 — Clear Trio notes
+
+Trio has a Clear notes button for daily and preview boards. It removes all pencil
+marks, preserves givens and placed symbols, dismisses any stale hint and saves
+the change as one Undo/Redo step. Empty and solved boards disable the control;
+an empty action does not discard redo. The button sits beside the mode text on
+phones and beneath it in the desktop sidebar, keeping the main toolbar compact.
+
+All 777 app tests, TypeScript and the production build pass; lint retains the
+existing TracksStage warning. Three new stage cases cover daily/preview saving,
+symbol preservation, gesture protection, Undo/Redo and empty-action behavior.
+Browser verification covers clearing notes, Undo/Redo, persistence after reload
+and desktop/phone layout. No dependencies, puzzle content or Python code changed.
