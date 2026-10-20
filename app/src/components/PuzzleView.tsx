@@ -1,3 +1,5 @@
+import { SolvedPanel } from './SolvedPanel'
+import { useLeaderboard } from '../lib/useLeaderboard'
 import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatPuzzleLabel, puzzleOfToday } from '../domain/dates'
@@ -85,6 +87,8 @@ export function PuzzleStage({
   const [stats, setStats] = useState<Stats | null>(null)
   // The solve already on record for this puzzle, if this was a replay.
   const [firstSolve, setFirstSolve] = useState<SolveRecord | null>(null)
+  const [candidate, setCandidate] = useState<SolveRecord | null>(null)
+  const { offerSolve } = useLeaderboard()
   const [copied, setCopied] = useState<'idle' | 'result' | 'solution' | 'failed'>('idle')
   // Set only when copying failed, so the text can be selected by hand.
   const [shareText, setShareText] = useState<string | null>(null)
@@ -141,19 +145,10 @@ export function PuzzleStage({
       const earlier = readStoredStats().find((record) => record.id === puzzle.id)
       // Recorded once, at the moment it happens, and never revised: a replay is
       // played knowing the answer, so its time would flatter the record.
-      setStats(
-        summarise(
-          storeSolve({
-            id: puzzle.id,
-            puzzleType: puzzle.puzzleType,
-            size: board.size,
-            elapsedMs: when - startedAt,
-            hints: hintsUsed,
-            solvedAt: when,
-          }),
-          puzzleOfToday(new Date(when), timeZone),
-        ),
-      )
+      const record: SolveRecord = { id: puzzle.id, puzzleType: puzzle.puzzleType, size: board.size,
+        elapsedMs: when - startedAt, hints: hintsUsed, solvedAt: when }
+      setStats(summarise(storeSolve(record), puzzleOfToday(new Date(when), timeZone)))
+      if (!earlier) { setCandidate(record); offerSolve(record) }
       setFirstSolve(earlier ?? null)
       setAnnouncement(`Solved in ${formatTime(when - startedAt)}!`)
     }
@@ -398,54 +393,8 @@ export function PuzzleStage({
         title={hint.action === 'queen' ? `Place a ${piece}` : `Rule out a ${piece}`}
         reasons={hintReasons} effect={`Uses your placed ${piecePlural} and crosses. Crosses are treated as ruled-out cells.`}
         onApply={acceptHint} onDismiss={dismissHint} onShowCell={showHintCell} />}
-      {solved && (
-        <div className="solved-panel">
-          <p className="solved-banner">
-            {firstSolve === null ? (
-              <>
-                Solved — nice!
-                {stats !== null && stats.currentStreak > 1 && (
-                  <> {stats.currentStreak}-day streak.</>
-                )}
-              </>
-            ) : (
-              <>
-                Solved again — your first solve, {formatTime(firstSolve.elapsedMs)}, still counts.
-              </>
-            )}
-          </p>
-          <div className="share-buttons">
-            <button
-              type="button"
-              className="tool-button share"
-              onClick={() => share('result')}
-            >
-              {copied === 'result' ? 'Copied result' : 'Copy result'}
-            </button>
-            <button
-              type="button"
-              className="tool-button share"
-              onClick={() => share('solution')}
-              title="Includes the finished board — this one gives the puzzle away"
-            >
-              {copied === 'solution' ? 'Copied solution' : 'Copy with solution'}
-            </button>
-          </div>
-          {shareText !== null && (
-            <textarea
-              className="share-text"
-              readOnly
-              rows={shareText.split('\n').length}
-              aria-label="Share text"
-              ref={(node) => {
-                node?.select()
-              }}
-              onFocus={(event) => event.currentTarget.select()}
-              value={shareText}
-            />
-          )}
-        </div>
-      )}
+      <SolvedPanel solved={solved} firstSolve={firstSolve} streak={stats?.currentStreak ?? 0}
+        copied={copied} shareText={shareText} onShare={share} puzzleId={puzzle.id} candidate={candidate} />
       <p className="sr-only" role="status" aria-live="polite">
         {announcement}
       </p>

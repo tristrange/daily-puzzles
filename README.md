@@ -6,14 +6,17 @@ app that plays them.
 
 **Live site → [tristrange.github.io/daily-puzzles](https://tristrange.github.io/daily-puzzles/)**
 
-No server, no database and no account. The entire product is a static site and a directory
-of committed puzzle files. **Queens**, **Star Battle**, **Train Tracks**,
+Puzzle play needs no account or server: the app is a static site with committed
+puzzle files and local progress. **Queens**, **Star Battle**, **Train Tracks**,
 **Word Paths** and **Trio** each keep their own first solve. Word Paths daily slots start on
 October 15, 2026. Trio's archive starts on September 26, 2026, backfilled at launch;
 both previews remain available independently.
 
-An optional account-free leaderboard backend is being prepared. It is not active
-in the app yet; see the [Free-plan setup guide](docs/leaderboard-setup.md).
+Optional leaderboards use Supabase Free and anonymous browser identities, with no
+email or password. Join to publish first solves with a nickname, time and hints;
+earlier history stays local. Browse rankings without joining. Stop publishing or
+remove your published results from the leaderboard panel. Preview boards never
+publish. See the [Free-plan setup guide](docs/leaderboard-setup.md) for activation.
 
 ---
 
@@ -116,7 +119,9 @@ downloads. Open the installed app online before relying on it offline.
 Train Tracks, Word Paths and Trio resume unfinished games; Queens and Star Battle
 restart unfinished attempts on reload. Browser cache eviction or clearing site
 data can remove downloads. Updates wait until all app windows close; finish
-your game, then close and reopen them. No account or syncing is added.
+your game, then close and reopen them. Progress does not sync between devices.
+Optional leaderboard participation belongs to each browser identity; losing that
+identity also loses self-service access to its published results.
 
 ## Why it is built this way
 
@@ -280,8 +285,8 @@ which is what the board-level conformance suite is for.
 
 - Commits are concise and imperative, e.g. `Add solution counter`.
 - Every puzzle file is committed. Puzzle history is visible in `git log`.
-- No databases, auth, ORMs or task-runner monorepo. If a change needs one of those, the
-  scope has crept and the plan needs revisiting.
+- Keep puzzle play local and independent of the optional leaderboard service.
+  Additional infrastructure needs an explicit scope decision.
 
 
 ## Contribution naming

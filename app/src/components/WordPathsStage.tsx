@@ -1,3 +1,4 @@
+import { useLeaderboard } from '../lib/useLeaderboard'
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { Puzzle } from '../domain/puzzle'
 import type { WordGrid } from '../domain/wordPaths'
@@ -38,6 +39,8 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
   ] : [], [hint])
   const completed = useRef(false)
   const [firstSolve, setFirstSolve] = useState<SolveRecord | null>(null)
+  const [candidate, setCandidate] = useState<SolveRecord | null>(null)
+  const { offerSolve } = useLeaderboard()
   const [stats, setStats] = useState<Stats | null>(null)
   const [copied, setCopied] = useState<'idle' | 'result' | 'solution' | 'failed'>('idle')
   const [shareText, setShareText] = useState<string | null>(null)
@@ -100,10 +103,10 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
       const when = Date.now()
       const earlier = readStoredStats().find((record) => record.id === puzzle.id)
       setFirstSolve(earlier ?? null)
-      setStats(summarise(storeSolve({
-        id: puzzle.id, puzzleType: puzzle.puzzleType, size: grid.width,
-        elapsedMs: time, hints: hintsUsed.current, solvedAt: when,
-      }), puzzleOfToday(new Date(when), timeZone)))
+      const record: SolveRecord = { id: puzzle.id, puzzleType: puzzle.puzzleType, size: grid.width,
+        elapsedMs: time, hints: hintsUsed.current, solvedAt: when }
+      setStats(summarise(storeSolve(record), puzzleOfToday(new Date(when), timeZone)))
+      if (!earlier) { setCandidate(record); offerSolve(record) }
     }
     setMessage(`Solved in ${formatTime(time)}!`)
   }
@@ -222,7 +225,7 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
         With a keyboard: arrows move, Space selects, Enter submits; Backspace removes a letter and Escape clears selection. H asks for a hint.
       </p>
       <p className="word-note">Use every letter once. Accepted words can lead to a dead end; Undo lets you try another path. Only words in this game&rsquo;s English list are accepted.</p>
-      <SolvedPanel solved={solved} firstSolve={firstSolve} streak={stats?.currentStreak ?? 0} copied={copied} shareText={shareText} onShare={share} />
+      <SolvedPanel puzzleId={preview ? undefined : puzzle.id} candidate={candidate} solved={solved} firstSolve={firstSolve} streak={stats?.currentStreak ?? 0} copied={copied} shareText={shareText} onShare={share} />
     </div>
   )
 }

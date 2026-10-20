@@ -1,3 +1,4 @@
+import { useLeaderboard } from '../lib/useLeaderboard'
 /** Track pieces and directional rules need their own stage; controls and hint presentation are shared. */
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
@@ -66,6 +67,8 @@ export function TracksStage({
   const [savingAvailable, setSavingAvailable] = useState(true)
   const [stats, setStats] = useState<Stats | null>(null)
   const [firstSolve, setFirstSolve] = useState<SolveRecord | null>(null)
+  const [candidate, setCandidate] = useState<SolveRecord | null>(null)
+  const { offerSolve } = useLeaderboard()
   const [copied, setCopied] = useState<'idle' | 'result' | 'solution' | 'failed'>('idle')
   const [shareText, setShareText] = useState<string | null>(null)
   // What a click puts in a cell. Kept here rather than inside the board because
@@ -119,25 +122,13 @@ export function TracksStage({
     setSolvedAt(when)
     // Read before storing, so a replay can be told why its time was not kept.
     const earlier = readStoredStats().find((record) => record.id === puzzle.id)
-    setStats(
-      summarise(
-        storeSolve({
-          id: puzzle.id,
-          puzzleType: puzzle.puzzleType,
-          // Stored as a single number because that is what the record has always
-          // held and every published board is square. A rectangular grid records
-          // its width; nothing reads the field, so nothing is misled.
-          size: grid.width,
-          elapsedMs: when - startedAt,
-          hints: hintsUsed.current,
-          solvedAt: when,
-        }),
-        puzzleOfToday(new Date(when), timeZone),
-      ),
-    )
+    const record: SolveRecord = { id: puzzle.id, puzzleType: puzzle.puzzleType, size: grid.width,
+      elapsedMs: when - startedAt, hints: hintsUsed.current, solvedAt: when }
+    setStats(summarise(storeSolve(record), puzzleOfToday(new Date(when), timeZone)))
+    if (!earlier) { setCandidate(record); offerSolve(record) }
     setFirstSolve(earlier ?? null)
     setAnnouncement(`Solved in ${formatTime(when - startedAt)}!`)
-  }, [grid.width, puzzle.id, puzzle.puzzleType, startedAt, timeZone])
+  }, [grid.width, puzzle.id, puzzle.puzzleType, startedAt, timeZone, offerSolve])
 
   // Arrived already solved. `solvedAt` is the guard, exactly as it is for a
   // finished game, so this fires once and never again.
@@ -353,6 +344,7 @@ export function TracksStage({
         reasons={hintReasons} effect={`${hint.brush === MAYBE ? 'Apply puts ? in this cell. It counts as track; choose its direction later. ' : ''}Uses your placed tracks, ? cells and crosses as starting assumptions.`}
         onApply={acceptHint} onDismiss={dismissHint} onShowCell={showHintCell} />}
       <SolvedPanel
+        puzzleId={puzzle.id} candidate={candidate}
         solved={solved}
         firstSolve={firstSolve}
         streak={stats?.currentStreak ?? 0}

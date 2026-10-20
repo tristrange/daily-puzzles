@@ -1,7 +1,8 @@
 # Free leaderboard setup
 
-The backend is prepared; the app integration and public leaderboard are not live
-yet. These steps prepare the free provider projects. Players will not need
+The backend is merged; app integration awaits review and merge after local and
+two-session hosted verification.
+These steps prepare the free provider projects. Players will not need
 accounts, but you need maintainer accounts to own the infrastructure.
 
 ## 1. Create a Supabase Free project
@@ -42,8 +43,7 @@ a free plan and does not require moving the puzzle site away from GitHub Pages.
    protection to use Turnstile and enter the secret there. Then enable anonymous
    sign-ins. The secret never belongs in the app or the repository.
 
-The local SQL tests do not use hosted credentials or CAPTCHA. The later app
-slice will supply the frontend test setup. Do not weaken the production widget
+The local SQL tests do not use hosted credentials or CAPTCHA. Do not weaken the production widget
 or put a production secret into a test file.
 
 ## 3. Values we will use
@@ -55,7 +55,7 @@ up the implementation:
 - Supabase **publishable** API key, not the secret/service-role key.
 - Turnstile **site** key, not its secret key.
 
-The eventual Pages build uses these public repository variables:
+The trusted main Pages build uses these public repository variables:
 
 | GitHub Actions variable | Browser build variable |
 | --- | --- |
@@ -73,8 +73,8 @@ add the secret. The next normal main deployment synchronizes all committed
 puzzle IDs before building Pages. A sync failure emits a workflow warning and
 publishing continues, so a paused leaderboard cannot stop new daily puzzles.
 The next deployment retries; you can also rerun synchronization manually. Without
-a secret, current deployment is unchanged. Public app integration waits
-for the later app PR, so leave its other two variables unset until activation.
+a secret, catalog synchronization is skipped. Missing public build variables
+disable leaderboard features while local play remains available.
 
 For manual catalog synchronization, load the URL and server secret into your
 terminal environment privately and run:
@@ -105,6 +105,44 @@ Supabase HTTP authentication or CAPTCHA; two real anonymous sessions remain
 required before public launch. No new npm/Python packages are needed here.
 
 ## 4. Activation and rollback
+
+For local hosted signup checks, explicitly add `localhost` to the same widget's
+Hostname Management: select **Add Hostnames**, enter the bare hostname, click
+**Add**, confirm it appears in the list, then save. Do not include a scheme,
+path or port. Reopen settings to confirm it persisted. Remove this temporary
+hostname after testing. Keep CAPTCHA enabled; dummy test tokens cannot be
+validated with the production secret. See Cloudflare's
+[hostname instructions](https://developers.cloudflare.com/turnstile/additional-configuration/hostname-management/)
+and [local testing guidance](https://developers.cloudflare.com/turnstile/troubleshooting/testing/).
+
+Local app preview with public configuration:
+
+```sh
+cd app
+# Set only the three public VITE_* variables from the table above.
+BASE_PATH=/daily-puzzles/ npm run build
+BASE_PATH=/daily-puzzles/ npm run preview -- --host localhost --port 4174
+```
+
+Open `http://localhost:4174/daily-puzzles/`. Separate localhost ports have separate
+browser identities and can be used for the two-session check. Never put server
+or Turnstile secret keys in a `VITE_*` variable or a committed environment file.
+
+Setup evidence on October 20: anonymous sign-ins are enabled; the maintainer
+reports CAPTCHA configured; the GitHub server-secret name and public variable
+names are present. A clean main deployment synchronized the catalog. A public
+ranking request for a committed puzzle succeeds and raw result-table reads are
+denied. Two real anonymous sessions completed managed Turnstile verification,
+published first solves, saw the correct hints/time rankings and their own "You"
+marker. Removing one identity's results left the other intact; both test scores
+were then removed with maintainer approval. Ties and outside-top-25 ownership
+are covered by SQL and app contract tests. Public activation awaits app PR merge.
+
+Publishing requires browser storage and Web Locks for safe coordination across
+tabs. Without them, local play and public rankings remain available but joining
+is refused. The SDK uses the same durable storage as participation; it owns
+session serialization and renewal. Stop is immediate in the current tab; saving
+the setting across tabs and removing results may wait for an in-flight request.
 
 After the schema and app PRs are reviewed and merged:
 

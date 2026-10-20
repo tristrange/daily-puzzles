@@ -12,6 +12,7 @@
 
 import { formatTime } from '../domain/game'
 import type { SolveRecord } from '../lib/stats'
+import { LeaderboardPanel } from './LeaderboardPanel'
 
 export interface SolvedPanelProps {
   solved: boolean
@@ -22,6 +23,8 @@ export interface SolvedPanelProps {
   /** The share text, shown when the clipboard could not be reached. */
   shareText: string | null
   onShare: (variant: 'result' | 'solution') => void
+  puzzleId?: string | undefined
+  candidate?: SolveRecord | null
 }
 
 export function SolvedPanel({
@@ -31,6 +34,8 @@ export function SolvedPanel({
   copied,
   shareText,
   onShare,
+  puzzleId,
+  candidate,
 }: SolvedPanelProps) {
   if (!solved) return null
   return (
@@ -71,6 +76,7 @@ export function SolvedPanel({
           value={shareText}
         />
       )}
+      {puzzleId && <LeaderboardPanel puzzleId={puzzleId} candidate={candidate} />}
     </div>
   )
 }

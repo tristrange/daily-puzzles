@@ -31,6 +31,7 @@ export function Shell() {
           <NavLink to="/stats" className={navClass}>
             Stats
           </NavLink>
+          <NavLink to="/leaderboards" className={navClass} aria-label="Leaderboards"><span className="leaderboards-nav-full">Leaderboards</span><span className="leaderboards-nav-short" aria-hidden="true">Ranks</span></NavLink>
           <NavLink to="/how-to-play" className={navClass}>
             How to play
           </NavLink>

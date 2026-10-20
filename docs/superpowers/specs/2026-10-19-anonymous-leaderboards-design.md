@@ -1,7 +1,8 @@
 # Account-free leaderboards
 
-Status: design approved on October 19, 2026; backend implemented for review.
-Hosted setup and app integration are not active.
+Status: design approved on October 19, 2026; backend PR merged on October 20.
+Hosted Auth/CAPTCHA, two-player submissions and owner-only removal were verified
+on October 20. App integration awaits PR review and merge; it is not public yet.
 
 ## Purpose and constraints
 
@@ -167,8 +168,10 @@ three public configuration values is the rollback: it stops cloud integration
 without deleting results or changing local Stats. Do not automate provider
 signup, accept terms, or attach a payment method.
 
-See [the Free-plan setup guide](../../leaderboard-setup.md). The user must create
-the provider projects; none exist for this feature yet.
+See [the Free-plan setup guide](../../leaderboard-setup.md). The user owns the
+provider projects and private settings. The supplied public configuration is
+stored in GitHub repository variables; remaining hosted setup is tracked in the
+[app plan](../plans/2026-10-20-leaderboard-app.md).
 
 ## Delivery and proof
 
