@@ -1,8 +1,8 @@
 /**
  * Local solve history: what this browser has finished, and what that adds up to.
  *
- * Nothing here leaves the device. There is no account and no server, so the only
- * thing to get right is honesty about what is stored: a solve is recorded when it
+ * This history stays on the device; optional publishing has separate storage.
+ * A solve is recorded when it
  * happens and never revised, so a streak cannot be quietly rewritten by replaying
  * a day. The first solve of a puzzle is the one that counts — later attempts are
  * left out rather than allowed to overwrite it, because "when did you first get

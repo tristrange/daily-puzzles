@@ -145,6 +145,9 @@ jobs:
           # A Pages project site is served from /<repo>/, so the built asset
           # URLs and the app's own puzzle fetches both need that prefix.
           BASE_PATH: /${{ github.event.repository.name }}
+          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+          VITE_TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
         run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

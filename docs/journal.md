@@ -1640,3 +1640,26 @@ queues, accessibility and offline checks belong to the next app slice; this PR
 alone does not expose a leaderboard. Scores remain community-reported and
 anonymous identities cannot prevent identity farming. Unchanged Python engine
 checks run in GitHub rather than being duplicated locally.
+
+## 2026-10-20 — Optional leaderboard app integration (verification in progress)
+
+The app now uses the official Supabase SDK for anonymous sessions, with explicit
+joining and consent. First daily/archive solves feed an owner-bound pending
+queue; previews and earlier history do not upload. Exact-puzzle rankings appear
+on solved screens and a new navigation page. Players can stop publishing or
+confirm removal of their own results. Failure to reach the provider does not
+block play or local Stats.
+
+All 723 app tests, TypeScript, seven CI-routing tests and the Pages build pass.
+Lint retains the existing TracksStage warning. The configured bundle contains
+the expected public settings and no secret-like tokens. The SDK increases the
+main bundle to about 745 kB (222 kB gzip), triggering Vite's size advisory.
+
+Hosted setup now permits anonymous Auth, and the maintainer reports Turnstile
+protection configured. Catalog import succeeded; public rankings return an
+empty board for a real puzzle and direct result-table reads are denied. Rerunning
+an old deployment produced duplicate Pages artifacts; a fresh main workflow
+completed successfully. CAPTCHA signup remains blocked locally by hostname
+authorization. Two-player hosted submission, ownership and removal, final
+browser checks and independent review are still pending; this is not launch
+evidence yet.
