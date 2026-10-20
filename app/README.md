@@ -145,8 +145,9 @@ precached too. Development mode does not register a worker.
 
 App caches are `daily-puzzles.app:<base>:<build hash>`. Navigation uses the
 installed HTML to keep its chunk versions consistent. Updates use the normal
-waiting lifecycle: finish the game, then close all app windows and reopen.
-There is no forced activation or reload. Activation removes only older app
+waiting lifecycle: the status line says when a new version is ready; finish the
+game, then close every open app window and reopen. There is no forced activation
+or reload. Activation removes only older app
 caches for this exact base; neighboring apps and player data are untouched.
 
 `src/lib/puzzles.ts` owns downloads separately in
