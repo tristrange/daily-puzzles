@@ -2,37 +2,43 @@ import { lazy, Suspense } from 'react'
 import { HashRouter, Route, Routes } from 'react-router-dom'
 import './App.css'
 import { Shell } from './components/Shell'
-import { ArchivePage } from './pages/ArchivePage'
 import { HomePage } from './pages/HomePage'
-import { NotFoundPage } from './pages/NotFoundPage'
-import { PuzzlePage } from './pages/PuzzlePage'
-import { RulesPage } from './pages/RulesPage'
-import { StarBattlePage } from './pages/StarBattlePage'
-import { StatsPage } from './pages/StatsPage'
-import { LeaderboardProvider } from './components/LeaderboardProvider'
-import { LeaderboardsPage } from './pages/LeaderboardsPage'
+import { LeaderboardGate } from './components/LeaderboardGate'
+
+const ArchivePage = lazy(() => import('./pages/ArchivePage').then((module) => ({ default: module.ArchivePage })))
+const LeaderboardsPage = lazy(() => import('./pages/LeaderboardsPage').then((module) => ({ default: module.LeaderboardsPage })))
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((module) => ({ default: module.NotFoundPage })))
+const PuzzlePage = lazy(() => import('./pages/PuzzlePage').then((module) => ({ default: module.PuzzlePage })))
+const RulesPage = lazy(() => import('./pages/RulesPage').then((module) => ({ default: module.RulesPage })))
+const StarBattlePage = lazy(() => import('./pages/StarBattlePage').then((module) => ({ default: module.StarBattlePage })))
+const StatsPage = lazy(() => import('./pages/StatsPage').then((module) => ({ default: module.StatsPage })))
+const TrioPreviewPage = lazy(() => import('./pages/TrioPreviewPage').then((module) => ({ default: module.TrioPreviewPage })))
 const WordPathsPreviewPage = lazy(() => import('./pages/WordPathsPreviewPage').then((module) => ({ default: module.WordPathsPreviewPage })))
 
-const TrioPreviewPage = lazy(() => import('./pages/TrioPreviewPage').then((module) => ({ default: module.TrioPreviewPage })))
+const loading = <p className="status" role="status">Loading…</p>
 
 function App() {
   return (
-    <LeaderboardProvider><HashRouter>
-      <Routes>
-        <Route element={<Shell />}>
-          <Route index element={<HomePage />} />
-          <Route path="archive" element={<ArchivePage />} />
-          <Route path="archive/:id" element={<PuzzlePage />} />
-          <Route path="star-battle" element={<StarBattlePage />} />
-          <Route path="preview/word-paths" element={<Suspense fallback={<p className="status">Loading preview…</p>}><WordPathsPreviewPage /></Suspense>} />
-          <Route path="preview/trio" element={<Suspense fallback={<p className="status">Loading preview…</p>}><TrioPreviewPage /></Suspense>} />
-          <Route path="stats" element={<StatsPage />} />
-          <Route path="leaderboards" element={<LeaderboardsPage />} />
-          <Route path="how-to-play" element={<RulesPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Route>
-      </Routes>
-    </HashRouter></LeaderboardProvider>
+    <HashRouter>
+      <Suspense fallback={loading}>
+        <Routes>
+          <Route element={<Shell />}>
+            <Route index element={<HomePage />} />
+            <Route path="archive" element={<ArchivePage />} />
+            <Route element={<LeaderboardGate />}>
+              <Route path="archive/:id" element={<PuzzlePage />} />
+              <Route path="star-battle" element={<StarBattlePage />} />
+              <Route path="leaderboards" element={<LeaderboardsPage />} />
+            </Route>
+            <Route path="preview/word-paths" element={<WordPathsPreviewPage />} />
+            <Route path="preview/trio" element={<TrioPreviewPage />} />
+            <Route path="stats" element={<StatsPage />} />
+            <Route path="how-to-play" element={<RulesPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
+        </Routes>
+      </Suspense>
+    </HashRouter>
   )
 }
 

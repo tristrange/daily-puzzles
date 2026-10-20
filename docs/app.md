@@ -15,6 +15,14 @@ route:
   files (`public/puzzles/<date>.json`) rather than an index manifest that could rot.
 - `/archive/:id` — a specific puzzle by id.
 
+Route pages are lazy chunks; the landing page stays in the entry chunk so the first
+choice appears without waiting for the play screens. The optional Supabase client is
+further scoped to a pathless `LeaderboardGate` around the puzzle, Star Battle and
+leaderboard routes. Home, Archive, Stats and Rules never mount the leaderboard provider,
+and the SDK is not in their route chunks. The offline worker still precaches every
+emitted chunk, so the SDK may arrive in the background after install; it is not parsed
+until a gated route needs it, and an installed route still opens offline.
+
 `puzzleOfToday(date, tz)` is the seam between the engine's date-keyed files and the
 player's clock:
 

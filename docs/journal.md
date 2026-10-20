@@ -1732,3 +1732,25 @@ the timer fires, including timer and listener cleanup. The main bundle is 748.5 
 (222.5 kB gzip). No new dependencies, puzzle content, schema or Python code
 changed. A real-browser overnight check was not run; the hook tests use fake
 timers and stubbed browser globals.
+
+## 2026-10-20 — Split routes and defer the leaderboard client
+
+Every non-landing route is now a lazy chunk, and the leaderboard provider sits
+behind a pathless gate around the puzzle, Star Battle and leaderboard routes.
+Home, Archive, Stats and Rules no longer mount a provider, and Supabase is no
+longer in the entry or their route chunks; the play screen and leaderboard load
+the 222.5 kB SDK chunk when they need it. The entry chunk falls from 748.5 kB to
+427.9 kB (222.5 kB to 134.7 kB gzip), and the 500 kB build warning is gone.
+
+The gate starts the matched page import while the provider chunk is still loading,
+so those two requests overlap. Remounting the singleton store re-reads shared
+participation instead of trusting a stop observed before the gate unmounted.
+
+All 757 app tests across 60 files, TypeScript and the production build pass; lint
+retains the existing TracksStage warning. The new jsdom integration test renders
+App and navigates between ungated and gated routes, covering provider placement
+and lifetime; a store test covers a missed cross-tab stop. jsdom is a dev-only
+dependency. The offline worker precaches the new lazy chunks, so route code is
+still available offline after install; the SDK may arrive in that background
+install but is not parsed until a gated route mounts it. No puzzle content,
+schema or Python code changed. A real-browser navigation check was not run.

@@ -183,6 +183,11 @@ export function createLeaderboardStore(config: LeaderboardConfig | null, client:
   }
   const start = () => {
     if (!client || !config) return () => {}
+    // A route gate can unmount this listener while another tab changes
+    // participation. Re-read storage on every mount so a missed stop/enable
+    // event cannot leave the singleton store stopped forever.
+    saved = load()
+    stopped = !saved.enabled
     const online = () => { void retry() }
     const changed = (event: StorageEvent) => {
       if (event.key !== null && event.key !== key) return

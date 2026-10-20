@@ -31,6 +31,13 @@ Routing uses `HashRouter` (the site has no server to rewrite paths for a
 - `/archive` lists published puzzles from the last 30 days.
 - `/archive/:id` renders one puzzle, e.g. `#/archive/2026-09-30`.
 
+Routes are lazy chunks around a static landing page. The optional Supabase
+leaderboard client lives behind `components/LeaderboardGate.tsx`, mounted only
+for puzzle, Star Battle and leaderboard routes, so it is not in the entry chunk
+or the Home, Archive, Stats and Rules route chunks. The offline worker precaches
+every emitted chunk, lazy ones included, so it can still arrive in the background
+for offline use; it is not parsed until a gated route mounts it.
+
 `puzzleOfToday(date, tz)` and the loaders live in `src/domain/dates.ts` and
 `src/lib/puzzles.ts` and are covered by `*.test.ts` suites.
 
