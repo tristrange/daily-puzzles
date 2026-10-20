@@ -1085,8 +1085,8 @@
   font-size: 15px;
 }
 
-/* The clear-my-stats control, at the foot of the page and deliberately quiet:
-   it is there for the player who wants it, not something to draw the eye. */
+/* Backup and clear controls, at the foot of the page and deliberately quiet:
+   they are there for the player who wants them, not to draw the eye. */
 .stats-footer {
   margin: 28px 0 0;
   padding: 18px 0 0;
@@ -1096,6 +1096,10 @@
     padding: 0 0 12px;
     max-width: 46ch;
   }
+}
+
+.stats-danger {
+  margin-top: 18px;
 }
 
 .content h2.page-title {

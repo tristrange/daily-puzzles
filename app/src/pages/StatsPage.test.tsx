@@ -126,6 +126,16 @@ describe('recent solves by game', () => {
   })
 })
 
+it('offers import with no history and export once there is a solve', () => {
+  const empty = renderHistory([])
+  expect(empty).toContain('Import stats')
+  expect(empty).not.toContain('Export stats')
+
+  const populated = renderHistory([solve('2026-10-05', 'queens', 1)])
+  expect(populated).toContain('Import stats')
+  expect(populated).toContain('Export stats')
+})
+
 it('filters daily Trio solves and retains the normal result link', () => {
   const html = renderHistory([solve('2026-10-18-trio', 'trio', 1), solve('2026-10-18', 'queens', 2)], '/stats?game=trio')
   expect(html).toContain('href="/archive/2026-10-18-trio"')

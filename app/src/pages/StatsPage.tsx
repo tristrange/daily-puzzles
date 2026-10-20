@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState, type ChangeEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { PUZZLE_TYPES } from '../domain/board'
 import { formatPuzzleLabel } from '../domain/dates'
@@ -8,6 +8,7 @@ import { formatTime } from '../domain/game'
 import {
   clearStats,
   formatSolveCounts,
+  importStoredStats,
   mostRecentSolves,
   readStoredStats,
   summarise,
@@ -16,6 +17,9 @@ import { useToday } from '../lib/useToday'
 
 /** How many solves the page lists under "Recent solves". */
 const RECENT_LIMIT = 10
+
+/** A backup larger than this is not a plausible local solve history. */
+const MAX_IMPORT_BYTES = 5 * 1024 * 1024
 
 /** A stat that has nothing to report yet, so it is not shown as a zero. */
 function stat(label: string, value: string | null): { label: string; value: string } | null {
@@ -34,6 +38,7 @@ export function StatsPage() {
   // be able to throw away a streak.
   const [confirming, setConfirming] = useState(false)
   const [notice, setNotice] = useState('')
+  const importInput = useRef<HTMLInputElement>(null)
   const todayId = useToday(timeZone)
   const stats = summarise(records, todayId)
   const recent = mostRecentSolves(records.filter(record => record.puzzleType === type), RECENT_LIMIT)
@@ -45,6 +50,43 @@ export function StatsPage() {
     setRecords([...clearStats()])
     setConfirming(false)
     setNotice('Your solve history has been deleted from this browser.')
+  }
+
+  const exportStats = () => {
+    const blob = new Blob([JSON.stringify(records, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'daily-puzzles-stats.json'
+    document.body.append(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+    setNotice('Stats exported as a JSON backup.')
+  }
+
+  const importStats = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0]
+    event.currentTarget.value = ''
+    if (file === undefined) return
+    setConfirming(false)
+    if (file.size > MAX_IMPORT_BYTES) {
+      setNotice('That file is too large to be a stats backup.')
+      return
+    }
+    try {
+      const { records: merged, imported, persisted } = importStoredStats(await file.text())
+      setRecords([...merged])
+      if (imported === 0) {
+        setNotice('No valid solves were found in that file.')
+      } else if (!persisted) {
+        setNotice(`Merged ${imported} solve${imported === 1 ? '' : 's'} for this visit, but this browser refused to save them.`)
+      } else {
+        setNotice(`Merged ${imported} solve${imported === 1 ? '' : 's'} from that file. ${merged.length} in this browser.`)
+      }
+    } catch {
+      setNotice('That file could not be read.')
+    }
   }
 
   const tiles = [
@@ -111,7 +153,36 @@ export function StatsPage() {
               ))}
             </ul>
           </section>
-          <div className="stats-footer">
+        </>
+      )}
+      <div className="stats-footer">
+        <p className="status">
+          Export a backup before clearing this browser, or import one from another
+          device.
+        </p>
+        <div className="stats-clear">
+          {stats.solved > 0 && (
+            <button type="button" className="tool-button" onClick={exportStats}>
+              Export stats
+            </button>
+          )}
+          <button
+            type="button"
+            className="tool-button"
+            onClick={() => importInput.current?.click()}
+          >
+            Import stats
+          </button>
+          <input
+            ref={importInput}
+            type="file"
+            accept=".json,application/json"
+            hidden
+            onChange={(event) => void importStats(event)}
+          />
+        </div>
+        {stats.solved > 0 && (
+          <div className="stats-danger">
             {confirming ? (
               <>
                 <p className="status">
@@ -132,17 +203,19 @@ export function StatsPage() {
                 </div>
               </>
             ) : (
-              <button
-                type="button"
-                className="tool-button"
-                onClick={() => setConfirming(true)}
-              >
-                Clear all stats
-              </button>
+              <div className="stats-clear">
+                <button
+                  type="button"
+                  className="tool-button"
+                  onClick={() => setConfirming(true)}
+                >
+                  Clear all stats
+                </button>
+              </div>
             )}
           </div>
-        </>
-      )}
+        )}
+      </div>
     </section>
   )
 }

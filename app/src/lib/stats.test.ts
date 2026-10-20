@@ -9,6 +9,8 @@ import {
   bestStreak,
   currentStreak,
   formatSolveCounts,
+  importStoredStats,
+  mergeStats,
   mostRecentSolves,
   parseStats,
   readStoredStats,
@@ -455,6 +457,7 @@ describe('the stored history', () => {
     })
     expect(readStoredStats()).toEqual([])
     expect(() => storeSolve(solve)).not.toThrow()
+    expect(importStoredStats(stored(solve)).persisted).toBe(false)
     expect(clearStats()).toEqual([])
   })
 
@@ -473,6 +476,68 @@ describe('the stored history', () => {
     storeSolve({ ...solve, id: '2026-09-30' })
     storeSolve({ ...solve, id: '2026-09-29' })
     expect(readStoredStats().map((held) => held.id)).toEqual(['2026-09-28', '2026-09-29', '2026-09-30'])
+  })
+})
+
+describe('merging a backup', () => {
+  it('keeps the earliest solve for an id and the union of the histories', () => {
+    const merged = mergeStats(
+      [record({ id: '2026-09-29', solvedAt: 200, elapsedMs: 90_000 })],
+      [
+        record({ id: '2026-09-29', solvedAt: 100, elapsedMs: 10_000 }),
+        record({ id: '2026-09-28', solvedAt: 300 }),
+      ],
+    )
+
+    expect(merged.map((held) => held.id)).toEqual(['2026-09-28', '2026-09-29'])
+    expect(merged[1]?.solvedAt).toBe(100)
+    expect(merged[1]?.elapsedMs).toBe(10_000)
+  })
+
+  it('moves a legacy id before de-duplicating it', () => {
+    // A backup can carry both the old bare-date Star Battle and the replacement
+    // companion id. Migrating after de-duplication would leave two records for
+    // the same puzzle and double-count the day.
+    const merged = mergeStats(
+      [record({ id: '2026-09-26-star', puzzleType: 'star-battle', solvedAt: 200 })],
+      [record({ id: '2026-09-26', puzzleType: 'star-battle', solvedAt: 100 })],
+    )
+
+    expect(merged).toHaveLength(1)
+    expect(merged[0]?.id).toBe('2026-09-26-star')
+    expect(merged[0]?.solvedAt).toBe(100)
+  })
+})
+
+describe('importStoredStats', () => {
+  it('merges a valid backup into storage and returns the combined history', () => {
+    const map = stubStorage()
+    storeSolve(record({ id: '2026-09-29', solvedAt: 200, elapsedMs: 90_000 }))
+
+    const result = importStoredStats(stored(
+      record({ id: '2026-09-29', solvedAt: 100, elapsedMs: 10_000 }),
+      record({ id: '2026-09-28', solvedAt: 300 }),
+      { id: 'yesterday' } as unknown as SolveRecord,
+    ))
+
+    expect(result.imported).toBe(2)
+    expect(result.persisted).toBe(true)
+    expect(result.records.map((held) => held.id)).toEqual(['2026-09-28', '2026-09-29'])
+    expect(result.records[1]?.solvedAt).toBe(100)
+    expect(map.get(STATS_STORAGE_KEY)).toBe(JSON.stringify(result.records))
+    expect(readStoredStats()).toEqual(result.records)
+  })
+
+  it('leaves storage untouched when the file has no valid records', () => {
+    const map = stubStorage()
+    storeSolve(record({ id: '2026-09-29' }))
+    const before = map.get(STATS_STORAGE_KEY)
+
+    const result = importStoredStats('{not json')
+
+    expect(result.imported).toBe(0)
+    expect(result.persisted).toBe(false)
+    expect(map.get(STATS_STORAGE_KEY)).toBe(before)
   })
 })
 

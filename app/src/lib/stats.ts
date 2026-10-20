@@ -77,10 +77,35 @@ function toRecord(value: unknown): SolveRecord | null {
 }
 
 /**
+ * Ids that were repurposed after the fact, and what they used to name.
+ *
+ * 2026-09-26 shipped as a Star Battle board under the bare date id, long before
+ * every day had a companion. That board moved to `-star` and the bare date now
+ * holds a Queens puzzle, so a record written against the old id would be read as
+ * a solve of the *new* puzzle — and because the first solve of a day wins, the
+ * player's real Queens solve for that date could never be recorded.
+ *
+ * The puzzle's own family is what tells the two apart: a legacy record says
+ * `star-battle`, a Queens solve of that date says `queens`. That makes this
+ * safe to run on every read rather than once behind a migration flag — a record
+ * that arrives later with the same id and the other family is left alone.
+ */
+const REPURPOSED_IDS: readonly (readonly [string, string])[] = [['2026-09-26', '2026-09-26-star']]
+
+function migrateRecords(records: readonly SolveRecord[]): readonly SolveRecord[] {
+  return records.flatMap((record) => {
+    const moved = REPURPOSED_IDS.find(([was]) => was === record.id)
+    if (moved === undefined || record.puzzleType !== 'star-battle') return [record]
+    return [{ ...record, id: moved[1] as string }]
+  })
+}
+
+/**
  * Stored history as records, oldest day first. A hand-edited or truncated file
  * loses its bad entries instead of the whole thing, and a puzzle id that appears
  * twice keeps its earliest solve, so a duplicated file cannot invent a longer
- * streak than the days actually played.
+ * streak than the days actually played. A repurposed id is moved to its current
+ * puzzle before that duplicate check, so the old and new copies cannot both count.
  */
 export function parseStats(value: string | null | undefined): readonly SolveRecord[] {
   if (value === null || value === undefined) return []
@@ -91,10 +116,13 @@ export function parseStats(value: string | null | undefined): readonly SolveReco
     return []
   }
   if (!Array.isArray(parsed)) return []
-  const earliest = new Map<string, SolveRecord>()
+  const records: SolveRecord[] = []
   for (const entry of parsed) {
     const record = toRecord(entry)
-    if (record === null) continue
+    if (record !== null) records.push(record)
+  }
+  const earliest = new Map<string, SolveRecord>()
+  for (const record of migrateRecords(records)) {
     const held = earliest.get(record.id)
     if (held === undefined || record.solvedAt < held.solvedAt) earliest.set(record.id, record)
   }
@@ -245,33 +273,21 @@ export function formatSolveCounts(byType: Readonly<Record<PuzzleType, number>>):
   return new Intl.ListFormat('en', { style: 'long', type: 'conjunction' }).format(parts)
 }
 
-/**
- * Ids that were repurposed after the fact, and what they used to name.
- *
- * 2026-09-26 shipped as a Star Battle board under the bare date id, long before
- * every day had a companion. That board moved to `-star` and the bare date now
- * holds a Queens puzzle, so a record written against the old id would be read as
- * a solve of the *new* puzzle — and because the first solve of a day wins, the
- * player's real Queens solve for that date could never be recorded.
- *
- * The puzzle's own family is what tells the two apart: a legacy record says
- * `star-battle`, a Queens solve of that date says `queens`. That makes this
- * safe to run on every read rather than once behind a migration flag — a record
- * that arrives later with the same id and the other family is left alone.
- */
-const REPURPOSED_IDS: readonly (readonly [string, string])[] = [['2026-09-26', '2026-09-26-star']]
-
 /** One zero tally per registered family, so an empty history names them all. */
 function emptyByType(): Record<PuzzleType, number> {
   return Object.fromEntries(PUZZLE_TYPES.map((type) => [type, 0])) as Record<PuzzleType, number>
 }
 
-function migrateRecords(records: readonly SolveRecord[]): readonly SolveRecord[] {
-  return records.flatMap((record) => {
-    const moved = REPURPOSED_IDS.find(([was]) => was === record.id)
-    if (moved === undefined || record.puzzleType !== 'star-battle') return [record]
-    return [{ ...record, id: moved[1] as string }]
-  })
+/**
+ * Two histories merged into one, keeping the earliest solve for each puzzle.
+ * Both sides are normalised through the same parser as storage, so an imported
+ * file cannot invent an unknown family or bypass the duplicate rule.
+ */
+export function mergeStats(
+  records: readonly SolveRecord[],
+  imported: readonly SolveRecord[],
+): readonly SolveRecord[] {
+  return parseStats(JSON.stringify([...records, ...imported]))
 }
 
 /**
@@ -279,16 +295,43 @@ function migrateRecords(records: readonly SolveRecord[]): readonly SolveRecord[]
  * just on write, so this has to be defensive to be worth having — a player who
  * blocks storage should still get a playable game.
  *
- * Migration happens here rather than on write, so a player who only ever reads
- * their stats still sees them under the right puzzle. The next solve persists
- * the corrected ids, since `storeSolve` writes back everything it read.
+ * Migration is part of parsing rather than writing, so a player who only ever
+ * reads their stats still sees them under the right puzzle. The next solve
+ * persists the corrected ids, since `storeSolve` writes back everything it read.
  */
 export function readStoredStats(): readonly SolveRecord[] {
   try {
-    return migrateRecords(parseStats(localStorage.getItem(STATS_STORAGE_KEY)))
+    return parseStats(localStorage.getItem(STATS_STORAGE_KEY))
   } catch {
     return []
   }
+}
+
+/**
+ * Merge a JSON backup into this browser's history and persist the result.
+ * Malformed entries are dropped; a malformed file leaves the stored history
+ * untouched. Returns the merged list, how many valid, distinct backups it read,
+ * and whether the merged list could be saved, so the page can distinguish an
+ * empty file from a browser that refused storage.
+ */
+export function importStoredStats(value: string): {
+  readonly records: readonly SolveRecord[]
+  readonly imported: number
+  readonly persisted: boolean
+} {
+  const imported = parseStats(value)
+  const records = mergeStats(readStoredStats(), imported)
+  let persisted = false
+  if (imported.length > 0) {
+    try {
+      localStorage.setItem(STATS_STORAGE_KEY, JSON.stringify(records))
+      persisted = true
+    } catch {
+      // The page still shows the merged history for this visit; storage denial
+      // is already handled the same way for ordinary solves.
+    }
+  }
+  return { records, imported: imported.length, persisted }
 }
 
 /**
