@@ -5,16 +5,21 @@ import { puzzleOfToday } from '../domain/dates'
  * The player's puzzle day, refreshed at local midnight.
  *
  * `puzzleOfToday` is pure, but a page that calls it once during its first render
- * keeps yesterday's board after midnight. Every caller resolves `timeZone` from
- * the same browser, so the next local midnight is the correct boundary for the
- * returned day. Timers can be throttled, and a page can be restored from the
- * back/forward cache, so visibility, focus and pageshow also reread the clock.
+ * keeps yesterday's board after midnight. The timer runs to local midnight, and
+ * a refresh re-resolves the browser's current time zone rather than trusting the
+ * one captured when the effect ran, so moving the device across zones cannot
+ * advance the day early. Timers can be throttled, and a page can be restored
+ * from the back/forward cache, so visibility, focus and pageshow also reread the
+ * clock. A render that notices a new `timeZone` re-arms the timer.
  */
 export function useToday(timeZone: string): string {
   const [today, setToday] = useState(() => puzzleOfToday(new Date(), timeZone))
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>
-    const refresh = () => setToday(puzzleOfToday(new Date(), timeZone))
+    const refresh = () => {
+      const currentZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+      setToday(puzzleOfToday(new Date(), currentZone))
+    }
     const schedule = () => {
       const now = new Date()
       const midnight = new Date(now)

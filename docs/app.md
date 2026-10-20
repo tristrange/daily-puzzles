@@ -32,10 +32,11 @@ even fetched, and every file the app reads is passed through the same JSON schem
 A page cannot call that pure function once and forget the clock: a tab open across
 midnight would keep yesterday's puzzle. `lib/useToday.ts` seeds state from
 `puzzleOfToday`, re-arms at the next local midnight, and rereads the clock on visibility,
-focus and pageshow so a throttled background timer cannot leave a stale day. Home,
-Archive, Stats, Leaderboards and the Star Battle shortcut all use it; fetched results are
-tagged with the day they belong to, so a rollover shows loading rather than yesterday's
-cards under the new date.
+focus and pageshow so a throttled background timer cannot leave a stale day. Each reread
+resolves the browser's current time zone again, so a device that moves zones does not
+advance the day at the old zone's midnight. Home, Archive, Stats, Leaderboards and the
+Star Battle shortcut all use it; fetched results are tagged with the day they belong to,
+so a rollover shows loading rather than yesterday's cards under the new date.
 
 A week of sample puzzles (`2026-09-27`..`2026-10-03`) is committed so the archive had
 content before the pipeline existed; `tools/publish.py` now keeps it filled from a cron.

@@ -1,4 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest'
+import { puzzleOfToday } from '../domain/dates'
 import { useToday } from './useToday'
 
 const hooks = vi.hoisted(() => ({
@@ -51,6 +52,7 @@ afterEach(() => {
   hooks.cursor = 0
   hooks.pending = []
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
   vi.useRealTimers()
 })
 
@@ -87,5 +89,39 @@ it('rereads the day when a throttled tab becomes visible or focused', () => {
   vi.setSystemTime(new Date(2026, 9, 23, 9, 0, 0))
   listeners.get('pageshow')!()
   expect(state()).toBe('2026-10-23')
+  cleanup()
+})
+
+it('uses the browser time zone current when the midnight timer fires', () => {
+  vi.useFakeTimers()
+  vi.setSystemTime(new Date(2026, 9, 20, 12, 0, 0))
+  browser()
+  const localZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const { state, cleanup } = render(localZone)
+  expect(state()).toBe('2026-10-20')
+
+  const now = new Date()
+  const midnight = new Date(now)
+  midnight.setHours(24, 0, 0, 0)
+  const fire = new Date(midnight.getTime() + 1)
+  const localAtFire = puzzleOfToday(fire, localZone)
+  // Pick a zone whose day at the old timer's firing instant is not the old
+  // zone's day, so a stale captured zone produces a different result.
+  const movedZone = ['Pacific/Kiritimati', 'Etc/GMT+12', 'America/Los_Angeles']
+    .find((zone) => puzzleOfToday(fire, zone) !== localAtFire)!
+  expect(movedZone).toBeDefined()
+
+  const RealDateTimeFormat = Intl.DateTimeFormat
+  let currentZone = localZone
+  const fakeIntl = Object.create(Intl) as typeof Intl
+  fakeIntl.DateTimeFormat = new Proxy(RealDateTimeFormat, {
+    apply: () => ({ resolvedOptions: () => ({ timeZone: currentZone }) }),
+  })
+  vi.stubGlobal('Intl', fakeIntl)
+  currentZone = movedZone
+
+  vi.advanceTimersByTime(midnight.getTime() - now.getTime() + 1)
+  expect(state()).toBe(puzzleOfToday(new Date(), movedZone))
+  expect(state()).not.toBe(localAtFire)
   cleanup()
 })
