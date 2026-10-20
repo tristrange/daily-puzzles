@@ -24,15 +24,19 @@ async function fixture() {
 const url = 'https://example.supabase.co'
 const secretKey = 'sb_secret_private-test-value'
 
-test('reads only metadata for all five games, named sizes and original Tracks', async () => {
+test('reads only metadata for all six games, named sizes and original Tracks', async () => {
   const dir = await directory()
   for (const id of ['2026-10-19', '2026-10-19-star', '2026-10-19-words', '2026-10-19-trio',
     '2026-10-19-tracks-small', '2026-10-19-tracks-medium', '2026-10-19-tracks-large', '2026-10-13-tracks']) {
     await cp(new URL(`../../app/public/puzzles/${id}.json`, import.meta.url), join(dir, `${id}.json`))
   }
+  await writeFile(join(dir, '2026-10-19-tents.json'), JSON.stringify({
+    id:'2026-10-19-tents', type:'tents', board:{size:10, trees:[0], rowCounts:[1], colCounts:[1]},
+  }))
   assert.deepEqual(await readCatalog(dir), [
     { puzzle_id:'2026-10-13-tracks', puzzle_type:'train-tracks', puzzle_day:'2026-10-13', width:7,height:7,size_label:null },
     { puzzle_id:'2026-10-19-star', puzzle_type:'star-battle', puzzle_day:'2026-10-19', width:9,height:9,size_label:null },
+    { puzzle_id:'2026-10-19-tents', puzzle_type:'tents', puzzle_day:'2026-10-19', width:10,height:10,size_label:null },
     { puzzle_id:'2026-10-19-tracks-large', puzzle_type:'train-tracks', puzzle_day:'2026-10-19', width:12,height:12,size_label:'Large' },
     { puzzle_id:'2026-10-19-tracks-medium', puzzle_type:'train-tracks', puzzle_day:'2026-10-19', width:10,height:10,size_label:'Medium' },
     { puzzle_id:'2026-10-19-tracks-small', puzzle_type:'train-tracks', puzzle_day:'2026-10-19', width:8,height:8,size_label:'Small' },
@@ -45,6 +49,9 @@ test('reads only metadata for all five games, named sizes and original Tracks', 
 test('rejects corrupt or foreign metadata before making any request', async () => {
   for (const raw of ['{', {id:'2026-02-30',type:'queens',board:{size:7}},
     {id:'2026-10-19-star',type:'queens',board:{size:7}},
+    {id:'2026-10-19-tents',type:'trio',board:{size:10}},
+    {id:'2026-10-19-trio',type:'tents',board:{size:10}},
+    {id:'2026-10-19-tents',type:'tents',board:{width:10,height:10}},
     {id:'2026-10-19',type:'unknown',board:{size:7}},
     {id:'2026-10-19',type:'queens',board:{size:0}},
     {id:'2026-10-19',type:'queens',board:{size:1.5}},

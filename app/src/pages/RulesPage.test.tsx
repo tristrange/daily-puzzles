@@ -7,7 +7,7 @@ import { RulesPage } from './RulesPage'
 it('links every game to its rules and retains the existing notes anchors', () => {
   const html = renderToStaticMarkup(<MemoryRouter><RulesPage /></MemoryRouter>)
   for (const type of PUZZLE_TYPES) {
-    expect(html).toContain(`href="/how-to-play#${type}"`)
+    expect(html.split(`href="/how-to-play#${type}"`)).toHaveLength(2)
     expect(html).toContain(`id="${type}"`)
   }
   for (const id of ['controls', 'crosses', 'notes']) expect(html).toContain(`id="${id}"`)

@@ -1,20 +1,29 @@
 // @vitest-environment jsdom
 import { act } from 'react'
+import { MemoryRouter } from 'react-router-dom'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import raw from '../data/tents-previews.json'
 import proof from '@shared/docs/measurements/tents-preview.json'
 import { createTentsGame, parseTentsBoard } from '../domain/tents'
 import { readTentsProgress, storeTentsProgress } from '../lib/tentsProgress'
-import { STATS_STORAGE_KEY } from '../lib/stats'
+import { readStoredStats, STATS_STORAGE_KEY } from '../lib/stats'
+import { TentsGrid } from '../domain/tents'
+import type { Puzzle } from '../domain/puzzle'
+import { copyText } from '../lib/share'
 import { TentsStage } from './TentsStage'
+
+const publication = vi.hoisted(() => ({ offerSolve: vi.fn() }))
+vi.mock('../lib/useLeaderboard', () => ({ useLeaderboard: () => ({ offerSolve: publication.offerSolve, status: 'disabled' }) }))
+vi.mock('../lib/share', async (original) => ({ ...await original<typeof import('../lib/share')>(),
+  copyText: vi.fn(async () => true), puzzleShareLink: (id: string) => `https://example.test/#/archive/${id}` }))
 
 const board = parseTentsBoard(raw[0])
 let container: HTMLDivElement, root: Root
 beforeEach(() => {
   ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
-  localStorage.clear()
+  localStorage.clear(); vi.clearAllMocks()
   container = document.createElement('div'); document.body.append(container); root = createRoot(container)
 })
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks() })
@@ -104,4 +113,44 @@ it.each([0, 6])('completes preview %s without adding daily stats', async index =
   expect(button('Undo').disabled).toBe(true)
   expect(readTentsProgress(board)).toBeNull()
   expect(localStorage.getItem(STATS_STORAGE_KEY)).toBe('[]')
+})
+
+it('finishes daily Tents, shares the first result, and keeps preview progress and replay stats separate', async () => {
+  const preview = parseTentsBoard(raw[6])
+  const board = new TentsGrid('2026-10-20-tents', preview.size, preview.trees, preview.rowClues, preview.colClues)
+  const puzzle: Puzzle = { id: board.id, puzzleType: 'tents', seed: 123, generatorVersion: 1, board, difficulty: null }
+  const solution = proof.samples[6]!.solution, last = solution.at(-1)!
+  const game = createTentsGame(board).map((_, cell) => cell !== last && solution.includes(cell) ? 1 as const : 0 as const)
+  storeTentsProgress(preview, game, 9000, 1)
+  const previewSave = localStorage.getItem(`daily-puzzles.tents-preview.v1.${preview.id}`)
+  storeTentsProgress(board, game, 5000, 2, true)
+  expect(readTentsProgress(board)).toBeNull()
+  await act(async () => root.render(<MemoryRouter><TentsStage board={board} puzzle={puzzle} /></MemoryRouter>))
+  expect(cell(solution[0]!).getAttribute('aria-label')).toContain('Tent')
+  await key(last, '1')
+  expect(container.querySelector('.solved-banner')?.textContent).toContain('Solved — nice!')
+  expect(readTentsProgress(board, true)).toBeNull()
+  expect(localStorage.getItem(`daily-puzzles.tents-preview.v1.${preview.id}`)).toBe(previewSave)
+  const first = readStoredStats()[0]!
+  expect(first).toMatchObject({ id: puzzle.id, puzzleType: 'tents', size: 10, hints: 2 })
+  expect(publication.offerSolve).toHaveBeenCalledExactlyOnceWith(first)
+  await click('Copy result')
+  const result = vi.mocked(copyText).mock.lastCall![0]
+  expect(result).toContain('Tents 10×10')
+  expect(result).toContain('2 hints')
+  expect(result).toContain(`/#/archive/${puzzle.id}`)
+  expect(result).not.toContain('⛺')
+  await click('Copy with solution')
+  expect(vi.mocked(copyText).mock.lastCall![0]).toContain('⛺')
+  expect(vi.mocked(copyText).mock.lastCall![0]).toContain('🌳')
+  await act(async () => root.unmount())
+  root = createRoot(container)
+  storeTentsProgress(board, game, 9000, 7, true)
+  await act(async () => root.render(<MemoryRouter><TentsStage board={board} puzzle={puzzle} /></MemoryRouter>))
+  await key(last, '1')
+  expect(container.querySelector('.solved-banner')?.textContent).toContain('your first solve')
+  expect(readStoredStats()).toEqual([first])
+  expect(publication.offerSolve).toHaveBeenCalledTimes(1)
+  await click('Copy result')
+  expect(vi.mocked(copyText).mock.lastCall![0]).toBe(result)
 })

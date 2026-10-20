@@ -23,10 +23,11 @@ import {
 import { DIFFICULTY_LABEL, PUZZLE_PIECE, PUZZLE_TYPE_HAS_HINTS, PUZZLE_TYPE_LABEL } from '../domain/games'
 import { firstHint, hintCellName, type Hint } from '../domain/hints'
 import type { Board } from '../domain/board'
-import { isMarksPuzzle, isTracksPuzzle, isTrioPuzzle, type Puzzle } from '../domain/puzzle'
+import { isMarksPuzzle, isTracksPuzzle, isTrioPuzzle, isTentsPuzzle, type Puzzle } from '../domain/puzzle'
 import { trackVariantOf } from '../domain/trackSizes'
 import { TracksStage } from './TracksStage'
 import { TrioStage } from './TrioStage'
+import { TentsStage } from './TentsStage'
 import { WordGrid } from '../domain/wordPaths'
 import { PuzzleNotFoundError, PuzzleUnavailableError, loadPuzzle } from '../lib/puzzles'
 import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } from '../lib/stats'
@@ -515,7 +516,9 @@ export function PuzzleView({
         </p>
       </div>
       <div key={state.puzzle.id}>
-        {isTrioPuzzle(state.puzzle) ? (
+        {isTentsPuzzle(state.puzzle) ? (
+          <TentsStage board={state.puzzle.board} puzzle={state.puzzle} />
+        ) : isTrioPuzzle(state.puzzle) ? (
           <TrioStage board={state.puzzle.board} puzzle={state.puzzle} />
         ) : isTracksPuzzle(state.puzzle) ? (
           <TracksStage puzzle={state.puzzle} grid={state.puzzle.board} timeZone={timeZone} />

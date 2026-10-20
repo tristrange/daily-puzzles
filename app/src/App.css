@@ -1474,3 +1474,8 @@
   /* Fit nine rows when possible; short screens scroll rather than shrink cells further. */
   .trio-board { width: min(100%, max(19.5rem, 100svh - 22rem)); margin: auto; }
 }
+
+.game-tents {
+  --motif-color: light-dark(#276b41, #8ac79d);
+  --motif-wash: light-dark(#edf4e8, #25332b);
+}

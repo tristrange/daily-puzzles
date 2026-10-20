@@ -14,6 +14,7 @@ import pytest
 
 from queens_engine import Board, PuzzleParseError, parse_puzzle, rulebook_for
 from queens_engine.puzzle import CONFORMANCE_DIR
+from queens_engine.tents import TentsGrid
 from queens_engine.trio import TrioGrid
 
 CASES_DIR = CONFORMANCE_DIR / "schema-cases"
@@ -71,6 +72,10 @@ def test_schema_case(case: dict[str, Any]) -> None:
         assert puzzle.generator_version == expected["generatorVersion"]
         if isinstance(puzzle.board, Board):
             assert list(puzzle.board.region_capacity) == expected["regionCapacity"]
+        elif isinstance(puzzle.board, TentsGrid):
+            assert list(puzzle.board.trees) == expected["trees"]
+            assert list(puzzle.board.rows) == expected["rowClues"]
+            assert list(puzzle.board.cols) == expected["colClues"]
         else:
             assert isinstance(puzzle.board, TrioGrid)
             assert list(puzzle.board.givens) == expected["givens"]

@@ -3,15 +3,15 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { expect, it } from 'vitest'
 import { PuzzlePage } from './PuzzlePage'
 
-it('allows daily Word Paths to load through the ordinary puzzle route', () => {
+it.each([['word-paths', '2026-10-15-words'], ['tents', '2026-10-20-tents']])('allows daily %s to load through the ordinary puzzle route', (family, id) => {
   const html = renderToStaticMarkup(
-    <MemoryRouter initialEntries={['/puzzle/2026-10-15-words']}>
+    <MemoryRouter initialEntries={[`/puzzle/${id}`]}>
       <Routes><Route path="/puzzle/:id" element={<PuzzlePage />} /></Routes>
     </MemoryRouter>,
   )
   expect(html).not.toContain('playing screen is not ready yet')
   expect(html).toContain('Loading puzzle')
-  expect(html).toContain('href="/archive?game=word-paths"')
+  expect(html).toContain(`href="/archive?game=${family}"`)
 })
 
 it('returns to the archive window the puzzle was opened from', () => {

@@ -14,6 +14,7 @@ import { Board, BoardError, PUZZLE_TYPES, type PuzzleType } from './board'
 import { TrackGrid, TrackGridError } from './tracks'
 import { WordGrid, WordGridError } from './wordPaths'
 import { TrioGrid, TrioGridError } from './trio'
+import { TentsGrid, TentsGridError } from './tents'
 
 export class PuzzleParseError extends Error {
   constructor(message: string) {
@@ -38,7 +39,7 @@ export interface Puzzle {
   readonly seed: number
   readonly generatorVersion: number
   /** Family-specific grid. Shared readers use width, height and cellCount. */
-  readonly board: Board | TrackGrid | WordGrid | TrioGrid
+  readonly board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid
   readonly difficulty: DifficultyBand | null
 }
 
@@ -55,6 +56,11 @@ export function isTracksPuzzle(puzzle: Puzzle): puzzle is Puzzle & { board: Trac
 /** Whether this puzzle uses the daily Trio grid. */
 export function isTrioPuzzle(puzzle: Puzzle): puzzle is Puzzle & { board: TrioGrid } {
   return puzzle.board instanceof TrioGrid
+}
+
+/** Whether this puzzle uses the daily Tents grid. */
+export function isTentsPuzzle(puzzle: Puzzle): puzzle is Puzzle & { board: TentsGrid } {
+  return puzzle.board instanceof TentsGrid
 }
 
 let compiled: ValidateFunction | undefined
@@ -127,19 +133,23 @@ export function parsePuzzle(data: unknown): Puzzle {
   // The one place the file format branches. Everything downstream asks the board
   // what it is rather than the type, because a board knows its own geometry and a
   // puzzle type does not.
-  let board: Board | TrackGrid | WordGrid | TrioGrid
+  let board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid
   try {
-    board = typeRaw === 'trio' ? new TrioGrid(String(record['id']), boardRecord['givens'], boardRecord['relations'])
+    board = typeRaw === 'tents' ? new TentsGrid(String(record['id']), boardRecord['size'], boardRecord['trees'], boardRecord['rowClues'], boardRecord['colClues'])
+      : typeRaw === 'trio' ? new TrioGrid(String(record['id']), boardRecord['givens'], boardRecord['relations'])
       : typeRaw === 'word-paths' ? parseWordGrid(boardRecord, Number(record['generatorVersion']))
       : typeRaw === 'train-tracks' ? parseTrackGrid(boardRecord) : parseMarksBoard(boardRecord, typeRaw)
   } catch (error) {
-    if (error instanceof BoardError || error instanceof TrackGridError || error instanceof WordGridError || error instanceof TrioGridError) {
+    if (error instanceof BoardError || error instanceof TrackGridError || error instanceof WordGridError || error instanceof TrioGridError || error instanceof TentsGridError) {
       throw new PuzzleParseError(error.message)
     }
     throw error
   }
 
   const id = String(record['id'])
+  if (typeRaw === 'tents' && puzzleTypeOf(id) !== typeRaw) {
+    throw new PuzzleParseError('tents requires a canonical date-tents id')
+  }
   if (typeRaw === 'trio' && puzzleTypeOf(id) !== typeRaw) {
     throw new PuzzleParseError('trio requires a canonical date-trio id')
   }

@@ -68,3 +68,26 @@ the basic hint system to finish these boards; let it honestly report a stall.
 No hint upgrades, difficulty labels or daily publishing are part of this slice.
 Make parsing, grid columns, accessible labels and selector dimensions match the
 board size. Check phone/desktop play, saves, history and 100-cell completion.
+
+## Daily rollout
+
+After playtesting, the maintainer selected 10×10 for daily publication and
+requested launch as soon as possible. Publish one board per day, with a backlog
+from September 26, 2026, using the established daily engine/app flow. Keep all
+nine previews, their IDs and their saved attempts intact. Daily attempts use a
+separate storage namespace and participate in Stats, streaks, sharing and the
+optional leaderboard with first-solve behavior matching Trio.
+
+The frozen v1 recipe produces 18 tents, nonzero clues, no initial singleton-tree
+or full-line tent placements, a unique tent placement, and no-guess completion
+through offline line-pattern propagation. Do not require the current smaller
+hint rule set to finish, or add difficulty labels. Published JSON contains only
+the seed/version and tree/clue definition, never its solution.
+
+Use the existing registry, publisher, monitor and replay verification. Expand the
+shared schema/ID contract and leaderboard catalog for the `tents` family and
+`YYYY-MM-DD-tents` IDs. Apply additive database migration 002 before deployment's
+catalog synchronization; old app versions and all existing results remain valid.
+Verify current-day playing, the archive, saved progress, first/repeated solves,
+sharing, mixed preview sizes and the new-family database contract. Ship through
+a reviewed PR; the maintainer merges after the database upgrade succeeds.

@@ -16,6 +16,7 @@ import { PUZZLE_TYPE_LABEL } from '../domain/games'
 import { trackVariantOf } from '../domain/trackSizes'
 import { formatTime } from '../domain/game'
 import { PIECE_GLYPHS, TrackGrid } from '../domain/tracks'
+import type { TentsBoard, TentsGame } from '../domain/tents'
 import type { WordGame } from '../domain/wordGame'
 import { spellPath } from '../domain/wordPaths'
 
@@ -239,5 +240,14 @@ export function buildWordSolutionShareText(result: ShareResult, game: WordGame):
 export function buildTrioSolutionShareText(result: ShareResult, cells: readonly number[]): string {
   const symbols = ['·', '☀', '☾', '★']
   const rows = Array.from({ length: 9 }, (_, row) => cells.slice(row * 9, row * 9 + 9).map((value) => symbols[value] ?? '·').join(' '))
+  return [...headerLines(result), '', ...rows, '', ...(result.streak > 1 ? [`${result.streak}-day streak`] : []), result.link].join('\n')
+}
+
+/** Explicit spoiler share: trees and the completed tent placements. */
+export function buildTentsSolutionShareText(result: ShareResult, board: TentsBoard, game: TentsGame): string {
+  const rows = Array.from({ length: board.size }, (_, row) => Array.from({ length: board.size }, (_, col) => {
+    const cell = row * board.size + col
+    return board.trees.includes(cell) ? '🌳' : game[cell] === 1 ? '⛺' : '⬛'
+  }).join(''))
   return [...headerLines(result), '', ...rows, '', ...(result.streak > 1 ? [`${result.streak}-day streak`] : []), result.link].join('\n')
 }

@@ -1,4 +1,4 @@
-/** Preview-only Tents rules. Pairings are existential; only placements must be unique. */
+/** Tents rules for daily puzzles and previews. Pairings are existential; only placements must be unique. */
 export interface TentsBoard {
   readonly id: string; readonly size: 8 | 10; readonly trees: readonly number[]
   readonly rowClues: readonly number[]; readonly colClues: readonly number[]
@@ -8,19 +8,49 @@ export type TentsGame = readonly TentsMark[]
 export const TENTS_NAMES = ['Empty', 'Tent', 'Grass'] as const
 export const isTentsMark = (value: unknown): value is TentsMark => value === 0 || value === 1 || value === 2
 
-export function parseTentsBoard(raw: unknown): TentsBoard {
-  if (!raw || typeof raw !== 'object') throw Error('Invalid Tents board')
-  const data = raw as Record<string, unknown>
+export class TentsGridError extends Error {
+  constructor(message: string) { super(message); this.name = 'TentsGridError' }
+}
+
+function parseTentsContents(data: Record<string, unknown>): Omit<TentsBoard, 'id'> {
   const size = data['size']
-  if (size !== 8 && size !== 10) throw Error('Invalid Tents board size')
+  if (size !== 8 && size !== 10) throw new TentsGridError('Invalid Tents board size')
   const trees = data['trees'], rows = data['rowClues'], cols = data['colClues']
   const clue = (values: unknown): values is number[] => Array.isArray(values) && values.length === size
     && values.every((n: unknown) => typeof n === 'number' && Number.isInteger(n) && n >= 0 && n <= size)
-  if (typeof data['id'] !== 'string' || !/^tents-preview-[1-9]\d*$/.test(data['id'])
-    || !Array.isArray(trees) || !trees.length || !trees.every((cell: unknown) => typeof cell === 'number' && Number.isInteger(cell) && cell >= 0 && cell < size ** 2)
+  if (!Array.isArray(trees) || !trees.length || !trees.every((cell: unknown) => typeof cell === 'number' && Number.isInteger(cell) && cell >= 0 && cell < size ** 2)
     || new Set(trees).size !== trees.length || !clue(rows) || !clue(cols)
-    || rows.reduce((a, b) => a + b, 0) !== trees.length || cols.reduce((a, b) => a + b, 0) !== trees.length) throw Error('Invalid Tents preview data')
-  return { id: data['id'], size, trees: [...trees] as number[], rowClues: [...rows], colClues: [...cols] }
+    || rows.reduce((a, b) => a + b, 0) !== trees.length || cols.reduce((a, b) => a + b, 0) !== trees.length) throw new TentsGridError('Invalid Tents board data')
+  return { size, trees: [...trees] as number[], rowClues: [...rows], colClues: [...cols] }
+}
+
+export function parseTentsBoard(raw: unknown): TentsBoard {
+  if (!raw || typeof raw !== 'object') throw Error('Invalid Tents board')
+  const data = raw as Record<string, unknown>
+  if (typeof data['id'] !== 'string' || !/^tents-preview-[1-9]\d*$/.test(data['id'])) throw Error('Invalid Tents preview data')
+  return { id: data['id'], ...parseTentsContents(data) }
+}
+
+/** Daily geometry and publishing constraints; preview boards keep their original format. */
+export class TentsGrid implements TentsBoard {
+  readonly size = 10
+  readonly width = 10
+  readonly height = 10
+  readonly cellCount = 100
+  readonly id: string
+  readonly trees: readonly number[]
+  readonly rowClues: readonly number[]
+  readonly colClues: readonly number[]
+
+  constructor(id: string, size: unknown, trees: unknown, rowClues: unknown, colClues: unknown) {
+    const checked = parseTentsContents({ size, trees, rowClues, colClues })
+    if (checked.size !== 10 || checked.trees.length !== 18
+      || checked.rowClues.includes(0) || checked.colClues.includes(0)) throw new TentsGridError('Daily Tents requires a 10x10 board, 18 trees and nonzero clues')
+    this.id = id
+    this.trees = checked.trees
+    this.rowClues = checked.rowClues
+    this.colClues = checked.colClues
+  }
 }
 
 export function tentsNeighbours(board: TentsBoard, cell: number, diagonal = false): number[] {

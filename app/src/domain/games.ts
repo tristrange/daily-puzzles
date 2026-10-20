@@ -12,7 +12,7 @@
  * the archive and the share text, with nothing to say so.
  */
 
-import { trio, wordPaths } from '../../../conformance/id-cases/manifest.json'
+import { trio, wordPaths, tents } from '../../../conformance/id-cases/manifest.json'
 import type { PuzzleType } from './board'
 import type { DifficultyBand } from './puzzle'
 
@@ -34,6 +34,7 @@ export const PUZZLE_TYPE_SUFFIX: Record<PuzzleType, string> = {
   'train-tracks': '-tracks',
   'word-paths': '-words',
   trio: '-trio',
+  tents: '-tents',
 }
 
 /**
@@ -51,10 +52,12 @@ export const PUZZLE_TYPE_PUBLISHED: Record<PuzzleType, boolean> = {
   'train-tracks': true,
   'word-paths': true,
   trio: true,
+  tents: true,
 }
 
 export const WORD_PATHS_START = wordPaths.activationDay
 export const TRIO_START = trio.activationDay
+export const TENTS_START = tents.activationDay
 
 /** The family whose id carries no suffix: the day's default puzzle. */
 export const DEFAULT_PUZZLE_TYPE: PuzzleType = 'queens'
@@ -80,6 +83,7 @@ export const PUZZLE_TYPE_HAS_HINTS: Record<PuzzleType, boolean> = {
   'train-tracks': true,
   'word-paths': true,
   trio: true,
+  tents: true,
 }
 
 export const PUZZLE_TYPE_LABEL: Record<PuzzleType, string> = {
@@ -88,6 +92,7 @@ export const PUZZLE_TYPE_LABEL: Record<PuzzleType, string> = {
   'train-tracks': 'Train Tracks',
   'word-paths': 'Word Paths',
   trio: 'Trio',
+  tents: 'Tents',
 }
 
 /**
@@ -119,4 +124,5 @@ export const PUZZLE_PIECE: Record<PuzzleType, { noun: string; plural: string; gl
   'train-tracks': { noun: 'track', plural: 'tracks', glyph: '─' },
   'word-paths': { noun: 'word', plural: 'words', glyph: 'A' },
   trio: { noun: 'symbol', plural: 'symbols', glyph: '☀' },
+  tents: { noun: 'tent', plural: 'tents', glyph: '⛺' },
 }

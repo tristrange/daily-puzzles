@@ -24,9 +24,35 @@ contents of
 [`001_leaderboards.sql`](../backend/leaderboard/migrations/001_leaderboards.sql)
 once. It creates the tables, private rate counter and restricted RPC functions
 in one transaction. Reapplying it fails without dropping the existing data.
+Then apply [`002_tents.sql`](../backend/leaderboard/migrations/002_tents.sql)
+to support all six puzzle families before synchronizing the catalog.
 Never run `tests/auth-fixture.sql` on Supabase: that file belongs only in the
 disposable local test database. Configure CAPTCHA before enabling anonymous
 sign-ins; the provider toggles alone do not activate publishing in the app.
+
+### Upgrade an existing project for Tents
+
+Before deploying the Tents release, open the existing Supabase project's **SQL
+Editor**, create a new query, paste the complete contents of
+[`backend/leaderboard/migrations/002_tents.sql`](../backend/leaderboard/migrations/002_tents.sql)
+and click **Run**. Do not rerun `001_leaderboards.sql`. The upgrade replaces only
+the three puzzle-family checks in one transaction, validates existing rows, and
+can be run again safely. Existing catalog entries, results, rate limits, RLS,
+RPC functions and privileges remain intact. A failed upgrade rolls back the
+whole transaction; resolve the reported error before deploying.
+
+After the upgrade succeeds, deploy the release normally. Its trusted catalog
+sync registers the committed `YYYY-MM-DD-tents` IDs with width and height 10.
+Existing deployed app versions remain compatible throughout this order. Confirm
+an existing game's ranking still loads and a published Tents solve can be
+submitted and read back.
+
+For rollback, redeploy the previous app version and leave `002` applied. Its
+expanded checks are compatible with the older catalog sync and app, and this
+preserves any Tents results already submitted. Do not drop Tents catalog rows,
+delete results, rerun `001`, or restore the narrower checks once Tents data
+exists. Disabling cloud features via the public build variables remains an
+option if needed.
 
 ## 2. Prepare free signup protection
 
@@ -100,7 +126,10 @@ The SQL script owns a new `postgres:17` container and removes it afterward. It
 accepts no database URL, exposes no host port and cannot run against a hosted
 database. A test-only Auth fixture supplies the roles and `auth.uid()` context;
 the checks exercise real PostgreSQL permissions, rankings, duplicates, owner
-deletion, write limits and concurrent first submissions. They do not prove
+deletion, write limits and concurrent first submissions.
+The harness tests both a clean `001` + `002` install and a seeded `001` upgrade,
+including a repeated `002`, unchanged rows/security/RPCs, Tents submissions and
+rejection of mismatched family/ID pairs. These checks do not prove
 Supabase HTTP authentication or CAPTCHA; the two real anonymous sessions in the
 activation checks below cover those. No new npm/Python packages are needed here.
 
@@ -147,7 +176,7 @@ the setting across tabs and removing results may wait for an in-flight request.
 
 Activation order for a new project or rebuild:
 
-1. Apply the versioned migration and run its database checks.
+1. Apply `001_leaderboards.sql`, then `002_tents.sql`, and run the database checks.
 2. Configure CAPTCHA and anonymous sign-ins; leave paid options disabled.
 3. Add the server-only GitHub secret and synchronize the known puzzle catalog.
 4. Set the three public GitHub variables and deploy the app.
