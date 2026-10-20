@@ -5,6 +5,7 @@ import { formatPuzzleLabel, puzzleDay } from '../domain/dates'
 import { DEFAULT_PUZZLE_TYPE, DIFFICULTY_LABEL, PUZZLE_TYPE_LABEL, PUZZLE_TYPE_PUBLISHED } from '../domain/games'
 import { trackVariantOf } from '../domain/trackSizes'
 import {
+  ARCHIVE_WINDOW_DAYS,
   groupPublishedPuzzles,
   listPublishedPuzzles,
   type PublishedGroup,
@@ -15,8 +16,8 @@ import { useToday } from '../lib/useToday'
 
 type LoadState =
   | { status: 'loading' }
-  | { status: 'ready'; day: string; puzzles: readonly PublishedPuzzle[] }
-  | { status: 'error'; day: string }
+  | { status: 'ready'; day: string; page: number; puzzles: readonly PublishedPuzzle[] }
+  | { status: 'error'; day: string; page: number }
 
 export function ArchivePage() {
   const [params] = useSearchParams()
@@ -39,27 +40,33 @@ export function ArchivePage() {
 function ArchiveGame({ type }: { readonly type: PuzzleType }) {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
   const todayId = useToday(timeZone)
+  // The page is relative to the current day, so a rollover starts at the latest
+  // window again instead of shifting the old page under the player's feet.
+  const [view, setView] = useState({ day: todayId, page: 0 })
+  const page = view.day === todayId ? view.page : 0
   const [state, setState] = useState<LoadState>({ status: 'loading' })
 
   useEffect(() => {
     let cancelled = false
-    listPublishedPuzzles(todayId).then(
+    listPublishedPuzzles(todayId, fetch, page * ARCHIVE_WINDOW_DAYS).then(
       (puzzles) => {
-        if (!cancelled) setState({ status: 'ready', day: todayId, puzzles })
+        if (!cancelled) setState({ status: 'ready', day: todayId, page, puzzles })
       },
       () => {
-        if (!cancelled) setState({ status: 'error', day: todayId })
+        if (!cancelled) setState({ status: 'error', day: todayId, page })
       },
     )
     return () => {
       cancelled = true
     }
-  }, [todayId])
+  }, [todayId, page])
 
-  // A result for a previous day is not the current archive window. Keeping the
-  // day beside the result lets a midnight rollover show the loading state until
-  // the new window lands, without an effect writing loading.
-  const current = state.status !== 'loading' && state.day === todayId ? state : { status: 'loading' as const }
+  // A result for a previous day or page is not the current archive window.
+  // Keeping both beside the result lets a rollover or page change show loading
+  // until the requested window lands, without an effect writing loading.
+  const current = state.status !== 'loading' && state.day === todayId && state.page === page
+    ? state
+    : { status: 'loading' as const }
   // Grouped while rendering rather than stored: it is a pure reshape of whatever
   // loaded, so deriving it on each pass keeps a second piece of state from ever
   // holding a stale arrangement of the first.
@@ -72,7 +79,26 @@ function ArchiveGame({ type }: { readonly type: PuzzleType }) {
         <p className="status error">Could not read the archive.</p>
       )}
       {current.status === 'ready' && <ArchiveGroups groups={groups} timeZone={timeZone} />}
+      <ArchivePager page={page} onPage={(next) => setView({ day: todayId, page: next })} />
     </div>
+  )
+}
+
+function ArchivePager({ page, onPage }: {
+  readonly page: number
+  readonly onPage: (page: number) => void
+}) {
+  return (
+    <nav className="archive-pager" aria-label="Archive pages">
+      {page > 0 && (
+        <button type="button" className="tool-button" aria-label="Show newer puzzles" onClick={() => onPage(page - 1)}>
+          ← Newer
+        </button>
+      )}
+      <button type="button" className="tool-button" aria-label="Show older puzzles" onClick={() => onPage(page + 1)}>
+        Older →
+      </button>
+    </nav>
   )
 }
 
@@ -85,7 +111,7 @@ export function ArchiveGroups({
   readonly timeZone: string
 }) {
   if (groups.length === 0) {
-    return <p className="status">No puzzles available in the recent archive. Connect to load puzzles that are not saved on this device.</p>
+    return <p className="status">No puzzles in this archive window. Connect to load puzzles that are not saved on this device.</p>
   }
   return (
     <>

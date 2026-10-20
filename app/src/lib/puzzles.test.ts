@@ -211,6 +211,22 @@ describe('listPublishedPuzzles', () => {
     expect(probes).not.toContain('2026-09-25-trio.json')
   })
 
+  it('probes an older window on demand without re-probing the first', async () => {
+    const probes: string[] = []
+    const olderFetcher = async (url: string) => {
+      const id = url.split('/').at(-1)?.replace('.json', '') ?? ''
+      probes.push(id)
+      return id === '2026-09-03' ? jsonResponse(puzzleBody(id)) : spaShellResponse()
+    }
+
+    const found = await listPublishedPuzzles('2026-10-03', olderFetcher, ARCHIVE_WINDOW_DAYS)
+
+    expect(found).toEqual([{ id: '2026-09-03', type: 'queens', difficulty: null, width: 3, height: 3 }])
+    expect(probes).toContain('2026-09-03')
+    expect(probes).not.toContain('2026-10-03')
+    expect(probes).not.toContain('2026-09-04')
+  })
+
   it('lists both puzzles of a day, the Queens one first', async () => {
     const both = ['2026-10-03', '2026-10-03-star', '2026-10-02']
 

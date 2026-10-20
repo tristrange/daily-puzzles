@@ -97,7 +97,7 @@ describe('ArchiveGroups', () => {
   })
 
   it('says so when nothing at all is published', () => {
-    expect(render([])).toContain('No puzzles available in the recent archive.')
+    expect(render([])).toContain('No puzzles in this archive window.')
     expect(render([])).toContain('Connect to load')
   })
 })

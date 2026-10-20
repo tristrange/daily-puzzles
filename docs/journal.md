@@ -1754,3 +1754,22 @@ dependency. The offline worker precaches the new lazy chunks, so route code is
 still available offline after install; the SDK may arrive in that background
 install but is not parsed until a gated route mounts it. No puzzle content,
 schema or Python code changed. A real-browser navigation check was not run.
+
+## 2026-10-20 — Page the archive past 30 days
+
+The archive now pages backward in 30-day windows. **Older** and **Newer** move
+between windows, and each window is discovered by probing only its own files, so
+older committed puzzles stay reachable without an index manifest and without
+re-probing the latest page. `listPublishedPuzzles` takes an `olderDays` offset;
+malformed offsets fall back to the latest window. The loaded result and current
+page are both tagged with the day, so a midnight rollover returns to the latest
+window rather than shifting the old page under the player.
+
+All 759 app tests across 61 files, TypeScript and the production build pass; lint
+retains the existing TracksStage warning. A jsdom integration test clicks Older
+and Newer and asserts the offset and returned links; a loader test proves the
+older window's newest day is one day older than the latest window's oldest day
+and does not probe the latest day. The entry bundle remains 427.9 kB (134.7 kB
+gzip), and the Archive route chunk is 3.14 kB. No new dependencies, puzzle
+content, schema or Python code changed. A real-browser check of the pager was
+not run.

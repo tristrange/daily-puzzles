@@ -735,6 +735,7 @@
 }
 
 .archive-page { max-width: 44rem; margin: 0 auto; }
+.archive-pager { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; margin-top: 1rem; }
 .game-picker { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 1.25rem; }
 .game-picker a {
   display: inline-flex;
