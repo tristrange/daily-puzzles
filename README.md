@@ -97,6 +97,7 @@ row and column, no three identical symbols consecutively, and adjacent same/diff
 clues. [Play the daily archive](https://tristrange.github.io/daily-puzzles/#/archive?game=trio).
 Each daily board is uniquely solvable and completes through direct deductions.
 It includes pencil notes, Undo/Redo, confirmed Reset, explained hints and saved attempts.
+Clear notes removes all pencil marks in one undoable move, keeping placed symbols.
 Hints highlight their target and supporting cells; Apply move places a forced
 symbol or updates one cell's candidate notes, with Undo available until solved.
 The [five-board preview](https://tristrange.github.io/daily-puzzles/#/preview/trio)
