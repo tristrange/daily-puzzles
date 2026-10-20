@@ -102,6 +102,22 @@ class TestPublishWindow:
         assert today.isoformat() in lines
         assert (tmp_path / f"{today.isoformat()}.json").exists() is False
 
+    def test_check_fails_without_publishing_when_a_slot_is_missing(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        lines = _run_publish(tmp_path, None, 0, check=True, expected_exit=1)
+
+        assert lines == []
+        assert f"error: {TEST_TODAY} is incomplete" in capsys.readouterr().err
+        assert not list(tmp_path.glob("*.json"))
+
+    def test_check_passes_through_the_lead_horizon(self, tmp_path: Path) -> None:
+        _run_publish(tmp_path, TEST_TODAY, 1, dry_run=False)
+
+        lines = _run_publish(tmp_path, None, 1, check=True)
+
+        assert f"archive complete through {(TEST_TODAY + timedelta(days=1)).isoformat()}" in lines
+
     def test_a_day_is_skipped_per_puzzle_not_wholesale(self, tmp_path: Path) -> None:
         """A committed Queens board must not stop its Star Battle companion
         from being filled in, which is what makes this safe to run against a
@@ -541,6 +557,7 @@ def _run_publish(
     lead: int,
     *,
     dry_run: bool = True,
+    check: bool = False,
     clock: date = TEST_TODAY,
     expected_exit: int = 0,
 ) -> list[str]:
@@ -548,6 +565,8 @@ def _run_publish(
     args = ["--out", str(out_dir), "--lead", str(lead)]
     if dry_run:
         args.append("--dry-run")
+    if check:
+        args.append("--check")
     if start is not None:
         args += ["--start", start.isoformat()]
     buffer = io.StringIO()

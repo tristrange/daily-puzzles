@@ -2,6 +2,7 @@
 
 Usage:
     python -m tools.publish [--out DIR] [--lead 3] [--start YYYY-MM-DD] [--dry-run]
+                            [--check]
 
 Each family provides its daily slots: Queens and Star Battle each provide one;
 Train Tracks provides a legacy slot before activation and three named sizes afterward. The suffix is
@@ -28,6 +29,9 @@ that band; a type off the ramp takes the guarantee the generator actually
 provides for it, a unique solution, and records no band. Idempotent: existing
 files are never rewritten and a given id always maps to one puzzle, so it is safe
 to run from cron every day and to run again by hand.
+
+`--check` is the monitor's read-only mode: it reports the first incomplete day
+through the lead horizon and exits 1 without writing anything.
 """
 
 from __future__ import annotations
@@ -143,6 +147,32 @@ def _first_incomplete_day(existing: set[str], first: date, end: date) -> date | 
     return None
 
 
+def _check_horizon(
+    existing: set[str],
+    days: set[date],
+    start: str | None,
+    today: date,
+    end: date,
+) -> int:
+    """Report the first incomplete day through `end`, without writing anything."""
+    if start is not None:
+        first = date.fromisoformat(start)
+    elif days:
+        first = min(days)
+    else:
+        first = today
+    incomplete = _first_incomplete_day(existing, first, end)
+    if incomplete is None:
+        print(f"archive complete through {end}")
+        return 0
+    missing = [identifier for identifier in _ids_for_day(incomplete) if identifier not in existing]
+    print(
+        f"error: {incomplete} is incomplete; missing {', '.join(missing)}",
+        file=sys.stderr,
+    )
+    return 1
+
+
 def _generate(
     puzzle_type: PuzzleType,
     day_id: str,
@@ -207,6 +237,11 @@ def main(argv: list[str] | None = None) -> int:
         "--start", help="first date to fill (default: day after the latest committed)"
     )
     parser.add_argument("--dry-run", action="store_true", help="print what would be published")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="exit 1 if any required slot through the lead horizon is missing",
+    )
     args = parser.parse_args(argv)
 
     args.out.mkdir(parents=True, exist_ok=True)
@@ -214,6 +249,9 @@ def main(argv: list[str] | None = None) -> int:
     today = date.today()
 
     end = today + timedelta(days=args.lead)
+
+    if args.check:
+        return _check_horizon(existing, days, args.start, today, end)
 
     if args.start is not None:
         start = date.fromisoformat(args.start)
