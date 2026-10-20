@@ -5,6 +5,7 @@ import { PUZZLE_DOWNLOAD_FAILED, registerOfflineApp } from '../lib/offline'
 export function OfflineStatus() {
   const [online, setOnline] = useState(() => navigator.onLine)
   const [ready, setReady] = useState(false)
+  const [updateReady, setUpdateReady] = useState(false)
   const [downloadFailed, setDownloadFailed] = useState(false)
   useEffect(() => {
     let cancelled = false
@@ -14,7 +15,8 @@ export function OfflineStatus() {
     window.addEventListener('online', update)
     window.addEventListener('offline', update)
     if (import.meta.env.PROD) {
-      void registerOfflineApp().then((available) => { if (!cancelled) setReady(available) })
+      void registerOfflineApp(() => { if (!cancelled) setUpdateReady(true) })
+        .then((available) => { if (!cancelled) setReady(available) })
     }
     return () => {
       cancelled = true
@@ -23,12 +25,13 @@ export function OfflineStatus() {
       window.removeEventListener('offline', update)
     }
   }, [])
-  return <OfflineMessage online={online} ready={ready} downloadFailed={downloadFailed} />
+  return <OfflineMessage online={online} ready={ready} updateReady={updateReady} downloadFailed={downloadFailed} />
 }
 
-export function OfflineMessage({ online, ready, downloadFailed }: {
+export function OfflineMessage({ online, ready, updateReady, downloadFailed }: {
   readonly online: boolean
   readonly ready: boolean
+  readonly updateReady: boolean
   readonly downloadFailed: boolean
 }) {
   return (
@@ -36,6 +39,7 @@ export function OfflineMessage({ online, ready, downloadFailed }: {
       {!online ? <>Offline · Play saved puzzles in the <Link to="/archive">archive</Link>.</>
         : ready ? <>App ready offline.{!downloadFailed && ' Open puzzles online to save them.'}</> : null}
       {downloadFailed && ' Some puzzles could not be saved on this device. Keep a connection to play them.'}
+      {updateReady && ' A new version is ready. Close every open app window to update.'}
     </p>
   )
 }

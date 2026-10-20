@@ -56,11 +56,12 @@ line changed.
 
 
 M8 closes the loop the samples were propping open: the archive publishes itself. Two
-tools and two workflows do it.
+tools and three workflows do it.
 
 ```sh
 cd engine
 uv run python -m tools.publish --out ../app/public/puzzles   # fill the gap to lead days ahead
+uv run python -m tools.publish --out ../app/public/puzzles --check  # fail if a required slot is missing
 uv run python -m tools.verify --dir ../app/public/puzzles    # replay every committed puzzle
 ```
 
@@ -111,3 +112,8 @@ The workflows live in [`.github/workflows/`](../.github/workflows):
 - `publish.yml` runs from a daily cron (and by hand via `workflow_dispatch`): generators
   and verifies the missing dates, then commits and pushes only when the diff is non-empty,
   so the archive and `git log` tell the whole publishing story.
+- `monitor-publish.yml` runs a few hours after the publisher and checks `main` with
+  `tools.publish --check`: every required slot from the archive's fixed first day through
+  the lead horizon must already be committed. It is deliberately separate from `publish.yml`, because a publisher that
+  fails before its push leaves the committed archive short while its local working tree
+  looks fine. A missing slot fails the scheduled run, which is the alert.

@@ -1778,3 +1778,34 @@ cursor, so a deep page still formats only 30 dates. The entry bundle is 428.0 kB
 (134.8 kB gzip); the shared archive URL helper is a 0.26 kB chunk. No new
 dependencies, puzzle content, schema or Python code changed. A real-browser check
 of the pager was not run.
+
+## 2026-10-20 — Finish the cleanup batch
+
+The offline status line now announces a waiting service-worker update instead of
+leaving it silent until every window closes. Registration reports a worker that
+is already waiting or finishes installing while the app is open; activation stays
+on the normal waiting lifecycle, so no board is reloaded mid-game.
+
+Stats can be exported as a JSON backup and merged back on another browser. Import
+validates every record, rejects an id that names a different family, migrates
+repurposed ids before de-duplicating them, and keeps the earliest solve for each
+puzzle id. Import is available with an empty
+history; export appears once there is something to save. The two-step clear flow
+remains.
+
+A new scheduled `monitor-publish.yml` runs six hours after the nightly publisher
+and calls `tools.publish --check`. The check reads `main`, reports the first
+incomplete day from the archive's fixed start through the lead horizon and
+exits non-zero without writing. It
+catches a publisher or commit that failed after the workflow's local tree looked
+healthy. The stale leaderboard activation wording was corrected separately on
+`main`.
+
+All 774 app tests across 62 files, TypeScript, lint and the production build pass;
+lint retains the existing TracksStage warning. The entry bundle is 428.6 kB
+(135.0 kB gzip), and the Stats chunk is 5.1 kB. The engine suite passes 656 tests;
+pyright, ruff and published-archive verification pass. `publish --check` reports
+the committed archive complete through 2026-10-23. No new dependencies or puzzle
+content changed. A real-browser service-worker update and file-picker flow were
+not run; the tests cover waiting/install detection, the notice text, import
+validation and merged storage.
