@@ -1650,7 +1650,7 @@ on solved screens and a new navigation page. Players can stop publishing or
 confirm removal of their own results. Failure to reach the provider does not
 block play or local Stats.
 
-All 729 app tests, TypeScript, seven CI-routing tests and the Pages build pass.
+All 731 app tests, TypeScript, seven CI-routing tests and the Pages build pass.
 Lint retains the existing TracksStage warning. The configured bundle contains
 the expected public settings and no secret-like tokens. The SDK increases the
 main bundle to about 746 kB (222 kB gzip), triggering Vite's size advisory.
@@ -1677,6 +1677,12 @@ No second review was commissioned; the fixed tree passes the full app suite.
 The subsequent GitHub review found a delayed cross-tab join event could still
 discard a first solve. A sixth regression test reproduced it; enqueue now reads
 the owner inside the lock and refreshes a stale SDK identity before validating it.
+Critical review of that fix found the same stale cache still dropped a solve
+when another tab re-enabled publishing before the enable event arrived, and a
+rejected session read was reported as a storage failure. Seventh and eighth
+regression tests cover the re-enable window and a failed identity read; enqueue
+treats the participation loaded under the lock as authoritative, and identity
+verification treats a failed read as no identity.
 
 Browser checks cover desktop, 375 px and 320 px, light/dark, visible keyboard
 focus, exact Train Tracks size links, and a complete solve with the provider

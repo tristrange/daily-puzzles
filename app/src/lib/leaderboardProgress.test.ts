@@ -262,3 +262,41 @@ it('uses newly enabled participation before a delayed cross-tab storage event ar
   expect(staleTab.getSnapshot()).toMatchObject({ status: 'on', pendingCount: 0 })
   expect(f.signup).toHaveBeenCalledTimes(1)
 })
+
+it('queues a solve when another tab re-enables publishing before the enable event arrives', async () => {
+  const f = fixture(), events = new EventTarget()
+  vi.stubGlobal('window', events)
+  const key = leaderboardProgressKey(config.url)
+  const other = createLeaderboardStore(config, f.client, f.storage)
+  await other.join('Alice', 'captcha')
+
+  const staleTab = createLeaderboardStore(config, f.client, f.storage)
+  const close = staleTab.start()
+  await staleTab.retry()
+  await other.stop()
+  events.dispatchEvent(Object.assign(new Event('storage'), { key }))
+  expect(staleTab.getSnapshot().status).toBe('off')
+
+  await other.join('Alice', 'captcha')
+  await staleTab.offerSolve(solve)
+  // The enable event arrived after the solve; the queued result must still publish.
+  events.dispatchEvent(Object.assign(new Event('storage'), { key }))
+  await staleTab.retry()
+  expect(f.requests).toEqual([{ name: 'submit_result', body: { p_puzzle_id: solve.id, p_nickname: 'Alice', p_elapsed_ms: solve.elapsedMs, p_hints: solve.hints } }])
+  expect(staleTab.getSnapshot()).toMatchObject({ status: 'on', pendingCount: 0 })
+  close()
+})
+
+it('does not report a failed session read as storage failure while queuing', async () => {
+  const f = fixture(), store = createLeaderboardStore(config, f.client, f.storage)
+  await store.join('Alice', 'captcha')
+  const other = createLeaderboardStore(config, f.client, f.storage)
+  f.switchIdentity()
+  await other.join('Bob', 'captcha')
+  vi.mocked(f.client.auth.getSession).mockRejectedValueOnce(Error('network'))
+  await store.offerSolve(solve)
+  await store.retry()
+  expect(store.getSnapshot().status).toBe('on')
+  expect(store.getSnapshot().message).toContain('session')
+  expect(store.getSnapshot().message).not.toContain('storage')
+})

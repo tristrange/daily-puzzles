@@ -59,8 +59,10 @@ export function createLeaderboardStore(config: LeaderboardConfig | null, client:
   const storageError = () => { storageFailed = true; notice = 'Browser storage is unavailable. Publishing is stopped; local play still works.'; emit() }
   const verifyIdentity = async () => {
     if (!client) return
-    const { data, error } = await client.auth.getSession()
-    identity = error ? null : data.session?.user.id ?? null
+    try {
+      const { data, error } = await client.auth.getSession()
+      identity = error ? null : data.session?.user.id ?? null
+    } catch { identity = null }
     verified = true
     saved = load()
     if (saved.enabled && identity !== saved.owner) notice = 'Your player session is unavailable. Join again to publish; old pending results will not move to a new identity.'
@@ -95,17 +97,18 @@ export function createLeaderboardStore(config: LeaderboardConfig | null, client:
     return draining
   }
   const offerSolve = async (record: SolveRecord) => {
-    if (!config || !client || stopped || removing || storageFailed) return
+    if (!config || !client || removing || storageFailed) return
     if (!isPuzzleId(record.id) || !isScoreNumber(record.elapsedMs) || !isScoreNumber(record.hints)) return
     const restoring = !verified
     try {
       await locked(async () => {
         saved = load()
         const owner = saved.owner
-        if (stopped || removing || storageFailed || !saved.enabled || !owner || saved.pending.some(result => result.id === record.id)) return
+        // A delayed cross-tab event can leave `stopped` stale; the participation read under the lock is authoritative.
+        if (removing || storageFailed || !saved.enabled || !owner || saved.pending.some(result => result.id === record.id)) return
         if (!restoring && owner !== identity) {
           await verifyIdentity()
-          if (owner !== identity || stopped || removing || storageFailed) return
+          if (owner !== identity || removing || storageFailed) return
         }
         if (saved.pending.length >= 100) { overflow = true; emit(); return }
         persist({ ...saved, pending: [...saved.pending, { id: record.id, nickname: saved.nickname, elapsedMs: record.elapsedMs, hints: record.hints }] })
