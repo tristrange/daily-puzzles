@@ -143,18 +143,25 @@ export type PublishedPuzzle = {
 }
 
 /**
- * Discover a bounded recent window, newest first. Probe every family's slots:
- * a valid file can declare a different family from its filename. The archive
+ * Discover one bounded window, newest first. Probe every family's slots: a
+ * valid file can declare a different family from its filename. The archive
  * selects from parsed types after discovery and reuses the results on switching.
+ *
+ * `olderDays` shifts the window back in whole days, so page two probes days
+ * 30–59 without re-probing the first page. It has to be a non-negative safe
+ * integer; malformed values fall back to the latest window.
  */
 export async function listPublishedPuzzles(
   todayId: string,
   fetcher: Fetcher = fetch,
+  olderDays = 0,
 ): Promise<readonly PublishedPuzzle[]> {
+  const offset = Number.isSafeInteger(olderDays) && olderDays > 0 ? olderDays : 0
   // Queued legacy boards remain accessible even after the daily slots change.
-  const candidates = previousPuzzleIds(todayId, ARCHIVE_WINDOW_DAYS).flatMap((day) =>
-    [...new Set([...puzzleIdsForDay(day), puzzleIdFor(day, 'train-tracks')])],
-  )
+  const candidates = previousPuzzleIds(todayId, ARCHIVE_WINDOW_DAYS, offset)
+    .flatMap((day) =>
+      [...new Set([...puzzleIdsForDay(day), puzzleIdFor(day, 'train-tracks')])],
+    )
   const results = await Promise.allSettled(
     candidates.map(async (id) => ({ id, puzzle: await fetchPuzzle(id, fetcher) })),
   )

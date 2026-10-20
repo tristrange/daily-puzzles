@@ -28,7 +28,7 @@ Routing uses `HashRouter` (the site has no server to rewrite paths for a
 `BrowserRouter`):
 
 - `/` renders today's puzzles in the player's time zone and refreshes at local midnight (`useToday`).
-- `/archive` lists published puzzles from the last 30 days.
+- `/archive` lists published puzzles in 30-day windows, newest first; **Older** and **Newer** move between windows, and `?page=` keeps the window across refresh and Back.
 - `/archive/:id` renders one puzzle, e.g. `#/archive/2026-09-30`.
 
 Routes are lazy chunks around a static landing page. The optional Supabase
@@ -154,7 +154,7 @@ caches for this exact base; neighboring apps and player data are untouched.
 saving; network failures, unsuccessful or invalid responses fall back to saved
 responses, which are validated again. A valid network response takes precedence.
 Storage denial/quota errors leave online play usable and show a download warning. Unfetched puzzles require
-internet. Today fetches its slots; Archive fetches its recent window. There is
+internet. Today fetches its slots; Archive fetches the selected window. There is
 no background archive crawl or guarantee against browser cache eviction.
 Existing player progress keys are unchanged, and all five games now resume
 unfinished attempts; Undo history remains visit-local.

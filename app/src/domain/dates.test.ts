@@ -192,6 +192,13 @@ describe('previousPuzzleIds', () => {
       '2026-09-30',
     ])
   })
+
+  it('starts an offset window without generating the days before it', () => {
+    expect(previousPuzzleIds('2026-10-02', 2, 2)).toEqual([
+      '2026-09-30',
+      '2026-09-29',
+    ])
+  })
 })
 
 describe('formatPuzzleLabel', () => {
