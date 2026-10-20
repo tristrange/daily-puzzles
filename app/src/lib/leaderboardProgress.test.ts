@@ -248,3 +248,17 @@ it('drains the new owner’s candidate after the old owner’s in-flight drain s
   expect(f.requests.map(request => (request.body as { p_nickname: string }).p_nickname)).toEqual(['Alice', 'Bob'])
   expect(store.getSnapshot()).toMatchObject({ status: 'on', pendingCount: 0, nickname: 'Bob' })
 })
+
+it('uses newly enabled participation before a delayed cross-tab storage event arrives', async () => {
+  const f = fixture(), staleTab = createLeaderboardStore(config, f.client, f.storage)
+  await staleTab.retry()
+  expect(staleTab.getSnapshot().status).toBe('off')
+  const joiningTab = createLeaderboardStore(config, f.client, f.storage)
+  await joiningTab.join('Alice', 'captcha')
+  // The SDK can read the new shared session before this tab receives storage events.
+  await staleTab.offerSolve(solve)
+  await staleTab.retry()
+  expect(f.requests).toEqual([{ name: 'submit_result', body: { p_puzzle_id: solve.id, p_nickname: 'Alice', p_elapsed_ms: solve.elapsedMs, p_hints: solve.hints } }])
+  expect(staleTab.getSnapshot()).toMatchObject({ status: 'on', pendingCount: 0 })
+  expect(f.signup).toHaveBeenCalledTimes(1)
+})

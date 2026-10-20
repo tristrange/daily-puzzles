@@ -97,12 +97,16 @@ export function createLeaderboardStore(config: LeaderboardConfig | null, client:
   const offerSolve = async (record: SolveRecord) => {
     if (!config || !client || stopped || removing || storageFailed) return
     if (!isPuzzleId(record.id) || !isScoreNumber(record.elapsedMs) || !isScoreNumber(record.hints)) return
-    const owner = saved.owner, restoring = !verified
+    const restoring = !verified
     try {
-      await locked(() => {
+      await locked(async () => {
         saved = load()
-        if (stopped || removing || storageFailed || !saved.enabled || !owner || saved.owner !== owner
-          || (!restoring && owner !== identity) || saved.pending.some(result => result.id === record.id)) return
+        const owner = saved.owner
+        if (stopped || removing || storageFailed || !saved.enabled || !owner || saved.pending.some(result => result.id === record.id)) return
+        if (!restoring && owner !== identity) {
+          await verifyIdentity()
+          if (owner !== identity || stopped || removing || storageFailed) return
+        }
         if (saved.pending.length >= 100) { overflow = true; emit(); return }
         persist({ ...saved, pending: [...saved.pending, { id: record.id, nickname: saved.nickname, elapsedMs: record.elapsedMs, hints: record.hints }] })
         notice = 'Result queued.'; emit()
