@@ -1,9 +1,9 @@
 # Free leaderboard setup
 
-The backend is merged; app integration awaits review and merge after local and
-two-session hosted verification.
-These steps prepare the free provider projects. Players will not need
-accounts, but you need maintainer accounts to own the infrastructure.
+The backend and app integration are merged, and the hosted project is active.
+These steps remain the reproducible setup guide for the free provider projects.
+Players will not need accounts, but you need maintainer accounts to own the
+infrastructure.
 
 ## 1. Create a Supabase Free project
 
@@ -19,8 +19,8 @@ accounts, but you need maintainer accounts to own the infrastructure.
    dialog/API settings. These are intended for public clients. A legacy `anon`
    key can serve the same client role; a secret or `service_role` key cannot.
 
-Do not invent tables by hand. After the backend PR is merged, open Supabase's
-SQL Editor and run the complete contents of
+Do not invent tables by hand. Open Supabase's SQL Editor and run the complete
+contents of
 [`001_leaderboards.sql`](../backend/leaderboard/migrations/001_leaderboards.sql)
 once. It creates the tables, private rate counter and restricted RPC functions
 in one transaction. Reapplying it fails without dropping the existing data.
@@ -101,8 +101,8 @@ accepts no database URL, exposes no host port and cannot run against a hosted
 database. A test-only Auth fixture supplies the roles and `auth.uid()` context;
 the checks exercise real PostgreSQL permissions, rankings, duplicates, owner
 deletion, write limits and concurrent first submissions. They do not prove
-Supabase HTTP authentication or CAPTCHA; two real anonymous sessions remain
-required before public launch. No new npm/Python packages are needed here.
+Supabase HTTP authentication or CAPTCHA; the two real anonymous sessions in the
+activation checks below cover those. No new npm/Python packages are needed here.
 
 ## 4. Activation and rollback
 
@@ -136,7 +136,8 @@ denied. Two real anonymous sessions completed managed Turnstile verification,
 published first solves, saw the correct hints/time rankings and their own "You"
 marker. Removing one identity's results left the other intact; both test scores
 were then removed with maintainer approval. Ties and outside-top-25 ownership
-are covered by SQL and app contract tests. Public activation awaits app PR merge.
+are covered by SQL and app contract tests. Public activation is complete as of
+October 20, 2026.
 
 Publishing requires browser storage and Web Locks for safe coordination across
 tabs. Without them, local play and public rankings remain available but joining
@@ -144,7 +145,7 @@ is refused. The SDK uses the same durable storage as participation; it owns
 session serialization and renewal. Stop is immediate in the current tab; saving
 the setting across tabs and removing results may wait for an in-flight request.
 
-After the schema and app PRs are reviewed and merged:
+Activation order for a new project or rebuild:
 
 1. Apply the versioned migration and run its database checks.
 2. Configure CAPTCHA and anonymous sign-ins; leave paid options disabled.
