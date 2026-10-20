@@ -116,10 +116,10 @@ can then be played without a connection. New or unopened puzzles need internet.
 
 Safari and the installed iPhone app keep separate progress, stats, settings and
 downloads. Open the installed app online before relying on it offline.
-Train Tracks, Word Paths and Trio resume unfinished games; Queens and Star Battle
-restart unfinished attempts on reload. Browser cache eviction or clearing site
-data can remove downloads. Updates wait until all app windows close; finish
-your game, then close and reopen them. Progress does not sync between devices.
+All five games resume unfinished games after reload; Undo history starts fresh.
+Browser cache eviction or clearing site data can remove downloads. Updates wait
+until all app windows close; finish your game, then close and reopen them.
+Progress does not sync between devices.
 Optional leaderboard participation belongs to each browser identity; losing that
 identity also loses self-service access to its published results.
 

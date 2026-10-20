@@ -90,8 +90,8 @@ export function clearCell(game: GameState, cell: number): GameState {
  *
  * The board is kept rather than rebuilt, so a reset never changes which puzzle is
  * being played and the same instance stays in the history an undo restores. Nothing
- * else about the attempt survives: elapsed time is derived from when the puzzle was
- * opened rather than from anything here, so the clock keeps running across a reset,
+ * else about the attempt survives: elapsed time is derived from when the attempt
+ * began rather than from anything here, so the clock keeps running across a reset,
  * which is the point — the time already spent was still spent.
  */
 export function resetGame(game: GameState): GameState {
