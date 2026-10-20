@@ -1,7 +1,8 @@
 # Account-free leaderboards
 
 Status: design approved on October 19, 2026; backend PR merged on October 20.
-Hosted setup is in progress; app integration is not active.
+Hosted Auth/CAPTCHA, two-player submissions and owner-only removal were verified
+on October 20. App integration awaits PR review and merge; it is not public yet.
 
 ## Purpose and constraints
 

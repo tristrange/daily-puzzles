@@ -1641,7 +1641,7 @@ alone does not expose a leaderboard. Scores remain community-reported and
 anonymous identities cannot prevent identity farming. Unchanged Python engine
 checks run in GitHub rather than being duplicated locally.
 
-## 2026-10-20 — Optional leaderboard app integration (verification in progress)
+## 2026-10-20 — Optional leaderboard app integration
 
 The app now uses the official Supabase SDK for anonymous sessions, with explicit
 joining and consent. First daily/archive solves feed an owner-bound pending
@@ -1650,16 +1650,34 @@ on solved screens and a new navigation page. Players can stop publishing or
 confirm removal of their own results. Failure to reach the provider does not
 block play or local Stats.
 
-All 723 app tests, TypeScript, seven CI-routing tests and the Pages build pass.
+All 728 app tests, TypeScript, seven CI-routing tests and the Pages build pass.
 Lint retains the existing TracksStage warning. The configured bundle contains
 the expected public settings and no secret-like tokens. The SDK increases the
-main bundle to about 745 kB (222 kB gzip), triggering Vite's size advisory.
+main bundle to about 746 kB (222 kB gzip), triggering Vite's size advisory.
 
 Hosted setup now permits anonymous Auth, and the maintainer reports Turnstile
 protection configured. Catalog import succeeded; public rankings return an
 empty board for a real puzzle and direct result-table reads are denied. Rerunning
 an old deployment produced duplicate Pages artifacts; a fresh main workflow
-completed successfully. CAPTCHA signup remains blocked locally by hostname
-authorization. Two-player hosted submission, ownership and removal, final
-browser checks and independent review are still pending; this is not launch
-evidence yet.
+completed successfully. After resolving the temporary localhost authorization,
+two real browser identities completed managed Turnstile verification and
+published the same Queens puzzle. Scores retained their own time and hint
+counts, ranked correctly, and identified only the current player. Owner-only
+removal preserved the other score; both test scores were removed with approval.
+Tie ranks and the owner outside the top 25 use the SQL/app contract checks.
+
+Independent review found five lifecycle problems: cross-tab queue updates could
+undo Stop, delayed uploads could outlive deletion in another tab, the SDK could
+fall back to memory storage, initial session restoration could lose a solve,
+and a new owner's candidate could stall behind an old drain. Five regression
+tests reproduced these failures before fixes. Shared Web Locks now serialize
+queue changes and network writes/removal; SDK persistence uses the explicit
+browser storage adapter, and restoration/owner transitions retain queued work.
+No second review was commissioned; the fixed tree passes the full app suite.
+
+Browser checks cover desktop, 375 px and 320 px, light/dark, visible keyboard
+focus, exact Train Tracks size links, and a complete solve with the provider
+unreachable. That solve remained in local Stats. Physical iPhone/Safari testing
+of this feature is unverified. No puzzle content, schema or Python code changed;
+the engine suite is left to GitHub. The optional service activates only after
+the app PR is merged and the trusted main deployment completes.

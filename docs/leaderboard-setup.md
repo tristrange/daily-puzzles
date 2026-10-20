@@ -1,6 +1,7 @@
 # Free leaderboard setup
 
-The backend is merged; app integration is being verified before launch.
+The backend is merged; app integration awaits review and merge after local and
+two-session hosted verification.
 These steps prepare the free provider projects. Players will not need
 accounts, but you need maintainer accounts to own the infrastructure.
 
@@ -131,8 +132,17 @@ Setup evidence on October 20: anonymous sign-ins are enabled; the maintainer
 reports CAPTCHA configured; the GitHub server-secret name and public variable
 names are present. A clean main deployment synchronized the catalog. A public
 ranking request for a committed puzzle succeeds and raw result-table reads are
-denied. Real CAPTCHA signup and two-player submission/ownership checks remain
-pending; these checks do not yet establish public launch readiness.
+denied. Two real anonymous sessions completed managed Turnstile verification,
+published first solves, saw the correct hints/time rankings and their own "You"
+marker. Removing one identity's results left the other intact; both test scores
+were then removed with maintainer approval. Ties and outside-top-25 ownership
+are covered by SQL and app contract tests. Public activation awaits app PR merge.
+
+Publishing requires browser storage and Web Locks for safe coordination across
+tabs. Without them, local play and public rankings remain available but joining
+is refused. The SDK uses the same durable storage as participation; it owns
+session serialization and renewal. Stop is immediate in the current tab; saving
+the setting across tabs and removing results may wait for an in-flight request.
 
 After the schema and app PRs are reviewed and merged:
 
