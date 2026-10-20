@@ -36,6 +36,7 @@
 - `app/src/lib/leaderboard.ts` / `.test.ts`: public configuration, SDK creation, typed RPC calls and response validation.
 - `app/src/lib/leaderboardProgress.ts` / `.test.ts`: validated local participation/queue storage, project/identity boundaries and pure queue operations.
 - `app/src/components/LeaderboardProvider.tsx` / `.test.tsx`: session lifecycle, queue serialization, cross-tab/online handling and shared React actions/status.
+- `app/src/lib/useLeaderboard.ts`: shared context/hook, separated from the component for Fast Refresh.
 - `app/src/components/JoinLeaderboard.tsx`: nickname/consent form and managed widget lifecycle.
 - `app/src/components/LeaderboardPanel.tsx` / `.test.tsx`: reusable rankings, publication status and participation controls.
 - `app/src/pages/LeaderboardsPage.tsx` / `.test.tsx`: exact puzzle selection using existing game/date/Track size helpers.
@@ -47,7 +48,7 @@
 
 **Consumes:** The three `VITE_` build variables and merged RPC signatures.
 
-**Produces:** `LeaderboardConfig`, `LeaderboardEntry`, `LeaderboardSnapshot`, `parseLeaderboardConfig(values): LeaderboardConfig | null`, `createLeaderboardClient(config)` returning the official SDK client; `readLeaderboard(client, puzzleId): Promise<LeaderboardSnapshot>`, `submitLeaderboardResult(client, result): Promise<'created' | 'existing'>`, `removeLeaderboardResults(client): Promise<number>`.
+**Produces:** `LeaderboardConfig`, `LeaderboardEntry`, `LeaderboardSnapshot`, `parseLeaderboardConfig(values): LeaderboardConfig | null`, `createLeaderboardClient(config)` returning the official SDK client; `readLeaderboard(client, puzzleId): Promise<LeaderboardSnapshot>`, `submitLeaderboardResult(client, result, expectedOwner): Promise<'created' | 'existing'>`, `removeLeaderboardResults(client, expectedOwner): Promise<number>`. The write helpers bind the checked SDK session to their request, preventing a later identity switch from reassigning queued results.
 
 - [ ] Write failing Vitest cases for complete public config, absent/partial config, foreign URLs and secret keys mistakenly supplied as publishable keys. Assert invalid configuration creates no SDK client or requests.
 - [ ] Test literal rank 1/1/3 and outside-top-25 projection; reject invalid rank/count/name/score types, unsafe numbers, more than 25 entries, malformed own entries and unexpected submit/delete results. Do not trust a TypeScript cast over network JSON.

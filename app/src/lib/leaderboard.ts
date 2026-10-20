@@ -53,17 +53,25 @@ export async function readLeaderboard(client: SupabaseClient, puzzleId: string):
   return { entries: board['entries'] as LeaderboardEntry[], total: board['total'], own_entry: board['own_entry'] as LeaderboardEntry | null }
 }
 
-export async function submitLeaderboardResult(client: SupabaseClient, result: LeaderboardResult): Promise<'created' | 'existing'> {
+async function ownerAuthorization(client: SupabaseClient, expectedOwner: string): Promise<string> {
+  const { data, error } = await client.auth.getSession()
+  if (error || !data.session || data.session.user.id !== expectedOwner) throw new Error('The original player session is required. Join again to publish.')
+  return `Bearer ${data.session.access_token}`
+}
+
+export async function submitLeaderboardResult(client: SupabaseClient, result: LeaderboardResult, expectedOwner: string): Promise<'created' | 'existing'> {
   if (!isPuzzleId(result.id) || !isLeaderboardNickname(result.nickname) || !isScoreNumber(result.elapsedMs) || !isScoreNumber(result.hints)) throw unavailable()
+  const authorization = await ownerAuthorization(client, expectedOwner)
   const { data, error } = await client.rpc('submit_result', { p_puzzle_id: result.id, p_nickname: result.nickname,
-    p_elapsed_ms: result.elapsedMs, p_hints: result.hints }).abortSignal(AbortSignal.timeout(15_000))
+    p_elapsed_ms: result.elapsedMs, p_hints: result.hints }).setHeader('Authorization', authorization).abortSignal(AbortSignal.timeout(15_000))
   const status = object(data)?.['status']
   if (error || (status !== 'created' && status !== 'existing')) throw unavailable()
   return status
 }
 
-export async function removeLeaderboardResults(client: SupabaseClient): Promise<number> {
-  const { data, error } = await client.rpc('remove_my_results').abortSignal(AbortSignal.timeout(15_000))
+export async function removeLeaderboardResults(client: SupabaseClient, expectedOwner: string): Promise<number> {
+  const authorization = await ownerAuthorization(client, expectedOwner)
+  const { data, error } = await client.rpc('remove_my_results').setHeader('Authorization', authorization).abortSignal(AbortSignal.timeout(15_000))
   if (error || !isScoreNumber(data)) throw unavailable()
   return data
 }
