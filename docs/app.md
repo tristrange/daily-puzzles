@@ -10,7 +10,7 @@ The app is a static React SPA with no server, so it routes with `HashRouter` —
 `#/archive/2026-09-30` works on any static host without rewrite rules. Three shapes of
 route:
 
-- `/` — today's puzzle, where "today" is the *player's* calendar day.
+- `/` — today's puzzles, where "today" is the *player's* calendar day.
 - `/archive` — the list of published puzzles, discovered by probing the recent-window
   files (`public/puzzles/<date>.json`) rather than an index manifest that could rot.
 - `/archive/:id` — a specific puzzle by id.
@@ -28,6 +28,14 @@ hand-rolled UTC offset, so a player near a date line never guesses which day the
 Puzzle ids are validated as real calendar days (`2026-02-30` is rejected) before they are
 even fetched, and every file the app reads is passed through the same JSON schema +
 `Board` validation as the engine uses.
+
+A page cannot call that pure function once and forget the clock: a tab open across
+midnight would keep yesterday's puzzle. `lib/useToday.ts` seeds state from
+`puzzleOfToday`, re-arms at the next local midnight, and rereads the clock on visibility,
+focus and pageshow so a throttled background timer cannot leave a stale day. Home,
+Archive, Stats, Leaderboards and the Star Battle shortcut all use it; fetched results are
+tagged with the day they belong to, so a rollover shows loading rather than yesterday's
+cards under the new date.
 
 A week of sample puzzles (`2026-09-27`..`2026-10-03`) is committed so the archive had
 content before the pipeline existed; `tools/publish.py` now keeps it filled from a cron.

@@ -27,7 +27,7 @@ cd ../engine && .venv/bin/python -m tools.generate \
 Routing uses `HashRouter` (the site has no server to rewrite paths for a
 `BrowserRouter`):
 
-- `/` renders today's puzzle in the player's time zone (`puzzleOfToday`).
+- `/` renders today's puzzles in the player's time zone and refreshes at local midnight (`useToday`).
 - `/archive` lists published puzzles from the last 30 days.
 - `/archive/:id` renders one puzzle, e.g. `#/archive/2026-09-30`.
 

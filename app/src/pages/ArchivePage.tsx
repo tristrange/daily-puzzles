@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { PUZZLE_TYPES, type PuzzleType } from '../domain/board'
-import { formatPuzzleLabel, puzzleDay, puzzleOfToday } from '../domain/dates'
+import { formatPuzzleLabel, puzzleDay } from '../domain/dates'
 import { DEFAULT_PUZZLE_TYPE, DIFFICULTY_LABEL, PUZZLE_TYPE_LABEL, PUZZLE_TYPE_PUBLISHED } from '../domain/games'
 import { trackVariantOf } from '../domain/trackSizes'
 import {
@@ -10,12 +10,13 @@ import {
   type PublishedGroup,
   type PublishedPuzzle,
 } from '../lib/puzzles'
+import { useToday } from '../lib/useToday'
 
 
 type LoadState =
   | { status: 'loading' }
-  | { status: 'ready'; puzzles: readonly PublishedPuzzle[] }
-  | { status: 'error' }
+  | { status: 'ready'; day: string; puzzles: readonly PublishedPuzzle[] }
+  | { status: 'error'; day: string }
 
 export function ArchivePage() {
   const [params] = useSearchParams()
@@ -37,17 +38,17 @@ export function ArchivePage() {
 
 function ArchiveGame({ type }: { readonly type: PuzzleType }) {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
-  const [todayId] = useState(() => puzzleOfToday(new Date(), timeZone))
+  const todayId = useToday(timeZone)
   const [state, setState] = useState<LoadState>({ status: 'loading' })
 
   useEffect(() => {
     let cancelled = false
     listPublishedPuzzles(todayId).then(
       (puzzles) => {
-        if (!cancelled) setState({ status: 'ready', puzzles })
+        if (!cancelled) setState({ status: 'ready', day: todayId, puzzles })
       },
       () => {
-        if (!cancelled) setState({ status: 'error' })
+        if (!cancelled) setState({ status: 'error', day: todayId })
       },
     )
     return () => {
@@ -55,18 +56,22 @@ function ArchiveGame({ type }: { readonly type: PuzzleType }) {
     }
   }, [todayId])
 
+  // A result for a previous day is not the current archive window. Keeping the
+  // day beside the result lets a midnight rollover show the loading state until
+  // the new window lands, without an effect writing loading.
+  const current = state.status !== 'loading' && state.day === todayId ? state : { status: 'loading' as const }
   // Grouped while rendering rather than stored: it is a pure reshape of whatever
   // loaded, so deriving it on each pass keeps a second piece of state from ever
   // holding a stale arrangement of the first.
-  const groups = state.status === 'ready' ? groupPublishedPuzzles(state.puzzles).filter(group => group.type === type) : []
+  const groups = current.status === 'ready' ? groupPublishedPuzzles(current.puzzles).filter(group => group.type === type) : []
 
   return (
     <div>
-      {state.status === 'loading' && <p className="status" role="status">Scanning archive…</p>}
-      {state.status === 'error' && (
+      {current.status === 'loading' && <p className="status" role="status">Scanning archive…</p>}
+      {current.status === 'error' && (
         <p className="status error">Could not read the archive.</p>
       )}
-      {state.status === 'ready' && <ArchiveGroups groups={groups} timeZone={timeZone} />}
+      {current.status === 'ready' && <ArchiveGroups groups={groups} timeZone={timeZone} />}
     </div>
   )
 }

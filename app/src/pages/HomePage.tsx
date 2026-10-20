@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { PuzzleType } from '../domain/board'
-import { formatPuzzleLabel, puzzleIdsForDay, puzzleOfToday, puzzleTypeOf } from '../domain/dates'
+import { formatPuzzleLabel, puzzleIdsForDay, puzzleTypeOf } from '../domain/dates'
 import { DEFAULT_PUZZLE_TYPE, DIFFICULTY_LABEL, PUZZLE_TYPE_LABEL, PUZZLE_PIECE } from '../domain/games'
 import { probePuzzles, type ProbedPuzzle } from '../lib/puzzles'
 import { trackVariantOf } from '../domain/trackSizes'
 import { readStoredStats } from '../lib/stats'
+import { useToday } from '../lib/useToday'
 
 type LoadState =
   | { status: 'loading' }
-  | { status: 'ready'; probes: readonly ProbedPuzzle[] }
+  | { status: 'ready'; day: string; probes: readonly ProbedPuzzle[] }
 
 const DESCRIPTION: Record<PuzzleType, string> = {
   queens: 'One queen in each row, column and region. No touching.',
@@ -33,7 +34,7 @@ const DESCRIPTION: Record<PuzzleType, string> = {
  */
 export function HomePage() {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
-  const [todayId] = useState(() => puzzleOfToday(new Date(), timeZone))
+  const todayId = useToday(timeZone)
   const [state, setState] = useState<LoadState>({ status: 'loading' })
   // Read once, like the archive does: history is not going to change while the
   // page is open, and the cards only use it to say what has been solved today.
@@ -44,12 +45,17 @@ export function HomePage() {
     // `probePuzzles` never rejects: each id fails alone, so there is no whole-page
     // failure left to handle here.
     probePuzzles(puzzleIdsForDay(todayId)).then((probes) => {
-      if (!cancelled) setState({ status: 'ready', probes })
+      if (!cancelled) setState({ status: 'ready', day: todayId, probes })
     })
     return () => {
       cancelled = true
     }
   }, [todayId])
+
+  // A result for a previous day is not today's answer. Keeping the day beside
+  // the probes lets a rollover show the loading state until the new day lands,
+  // without an effect writing loading and triggering a second render.
+  const ready = state.status === 'ready' && state.day === todayId ? state : null
 
   return (
     <section className="today">
@@ -58,9 +64,9 @@ export function HomePage() {
         <h1 className="page-title">Today&rsquo;s puzzles</h1>
         <p className="page-intro">Fresh logic puzzles, every day. Pick your challenge.</p>
       </div>
-      {state.status === 'loading' && <p className="status">Checking what&rsquo;s out…</p>}
-      {state.status === 'ready' && (
-        <TodayCards probes={state.probes} solved={solved} />
+      {ready === null && <p className="status">Checking what&rsquo;s out…</p>}
+      {ready !== null && (
+        <TodayCards probes={ready.probes} solved={solved} />
       )}
       <div className="today-more">
         <p>Another round?</p>
