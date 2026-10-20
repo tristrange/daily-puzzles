@@ -23,9 +23,32 @@ select public.register_leaderboard_puzzles(jsonb_agg(jsonb_build_object(
   'puzzle_id', current_date::text || '-tracks-' || variant, 'puzzle_type', 'train-tracks',
   'puzzle_day', current_date::text, 'width', size, 'height', size, 'size_label', label)))
 from (values ('small', 8, 'Small'), ('medium', 10, 'Medium'), ('large', 12, 'Large')) v(variant, size, label);
+select public.register_leaderboard_puzzles(jsonb_agg(jsonb_build_object(
+  'puzzle_id', current_date::text || suffix, 'puzzle_type', family,
+  'puzzle_day', current_date::text, 'width', size, 'height', size, 'size_label', null)))
+from (values ('star-battle', '-star', 9), ('word-paths', '-words', 5),
+  ('trio', '-trio', 9), ('tents', '-tents', 10), ('train-tracks', '-tracks', 7)) v(family, suffix, size);
 select public.register_leaderboard_puzzles(jsonb_build_array(jsonb_build_object(
   'puzzle_id', (current_date + 3)::text, 'puzzle_type', 'queens',
   'puzzle_day', (current_date + 3)::text, 'width', 7, 'height', 7, 'size_label', null)));
+reset role;
+
+-- Every family must retain its canonical ID, including both sides of Tents pairings.
+set local role service_role;
+do $$ declare family text; suffix text; candidate jsonb; begin
+  for family, suffix in
+    select a.family, b.suffix
+    from (values ('queens', ''), ('star-battle', '-star'), ('train-tracks', '-tracks'),
+      ('word-paths', '-words'), ('trio', '-trio'), ('tents', '-tents')) a(family, suffix)
+    cross join (values ('queens', ''), ('star-battle', '-star'), ('train-tracks', '-tracks'),
+      ('word-paths', '-words'), ('trio', '-trio'), ('tents', '-tents')) b(family, suffix)
+    where a.family <> b.family
+  loop
+    candidate := jsonb_build_array(jsonb_build_object('puzzle_id', current_date::text || suffix,
+      'puzzle_type', family, 'puzzle_day', current_date::text, 'width',10,'height',10));
+    perform pg_temp.rejects(format('select public.register_leaderboard_puzzles(%L)', candidate::text), '23514');
+  end loop;
+end $$;
 reset role;
 
 set local role anon;
@@ -81,6 +104,11 @@ select public.submit_result(current_date::text || '-tracks-small', 'Tracks', 100
 select pg_temp.check_true(public.get_leaderboard(current_date::text || '-tracks-small')->>'total' = '1', 'small has result');
 select pg_temp.check_true(public.get_leaderboard(current_date::text || '-tracks-medium')->>'total' = '0', 'medium separate');
 select pg_temp.check_true(public.get_leaderboard(current_date::text || '-tracks-large')->>'total' = '0', 'large separate');
+select pg_temp.check_true(public.submit_result(current_date::text || '-tents', 'Tents', 12345, 0)->>'status' = 'created', 'Tents first submit');
+select pg_temp.check_true(public.submit_result(current_date::text || '-tents', 'Changed', 1, 0)->>'status' = 'existing', 'Tents retry');
+select pg_temp.check_true(public.get_leaderboard(current_date::text || '-tents')->'entries' =
+  '[{"rank":1,"nickname":"Tents","elapsed_ms":12345,"hints":0,"is_you":true}]'::jsonb, 'Tents ranking and owner');
+select pg_temp.check_true(public.get_leaderboard(current_date::text || '-trio')->>'total' = '0', 'Tents separate from Trio');
 
 -- Outside-top-25 owner gets their own rank without exposing private columns.
 do $$ begin for n in 1..26 loop

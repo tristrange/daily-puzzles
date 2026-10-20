@@ -1,12 +1,12 @@
 import { isTentsMark, isTentsSolved, type TentsBoard, type TentsGame } from '../domain/tents'
 
-const key = (board: TentsBoard) => `daily-puzzles.tents-preview.v1.${board.id}`
+const key = (board: TentsBoard, daily: boolean) => `daily-puzzles.${daily ? 'tents' : 'tents-preview'}.v1.${board.id}`
 const fingerprint = (board: TentsBoard) => JSON.stringify([board.size, board.trees, board.rowClues, board.colClues])
 const count = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
 
-export function readTentsProgress(board: TentsBoard): { game: TentsGame; elapsedMs: number; hints: number } | null {
+export function readTentsProgress(board: TentsBoard, daily = false): { game: TentsGame; elapsedMs: number; hints: number } | null {
   try {
-    const raw: unknown = JSON.parse(localStorage.getItem(key(board)) ?? 'null')
+    const raw: unknown = JSON.parse(localStorage.getItem(key(board, daily)) ?? 'null')
     if (!raw || typeof raw !== 'object') return null
     const saved = raw as Record<string, unknown>, game = saved['game']
     if (saved['version'] !== 1 || saved['board'] !== fingerprint(board)
@@ -17,11 +17,11 @@ export function readTentsProgress(board: TentsBoard): { game: TentsGame; elapsed
   } catch { return null }
 }
 
-export function storeTentsProgress(board: TentsBoard, game: TentsGame, elapsedMs: number, hints: number): boolean {
+export function storeTentsProgress(board: TentsBoard, game: TentsGame, elapsedMs: number, hints: number, daily = false): boolean {
   if (!count(elapsedMs) || !count(hints)) return false
   try {
-    if (isTentsSolved(board, game)) localStorage.removeItem(key(board))
-    else localStorage.setItem(key(board), JSON.stringify({ version: 1, board: fingerprint(board), game, elapsedMs, hints }))
+    if (isTentsSolved(board, game)) localStorage.removeItem(key(board, daily))
+    else localStorage.setItem(key(board, daily), JSON.stringify({ version: 1, board: fingerprint(board), game, elapsedMs, hints }))
     return true
   } catch { return false }
 }

@@ -103,19 +103,21 @@ symbol or updates one cell's candidate notes, with Undo available until solved.
 The [five-board preview](https://tristrange.github.io/daily-puzzles/#/preview/trio)
 retains separate attempts and never affects daily stats. No difficulty rating is claimed.
 
-**Tents preview** — [try the new 10×10 boards](https://tristrange.github.io/daily-puzzles/#/preview/tents?board=7).
+**Tents** — one daily 10×10 board with 18 tents.
+[Play the daily archive](https://tristrange.github.io/daily-puzzles/#/archive?game=tents).
 Pair every tree with one orthogonally adjacent tent, match the row/column totals,
 and keep tents apart, including diagonally. A tent can border several trees;
-the completed board must allow a one-to-one pairing. Each preview has a verified
-unique tent placement. Boards 1–6 are 8×8 and finish through the explained hint rules.
-Boards 7–9 are 10×10 with 18 tents, nonzero clues throughout and no immediately forced
-tent placements from singleton trees or full lines. They go beyond the current hint
-rules, which may stall; no new hint features are included. All six existing boards
-and saved attempts remain available. No difficulty rating is claimed.
+the completed board must allow a one-to-one pairing. Daily boards have nonzero
+clues throughout, a verified unique tent placement, no immediate singleton-tree
+or full-line opening, and an offline line-pattern completion without guessing.
+The current explained hints may stall; no difficulty rating is claimed.
 Tent, Grass and Erase brushes support tap/drag and keyboard play, Undo/Redo,
 confirmed Reset and separately saved active-time attempts. Grass is optional for
-completion but is an assumption for hints. Preview solves do not enter daily Stats
-or leaderboards; daily publication and difficulty policy await playtesting.
+completion but is an assumption for hints. Daily solves support Stats, streaks,
+sharing and optional leaderboards. The backlog starts September 26, 2026.
+The [nine-board preview](https://tristrange.github.io/daily-puzzles/#/preview/tents?board=7)
+retains its original boards and separate saved attempts; preview solves do not
+enter daily Stats or leaderboards. Boards 1–6 are 8×8 and Boards 7–9 are 10×10.
 
 ---
 
@@ -131,7 +133,7 @@ can then be played without a connection. New or unopened puzzles need internet.
 
 Safari and the installed iPhone app keep separate progress, stats, settings and
 downloads. Open the installed app online before relying on it offline.
-All five games resume unfinished games after reload; Undo history starts fresh.
+All six games resume unfinished games after reload; Undo history starts fresh.
 Today, Archive, Stats and Leaderboards follow the player's local calendar day and
 roll over at midnight even if the app stays open. Browser cache eviction or
 clearing site data can remove downloads. Updates wait until all app windows
@@ -218,6 +220,7 @@ uv run ruff format . # format
 uv run pyright       # strict type check
 uv run python -m tools.generate --date 2026-10-01   # one puzzle, plus an ASCII render
 uv run python -m tools.generate --date 2026-10-14-tracks-large --type train-tracks # 12x12
+uv run python -m tools.generate --date 2026-10-21-tents --type tents # daily 10x10
 uv run python -m tools.publish  --out ../app/public/puzzles   # fill the archive
 uv run python -m tools.verify   --dir ../app/public/puzzles   # replay every committed file
 uv run python -m tools.benchmark_tracks --out /tmp/tracks-probe.json # probe 8/10/12 boards

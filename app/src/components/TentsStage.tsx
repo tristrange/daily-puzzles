@@ -1,3 +1,9 @@
+import { useLeaderboard } from '../lib/useLeaderboard'
+import type { Puzzle } from '../domain/puzzle'
+import { puzzleOfToday } from '../domain/dates'
+import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } from '../lib/stats'
+import { buildShareText, buildTentsSolutionShareText, copyText, puzzleShareLink } from '../lib/share'
+import { SolvedPanel } from './SolvedPanel'
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createTentsGame, editTent, isTentsSolved, tentsConflicts, type TentsBoard as Board, type TentsGame, type TentsMark } from '../domain/tents'
 import { findTentsHint, tentsCellName, type TentsHint } from '../domain/tentsHints'
@@ -10,8 +16,15 @@ import { ResetButton } from './ResetButton'
 import { TentsBoard } from './TentsBoard'
 import { TentsSymbol } from './TentsSymbol'
 
-export function TentsStage({ board }: { board: Board }) {
-  const [initial] = useState(() => readTentsProgress(board))
+export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) {
+  const daily = puzzle !== undefined
+  const [stats, setStats] = useState<Stats | null>(null)
+  const [firstSolve, setFirstSolve] = useState<SolveRecord | null>(null)
+  const [candidate, setCandidate] = useState<SolveRecord | null>(null)
+  const { offerSolve } = useLeaderboard()
+  const [copied, setCopied] = useState<'idle' | 'result' | 'solution' | 'failed'>('idle')
+  const [shareText, setShareText] = useState<string | null>(null)
+  const [initial] = useState(() => readTentsProgress(board, daily))
   const [game, setGame] = useState(() => initial?.game ?? createTentsGame(board))
   const current = useRef(game), before = useRef<TentsGame | null>(null)
   const history = useMoveHistory<TentsGame>()
@@ -34,8 +47,8 @@ export function TentsStage({ board }: { board: Board }) {
   }, [])
   const save = useCallback(() => {
     const time = settle(); setElapsed(time)
-    setSaving(storeTentsProgress(board, current.current, time, hintsUsed.current))
-  }, [board, settle])
+    setSaving(storeTentsProgress(board, current.current, time, hintsUsed.current, daily))
+  }, [board, daily, settle])
   useEffect(() => {
     if (solved) return
     clock.current = { ...clock.current, lastAt: performance.now(), visible: !document.hidden }
@@ -45,9 +58,9 @@ export function TentsStage({ board }: { board: Board }) {
     return () => {
       clearInterval(timer)
       document.removeEventListener('visibilitychange', flush); window.removeEventListener('pagehide', flush)
-      if (!completed.current) storeTentsProgress(board, current.current, settle(), hintsUsed.current)
+      if (!completed.current) storeTentsProgress(board, current.current, settle(), hintsUsed.current, daily)
     }
-  }, [board, save, settle, solved])
+  }, [board, daily, save, settle, solved])
 
   const change = (next: TentsGame) => { current.current = next; setGame(next) }
   const begin = () => { if (!completed.current) { before.current = current.current; setHint(null) } }
@@ -61,7 +74,18 @@ export function TentsStage({ board }: { board: Board }) {
     else if (previous !== current.current) {
       history.remember(previous)
       if (isTentsSolved(board, current.current)) {
-        setElapsed(settle()); completed.current = true; clock.current.visible = false; setResult({ hints: hintsUsed.current })
+        const elapsedMs = settle()
+        setElapsed(elapsedMs)
+        if (puzzle) {
+          const when = Date.now()
+          const earlier = readStoredStats().find(record => record.id === puzzle.id)
+          setFirstSolve(earlier ?? null)
+          const record: SolveRecord = { id: puzzle.id, puzzleType: 'tents', size: board.size,
+            elapsedMs, hints: hintsUsed.current, solvedAt: when }
+          setStats(summarise(storeSolve(record), puzzleOfToday(new Date(when), Intl.DateTimeFormat().resolvedOptions().timeZone)))
+          if (!earlier) { setCandidate(record); offerSolve(record) }
+        }
+        completed.current = true; clock.current.visible = false; setResult({ hints: hintsUsed.current })
       }
     }
     save()
@@ -103,6 +127,20 @@ export function TentsStage({ board }: { board: Board }) {
     hintButton.current?.focus({ preventScroll: true })
   }
 
+  const share = async (variant: 'result' | 'solution') => {
+    if (!puzzle) return
+    const counted = firstSolve ?? { elapsedMs: elapsed, hints: hintsUsed.current }
+    const result = { puzzleId: puzzle.id, puzzleType: 'tents' as const, width: board.size, height: board.size,
+      elapsedMs: counted.elapsedMs, hints: counted.hints, streak: stats?.currentStreak ?? 0,
+      link: puzzleShareLink(puzzle.id) }
+    const text = variant === 'solution' ? buildTentsSolutionShareText(result, board, game) : buildShareText(result)
+    const ok = await copyText(text)
+    setCopied(ok ? variant : 'failed')
+    setShareText(ok ? null : text)
+    setMessage(ok ? (variant === 'solution' ? 'Share text with the solution copied — that one gives the puzzle away.' : 'Share text copied to the clipboard.')
+      : 'Could not reach the clipboard — the share text is shown below, ready to copy.')
+  }
+
   return <div className="tents-game" ref={stage}>
     <div className="tents-workspace">
       <div className="tents-controls">
@@ -126,8 +164,9 @@ export function TentsStage({ board }: { board: Board }) {
         instructionsId={hint ? `${instructionsId} ${hintId}` : instructionsId} onBegin={begin} onApply={apply} onEnd={end} onUndo={undo} onRedo={redo} onHint={requestHint} />
     </div>
     <p className={`trio-feedback${conflicts.size ? ' error' : ''}`} role="status">{solved
-      ? `Solved in ${formatTime(elapsed)} with ${result.hints} hint${result.hints === 1 ? '' : 's'}! Choose another board to keep playing.`
+      ? message || `Solved in ${formatTime(elapsed)} with ${result.hints} hint${result.hints === 1 ? '' : 's'}!${daily ? '' : ' Choose another board to keep playing.'}`
       : conflicts.size ? 'Check the highlighted tents: some touch, exceed a line count or cannot each be paired with a different tree.' : message || '\u00a0'}</p>
+    {daily && <SolvedPanel puzzleId={puzzle?.id} candidate={candidate} solved={solved} firstSolve={firstSolve} streak={stats?.currentStreak ?? 0} copied={copied} shareText={shareText} onShare={share} />}
     {hint && <HintPanel id={hintId} title={hint.value === 1 ? 'Place a tent' : 'Mark grass'} location={tentsCellName(board, hint.cell)}
       reasons={reasons} effect="Uses your tents and grass as assumptions. A mistaken grass mark can mislead hints."
       onApply={acceptHint} onDismiss={dismissHint} onShowCell={showHintCell} />}

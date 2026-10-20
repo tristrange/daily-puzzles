@@ -25,6 +25,7 @@ import {
   PUZZLE_TYPE_SUFFIX,
   WORD_PATHS_START,
   TRIO_START,
+  TENTS_START,
   isDefaultPuzzleType,
 } from './games'
 
@@ -143,7 +144,8 @@ export function puzzleIdFor(day: string, type: PuzzleType, trackSize?: TrackSize
 export function puzzleIdsForDay(day: string): string[] {
   return PUZZLE_TYPES.filter((type) => PUZZLE_TYPE_PUBLISHED[type] &&
     (type !== 'word-paths' || day >= WORD_PATHS_START) &&
-    (type !== 'trio' || day >= TRIO_START)).flatMap((type) =>
+    (type !== 'trio' || day >= TRIO_START) &&
+    (type !== 'tents' || day >= TENTS_START)).flatMap((type) =>
     type === 'train-tracks' && day >= TRACK_SIZES_START
       ? TRACK_VARIANTS.map((v) => puzzleIdFor(day, type, v.name))
       : [puzzleIdFor(day, type)],

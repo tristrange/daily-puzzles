@@ -414,6 +414,103 @@
       "errorPaths": [
         "minItems:board/givens"
       ]
+    },
+    {
+      "file": "tents.accept.json",
+      "valid": true,
+      "expect": {
+        "type": "tents",
+        "seed": 4255207780,
+        "generatorVersion": 1,
+        "size": 10,
+        "difficulty": null,
+        "trees": [
+          2,
+          4,
+          6,
+          9,
+          12,
+          21,
+          22,
+          27,
+          35,
+          49,
+          51,
+          62,
+          64,
+          68,
+          71,
+          93,
+          94,
+          99
+        ],
+        "rowClues": [
+          3,
+          2,
+          2,
+          1,
+          2,
+          1,
+          1,
+          3,
+          1,
+          2
+        ],
+        "colClues": [
+          1,
+          2,
+          3,
+          2,
+          1,
+          3,
+          1,
+          2,
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "file": "tents-size.reject.json",
+      "valid": false,
+      "errorPaths": [
+        "const:board/size"
+      ]
+    },
+    {
+      "file": "tents-answer.reject.json",
+      "valid": false,
+      "errorPaths": [
+        "additionalProperties:board:solution"
+      ]
+    },
+    {
+      "file": "tents-boolean.reject.json",
+      "valid": false,
+      "errorPaths": [
+        "type:board/trees/0"
+      ]
+    },
+    {
+      "file": "tents-zero-clue.reject.json",
+      "valid": false,
+      "errorPaths": [
+        "minimum:board/rowClues/0"
+      ]
+    },
+    {
+      "file": "tents-version.reject.json",
+      "valid": false,
+      "errorPaths": [
+        "const:generatorVersion"
+      ]
+    },
+    {
+      "file": "tents-difficulty.reject.json",
+      "valid": false,
+      "errorPaths": [
+        "not:<root>"
+      ]
     }
   ]
 }

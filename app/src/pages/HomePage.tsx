@@ -18,6 +18,7 @@ const DESCRIPTION: Record<PuzzleType, string> = {
   'train-tracks': 'Connect the ends with one track. Match every row and column count.',
   'word-paths': 'Find words along adjoining letters. Use every letter once.',
   trio: 'Balance sun, moon and star. Three of each in every row and column.',
+  tents: 'Pair every tree with a tent. Match the counts and keep tents apart.',
 }
 
 /**
@@ -68,11 +69,6 @@ export function HomePage() {
       {ready !== null && (
         <TodayCards probes={ready.probes} solved={solved} />
       )}
-      <div className="today-more">
-        <p>Meet Tents</p>
-        <Link to="/preview/tents?board=7">Try three 10×10 boards <span aria-hidden="true">→</span></Link>
-        <span>A larger Tents playtest. The six 8×8 previews are still available.</span>
-      </div>
       <div className="today-more">
         <p>Another round?</p>
         <Link to="/archive">Explore the archive <span aria-hidden="true">→</span></Link>

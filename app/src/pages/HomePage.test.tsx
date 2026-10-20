@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import small from '../../../conformance/id-cases/tracks-small.accept.json'
 import medium from '../../../conformance/id-cases/tracks-medium.accept.json'
 import words from '../../../conformance/word-paths/2026-10-14-words.json'
+import tents from '../../../conformance/schema-cases/tents.accept.json'
 import trio from '../../../conformance/schema-cases/trio.accept.json'
 import large from '../../../conformance/id-cases/tracks-large.accept.json'
 import { parsePuzzle } from '../domain/puzzle'
@@ -83,4 +84,17 @@ it.each([small.id, words.id, trio.id])('distinguishes an unavailable download fr
   const html = render([{ id, puzzle: null, unavailable: true }])
   expect(html).toContain('Not saved — connect to load.')
   expect(html).not.toContain('Not published yet.')
+})
+
+it('offers daily Tents with a normal play link and honest publication states', () => {
+  const puzzle = parsePuzzle(tents)
+  const html = render([{ id: puzzle.id, puzzle }], new Set([puzzle.id]))
+  expect(html).toContain('game-tents')
+  expect(html).toContain('aria-label="Play Tents again"')
+  expect(html).toContain(`href="/archive/${puzzle.id}"`)
+  expect(html).not.toContain('/preview/tents')
+  expect(html).not.toContain('Easy')
+  const unpublished = render([{ id: puzzle.id, puzzle: null }])
+  expect(unpublished).toContain('Tents')
+  expect(unpublished).toContain('Not published yet.')
 })

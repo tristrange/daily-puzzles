@@ -17,7 +17,7 @@ export function RulesPage() {
     <section className="rules">
       <h1 className="page-title">How to play</h1>
       <p className="status">
-        Fresh Queens, Star Battle, Train Tracks, Word Paths and Trio puzzles arrive every day.
+        Fresh Queens, Star Battle, Train Tracks, Word Paths, Trio and Tents puzzles arrive every day.
         Past puzzles stay in the <Link to="/archive">archive</Link>.
       </p>
       <nav className="game-picker" aria-label="Game rules">
@@ -26,7 +26,6 @@ export function RulesPage() {
             {PUZZLE_TYPE_LABEL[type]}
           </Link>
         ))}
-        <Link to={{ pathname: '/how-to-play', hash: '#tents' }}>Tents preview</Link>
       </nav>
 
       <h2 id="controls" tabIndex={-1}>Shared controls</h2>
@@ -45,7 +44,7 @@ export function RulesPage() {
         Undo and Redo history lasts while the puzzle is open and is cleared by reloading or leaving it.
         Rules links inside a game open a new tab so you can consult them without leaving your board.</p>
 
-      <h2 id="tents" tabIndex={-1}>Tents preview</h2>
+      <h2 id="tents" tabIndex={-1}>Tents</h2>
       <h3>Rules</h3>
       <ul>
         <li>Pair every tree with one tent directly above, below, left or right of it. Every tent needs its own tree.</li>
@@ -62,7 +61,7 @@ export function RulesPage() {
       <p>Hint or H explains a deduction from tree adjacency, non-touching or line counts.
         Apply move places a tent or grass as one undoable move. Target and support cells
         are highlighted. Your tents and grass are assumptions; a mistaken mark can mislead hints.
-        A stall is reported without guessing. Shown hints are counted even if undone or reset.</p>
+        Hints may run out before you finish; a stall is reported without guessing. Shown hints are counted even if undone or reset.</p>
       <p><Link to="/preview/tents">Try the Tents previews</Link>. Each has a verified unique
         tent placement. Preview attempts save separately and do not affect daily stats or leaderboards.
         Boards 1–6 are 8×8; Boards 7–9 are a larger 10×10 playtest. Boards 4–9 use every row and column.

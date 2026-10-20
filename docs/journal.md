@@ -1937,3 +1937,37 @@ Desktop 1280×900 and phone 375×812 / 320×667 layouts fit without horizontal
 overflow; light and system appearance work. [Phone preview](images/tents-10x10-phone.png).
 Physical phone usability and actual difficulty remain for playtesting. No daily
 publishing, new hint features or dependencies are included.
+
+## 2026-10-21 — Daily Tents
+
+The maintainer selected 10×10 for daily play after testing both preview sizes.
+Tents now uses the existing daily registry, publisher, monitor and replay path:
+one `YYYY-MM-DD-tents` board per day, with no difficulty label. A frozen v1
+recipe certifies 18 tents, nonzero clues, no singleton-tree or full-line opening,
+completion by offline line-pattern propagation without guessing, and exactly
+one tent placement. The browser's smaller hint engine is unchanged and may stall.
+
+The launch backlog contains 29 boards from September 26 through October 24.
+All were regenerated and checked for unique placements; their solution layouts
+are distinct. Generation plus replay took under a second locally. All 144 prior
+puzzle files and all nine preview definitions remain byte-for-byte unchanged.
+Preview and daily saved attempts use separate keys while retaining the original
+preview fingerprints. Today, Archive, Stats, sharing, offline play and optional
+leaderboards use the normal daily flow; only the first solve counts.
+
+Leaderboard migration 002 expands only the three existing family checks, without
+changing permissions, RPCs, rankings or scores. It must run in Supabase before
+main deployment synchronizes the new catalog. Clean installation, populated
+upgrade, repeated migration and concurrent first submissions passed on disposable
+local PostgreSQL 18.6. Docker PostgreSQL 17 is left to the existing CI job.
+Rollback keeps the expanded checks and data and redeploys the previous app.
+
+All 709 engine tests, 819 app tests and five catalog tests pass, alongside replay
+of all 173 published puzzles, build, pyright, ruff, formatting and schema-ID checks.
+App lint retains its existing TracksStage warning. Independent review found no
+issues and checked exact counting/propagation against 154 small brute-force cases.
+Browser checks cover daily completion, sharing, the Tents Stats filter, archive
+navigation, replay, saved reload, desktop/phone layout and cached reload with the
+server stopped. [Today](images/tents-daily-today.png),
+[phone board](images/tents-daily-phone.png). Live Tents leaderboard publication
+and physical iPhone play remain unverified until deployment and playtesting.

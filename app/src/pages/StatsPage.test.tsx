@@ -149,3 +149,10 @@ it('filters daily Trio solves and retains the normal result link', () => {
   expect(html).not.toContain('href="/archive/2026-10-18"')
   expect(html).toContain('Trio')
 })
+
+it('filters daily Tents solves and retains the normal result link', () => {
+  const html = renderHistory([solve('2026-10-18-tents', 'tents', 1), solve('2026-10-18', 'queens', 2)], '/stats?game=tents')
+  expect(html).toContain('href="/archive/2026-10-18-tents"')
+  expect(html).not.toContain('href="/archive/2026-10-18"')
+  expect(html).toContain('Tents')
+})

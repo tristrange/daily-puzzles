@@ -122,6 +122,7 @@ it('lists published Word Paths under its own archive heading', () => {
 it.each([
   ['/archive?game=word-paths', 'word-paths'],
   ['/archive?game=trio', 'trio'],
+  ['/archive?game=tents', 'tents'],
   ['/archive?game=unknown', 'queens'],
   ['/archive', 'queens'],
 ])('selects the archive game from %s', (url, selected) => {
@@ -135,5 +136,12 @@ it('lists daily Trio under its own heading without a difficulty rating', () => {
   const html = render([{ id: '2026-09-26-trio', type: 'trio', difficulty: null, width: 9, height: 9 }])
   expect(html).toContain('<h2 class="archive-group-title">Trio</h2>')
   expect(html).toContain('href="/archive/2026-09-26-trio"')
+  expect(html).not.toContain('Easy')
+})
+
+it('lists daily Tents under its own heading without a difficulty rating', () => {
+  const html = render([{ id: '2026-09-26-tents', type: 'tents', difficulty: null, width: 10, height: 10 }])
+  expect(html).toContain('<h2 class="archive-group-title">Tents</h2>')
+  expect(html).toContain('href="/archive/2026-09-26-tents"')
   expect(html).not.toContain('Easy')
 })

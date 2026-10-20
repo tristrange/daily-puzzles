@@ -31,6 +31,6 @@ export function LeaderboardsPage() {
       </select></label>}
     </div>
     {valid ? <><p><Link to={`/archive/${requested}`}>Play this puzzle ↗</Link></p><LeaderboardPanel key={requested} puzzleId={requested} /></> : <p className="status">Choose a published puzzle dated today or earlier.</p>}
-    <p className="leaderboard-note">Queens, Star Battle and Train Tracks count elapsed page time. Trio and Word Paths count time while the page is visible. Times are compared only within the same puzzle.</p>
+    <p className="leaderboard-note">Queens, Star Battle and Train Tracks count elapsed page time. Trio, Tents and Word Paths count time while the page is visible. Times are compared only within the same puzzle.</p>
   </section>
 }
