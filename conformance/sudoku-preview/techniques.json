@@ -1,0 +1,262 @@
+[
+  {
+    "name": "peer",
+    "changes": [
+      [
+        0,
+        1
+      ]
+    ],
+    "level": "easy",
+    "cell": 1,
+    "after": 510,
+    "rule": "peer"
+  },
+  {
+    "name": "hidden single",
+    "changes": [
+      [
+        1,
+        510
+      ],
+      [
+        2,
+        510
+      ],
+      [
+        3,
+        510
+      ],
+      [
+        4,
+        510
+      ],
+      [
+        5,
+        510
+      ],
+      [
+        6,
+        510
+      ],
+      [
+        7,
+        510
+      ],
+      [
+        8,
+        510
+      ]
+    ],
+    "level": "easy",
+    "cell": 0,
+    "after": 1,
+    "rule": "hidden-single"
+  },
+  {
+    "name": "naked pair",
+    "changes": [
+      [
+        0,
+        3
+      ],
+      [
+        4,
+        3
+      ]
+    ],
+    "level": "medium",
+    "cell": 1,
+    "after": 508,
+    "rule": "naked-pair"
+  },
+  {
+    "name": "hidden pair",
+    "changes": [
+      [
+        1,
+        508
+      ],
+      [
+        2,
+        508
+      ],
+      [
+        3,
+        508
+      ],
+      [
+        5,
+        508
+      ],
+      [
+        6,
+        508
+      ],
+      [
+        7,
+        508
+      ],
+      [
+        8,
+        508
+      ]
+    ],
+    "level": "medium",
+    "cell": 0,
+    "after": 3,
+    "rule": "hidden-pair"
+  },
+  {
+    "name": "naked triple",
+    "changes": [
+      [
+        0,
+        3
+      ],
+      [
+        4,
+        5
+      ],
+      [
+        8,
+        6
+      ]
+    ],
+    "level": "hard",
+    "cell": 1,
+    "after": 504,
+    "rule": "naked-triple"
+  },
+  {
+    "name": "hidden triple",
+    "changes": [
+      [
+        1,
+        504
+      ],
+      [
+        2,
+        504
+      ],
+      [
+        3,
+        504
+      ],
+      [
+        5,
+        504
+      ],
+      [
+        6,
+        504
+      ],
+      [
+        7,
+        504
+      ]
+    ],
+    "level": "hard",
+    "cell": 0,
+    "after": 7,
+    "rule": "hidden-triple"
+  },
+  {
+    "name": "pointing",
+    "changes": [
+      [
+        9,
+        510
+      ],
+      [
+        10,
+        510
+      ],
+      [
+        11,
+        510
+      ],
+      [
+        18,
+        510
+      ],
+      [
+        19,
+        510
+      ],
+      [
+        20,
+        510
+      ]
+    ],
+    "level": "medium",
+    "cell": 3,
+    "after": 510,
+    "rule": "locked-candidate"
+  },
+  {
+    "name": "xwing",
+    "changes": [
+      [
+        0,
+        510
+      ],
+      [
+        2,
+        510
+      ],
+      [
+        3,
+        510
+      ],
+      [
+        4,
+        510
+      ],
+      [
+        5,
+        510
+      ],
+      [
+        7,
+        510
+      ],
+      [
+        8,
+        510
+      ],
+      [
+        36,
+        510
+      ],
+      [
+        38,
+        510
+      ],
+      [
+        39,
+        510
+      ],
+      [
+        40,
+        510
+      ],
+      [
+        41,
+        510
+      ],
+      [
+        43,
+        510
+      ],
+      [
+        44,
+        510
+      ]
+    ],
+    "level": "hard",
+    "cell": 10,
+    "after": 510,
+    "rule": "x-wing"
+  }
+]
