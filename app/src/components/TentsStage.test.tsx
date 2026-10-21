@@ -71,6 +71,26 @@ it('explains and highlights a hint, applying it as one saved undoable move', asy
   await click('Redo'); expect(readTentsProgress(board)?.game[index]).toBe(2)
 })
 
+it('shows a line arrangement before applying one saved, undoable tent', async () => {
+  const board = parseTentsBoard({ id: 'tents-preview-1', size: 8, trees: [8, 9, 10],
+    rowClues: [2, 0, 1, 0, 0, 0, 0, 0], colClues: [1, 1, 1, 0, 0, 0, 0, 0] })
+  const open = [0, 1, 2, 16, 17, 18]
+  const game = createTentsGame(board).map((_, cell) => board.trees.includes(cell) || open.includes(cell) ? 0 : 2)
+  storeTentsProgress(board, game, 5000, 2)
+  await act(async () => root.render(<TentsStage board={board} />))
+  await click('Hint')
+  expect(container.querySelector('.hint-panel')?.textContent).toContain('Possible tent columns: 1, 3')
+  expect(container.querySelectorAll('.hint-panel ol li')).toHaveLength(3)
+  expect(cell(0).dataset['hint']).toBe('target')
+  expect(cell(2).dataset['hint']).toBe('support')
+  expect(cell(0).getAttribute('aria-label')).toContain('Empty')
+  expect(readTentsProgress(board)?.hints).toBe(3)
+  await click('Apply move'); expect(readTentsProgress(board)?.game[0]).toBe(1)
+  await click('Undo'); expect(readTentsProgress(board)?.game[0]).toBe(0)
+  await click('Redo'); expect(readTentsProgress(board)?.game[0]).toBe(1)
+  expect(readTentsProgress(board)?.hints).toBe(3)
+})
+
 it('treats a drag as one move and restores cancelled strokes', async () => {
   await act(async () => root.render(<TentsStage board={board} />))
   await act(async () => container.querySelector<HTMLInputElement>('input[aria-label="Grass"]')!.click())

@@ -2014,3 +2014,27 @@ warning by editing, reveal without applying, correction Undo/Redo, and normal
 deductions after correction. See the [Star Battle desktop warning](images/mistake-warning-desktop.png)
 and [Queens phone warning](images/mistake-warning-phone.png). Physical iPhone and
 screen-reader testing were not performed.
+
+## 2026-10-21 — Explain stronger Tents deductions
+
+Tents hints now compare the possible arrangements of one row or column, keeping
+its count, non-touching tents, distinct-tree pairings and an available tent for
+every tree. A cell used in every arrangement is a tent; one used in none is grass.
+The panel explains the constraints, lists positions when there are at most four
+arrangements, and highlights the line and supporting evidence. Impossible lines
+produce the existing general contradiction warning before any suggested move.
+Basic deductions retain priority. No generator, puzzle or saved format changes.
+
+All 833 app tests, build/typecheck and diff checks pass. Lint retains the existing
+TracksStage warning. Independent review found no issues. A one-off probe compared
+all suggested moves with independently computed Python solutions on 38 preview
+and published boards: hints completed all 38, versus six with the previous rules.
+Another 608 valid partial positions produced no incorrect hint or false warning.
+The slowest measured hint call was under 1 ms on this laptop; the broad probe is
+not added to CI.
+
+Browser checks cover explanations and highlights, Apply/Undo/Redo, saved reload,
+target focus, Escape focus restoration and a 393px layout without horizontal
+overflow. See [desktop](images/tents-line-hint-desktop.png) and
+[phone](images/tents-line-hint-phone.png). Physical iPhone and screen-reader
+testing were not performed; the unchanged engine suite was not rerun.

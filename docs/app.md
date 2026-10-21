@@ -477,6 +477,23 @@ preview and daily attempts. `wordProgress` retains its storage keys, version and
 board fingerprint; old snapshots without a hint count read as zero. No stored
 answers, published puzzle changes, new dependencies or network calls are needed.
 
+## Tents hints
+
+`tentsHints.ts` keeps the direct adjacency, non-touching, line-count and
+single-tree deductions. It also enumerates one row or column's arrangements,
+retaining only those that meet its count, keep tents apart, permit distinct-tree
+pairings for placed tents and leave each tree a possible tent. Agreement across
+all surviving arrangements proves a tent or grass cell. An impossible line
+suppresses hints and produces the existing general contradiction warning.
+
+Parsed boards have at most ten cells per line, bounding this comparison without
+searching full-board solutions. The shared `hasTentsMatching` helper checks
+partial pairings; the frozen generator, published boards and saved formats are
+unchanged. Explanations list small sets of remaining positions in separate steps,
+and highlight the line plus tree/tent evidence used to reject arrangements.
+Player tents and grass remain assumptions. Apply, Undo/Redo and hint counting
+use the existing stage flow; a stall still reports no deduction without guessing.
+
 ## Daily Train Tracks sizes and saved boards
 
 From October 14, 2026 the daily chooser groups Small 8×8, Medium 10×10 and Large

@@ -69,8 +69,7 @@ it('explains only sound moves across the verified preview boards', () => {
       game = next
       shown++
     }
-    // Larger playtests deliberately exceed the current basic hint rules.
-    expect(isTentsSolved(board, game), board.id).toBe(board.size === 8)
+    expect(isTentsSolved(board, game), board.id).toBe(true)
     expect(findTentsHint(board, game).kind).toBe('none')
   }
 })
