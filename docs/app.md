@@ -67,6 +67,14 @@ reports a miss per id instead of rejecting, and the absent card says *Not publis
 with no link, rather than the whole page failing over one absent file. A solve already
 recorded for today turns that card's action into *Play again*.
 
+Valid unfinished daily attempts show *Resume · time*, including an independent
+action for each Train Tracks size. Completed results keep replay priority. Home
+loads the existing progress readers after showing the cards, preserving their
+board fingerprints and validation without putting the Word Paths dictionary in
+the entry bundle. A failed read leaves Play available. Preview saves are separate;
+no storage format changes are needed. Cards use a minimum width to keep the
+longer actions readable, with one column on phones.
+
 The two family names lived in three copies — share text, archive and stats — which is
 three places to forget a rename, so they now come from one table in `domain/games.ts`.
 

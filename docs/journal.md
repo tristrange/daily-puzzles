@@ -2038,3 +2038,28 @@ target focus, Escape focus restoration and a 393px layout without horizontal
 overflow. See [desktop](images/tents-line-hint-desktop.png) and
 [phone](images/tents-line-hint-phone.png). Physical iPhone and screen-reader
 testing were not performed; the unchanged engine suite was not rerun.
+
+## 2026-10-21 — Resume from Today
+
+Today now shows Resume with the saved elapsed time for unfinished daily attempts
+across all six games. Each Train Tracks size has its own status. Completed results
+retain Play again/Solved even if an unfinished replay exists. The same progress
+readers used by gameplay reject stale boards and invalid saves; blocked storage
+or failed module loading leaves Play available. No progress formats, puzzle data,
+game logic or leaderboard behavior changed.
+
+Progress readers load after the cards appear so full Word Paths validation stays
+out of the initial bundle. The entry is 437.5 kB (137.5 kB gzip), compared with
+432.8 kB before this change; direct imports would have made it 564.2 kB. A minimum
+card width prevents the longer Train Tracks action wrapping at narrow desktop
+widths: three columns at 1280px, two at 900px, and one on phones.
+
+All 837 app tests, build/typecheck and diff checks pass. Four new integration tests
+exercise real save readers, all six games, per-size status, solved replay priority,
+stale saves, blocked storage and zero-time attempts. Lint retains the existing
+TracksStage warning; independent review found no issues. Browser checks cover
+Queens and Train Tracks Resume navigation, restored moves after reload, and
+desktop/phone layouts without horizontal overflow. See
+[desktop](images/today-resume-desktop.png) and [phone](images/today-resume-phone.png).
+Physical iPhone and screen-reader testing were not performed. The unchanged
+engine and database suites were not rerun locally.
