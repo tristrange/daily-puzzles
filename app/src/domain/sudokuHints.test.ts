@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest'
 import cases from '../../../conformance/sudoku-preview/techniques.json'
 import raw from '../data/sudoku-previews.json'
+import playtest from './fixtures/sudoku-hard-playtest.json'
 import proof from '../../../docs/measurements/sudoku-preview.json'
 import { createSudokuGame, editSudoku, parseSudokuBoards, type SudokuLevel } from './sudoku'
 import { deduceSudoku, findSudokuHint, nextSudokuStep, applySudokuHint } from './sudokuHints'
@@ -39,4 +40,20 @@ it('checks mistakes before normal hints and ignores notes as proof', () => {
   const applied = applySudokuHint(board, result.hint.source, result.hint)
   expect(applied).not.toBe(result.hint.source)
   expect(applySudokuHint(board, game, result.hint)).toBe(game)
+})
+
+
+it('keeps the reported long hint concise while retaining its supporting deductions', () => {
+  const game = { cells: playtest.cells.flat(), notes: playtest.notes.flat().map(text => [...text].reduce((mask, digit) => mask | (1 << (Number(digit) - 1)), 0)) }
+  const result = findSudokuHint(boards[2]!, game)
+  expect(result.kind).toBe('hint')
+  if (result.kind !== 'hint') throw Error('Expected hint')
+  expect(result.hint.cell).toBe(59)
+  expect(result.hint.candidates).toBe(79) // 1, 2, 3, 4, 7
+  expect(result.hint.reasons).toHaveLength(1)
+  expect(result.hint.reasons[0]).toContain('1, 2, 3, 4, 7')
+  expect(result.hint.supportingReasons!.length).toBeLessThan(8)
+  expect(result.hint.supportingReasons!.join(' ')).toContain('Row/column/box checks')
+  expect(result.hint.supportingReasons!.join(' ')).toContain('R2C2: 4, 5')
+  expect(result.hint.reasons.join(' ')).not.toContain('Remove ')
 })

@@ -3,9 +3,10 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import raw from '../data/sudoku-previews.json'
+import playtest from '../domain/fixtures/sudoku-hard-playtest.json'
 import proof from '../../../docs/measurements/sudoku-preview.json'
 import { parseSudokuBoards } from '../domain/sudoku'
-import { readSudokuProgress } from '../lib/sudokuProgress'
+import { readSudokuProgress, storeSudokuProgress } from '../lib/sudokuProgress'
 import { SudokuStage } from './SudokuStage'
 
 const board = parseSudokuBoards(raw)[0]!, index = board.givens.indexOf(0)
@@ -82,4 +83,44 @@ it('resumes notes/time and completes through keyboard input without daily stats'
   expect(container.textContent).toContain('Solved in')
   expect(readSudokuProgress(board)).toBeNull()
   expect(localStorage.getItem('daily-puzzles:stats')).toBeNull()
+})
+
+
+it('cleans peer notes in the same saved, undoable move as number entry', async () => {
+  const notes = Array<number>(81).fill(0); notes[2] = 96 // 6, 7, same row as first cell
+  storeSudokuProgress(board, { cells: [...board.givens], notes }, 0, 0)
+  await mount(); await click('Enter 6')
+  expect(readSudokuProgress(board)?.game.notes[2]).toBe(64)
+  await click('Undo'); expect(readSudokuProgress(board)?.game.notes[2]).toBe(96)
+  expect(readSudokuProgress(board)?.game.cells[0]).toBe(0)
+  await click('Redo'); expect(readSudokuProgress(board)?.game.notes[2]).toBe(64)
+})
+
+it('highlights matching digits and their rows/columns, and clears them on an empty selection', async () => {
+  await mount()
+  await act(async () => cell(1).click()) // given 1, also at R2C6 and R4C1
+  expect(cell(1).dataset['selected']).toBe('true')
+  expect(cell(14).dataset['match']).toBe('true')
+  expect(cell(27).dataset['match']).toBe('true')
+  expect(cell(36).dataset['digitLine']).toBe('true') // column 1 of another 1
+  expect(cell(36).dataset['context']).toBe('false') // not selected cell's peers
+  expect(cell(29).dataset['match']).toBe('false') // another filled digit
+  await act(async () => cell(0).click())
+  expect(container.querySelector('[data-match="true"]')).toBeNull()
+  expect(container.querySelector('[data-digit-line="true"]')).toBeNull()
+})
+
+it('collapses supporting deductions without hiding the conclusion or Apply action', async () => {
+  const hard = parseSudokuBoards(raw)[2]!
+  storeSudokuProgress(hard, { cells: playtest.cells.flat(), notes: playtest.notes.flat().map(text => [...text].reduce((mask, digit) => mask | (1 << (Number(digit) - 1)), 0)) }, 0, 0)
+  await act(async () => root.render(<SudokuStage board={hard} />)); await click('Get an explained hint')
+  const details = container.querySelector<HTMLDetailsElement>('.hint-panel details')!
+  expect(details).not.toBeNull()
+  expect(details.open).toBe(false)
+  expect(container.querySelector('.hint-panel > ol')?.children).toHaveLength(1)
+  expect(container.querySelector('.hint-effect')?.textContent).toContain('1, 2, 3, 4, 7')
+  await act(async () => { details.open = true })
+  expect(details.textContent).toContain('R2C2: 4, 5')
+  expect(readSudokuProgress(hard)?.hints).toBe(1)
+  await click('Apply move'); expect(readSudokuProgress(hard)?.game.notes[59]).toBe(79)
 })

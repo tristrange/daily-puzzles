@@ -2097,3 +2097,28 @@ and complete keyboard play followed by cleared completion saves. See
 [phone](images/sudoku-preview-phone.png). Physical iPhone and screen-reader
 testing remain unperformed; technique ratings need human playtesting before
 three-per-day publication.
+
+## 2026-10-21 — Sudoku playtest polish
+
+Reproduced the reported Hard position and its 22-step hint. The default panel now
+shows one deduction and the remaining candidates. Supporting deductions expands
+six compact items: sixteen routine peer checks become one candidate summary,
+while the earlier logical deductions remain in order. Native disclosure controls
+support keyboard access; expanding the proof does not count another hint.
+
+Number entry removes its digit from notes in the same row, column and box,
+including numbers placed through hints. Undo/Redo restores both values and notes
+as one move; erasing does not recreate removed notes. Selecting a filled digit
+softly highlights matching cells and their rows/columns, with selection stronger.
+Existing saves and their fingerprints are unchanged.
+
+All 856 app tests, TypeScript checking and the production build pass. Lint retains
+the existing TracksStage warning. Five new regression tests use the screenshot
+position, verify peer-only cleanup/history/reload, and check matching highlights
+and collapsed proof. Independent review found no actionable issues. Browser
+checks cover the exact reported hint, keyboard disclosure/Escape focus, note
+cleanup/Undo/Redo/reload, desktop dark and 393px light layouts without overflow.
+See [compact hint](images/sudoku-compact-hint.png),
+[matching digits](images/sudoku-matching-digits.png) and
+[phone](images/sudoku-playing-aids-phone.png). Physical iPhone/screen-reader
+checks and the unchanged Python engine/database suites were not run.

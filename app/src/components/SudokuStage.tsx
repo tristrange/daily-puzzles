@@ -125,7 +125,7 @@ export function SudokuStage({ board }: { board: Board }) {
       : message || (conflicts.size ? `${conflicts.size} cells repeat a number in a row, column or box. You can keep editing or Undo.` : '\u00a0')}</p>
     {mistake !== null && <MistakeWarning id={hintId} message="Your numbers lead to a contradiction. Check your entries, or try Undo." onReveal={revealMistake} onDismiss={dismiss} />}
     {hint && <HintPanel id={hintId} location={sudokuCellName(hint.cell)} title={hint.correction ? 'Clear this entry' : sudokuSingle(hint.candidates) ? `Place ${sudokuDigits(hint.candidates)[0]}` : 'Narrow the possibilities'}
-      reasons={hint.reasons} effect={hint.correction || sudokuSingle(hint.candidates) ? '' : `Apply updates this cell's notes to ${sudokuDigits(hint.candidates).join(', ')}. The cell stays empty.`}
+      reasons={hint.reasons} supportingReasons={hint.supportingReasons} effect={hint.correction || sudokuSingle(hint.candidates) ? '' : `Apply updates this cell's notes to ${sudokuDigits(hint.candidates).join(', ')}. The cell stays empty.`}
       onApply={acceptHint} onDismiss={dismiss} onShowCell={showCell} />}
     {!saving && !solved && <p className="status error" role="status">Progress can&rsquo;t be saved. Keep this page open to retain your attempt.</p>}
     <p className="word-note" id={instructionsId}>Digits 1–9 once in every row, column and 3×3 box. Given numbers are fixed.

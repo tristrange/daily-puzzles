@@ -536,3 +536,12 @@ cells, then optionally apply a number or candidate restriction. Incorrect entrie
 first produce a free general warning; revealing one mistake counts a hint and
 offers an undoable erase. Search exhaustion produces no accusation or guessed
 hint. Controls sit beside the board on desktop and above/below it on phones.
+
+Sudoku hints lead with the final deduction and remaining candidates. Earlier
+dependencies are available in Supporting deductions, with consecutive peer
+checks grouped into one candidate summary. The full proof still ignores manual
+notes. Entering a number removes that digit from peer notes through the shared
+`editSudoku` path, including hint placements; history saves the combined move.
+Erasing does not recreate notes. Selecting a filled digit highlights all matches
+and their rows/columns below the selected cell's visual emphasis. Save keys and
+fingerprints are unchanged, so existing preview attempts resume normally.

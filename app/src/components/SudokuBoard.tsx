@@ -7,6 +7,8 @@ export function SudokuBoard({ board, game, selected, locked, conflicts, hint, in
   hint: SudokuHint | null; instructionsId: string; onSelect: (cell: number) => void
 }) {
   const grid = useRef<HTMLDivElement>(null), support = new Set(hint?.support)
+  const digit = game.cells[selected], matches = game.cells.flatMap((value, cell) => digit && value === digit ? [cell] : [])
+  const matchingRows = new Set(matches.map(cell => Math.floor(cell / 9))), matchingColumns = new Set(matches.map(cell => cell % 9))
   const navigate = (event: KeyboardEvent<HTMLDivElement>) => {
     const r = Math.floor(selected / 9), c = selected % 9
     const moves: Record<string, number> = { ArrowUp: Math.max(0, r - 1) * 9 + c, ArrowDown: Math.min(8, r + 1) * 9 + c,
@@ -20,6 +22,7 @@ export function SudokuBoard({ board, game, selected, locked, conflicts, hint, in
         const cell = r * 9 + c, value = game.cells[cell]!, given = board.givens[cell] !== 0, notes = sudokuDigits(game.notes[cell]!)
         return <button key={cell} type="button" role="gridcell" className="sudoku-cell" tabIndex={selected === cell ? 0 : -1}
           data-cell={cell} data-given={given} data-selected={selected === cell} data-context={SUDOKU_PEERS[selected]!.includes(cell)}
+          data-match={!!digit && value === digit} data-digit-line={matchingRows.has(r) || matchingColumns.has(c)}
           data-conflict={conflicts.has(cell)} data-box-right={c === 2 || c === 5} data-box-bottom={r === 2 || r === 5}
           data-hint={hint?.cell === cell ? 'target' : support.has(cell) ? 'support' : undefined}
           aria-selected={selected === cell} aria-readonly={given || locked}

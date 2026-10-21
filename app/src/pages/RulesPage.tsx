@@ -222,12 +222,15 @@ export function RulesPage() {
         Given numbers are fixed. Notes are optional and do not count as filled cells.</p>
       <p>Select a cell, then tap a number or press 1–9. N toggles Notes; tap digits
         to toggle their pencil marks in an empty cell. Entering a number clears that
-        cell&rsquo;s notes. Erase clears the selected editable cell. Clear notes removes
+        cell&rsquo;s notes and removes that digit from notes in its row, column and box.
+        Undo restores the number and affected notes together. Erase clears the selected editable cell. Clear notes removes
         all pencil marks in one undoable move. Arrows and Home/End move around the board.</p>
       <p>Hint explains a placement or candidate elimination, with target and support
-        highlights. Apply move is optional and undoable. Notes never prove hints.
+        highlights. It shows remaining candidates; Supporting deductions expands the
+        earlier reasoning. Apply move is optional and undoable. Notes never prove hints.
         A wrong number first produces a free general warning; Show the mistake reveals
-        one correction and counts as a hint. Undo and Reset do not refund shown hints.</p>
+        one correction and counts as a hint. Undo and Reset do not refund shown hints.
+        Select a filled cell to softly highlight matching numbers and their rows and columns.</p>
       <p><Link to="/preview/sudoku">Try Easy, Medium and Hard</Link>. Each preview has
         one independently verified solution and finishes through its supported logical
         techniques. Medium requires more than singles; Hard requires more than our
