@@ -20,8 +20,8 @@ export function MistakeWarning({ id, onReveal, onDismiss, message = 'Your entrie
   </section>
 }
 
-export function HintPanel({ id, location, title, reasons, effect, onApply, onDismiss, onShowCell, variant = 'logic' }: {
-  id: string; location: string; title: string; reasons: readonly string[]; effect?: string
+export function HintPanel({ id, location, title, reasons, supportingReasons, effect, onApply, onDismiss, onShowCell, variant = 'logic' }: {
+  id: string; location: string; title: string; reasons: readonly string[]; supportingReasons?: readonly string[] | undefined; effect?: string
   onApply?: (() => void) | undefined; onDismiss: () => void; onShowCell: () => void; variant?: 'logic' | 'word'
 }) {
   const panel = useRef<HTMLElement>(null)
@@ -39,6 +39,10 @@ export function HintPanel({ id, location, title, reasons, effect, onApply, onDis
     </div>
     <p className="hint-key">{variant === 'word' ? 'Solid: start · Dashed: continuation · Bottom badges: hint order' : 'Target: solid outline · Support: dashed'}</p>
     <ol>{reasons.map((reason, i) => <li key={i}>{reason}</li>)}</ol>
+    {!!supportingReasons?.length && <details className="hint-supporting">
+      <summary>Supporting deductions</summary>
+      <ol>{supportingReasons.map((reason, i) => <li key={i}>{reason}</li>)}</ol>
+    </details>}
     {effect && <p className="hint-effect">{effect}</p>}
     {onApply && <button type="button" className="tool-button apply-hint" onClick={onApply}>{variant === 'word' ? 'Reveal next letter' : 'Apply move'}</button>}
     <span className="hint-undo">{variant === 'word' ? 'Each revealed letter counts as a hint.' : 'Undo is available until solved.'}</span>

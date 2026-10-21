@@ -40,8 +40,11 @@ export function editSudoku(board: SudokuBoard, game: SudokuGame, cell: number, v
   if (pencil && value !== 0) {
     if (cells[cell] !== 0) return game
     notes[cell] = notes[cell]! ^ (1 << (value - 1))
-  } else { cells[cell] = value; notes[cell] = 0 }
-  return cells[cell] === game.cells[cell] && notes[cell] === game.notes[cell] ? game : { cells, notes }
+  } else {
+    cells[cell] = value; notes[cell] = 0
+    if (value) for (const peer of SUDOKU_PEERS[cell]!) if (!cells[peer]) notes[peer]! &= ~(1 << (value - 1))
+  }
+  return cells[cell] === game.cells[cell] && notes.every((mask, i) => mask === game.notes[i]) ? game : { cells, notes }
 }
 export function isSudokuSolved(board: SudokuBoard, cells: readonly number[]): boolean {
   return cells.length === 81 && cells.every((value, cell) => sudokuDigit(value) && value !== 0 && (!board.givens[cell] || value === board.givens[cell])) && sudokuConflicts(cells).size === 0

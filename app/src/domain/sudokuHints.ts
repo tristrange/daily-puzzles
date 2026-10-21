@@ -1,12 +1,13 @@
 /** The preview classifier's logical rules; notes never prove deductions. */
 import { editSudoku, isSudokuSolved, solveSudoku, SUDOKU_COLUMNS, SUDOKU_PEERS, SUDOKU_ROWS, SUDOKU_UNITS,
-  sudokuCellName, sudokuDigits, sudokuSingle, type SudokuBoard, type SudokuGame, type SudokuLevel, type SudokuSolution } from './sudoku'
+  sudokuDigits, sudokuSingle, type SudokuBoard, type SudokuGame, type SudokuLevel, type SudokuSolution } from './sudoku'
 
 export interface SudokuStep { cell: number; before: number; after: number; rule: string; group: readonly number[]; dependencies: readonly number[]; reason: string }
-export interface SudokuHint { cell: number; candidates: number; source: SudokuGame; reasons: readonly string[]; support: readonly number[]; correction?: boolean }
+export interface SudokuHint { cell: number; candidates: number; source: SudokuGame; reasons: readonly string[]; supportingReasons?: readonly string[]; support: readonly number[]; correction?: boolean }
 export type SudokuHintResult = { kind: 'hint'; hint: SudokuHint } | { kind: 'mistake'; cell: number } | { kind: 'none' | 'unverified' | 'contradiction' }
 export class SudokuContradictionError extends Error {}
 const count = (mask: number) => sudokuDigits(mask).length
+const cellLabel = (cell: number) => `R${Math.floor(cell / 9) + 1}C${cell % 9 + 1}`
 const unitName = (unit: readonly number[]) => {
   const index = SUDOKU_UNITS.findIndex(other => other.length === unit.length && other.every((cell, i) => unit[i] === cell))
   return index < 9 ? `Row ${index + 1}` : index < 18 ? `Column ${index - 8}` : `Box ${index - 17}`
@@ -26,15 +27,14 @@ export function nextSudokuStep(masks: readonly number[], level: SudokuLevel): Su
     const before = masks[cell]!, after = before & allowed
     if (!after) throw new SudokuContradictionError('A cell has no candidates')
     if (after === before) return null
-    const conclusion = sudokuSingle(after) ? `Only ${sudokuDigits(after)[0]} remains at ${sudokuCellName(cell).toLowerCase()}.`
-      : `Remove ${sudokuDigits(before & ~after).join(', ')} from ${sudokuCellName(cell).toLowerCase()}.`
+    const conclusion = `${cellLabel(cell)}: only ${sudokuDigits(after).join(', ')} ${sudokuSingle(after) ? 'remains' : 'remain'}.`
     return { cell, before, after, rule, group, dependencies: [], reason: `${premise} ${conclusion}` }
   }
   for (const [cell, mask] of masks.entries()) if (!sudokuSingle(mask)) {
     const fixed = SUDOKU_PEERS[cell]!.filter(i => sudokuSingle(masks[i]!))
     const used = fixed.reduce((all, i) => all | masks[i]!, 0)
     const step = restrict(cell, 511 ^ used, sudokuSingle(mask & ~used) ? 'naked-single' : 'peer', fixed,
-      `Cells sharing this cell's row, column or box already contain ${sudokuDigits(used & mask).join(', ')}. A digit cannot repeat in those groups.`)
+      'Digits already placed in this row, column or box are excluded.')
     if (step) return step
   }
   for (const unit of SUDOKU_UNITS) for (let digit = 0; digit < 9; digit++) {
@@ -52,7 +52,7 @@ export function nextSudokuStep(masks: readonly number[], level: SudokuLevel): Su
       if ((sourceIndex < 18) === (destIndex < 18) || !places.every(i => dest.includes(i))) continue
       for (const cell of dest) if (!source.includes(cell)) {
         const step = restrict(cell, 511 ^ bit, 'locked-candidate', source,
-          `${unitName(source)} can place ${digit + 1} only at ${places.map(i => sudokuCellName(i).toLowerCase()).join('; ')}. All these positions are in ${unitName(dest).toLowerCase()}, so ${digit + 1} cannot appear elsewhere in it.`)
+          `${unitName(source)} can place ${digit + 1} only at ${places.map(cellLabel).join(', ')}. All are in ${unitName(dest).toLowerCase()}, so ${digit + 1} cannot appear elsewhere in it.`)
         if (step) return step
       }
     }
@@ -65,7 +65,7 @@ export function nextSudokuStep(masks: readonly number[], level: SudokuLevel): Su
       if (count(union) !== size) continue
       for (const cell of unit) if (!selected.includes(cell)) {
         const step = restrict(cell, 511 ^ union, `naked-${name}`, selected,
-          `The highlighted ${size} cells in ${unitName(unit).toLowerCase()} can contain only ${sudokuDigits(union).join(', ')}. Those digits must stay in these cells.`)
+          `${selected.map(cellLabel).join(', ')} in ${unitName(unit).toLowerCase()} can contain only ${sudokuDigits(union).join(', ')}. Those digits must stay in these cells.`)
         if (step) return step
       }
     }
@@ -74,7 +74,7 @@ export function nextSudokuStep(masks: readonly number[], level: SudokuLevel): Su
       if (places.length !== size) continue
       for (const cell of places) {
         const step = restrict(cell, allowed, `hidden-${name}`, unit,
-          `${unitName(unit)} can place ${sudokuDigits(allowed).join(', ')} only at ${places.map(i => sudokuCellName(i).toLowerCase()).join('; ')}. These ${size} cells must hold those digits.`)
+          `${unitName(unit)} can place ${sudokuDigits(allowed).join(', ')} only at ${places.map(cellLabel).join(', ')}. These ${size} cells must hold those digits.`)
         if (step) return step
       }
     }
@@ -120,8 +120,18 @@ export function findSudokuHint(board: SudokuBoard, game: SudokuGame): SudokuHint
     const include = (i: number) => { if (included.has(i)) return; included.add(i); steps[i]!.dependencies.forEach(include) }
     include(index)
     const chain = [...included].sort((a, b) => a - b).map(i => steps[i]!)
+    const supportingReasons: string[] = [], peerChecks: string[] = []
+    const flushPeers = () => {
+      if (peerChecks.length) supportingReasons.push(`Row/column/box checks exclude placed digits, leaving ${peerChecks.join('; ')}.`)
+      peerChecks.length = 0
+    }
+    for (const step of chain.slice(0, -1)) {
+      if (step.rule === 'peer' || step.rule === 'naked-single') peerChecks.push(`${cellLabel(step.cell)}: ${sudokuDigits(step.after).join(', ')}`)
+      else { flushPeers(); supportingReasons.push(step.reason) }
+    }
+    flushPeers()
     return { kind: 'hint', hint: { cell: steps[index]!.cell, candidates: steps[index]!.after, source: game,
-      reasons: chain.map(step => step.reason), support: [...new Set(chain.flatMap(step => [...step.group, step.cell]))] } }
+      reasons: [steps[index]!.reason], supportingReasons, support: [...new Set(chain.flatMap(step => [...step.group, step.cell]))] } }
   } catch (error) { if (error instanceof SudokuContradictionError) return { kind: 'contradiction' }; throw error }
 }
 
