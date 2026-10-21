@@ -2084,7 +2084,8 @@ undoable erase. No production game registration, daily saves, stats, leaderboard
 publisher or database changes. Runtime data contains no answers.
 
 All 728 engine tests and 851 app tests pass, as do full typechecks, engine
-lint/format and the production build. App lint retains the existing TracksStage
+lint/format and the production build. All 180 published puzzles replay and the
+schema ID pattern matches the manifest. App lint retains the existing TracksStage
 warning. The Pages-base entry is 437.90 kB (137.63 kB gzip); Sudoku is a separate
 18.10 kB lazy chunk. Independent review caught an Escape focus issue, fixed with
 a regression test; the final review found no remaining actionable findings.
