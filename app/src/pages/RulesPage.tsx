@@ -26,6 +26,7 @@ export function RulesPage() {
             {PUZZLE_TYPE_LABEL[type]}
           </Link>
         ))}
+        <Link to={{ pathname: '/how-to-play', hash: '#sudoku' }}>Sudoku preview</Link>
       </nav>
 
       <h2 id="controls" tabIndex={-1}>Shared controls</h2>
@@ -215,6 +216,23 @@ export function RulesPage() {
       <p><Link to="/preview/trio">Play the five-board Trio preview</Link>. Attempts save
         separately in this browser. The timer pauses while the page is hidden or closed.
         Preview solves do not affect daily stats or streaks. No difficulty rating yet.</p>
+
+      <h2 id="sudoku" tabIndex={-1}>Sudoku</h2>
+      <p>Fill the 9×9 board with digits 1–9, once in every row, column and 3×3 box.
+        Given numbers are fixed. Notes are optional and do not count as filled cells.</p>
+      <p>Select a cell, then tap a number or press 1–9. N toggles Notes; tap digits
+        to toggle their pencil marks in an empty cell. Entering a number clears that
+        cell&rsquo;s notes. Erase clears the selected editable cell. Clear notes removes
+        all pencil marks in one undoable move. Arrows and Home/End move around the board.</p>
+      <p>Hint explains a placement or candidate elimination, with target and support
+        highlights. Apply move is optional and undoable. Notes never prove hints.
+        A wrong number first produces a free general warning; Show the mistake reveals
+        one correction and counts as a hint. Undo and Reset do not refund shown hints.</p>
+      <p><Link to="/preview/sudoku">Try Easy, Medium and Hard</Link>. Each preview has
+        one independently verified solution and finishes through its supported logical
+        techniques. Medium requires more than singles; Hard requires more than our
+        Medium techniques. These are provisional project ratings. Attempts save
+        separately and do not affect daily stats, streaks or leaderboards.</p>
 
       <h2>Finishing, sharing and stats</h2>
       <p>A solved board locks and offers a result to share, optionally including the finished

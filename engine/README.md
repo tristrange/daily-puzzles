@@ -232,3 +232,18 @@ The probe writes review data including answers and deduction traces, never publi
 puzzle files. Its provisional recipe requires deduction completion and a unique
 solution. See the [design](../docs/superpowers/specs/2026-10-18-trio-design.md) and
 [measured pilot](../docs/measurements/trio-pilot.json). Human difficulty is untested.
+
+## Sudoku preview certificates
+
+From `engine/`, `uv run python -m tools.sudoku_preview` verifies the three
+committed boards without writing. Add `--generate` to reconstruct the batch:
+at most 256 seeds per level, with a 200,000-node limit per independent exact
+check. Exhaustion never proves uniqueness. Broad construction is a manual probe;
+CI checks the three fixed boards and one small deterministic recipe.
+
+Easy uses singles and peer elimination. Medium adds locked candidates and pairs;
+Hard adds triples and X-wing. A band requires logical completion and, above Easy,
+a stall under the preceding band. These describe supported techniques, not human
+solve times. The [measurement report](../docs/measurements/sudoku-preview.json)
+contains offline answers and traces; app definitions contain only givens and IDs.
+Sudoku is not registered with the daily publisher yet.

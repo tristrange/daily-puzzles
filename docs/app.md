@@ -516,3 +516,23 @@ updates and page exit. Revisiting resumes only active play time. Undo remains
 visit-local. Solving clears the unfinished snapshot; replay starts fresh and
 never replaces the first-solve record. Storage failures leave play usable and
 show a warning after an actual failed save.
+
+## Sudoku preview
+
+`/preview/sudoku?board=1` lazily loads three original 9×9 boards, with Easy,
+Medium and Hard selected below the board. The dedicated Sudoku domain validates
+givens and completions by rows, columns and boxes. Its bounded exact checker is
+independent of logical hints; shared candidate fixtures verify the Python and
+TypeScript deduction rules. No answers are imported into the runtime bundle.
+
+Cell-first keypad/keyboard input, notes, Clear notes, visit-local Undo/Redo and
+confirmed Reset reuse existing controls and history. Preview saves use
+`daily-puzzles.sudoku-preview.v1.<id>` plus a board fingerprint; malformed saves
+are ignored and completed saves removed. Time counts active play. Reset and
+history preserve hint counts. Sudoku never writes daily Stats or leaderboards.
+
+Hints ignore manual notes as evidence. They show a dependency chain and supporting
+cells, then optionally apply a number or candidate restriction. Incorrect entries
+first produce a free general warning; revealing one mistake counts a hint and
+offers an undoable erase. Search exhaustion produces no accusation or guessed
+hint. Controls sit beside the board on desktop and above/below it on phones.
