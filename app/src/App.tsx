@@ -14,6 +14,7 @@ const StarBattlePage = lazy(() => import('./pages/StarBattlePage').then((module)
 const StatsPage = lazy(() => import('./pages/StatsPage').then((module) => ({ default: module.StatsPage })))
 const TrioPreviewPage = lazy(() => import('./pages/TrioPreviewPage').then((module) => ({ default: module.TrioPreviewPage })))
 const TentsPreviewPage = lazy(() => import('./pages/TentsPreviewPage').then((module) => ({ default: module.TentsPreviewPage })))
+const SudokuPreviewPage = lazy(() => import('./pages/SudokuPreviewPage').then((module) => ({ default: module.SudokuPreviewPage })))
 const WordPathsPreviewPage = lazy(() => import('./pages/WordPathsPreviewPage').then((module) => ({ default: module.WordPathsPreviewPage })))
 
 const loading = <p className="status" role="status">Loading…</p>
@@ -34,6 +35,7 @@ function App() {
             <Route path="preview/word-paths" element={<WordPathsPreviewPage />} />
             <Route path="preview/trio" element={<TrioPreviewPage />} />
             <Route path="preview/tents" element={<TentsPreviewPage />} />
+            <Route path="preview/sudoku" element={<SudokuPreviewPage />} />
             <Route path="stats" element={<StatsPage />} />
             <Route path="how-to-play" element={<RulesPage />} />
             <Route path="*" element={<NotFoundPage />} />

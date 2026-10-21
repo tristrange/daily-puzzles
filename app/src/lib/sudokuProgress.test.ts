@@ -1,0 +1,23 @@
+import { afterEach, expect, it, vi } from 'vitest'
+import raw from '../data/sudoku-previews.json'
+import { createSudokuGame, editSudoku, parseSudokuBoards } from '../domain/sudoku'
+import { readSudokuProgress, storeSudokuProgress } from './sudokuProgress'
+afterEach(() => vi.unstubAllGlobals())
+it('isolates validated preview attempts and preserves notes, active time and shown hints', () => {
+  const values = new Map<string, string>()
+  vi.stubGlobal('localStorage', { getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) })
+  const [board, other] = parseSudokuBoards(raw)
+  const game = editSudoku(board!, createSudokuGame(board!), board!.givens.indexOf(0), 9, true)
+  expect(storeSudokuProgress(board!, game, 4321, 2)).toBe(true)
+  expect(readSudokuProgress(board!)).toEqual({ game, elapsedMs: 4321, hints: 2 })
+  expect(readSudokuProgress(other!)).toBeNull()
+  const [key, value] = [...values][0]!, saved = JSON.parse(value)
+  for (const change of [{ hints: -1 }, { elapsedMs: 1.5 }, { board: 'stale' }, { notes: [512] }, { cells: Array(81).fill(0) }]) {
+    values.set(key, JSON.stringify({ ...saved, ...change }))
+    expect(readSudokuProgress(board!)).toBeNull()
+  }
+  vi.stubGlobal('localStorage', { getItem: () => { throw Error('blocked') }, setItem: () => { throw Error('blocked') } })
+  expect(readSudokuProgress(board!)).toBeNull()
+  expect(storeSudokuProgress(board!, game, 4321, 2)).toBe(false)
+})

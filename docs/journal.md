@@ -2063,3 +2063,36 @@ desktop/phone layouts without horizontal overflow. See
 [desktop](images/today-resume-desktop.png) and [phone](images/today-resume-phone.png).
 Physical iPhone and screen-reader testing were not performed. The unchanged
 engine and database suites were not rerun locally.
+
+
+## 2026-10-21 — Three playable Sudoku previews
+
+Added original Easy, Medium and Hard 9×9 previews, with one unique solution each.
+An independent occupancy/MRV counter certifies uniqueness; a separate deduction
+engine completes each board. Medium stalls under Easy techniques, and Hard stalls
+under Medium techniques. The chosen seeds are 0, 10002 and 20180, found in 1, 3
+and 181 attempts (about 0.02, 0.13 and 8.82 seconds locally). Hard requires a hidden
+triple. The bounded construction probe remains manual; CI checks only the fixed
+boards and a small deterministic recipe. See the
+[offline certificates](measurements/sudoku-preview.json).
+
+The lazy preview includes cell-first keypad/keyboard input, notes, Clear notes,
+Undo/Redo, confirmed Reset, active timing and fingerprinted local saves. Logical
+hints explain placements or candidate eliminations and highlight their support.
+Wrong entries get a free general warning before an optional counted reveal and
+undoable erase. No production game registration, daily saves, stats, leaderboard,
+publisher or database changes. Runtime data contains no answers.
+
+All 728 engine tests and 851 app tests pass, as do full typechecks, engine
+lint/format and the production build. App lint retains the existing TracksStage
+warning. The Pages-base entry is 437.90 kB (137.63 kB gzip); Sudoku is a separate
+18.10 kB lazy chunk. Independent review caught an Escape focus issue, fixed with
+a regression test; the final review found no remaining actionable findings.
+
+Browser checks cover desktop and 393px layouts, Light/Dark/Auto, notes and saved
+reload, history, staged mistakes, candidate hint application, target/Escape focus,
+and complete keyboard play followed by cleared completion saves. See
+[desktop](images/sudoku-preview-desktop.png) and
+[phone](images/sudoku-preview-phone.png). Physical iPhone and screen-reader
+testing remain unperformed; technique ratings need human playtesting before
+three-per-day publication.

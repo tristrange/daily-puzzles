@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 
-export function MistakeWarning({ id, onReveal, onDismiss }: {
-  id: string; onReveal: () => void; onDismiss: () => void
+export function MistakeWarning({ id, onReveal, onDismiss, message = 'Your entries lead to a contradiction. Check your placements and crosses, or try Undo.' }: {
+  id: string; onReveal: () => void; onDismiss: () => void; message?: string
 }) {
   const panel = useRef<HTMLElement>(null)
   useEffect(() => {
@@ -14,7 +14,7 @@ export function MistakeWarning({ id, onReveal, onDismiss }: {
       <div><p className="eyebrow">Hint check</p><h2 id={`${id}-title`}>Check your entries</h2></div>
       <button type="button" className="tool-button" onClick={onDismiss} aria-label="Dismiss hint">×</button>
     </div>
-    <p>Your entries lead to a contradiction. Check your placements and crosses, or try Undo.</p>
+    <p>{message}</p>
     <button type="button" className="tool-button apply-hint" onClick={onReveal}>Show the mistake</button>
     <span className="hint-undo">Revealing the mistake counts as one hint.</span>
   </section>

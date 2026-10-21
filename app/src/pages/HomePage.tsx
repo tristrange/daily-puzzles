@@ -90,6 +90,7 @@ export function HomePage() {
         <TodayCards probes={ready.probes} solved={solved} />
       )}
       <div className="today-more">
+        <Link to="/preview/sudoku">Try the Sudoku preview <span aria-hidden="true">→</span></Link>
         <p>Another round?</p>
         <Link to="/archive">Explore the archive <span aria-hidden="true">→</span></Link>
         <Link to="/stats">Your progress <span aria-hidden="true">→</span></Link>

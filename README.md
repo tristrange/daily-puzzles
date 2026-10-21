@@ -18,6 +18,13 @@ earlier history stays local. Browse rankings without joining. Stop publishing or
 remove your published results from the leaderboard panel. Preview boards never
 publish. See the [Free-plan setup guide](docs/leaderboard-setup.md) for activation.
 
+**Sudoku preview:** open `#/preview/sudoku?board=1` or use **Try Sudoku preview**
+on Today. Choose Easy, Medium or Hard below the board. Select a cell, then use
+the keypad or digits 1–9; Notes marks candidates. Explained hints can narrow
+candidates without filling a cell. Each original board has a proven unique
+solution and a verified logical solve. Levels are provisional technique bands;
+preview progress stays local and does not affect daily stats or leaderboards.
+
 ---
 
 ## The puzzles
