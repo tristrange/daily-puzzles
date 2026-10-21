@@ -124,3 +124,26 @@ it('collapses supporting deductions without hiding the conclusion or Apply actio
   expect(readSudokuProgress(hard)?.hints).toBe(1)
   await click('Apply move'); expect(readSudokuProgress(hard)?.game.notes[59]).toBe(79)
 })
+
+it('dims a digit at nine placements, excluding notes, and restores it after edits or history', async () => {
+  const digit = 6, cells = [...board.givens], notes = Array<number>(81).fill(0)
+  for (const [i, value] of proof.samples[0]!.solution.entries()) if (value === digit && i !== index) cells[i] = digit
+  notes[index] = 1 << (digit - 1)
+  storeSudokuProgress(board, { cells, notes }, 0, 0)
+  await mount()
+  const picker = () => container.querySelector<HTMLButtonElement>('[aria-label="Enter 6"]')!
+  expect(picker().dataset['allPlaced']).toBe('false')
+  await click('Enter 6')
+  expect(picker().dataset['allPlaced']).toBe('true')
+  expect(picker().getAttribute('aria-description')).toBe('9 of 9 placed')
+  expect(picker().disabled).toBe(false)
+  await click('Undo'); expect(picker().dataset['allPlaced']).toBe('false')
+  await click('Redo'); expect(picker().dataset['allPlaced']).toBe('true')
+  await click('Erase'); expect(picker().dataset['allPlaced']).toBe('false')
+  await click('Undo')
+  await act(async () => root.unmount()); root = createRoot(container); await mount()
+  expect(picker().dataset['allPlaced']).toBe('true')
+  await act(async () => cell(2).click()); await click('Enter 6')
+  expect(picker().getAttribute('aria-description')).toBe('10 of 9 placed')
+  expect(picker().disabled).toBe(false)
+})

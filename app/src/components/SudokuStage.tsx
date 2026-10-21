@@ -83,6 +83,8 @@ export function SudokuStage({ board }: { board: Board }) {
     else if (event.key.toLowerCase() === 'h') { event.preventDefault(); requestHint() }
   }
   const editable = !solved && board.givens[selected] === 0
+  const placedCounts = Array<number>(10).fill(0)
+  for (const value of game.cells) placedCounts[value]!++
   return <div className="sudoku-game" ref={stage} onKeyDown={keyboard}>
     <div className="sudoku-workspace">
       <div className="sudoku-controls">
@@ -99,6 +101,7 @@ export function SudokuStage({ board }: { board: Board }) {
         </div>
         <div className="sudoku-keypad" role="group" aria-label={pencil ? 'Note digits' : 'Enter a number'}>
           {Array.from({ length: 9 }, (_, i) => i + 1).map(value => <button type="button" className="tool-button" key={value} disabled={!editable}
+            data-all-placed={placedCounts[value]! >= 9} aria-description={`${placedCounts[value]} of 9 placed`}
             aria-label={`Enter ${value}`} onClick={() => enter(value)}>{value}</button>)}
           <button type="button" className="tool-button" disabled={!editable} onClick={() => enter(0)}>Erase</button>
         </div>

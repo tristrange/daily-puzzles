@@ -2146,3 +2146,15 @@ checks confirm Sudoku and Train Tracks render and hints still work; native focus
 switching is unavailable in the automated browser, so actual app-switch/minimize
 and physical iPhone verification remain manual. The unchanged engine/database
 suites were not rerun.
+
+## 2026-10-21 — Completed Sudoku digits
+
+The number picker dims a digit at nine or more placements, including givens and
+excluding notes. It stays usable for corrections and notes; the count does not
+claim the placements are correct. Erase, Undo/Redo and saved reload derive the
+cue from the board without changing the save format.
+
+All 866 app tests, typechecking and the production build pass. Lint retains the
+existing TracksStage warning. Browser checks cover history, desktop dark and
+393px light layouts. See [completed digit](images/sudoku-completed-digit.png).
+Physical iPhone, screen-reader and unchanged engine/database checks were not run.

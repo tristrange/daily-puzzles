@@ -1232,6 +1232,7 @@
 .sudoku-keypad { grid-area: keys; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .4rem; width: min(100%, 36rem); }
 .sudoku-keypad .tool-button { font-size: 1.1rem; min-height: 2.75rem; padding-inline: .25rem; }
 .sudoku-keypad .tool-button:last-child { font-size: .8125rem; }
+.sudoku-keypad .tool-button[data-all-placed='true'] { color: var(--text); background: var(--bg-sunken); border-color: transparent; }
 .sudoku-controls .timer { text-align: center; align-self: center; }
 .sudoku-mode { grid-area: mode; margin: 0; font-size: .8125rem; text-align: center; }
 .sudoku-board { grid-area: board; display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); width: min(100%, 36rem); border: 2px solid var(--text-h); border-radius: .3rem; overflow: hidden; background: var(--surface); touch-action: pinch-zoom; user-select: none; -webkit-user-select: none; }
