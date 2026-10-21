@@ -4,10 +4,10 @@ import { puzzleOfToday } from '../domain/dates'
 import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } from '../lib/stats'
 import { buildShareText, buildTentsSolutionShareText, copyText, puzzleShareLink } from '../lib/share'
 import { SolvedPanel } from './SolvedPanel'
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useId, useMemo, useRef, useState } from 'react'
 import { createTentsGame, editTent, isTentsSolved, tentsConflicts, type TentsBoard as Board, type TentsGame, type TentsMark } from '../domain/tents'
 import { findTentsHint, tentsCellName, type TentsHint } from '../domain/tentsHints'
-import { advanceWordClock } from '../domain/wordClock'
+import { usePlayClock } from '../lib/usePlayClock'
 import { formatTime } from '../domain/game'
 import { readTentsProgress, storeTentsProgress } from '../lib/tentsProgress'
 import { useMoveHistory } from '../lib/useMoveHistory'
@@ -31,8 +31,6 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
   const [brush, setBrush] = useState<TentsMark>(1)
   const [result, setResult] = useState<{ hints: number } | null>(null), completed = useRef(false)
   const solved = result !== null
-  const [elapsed, setElapsed] = useState(initial?.elapsedMs ?? 0)
-  const clock = useRef({ elapsedMs: initial?.elapsedMs ?? 0, lastAt: 0, visible: false })
   const hintsUsed = useRef(initial?.hints ?? 0)
   const [saving, setSaving] = useState(true), [message, setMessage] = useState('')
   const [hint, setHint] = useState<TentsHint | null>(null)
@@ -41,27 +39,10 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
   const conflicts = tentsConflicts(board, game)
   const reasons = useMemo(() => hint ? hint.reason.split('\n') : [], [hint])
 
-  const settle = useCallback(() => {
-    clock.current = advanceWordClock(clock.current, performance.now(), !document.hidden && !completed.current)
-    return Math.floor(clock.current.elapsedMs)
-  }, [])
-  const save = useCallback(() => {
-    const time = settle(); setElapsed(time)
+  const { elapsed, settle, stop } = usePlayClock(initial?.elapsedMs ?? 0, time => {
     setSaving(storeTentsProgress(board, current.current, time, hintsUsed.current, daily))
-  }, [board, daily, settle])
-  useEffect(() => {
-    if (solved) return
-    clock.current = { ...clock.current, lastAt: performance.now(), visible: !document.hidden }
-    const flush = () => { if (!completed.current) save() }
-    const timer = setInterval(flush, 500)
-    document.addEventListener('visibilitychange', flush); window.addEventListener('pagehide', flush)
-    return () => {
-      clearInterval(timer)
-      document.removeEventListener('visibilitychange', flush); window.removeEventListener('pagehide', flush)
-      if (!completed.current) storeTentsProgress(board, current.current, settle(), hintsUsed.current, daily)
-    }
-  }, [board, daily, save, settle, solved])
-
+  })
+  const save = () => { setSaving(storeTentsProgress(board, current.current, settle(), hintsUsed.current, daily)) }
   const change = (next: TentsGame) => { current.current = next; setGame(next) }
   const begin = () => { if (!completed.current) { before.current = current.current; setHint(null) } }
   const apply = (cell: number, value: TentsMark) => {
@@ -74,8 +55,7 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
     else if (previous !== current.current) {
       history.remember(previous)
       if (isTentsSolved(board, current.current)) {
-        const elapsedMs = settle()
-        setElapsed(elapsedMs)
+        const elapsedMs = stop()
         if (puzzle) {
           const when = Date.now()
           const earlier = readStoredStats().find(record => record.id === puzzle.id)
@@ -85,7 +65,7 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
           setStats(summarise(storeSolve(record), puzzleOfToday(new Date(when), Intl.DateTimeFormat().resolvedOptions().timeZone)))
           if (!earlier) { setCandidate(record); offerSolve(record) }
         }
-        completed.current = true; clock.current.visible = false; setResult({ hints: hintsUsed.current })
+        completed.current = true; setResult({ hints: hintsUsed.current })
       }
     }
     save()

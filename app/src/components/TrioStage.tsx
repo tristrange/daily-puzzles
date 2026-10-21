@@ -1,7 +1,7 @@
 import { useLeaderboard } from '../lib/useLeaderboard'
-import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { createTrioGame, editTrio, isTrioSolved, TRIO_NAMES, trioConflicts, type TrioAction, type TrioBoard as Board, type TrioGame, type TrioValue } from '../domain/trio'
-import { advanceWordClock } from '../domain/wordClock'
+import { usePlayClock } from '../lib/usePlayClock'
 import { formatTime } from '../domain/game'
 import { readTrioProgress, storeTrioProgress } from '../lib/trioProgress'
 import { applyTrioHint, findTrioHint, type TrioHint } from '../domain/trioHints'
@@ -34,8 +34,6 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
   const [pencil, setPencil] = useState(false)
   const [solved, setSolved] = useState(false)
   const completed = useRef(false)
-  const [elapsed, setElapsed] = useState(initial?.elapsedMs ?? 0)
-  const clock = useRef({ elapsedMs: initial?.elapsedMs ?? 0, lastAt: 0, visible: false })
   const [saving, setSaving] = useState(true)
   const [message, setMessage] = useState('')
   const [hint, setHint] = useState<TrioHint | null>(null)
@@ -44,30 +42,10 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
   const instructionsId = useId(), pickerId = useId(), hintId = useId()
   const conflicts = trioConflicts(board, game.cells)
 
-  const settle = useCallback(() => {
-    clock.current = advanceWordClock(clock.current, performance.now(), !document.hidden && !completed.current)
-    return Math.floor(clock.current.elapsedMs)
-  }, [])
-  const save = useCallback(() => {
-    const time = settle()
-    setElapsed(time)
+  const { elapsed, settle, stop } = usePlayClock(initial?.elapsedMs ?? 0, time => {
     setSaving(storeTrioProgress(board, current.current, time, daily, hintsUsed.current))
-  }, [board, daily, settle])
-  useEffect(() => {
-    if (solved) return
-    clock.current = { ...clock.current, lastAt: performance.now(), visible: !document.hidden }
-    const flush = () => { if (!completed.current) save() }
-    const timer = setInterval(flush, 500)
-    document.addEventListener('visibilitychange', flush)
-    window.addEventListener('pagehide', flush)
-    return () => {
-      clearInterval(timer)
-      document.removeEventListener('visibilitychange', flush)
-      window.removeEventListener('pagehide', flush)
-      if (!completed.current) storeTrioProgress(board, current.current, settle(), daily, hintsUsed.current)
-    }
-  }, [board, daily, save, settle, solved])
-
+  })
+  const save = () => { setSaving(storeTrioProgress(board, current.current, settle(), daily, hintsUsed.current)) }
   const change = (next: TrioGame) => { current.current = next; setGame(next) }
   const begin = () => { before.current = current.current; setHint(null) }
   const apply = (cell: number, action: TrioAction) => {
@@ -81,8 +59,7 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
     else if (previous !== current.current) {
       history.remember(previous)
       if (isTrioSolved(board, current.current.cells)) {
-        const elapsedMs = settle()
-        setElapsed(elapsedMs)
+        const elapsedMs = stop()
         if (puzzle) {
           const when = Date.now()
           const earlier = readStoredStats().find(record => record.id === puzzle.id)
@@ -93,7 +70,6 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
           if (!earlier) { setCandidate(record); offerSolve(record) }
         }
         completed.current = true
-        clock.current.visible = false
         setSolved(true)
       }
     }

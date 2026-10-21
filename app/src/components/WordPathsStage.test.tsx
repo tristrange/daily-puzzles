@@ -26,6 +26,7 @@ vi.mock('react', async (original) => ({ ...await original<typeof import('react')
     if (!(index in hooks.values)) hooks.values[index] = { current }
     return hooks.values[index]
   },
+  useEffectEvent: (fn: unknown) => fn,
   useCallback: (fn: unknown) => fn, useEffect: () => {}, useMemo: (fn: () => unknown) => fn(), useId: () => 'hint-id',
 }))
 vi.mock('../lib/share', async (original) => ({ ...await original<typeof import('../lib/share')>(),
@@ -40,7 +41,7 @@ function playing(game = createWordGame(grid), hints = 0) {
   const values = new Map<string, string>()
   vi.stubGlobal('localStorage', { getItem: (key: string) => values.get(key) ?? null,
     setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) })
-  vi.stubGlobal('document', { hidden: false })
+  vi.stubGlobal('document', { hidden: false, hasFocus: () => true })
   const puzzle: Puzzle = { id: '2026-10-19-words', puzzleType: 'word-paths', seed: 1, generatorVersion: 2, board: grid, difficulty: null }
   storeWordProgress(puzzle.id, game, 5000, false, hints)
   const render = () => { hooks.cursor = 0; return children(WordPathsStage({ puzzle, grid, timeZone: 'UTC' })) }

@@ -27,8 +27,9 @@ vi.mock('react', async (original) => ({ ...await original<typeof import('react')
     if (!(index in hooks.values)) hooks.values[index] = { current }
     return hooks.values[index]
   },
+  useEffectEvent: (fn: unknown) => fn,
   useEffect: (callback: () => void | (() => void)) => { effects.pending.push(callback) },
-  useMemo: (fn: () => unknown) => fn(), useId: () => 'hint-id',
+  useCallback: (fn: unknown) => fn, useMemo: (fn: () => unknown) => fn(), useId: () => 'hint-id',
 }))
 function children(node: ReactNode): ReactElement<Record<string, unknown>>[] {
   if (Array.isArray(node)) return node.flatMap(children)
@@ -36,6 +37,7 @@ function children(node: ReactNode): ReactElement<Record<string, unknown>>[] {
   return [node, ...children(node.props['children'] as ReactNode)]
 }
 function playing(raw: unknown, seed?: (puzzle: Puzzle, board: Board) => void) {
+  vi.stubGlobal('document', { ...globalThis.document, hidden: false, hasFocus: () => true })
   const values = new Map<string, string>()
   vi.stubGlobal('localStorage', { getItem: (key: string) => values.get(key) ?? null,
     setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) })

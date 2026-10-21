@@ -30,6 +30,7 @@ vi.mock('react', async (original) => ({
     if (!(index in hooks.values)) hooks.values[index] = { current }
     return hooks.values[index]
   },
+  useEffectEvent: (fn: unknown) => fn,
   useEffect: () => {}, useCallback: (callback: unknown) => callback, useId: () => 'test-id',
 }))
 vi.mock('../lib/share', async (original) => ({ ...await original<typeof import('../lib/share')>(),
@@ -44,7 +45,7 @@ function storage() {
   const values = new Map<string, string>()
   vi.stubGlobal('localStorage', { getItem: (key: string) => values.get(key) ?? null,
     setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) })
-  vi.stubGlobal('document', { hidden: false })
+  vi.stubGlobal('document', { hidden: false, hasFocus: () => true })
   vi.stubGlobal('performance', { now: () => 0 })
   return values
 }

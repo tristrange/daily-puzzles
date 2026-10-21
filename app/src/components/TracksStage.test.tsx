@@ -26,6 +26,7 @@ vi.mock('react', async (original) => ({ ...await original<typeof import('react')
     if (!(index in hooks.values)) hooks.values[index] = { current }
     return hooks.values[index]
   },
+  useEffectEvent: (fn: unknown) => fn,
   useCallback: (fn: unknown) => fn, useEffect: () => {}, useMemo: (fn: () => unknown) => fn(), useId: () => 'hint-id',
 }))
 function children(node: ReactNode): ReactElement<Record<string, unknown>>[] {
@@ -37,6 +38,7 @@ function children(node: ReactNode): ReactElement<Record<string, unknown>>[] {
 vi.mock('../lib/share', async (original) => ({ ...await original<typeof import('../lib/share')>(),
   copyText: vi.fn(async () => true), puzzleShareLink: (id: string) => `https://example.test/#/archive/${id}` }))
 function playing(grid: TrackGrid, savedHints = 0) {
+  vi.stubGlobal('document', { hidden: false, hasFocus: () => true })
   const values = new Map<string, string>()
   vi.stubGlobal('localStorage', { getItem: (key: string) => values.get(key) ?? null,
     setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) })

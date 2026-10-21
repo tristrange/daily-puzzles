@@ -39,6 +39,7 @@ import { InteractiveBoard } from './InteractiveBoard'
 import { HintPanel, MistakeWarning } from './HintPanel'
 import { ResetButton } from './ResetButton'
 import { useMoveHistory } from '../lib/useMoveHistory'
+import { usePlayClock } from '../lib/usePlayClock'
 
 const WordPathsStage = lazy(() => import('./WordPathsStage').then((module) => ({ default: module.WordPathsStage })))
 
@@ -84,8 +85,6 @@ export function PuzzleStage({
   const [announcement, setAnnouncement] = useState('')
   const [autoMark, setAutoMark] = useState(readStoredAutoMark)
   const [solvedAt, setSolvedAt] = useState<number | null>(null)
-  const [startedAt] = useState(() => Date.now() - (initialProgress?.elapsedMs ?? 0))
-  const [elapsed, setElapsed] = useState(initialProgress?.elapsedMs ?? 0)
   const [savingAvailable, setSavingAvailable] = useState(true)
   // Hints actually shown, not hints asked for: a request that had nothing forced
   // to say is not help, and counting it would make the stat a measure of nerves.
@@ -104,35 +103,9 @@ export function PuzzleStage({
   // as one step instead of one step per cell painted.
   const strokeStart = useRef<GameState | null>(null)
 
-  // Save with the timer, and flush on the way out. The start is offset by the
-  // saved duration, so a reload resumes from the same elapsed time rather than
-  // counting the time the app was closed.
-  useEffect(() => {
-    if (solvedAt !== null) return
-    const save = () => {
-      if (completed.current) return
-      setSavingAvailable(storeMarksProgress(
-        puzzle.id, currentGame.current, Math.max(0, Date.now() - startedAt), hintsUsed.current,
-      ))
-    }
-    const timer = setInterval(() => {
-      setElapsed(Math.max(0, Date.now() - startedAt))
-      save()
-    }, 500)
-    const flush = () => { save() }
-    document.addEventListener('visibilitychange', flush)
-    window.addEventListener('pagehide', flush)
-    return () => {
-      clearInterval(timer)
-      document.removeEventListener('visibilitychange', flush)
-      window.removeEventListener('pagehide', flush)
-      if (!completed.current) {
-        storeMarksProgress(
-          puzzle.id, currentGame.current, Math.max(0, Date.now() - startedAt), hintsUsed.current,
-        )
-      }
-    }
-  }, [puzzle.id, solvedAt, startedAt])
+  const { elapsed, settle, stop } = usePlayClock(initialProgress?.elapsedMs ?? 0, time => {
+    setSavingAvailable(storeMarksProgress(puzzle.id, currentGame.current, time, hintsUsed.current))
+  })
 
   const conflictList = useMemo(() => conflicts(game), [game])
   const conflictCells = useMemo(() => {
@@ -152,7 +125,7 @@ export function PuzzleStage({
   const piecePlural = PUZZLE_PIECE[puzzle.puzzleType].plural
 
   const solved = isSolved(game)
-  const shownTime = solvedAt === null ? elapsed : solvedAt - startedAt
+  const shownTime = elapsed
 
   const announce = (message: string) => {
     setAnnouncement(message)
@@ -165,6 +138,7 @@ export function PuzzleStage({
   }
 
   const recordSolve = (when: number) => {
+    const time = stop()
     completed.current = true
     clearMarksProgress(puzzle.id)
     setSolvedAt(when)
@@ -173,11 +147,11 @@ export function PuzzleStage({
     // Recorded once, at the moment it happens, and never revised: a replay is
     // played knowing the answer, so its time would flatter the record.
     const record: SolveRecord = { id: puzzle.id, puzzleType: puzzle.puzzleType, size: board.size,
-      elapsedMs: when - startedAt, hints: hintsUsed.current, solvedAt: when }
+      elapsedMs: time, hints: hintsUsed.current, solvedAt: when }
     setStats(summarise(storeSolve(record), puzzleOfToday(new Date(when), timeZone)))
     if (!earlier) { setCandidate(record); offerSolve(record) }
     setFirstSolve(earlier ?? null)
-    setAnnouncement(`Solved in ${formatTime(when - startedAt)}!`)
+    setAnnouncement(`Solved in ${formatTime(time)}!`)
   }
 
   const applyGame = (next: GameState, before: GameState = game) => {
@@ -191,7 +165,7 @@ export function PuzzleStage({
       return
     }
     setSavingAvailable(storeMarksProgress(
-      puzzle.id, next, Math.max(0, Date.now() - startedAt), hintsUsed.current,
+      puzzle.id, next, settle(), hintsUsed.current,
     ))
   }
 
@@ -248,7 +222,7 @@ export function PuzzleStage({
     resetHint()
     setAnnouncement('Undid the last move.')
     setSavingAvailable(storeMarksProgress(
-      puzzle.id, previous, Math.max(0, Date.now() - startedAt), hintsUsed.current,
+      puzzle.id, previous, settle(), hintsUsed.current,
     ))
   }
 
@@ -261,7 +235,7 @@ export function PuzzleStage({
     resetHint()
     setAnnouncement('Redid the last move.')
     setSavingAvailable(storeMarksProgress(
-      puzzle.id, next, Math.max(0, Date.now() - startedAt), hintsUsed.current,
+      puzzle.id, next, settle(), hintsUsed.current,
     ))
   }
 
@@ -272,9 +246,7 @@ export function PuzzleStage({
    * and a single Undo brings the whole board back after confirmation. It also
    * clears the hint panel so it cannot describe a board that no longer exists.
    *
-   * The clock is untouched. Elapsed time is measured from when the attempt
-   * began, so a reset mid-attempt leaves the timer running — the work already
-   * done was still done, and a reset is a correction rather than a new attempt.
+   * Reset preserves accumulated play time; correcting the board is not a new attempt.
    */
   const reset = () => {
     if (solved || strokeStart.current !== null || isEmpty(game)) return
@@ -287,7 +259,7 @@ export function PuzzleStage({
     setHint(next)
     hintsUsed.current += 1
     setSavingAvailable(storeMarksProgress(
-      puzzle.id, currentGame.current, Math.max(0, Date.now() - startedAt), hintsUsed.current,
+      puzzle.id, currentGame.current, settle(), hintsUsed.current,
     ))
     const position = hintCellName(board, next.cell)
     setAnnouncement(

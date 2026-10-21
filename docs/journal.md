@@ -2122,3 +2122,27 @@ See [compact hint](images/sudoku-compact-hint.png),
 [matching digits](images/sudoku-matching-digits.png) and
 [phone](images/sudoku-playing-aids-phone.png). Physical iPhone/screen-reader
 checks and the unchanged Python engine/database suites were not run.
+
+## 2026-10-21 — One focused-play timer policy
+
+The README review exposed inconsistent timers: Queens, Star Battle and Train
+Tracks counted elapsed page time, while the newer games excluded hidden time.
+The chosen policy now counts only a visible, focused puzzle page across every
+game and preview. Switching tabs or focusing another application pauses the same
+clock used by the display, saves, final results, shares and leaderboard uploads.
+
+`usePlayClock` replaces the stage-specific timer loops, reusing the existing
+monotonic clock calculation. It settles focus/visibility/lifecycle transitions,
+flushes current progress and stops permanently at completion. Existing save keys,
+fingerprints, accumulated durations and first-solve records remain unchanged.
+Earlier results cannot be retroactively converted into focused-play times.
+
+Nine integration cases went red against the old behavior: seven game types cover
+unfocused/hidden time, exact transition boundaries and saved remounts; Queens and
+Train Tracks also verify final solve times and leaderboard handoff. All 865 app
+tests, TypeScript checking and the production build pass. Lint retains the existing
+TracksStage warning. Independent review found no actionable issues. Browser smoke
+checks confirm Sudoku and Train Tracks render and hints still work; native focus
+switching is unavailable in the automated browser, so actual app-switch/minimize
+and physical iPhone verification remain manual. The unchanged engine/database
+suites were not rerun.

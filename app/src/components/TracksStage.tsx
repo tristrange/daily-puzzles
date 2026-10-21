@@ -1,4 +1,5 @@
 import { useLeaderboard } from '../lib/useLeaderboard'
+import { usePlayClock } from '../lib/usePlayClock'
 /** Track pieces and directional rules need their own stage; controls and hint presentation are shared. */
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
@@ -62,8 +63,6 @@ export function TracksStage({
   const history = useMoveHistory<TracksGame>()
   const [announcement, setAnnouncement] = useState('')
   const [solvedAt, setSolvedAt] = useState<number | null>(null)
-  const [startedAt] = useState(() => Date.now() - (initialProgress?.elapsedMs ?? 0))
-  const [elapsed, setElapsed] = useState(initialProgress?.elapsedMs ?? 0)
   const [savingAvailable, setSavingAvailable] = useState(true)
   const [stats, setStats] = useState<Stats | null>(null)
   const [firstSolve, setFirstSolve] = useState<SolveRecord | null>(null)
@@ -80,23 +79,9 @@ export function TracksStage({
 
   useEffect(() => { currentGame.current = game }, [game])
 
-  useEffect(() => {
-    if (solvedAt !== null) return
-    const save = () => storeTrackProgress(
-      puzzle.id, currentGame.current, Math.max(0, Date.now() - startedAt), hintsUsed.current,
-    )
-    const timer = setInterval(() => {
-      setElapsed(Math.max(0, Date.now() - startedAt))
-      setSavingAvailable(save())
-    }, 500)
-    const onPageHide = () => { if (!completed.current) save() }
-    window.addEventListener('pagehide', onPageHide)
-    return () => {
-      clearInterval(timer)
-      window.removeEventListener('pagehide', onPageHide)
-      if (!completed.current) save()
-    }
-  }, [puzzle.id, solvedAt, startedAt])
+  const { elapsed, settle, stop } = usePlayClock(initialProgress?.elapsedMs ?? 0, time => {
+    setSavingAvailable(storeTrackProgress(puzzle.id, currentGame.current, time, hintsUsed.current))
+  })
 
   // Nothing is flagged until the player has placed something. The givens are
   // pieces, and a given whose far end faces an empty cell is an unfinished board
@@ -109,7 +94,7 @@ export function TracksStage({
     [game, placed],
   )
   const solved = isTracksSolved(game)
-  const shownTime = solvedAt === null ? elapsed : solvedAt - startedAt
+  const shownTime = elapsed
 
   // The one place a solve is recorded, so a board that arrives already solved and
   // one the player finishes take the same path. Defensive today — the generator
@@ -117,18 +102,19 @@ export function TracksStage({
   // prevents is silent: the board renders locked, the clock runs on, and nothing
   // is ever stored.
   const recordSolve = useCallback((when: number) => {
+    const time = stop()
     completed.current = true
     clearTrackProgress(puzzle.id)
     setSolvedAt(when)
     // Read before storing, so a replay can be told why its time was not kept.
     const earlier = readStoredStats().find((record) => record.id === puzzle.id)
     const record: SolveRecord = { id: puzzle.id, puzzleType: puzzle.puzzleType, size: grid.width,
-      elapsedMs: when - startedAt, hints: hintsUsed.current, solvedAt: when }
+      elapsedMs: time, hints: hintsUsed.current, solvedAt: when }
     setStats(summarise(storeSolve(record), puzzleOfToday(new Date(when), timeZone)))
     if (!earlier) { setCandidate(record); offerSolve(record) }
     setFirstSolve(earlier ?? null)
-    setAnnouncement(`Solved in ${formatTime(when - startedAt)}!`)
-  }, [grid.width, puzzle.id, puzzle.puzzleType, startedAt, timeZone, offerSolve])
+    setAnnouncement(`Solved in ${formatTime(time)}!`)
+  }, [grid.width, puzzle.id, puzzle.puzzleType, stop, timeZone, offerSolve])
 
   // Arrived already solved. `solvedAt` is the guard, exactly as it is for a
   // finished game, so this fires once and never again.
@@ -148,7 +134,7 @@ export function TracksStage({
     history.remember(before)
     currentGame.current = next
     setGame(next)
-    setSavingAvailable(storeTrackProgress(puzzle.id, next, Math.max(0, Date.now() - startedAt), hintsUsed.current))
+    setSavingAvailable(storeTrackProgress(puzzle.id, next, settle(), hintsUsed.current))
     if (solvedAt !== null || !isTracksSolved(next)) return
     recordSolve(Date.now())
   }
@@ -190,7 +176,7 @@ export function TracksStage({
     clearHint()
     currentGame.current = previous
     setGame(previous)
-    setSavingAvailable(storeTrackProgress(puzzle.id, previous, Math.max(0, Date.now() - startedAt), hintsUsed.current))
+    setSavingAvailable(storeTrackProgress(puzzle.id, previous, settle(), hintsUsed.current))
     setAnnouncement('Undid the last move.')
   }
 
@@ -201,7 +187,7 @@ export function TracksStage({
     clearHint()
     currentGame.current = next
     setGame(next)
-    setSavingAvailable(storeTrackProgress(puzzle.id, next, Math.max(0, Date.now() - startedAt), hintsUsed.current))
+    setSavingAvailable(storeTrackProgress(puzzle.id, next, settle(), hintsUsed.current))
     setAnnouncement('Redid the last move.')
   }
 
@@ -222,7 +208,7 @@ export function TracksStage({
     setAnnouncement(message)
     if (result.kind === 'hint') {
       hintsUsed.current += 1
-      setSavingAvailable(storeTrackProgress(puzzle.id, currentGame.current, Math.max(0, Date.now() - startedAt), hintsUsed.current))
+      setSavingAvailable(storeTrackProgress(puzzle.id, currentGame.current, settle(), hintsUsed.current))
     }
   }
   const dismissHint = () => { clearHint(); hintButton.current?.focus({ preventScroll: true }) }

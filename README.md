@@ -52,7 +52,7 @@ previews also remain available with separate progress.
 ## Playing features
 
 - Responsive boards, keyboard controls, Light/Dark themes and Auto following the system.
-- Saved unfinished attempts and active-play timers. Today offers Resume; Undo/Redo history belongs to the current visit. Reset asks for confirmation.
+- Saved unfinished attempts and timers that pause while the page is hidden or unfocused. Today offers Resume; Undo/Redo history belongs to the current visit. Reset asks for confirmation.
 - Explained logic hints with target/support highlights and optional, undoable moves. Word Paths reveals a starting cell, then additional letters on request.
 - Notes and Clear notes in Trio and Sudoku. Shown hint counts survive Undo, Reset and reload.
 - Per-game archives and personal stats, first-solve times, daily streaks and shareable results.
