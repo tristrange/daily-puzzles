@@ -5,12 +5,17 @@ import { formatPuzzleLabel, puzzleIdsForDay, puzzleTypeOf } from '../domain/date
 import { DEFAULT_PUZZLE_TYPE, DIFFICULTY_LABEL, PUZZLE_TYPE_LABEL, PUZZLE_PIECE } from '../domain/games'
 import { probePuzzles, type ProbedPuzzle } from '../lib/puzzles'
 import { trackVariantOf } from '../domain/trackSizes'
+import { formatTime } from '../domain/game'
+import { isMarksPuzzle, isTracksPuzzle, isTrioPuzzle, isTentsPuzzle, type Puzzle } from '../domain/puzzle'
+import { WordGrid } from '../domain/wordPaths'
 import { readStoredStats } from '../lib/stats'
 import { useToday } from '../lib/useToday'
 
 type LoadState =
   | { status: 'loading' }
-  | { status: 'ready'; day: string; probes: readonly ProbedPuzzle[] }
+  | { status: 'ready'; day: string; probes: readonly TodayPuzzle[] }
+
+type TodayPuzzle = ProbedPuzzle & { readonly elapsedMs?: number | null }
 
 const DESCRIPTION: Record<PuzzleType, string> = {
   queens: 'One queen in each row, column and region. No touching.',
@@ -19,6 +24,15 @@ const DESCRIPTION: Record<PuzzleType, string> = {
   'word-paths': 'Find words along adjoining letters. Use every letter once.',
   trio: 'Balance sun, moon and star. Three of each in every row and column.',
   tents: 'Pair every tree with a tent. Match the counts and keep tents apart.',
+}
+
+// Keep full save validation, including the Word Paths vocabulary, out of the initial bundle.
+async function savedTime(puzzle: Puzzle): Promise<number | null> {
+  if (isMarksPuzzle(puzzle)) return (await import('../lib/marksProgress')).readMarksProgress(puzzle.id, puzzle.board)?.elapsedMs ?? null
+  if (isTracksPuzzle(puzzle)) return (await import('../lib/trackProgress')).readTrackProgress(puzzle.id, puzzle.board)?.elapsedMs ?? null
+  if (isTrioPuzzle(puzzle)) return (await import('../lib/trioProgress')).readTrioProgress(puzzle.board, true)?.elapsedMs ?? null
+  if (isTentsPuzzle(puzzle)) return (await import('../lib/tentsProgress')).readTentsProgress(puzzle.board, true)?.elapsedMs ?? null
+  return puzzle.board instanceof WordGrid ? (await import('../lib/wordProgress')).readWordProgress(puzzle.id, puzzle.board)?.elapsedMs ?? null : null
 }
 
 /**
@@ -45,13 +59,19 @@ export function HomePage() {
     let cancelled = false
     // `probePuzzles` never rejects: each id fails alone, so there is no whole-page
     // failure left to handle here.
-    probePuzzles(puzzleIdsForDay(todayId)).then((probes) => {
-      if (!cancelled) setState({ status: 'ready', day: todayId, probes })
+    probePuzzles(puzzleIdsForDay(todayId)).then(async (probes) => {
+      if (cancelled) return
+      setState({ status: 'ready', day: todayId, probes })
+      const attempts = await Promise.all(probes.map(async probe => {
+        try { return { ...probe, elapsedMs: probe.puzzle && !solved.has(probe.id) ? await savedTime(probe.puzzle) : null } }
+        catch { return { ...probe, elapsedMs: null } }
+      }))
+      if (!cancelled) setState({ status: 'ready', day: todayId, probes: attempts })
     })
     return () => {
       cancelled = true
     }
-  }, [todayId])
+  }, [todayId, solved])
 
   // A result for a previous day is not today's answer. Keeping the day beside
   // the probes lets a rollover show the loading state until the new day lands,
@@ -80,10 +100,10 @@ export function HomePage() {
 
 /** Rendering is shared by the daily page and controlled publication-state tests. */
 export function TodayCards({ probes, solved }: {
-  readonly probes: readonly ProbedPuzzle[]
+  readonly probes: readonly TodayPuzzle[]
   readonly solved: ReadonlySet<string>
 }) {
-  const groups = new Map<PuzzleType, ProbedPuzzle[]>()
+  const groups = new Map<PuzzleType, TodayPuzzle[]>()
   for (const probe of probes) {
     const family = probe.puzzle?.puzzleType ?? familyOf(probe.id)
     const group = groups.get(family)
@@ -95,6 +115,8 @@ export function TodayCards({ probes, solved }: {
       {[...groups].map(([family, entries]) => {
         const probe = entries[0]!
         const sized = family === 'train-tracks' && trackVariantOf(probe.id) !== null
+        const again = solved.has(probe.id)
+        const elapsed = !again ? probe.elapsedMs ?? null : null
         return (
           <li key={family} className={`game-card game-${family}`}>
             <div className="game-motif" aria-hidden="true">
@@ -114,6 +136,7 @@ export function TodayCards({ probes, solved }: {
                   const variant = trackVariantOf(entry.id)!
                   const label = `${variant.label} · ${variant.side}×${variant.side}`
                   const again = solved.has(entry.id)
+                  const elapsed = !again ? entry.elapsedMs ?? null : null
                   return (
                     <li key={entry.id}>
                       {entry.puzzle === null ? (
@@ -122,9 +145,9 @@ export function TodayCards({ probes, solved }: {
                         </div>
                       ) : (
                         <Link className="tool-button track-choice" to={`/archive/${entry.id}`}
-                          aria-label={`Play Train Tracks ${variant.label}${again ? ' again' : ''}`}>
+                          aria-label={`${elapsed === null ? 'Play' : 'Resume'} Train Tracks ${variant.label}${again ? ' again' : elapsed !== null ? ` at ${formatTime(elapsed)}` : ''}`}>
                           <span>{label}</span>
-                          <span className={again ? 'solved' : ''}>{again ? 'Solved' : 'Play'} <span aria-hidden="true">↗</span></span>
+                          <span className={again ? 'solved' : ''}>{again ? 'Solved' : elapsed !== null ? `Resume · ${formatTime(elapsed)}` : 'Play'} <span aria-hidden="true">↗</span></span>
                         </Link>
                       )}
                     </li>
@@ -139,10 +162,10 @@ export function TodayCards({ probes, solved }: {
                 </p>
                 {probe.puzzle === null ? <p className="game-card-state">{probe.unavailable ? 'Not saved — connect to load.' : 'Not published yet.'}</p> : (
                   <>
-                    {solved.has(probe.id) && <p className="game-card-state solved">Solved today.</p>}
+                    {again && <p className="game-card-state solved">Solved today.</p>}
                     <Link className="tool-button primary" to={`/archive/${probe.id}`}
-                      aria-label={`Play ${PUZZLE_TYPE_LABEL[family]}${solved.has(probe.id) ? ' again' : ''}`}>
-                      {solved.has(probe.id) ? 'Play again' : 'Play'} <span aria-hidden="true">↗</span>
+                      aria-label={`${elapsed === null ? 'Play' : 'Resume'} ${PUZZLE_TYPE_LABEL[family]}${again ? ' again' : elapsed !== null ? ` at ${formatTime(elapsed)}` : ''}`}>
+                      {again ? 'Play again' : elapsed !== null ? `Resume · ${formatTime(elapsed)}` : 'Play'} <span aria-hidden="true">↗</span>
                     </Link>
                   </>
                 )}
