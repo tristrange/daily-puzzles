@@ -2158,3 +2158,25 @@ All 866 app tests, typechecking and the production build pass. Lint retains the
 existing TracksStage warning. Browser checks cover history, desktop dark and
 393px light layouts. See [completed digit](images/sudoku-completed-digit.png).
 Physical iPhone, screen-reader and unchanged engine/database checks were not run.
+
+## 2026-10-21 — Sudoku group notes
+
+Dragging over Sudoku cells now highlights a selection immediately. Shift-click
+and Shift-arrow extend it without dragging. With several cells selected, digits
+add notes wherever missing, or remove a note when every empty selected cell has
+it. Notes mode is unchanged; filled values are preserved, and Erase clears only
+the selected empty cells' notes. Each group edit saves as one Undo/Redo move.
+Selecting one cell restores normal entry. Selection itself is temporary.
+
+Four regression cases cover mouse/touch pointer events, mixed notes, fixed and
+player-filled cells, group history, single-cell entry, keyboard selection and
+cancelled gestures. All 870 app tests, typecheck and Pages-base build pass; lint
+retains the existing TracksStage warning. Browser checks cover actual horizontal
+and vertical drags, group history, saved reload and desktop dark/393px light
+layouts. See [group notes](images/sudoku-group-notes.png). Physical iPhone and
+screen-reader checks and unchanged engine/database suites were not run.
+
+Review caught keyboard focus losing its automatic scroll; pointer focus now
+suppresses scrolling while keyboard navigation reveals the destination, verified
+in a short browser viewport. The touch regression also covers implicit pointer
+capture transferring from a cell to the grid without ending the drag.
