@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
+import { useId, useRef, useState, type KeyboardEvent } from 'react'
 import { createSudokuGame, editSudoku, isSudokuSolved, sudokuCellName, sudokuConflicts, sudokuDigits, sudokuSingle, type SudokuBoard as Board, type SudokuGame } from '../domain/sudoku'
 import { applySudokuHint, findSudokuHint, type SudokuHint } from '../domain/sudokuHints'
-import { advanceWordClock } from '../domain/wordClock'
+import { usePlayClock } from '../lib/usePlayClock'
 import { formatTime } from '../domain/game'
 import { historyCommand, useMoveHistory } from '../lib/useMoveHistory'
 import { readSudokuProgress, storeSudokuProgress } from '../lib/sudokuProgress'
@@ -16,32 +16,17 @@ export function SudokuStage({ board }: { board: Board }) {
   const [shownHints, setShownHints] = useState(initial?.hints ?? 0)
   const [selected, setSelected] = useState(() => Math.max(0, board.givens.indexOf(0)))
   const [pencil, setPencil] = useState(false), [solved, setSolved] = useState(false), [saving, setSaving] = useState(true)
-  const [elapsed, setElapsed] = useState(initial?.elapsedMs ?? 0), clock = useRef({ elapsedMs: initial?.elapsedMs ?? 0, lastAt: 0, visible: false })
   const [message, setMessage] = useState(''), [hint, setHint] = useState<SudokuHint | null>(null), [mistake, setMistake] = useState<number | null>(null)
   const stage = useRef<HTMLDivElement>(null), hintButton = useRef<HTMLButtonElement>(null)
   const instructionsId = useId(), hintId = useId(), conflicts = sudokuConflicts(game.cells)
-  const settle = useCallback(() => {
-    clock.current = advanceWordClock(clock.current, performance.now(), !document.hidden && !completed.current)
-    return Math.floor(clock.current.elapsedMs)
-  }, [])
-  const persist = useCallback((time: number) => storeSudokuProgress(board, current.current, time, hints.current), [board])
-  const save = useCallback(() => {
-    const time = settle(); setElapsed(time); setSaving(persist(time))
-  }, [persist, settle])
-  useEffect(() => {
-    if (solved) return
-    clock.current = { ...clock.current, lastAt: performance.now(), visible: !document.hidden }
-    const flush = () => { if (!completed.current) save() }, timer = setInterval(flush, 500)
-    document.addEventListener('visibilitychange', flush); window.addEventListener('pagehide', flush)
-    return () => {
-      clearInterval(timer); document.removeEventListener('visibilitychange', flush); window.removeEventListener('pagehide', flush)
-      if (!completed.current) persist(settle())
-    }
-  }, [persist, save, settle, solved])
+  const { elapsed, settle, stop } = usePlayClock(initial?.elapsedMs ?? 0, time => {
+    setSaving(storeSudokuProgress(board, current.current, time, hints.current))
+  })
+  const save = () => { setSaving(storeSudokuProgress(board, current.current, settle(), hints.current)) }
   const clearHint = () => { setHint(null); setMistake(null) }
   const change = (next: SudokuGame) => {
     current.current = next; setGame(next); clearHint()
-    if (isSudokuSolved(board, next.cells)) { setElapsed(settle()); completed.current = true; clock.current.visible = false; setSolved(true) }
+    if (isSudokuSolved(board, next.cells)) { stop(); completed.current = true; setSolved(true) }
     save()
   }
   const commit = (next: SudokuGame, feedback = '') => {

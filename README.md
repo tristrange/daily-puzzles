@@ -1,328 +1,183 @@
 # Daily Puzzles
 
-A daily logic puzzle, published as a static site. Inspired by LinkedIn Queens, built from
-scratch: a Python engine that generates and proves puzzles, and a static TypeScript/React
-app that plays them.
+Six daily puzzle games and a Sudoku preview, built as a portfolio and learning
+project. A Python engine generates and verifies original boards; a React and
+TypeScript app plays them in the browser. The site is hosted on GitHub Pages.
 
-**Live site → [tristrange.github.io/daily-puzzles](https://tristrange.github.io/daily-puzzles/)**
+**[Play Daily Puzzles](https://tristrange.github.io/daily-puzzles/)** ·
+[Rules](https://tristrange.github.io/daily-puzzles/#/how-to-play) ·
+[Archive](https://tristrange.github.io/daily-puzzles/#/archive)
 
-Puzzle play needs no account or server: the app is a static site with committed
-puzzle files and local progress. **Queens**, **Star Battle**, **Train Tracks**,
-**Word Paths** and **Trio** each keep their own first solve. Word Paths daily slots start on
-October 15, 2026. Trio's archive starts on September 26, 2026, backfilled at launch;
-both previews remain available independently.
+Playing needs no account or backend connection. Progress, settings and personal
+stats stay in your browser. Optional anonymous leaderboards use a separate
+Supabase backend.
 
-Optional leaderboards use Supabase Free and anonymous browser identities, with no
-email or password. Join to publish first solves with a nickname, time and hints;
-earlier history stays local. Browse rankings without joining. Stop publishing or
-remove your published results from the leaderboard panel. Preview boards never
-publish. See the [Free-plan setup guide](docs/leaderboard-setup.md) for activation.
+## Games
 
-**Sudoku preview:** open `#/preview/sudoku?board=1` or use **Try Sudoku preview**
-on Today. Choose Easy, Medium or Hard below the board. Select a cell, then use
-the keypad or digits 1–9; Notes marks candidates. Explained hints can narrow
-candidates without filling a cell. Each original board has a proven unique
-solution and a verified logical solve. Levels are provisional technique bands;
-preview progress stays local and does not affect daily stats or leaderboards.
+| Game | Daily board | Rules in brief |
+| --- | --- | --- |
+| **Queens** | Variable size, rated difficulty | One queen in each row, column and coloured region. Queens cannot touch, including diagonally; sharing a longer diagonal is allowed. |
+| **Star Battle** | 9×9, two stars per group | Two stars in each row, column and region. Stars cannot touch, including diagonally. |
+| **Train Tracks** | Small 8×8, Medium 10×10 and Large 12×12 | Connect the two edge endpoints with one unbranched track, matching row and column counts. All three sizes publish every day. |
+| **Word Paths** | 5×5, English | Trace four orthogonal words of lengths 3, 4, 5 and 6, using every letter once without overlap. |
+| **Trio** | 9×9 | Place three suns, moons and stars in every row and column. No three identical symbols consecutively; respect adjacent same/different clues. |
+| **Tents** | 10×10, 18 tents | Pair trees with orthogonally adjacent tents, match row/column counts and keep tents apart, including diagonally. Each tree and tent must have a one-to-one pairing. |
 
----
+Train Tracks sizes describe dimensions, not difficulty. New boards use every row
+and column; older 7×7 boards remain playable with their original rules. The `?`
+marker means definite track with an undecided shape and counts toward clues.
 
-## The puzzles
+### Sudoku preview
 
-**Queens** — on an `N`×`N` grid divided into `N` coloured regions, place `N` pieces so
-that every row, every column and every region holds exactly one, and no two pieces touch,
-**including diagonally**.
+**[Try Easy, Medium and Hard](https://tristrange.github.io/daily-puzzles/#/preview/sudoku?board=1)**
+— one original 9×9 board per level, selected below the board. Sudoku is not yet
+published daily.
 
-The diagonal is the part that trips up most clones. One-per-row and one-per-column already
-forbid horizontal and vertical neighbours, so the touching rule only ever adds the four
-diagonal neighbours — which means this is *not* classic N-queens. Two pieces may share a
-long diagonal as long as they are not adjacent.
+Select a cell, then use the keypad or keyboard. Notes mark candidates; entering
+a number removes it from peer notes in its row, column and box. Clear notes,
+Undo/Redo and confirmed Reset are available. Selecting a number softly highlights
+matching numbers and their rows/columns. Explained hints show remaining candidates
+and keep supporting deductions expandable.
 
-**Star Battle** — the same board with two stars per row, column and region. Same
-no-touching rule, same solver.
+Each board has a verified unique solution and a complete logical solve. The
+levels describe the techniques required by the project's solver and remain
+provisional pending playtesting. Preview attempts save separately and never
+count toward daily stats, streaks or leaderboards.
 
-Both games offer explained hints with target and support highlights. Apply move
-places a forced piece or crosses out one cell; Undo/Redo can restore the move
-until solved. Hints reason from your placed pieces and crosses, so they assume
-your crosses are correct.
+Earlier [Word Paths](https://tristrange.github.io/daily-puzzles/#/preview/word-paths),
+[Trio](https://tristrange.github.io/daily-puzzles/#/preview/trio) and
+[Tents](https://tristrange.github.io/daily-puzzles/#/preview/tents?board=7)
+previews also remain available with separate progress.
 
-Neither game will hand you a puzzle you cannot solve, and both guarantee two things the
-player is never told: regions partition the grid and each is 4-connected, and **exactly one
-solution exists**.
+## Playing features
 
-That uniqueness is a hard gate, enforced by an exact solver with no heuristics and no time
-cutoff. It is the same guarantee for both games.
+- Responsive boards, keyboard controls, Light/Dark themes and Auto following the system.
+- Saved unfinished attempts and timers that pause while the page is hidden or unfocused. Today offers Resume; Undo/Redo history belongs to the current visit. Reset asks for confirmation.
+- Explained logic hints with target/support highlights and optional, undoable moves. Word Paths reveals a starting cell, then additional letters on request.
+- Notes and Clear notes in Trio and Sudoku. Shown hint counts survive Undo, Reset and reload.
+- Per-game archives and personal stats, first-solve times, daily streaks and shareable results.
+- Optional per-puzzle leaderboards showing nickname, time and hints, accessible after solving and from navigation. Browsing requires no signup; joining uses an anonymous browser identity, without email or password.
 
-**Queens carries a third guarantee: it is solvable by pure logic rather than guessing.**
-Star Battle does not, and claiming it would be false — of 1000 sampled two-star boards only
-0.1% finished on rules alone, so the publisher gates Star Battle on uniqueness and says
-exactly that rather than claiming a property it does not check. ("Solvable without
-guessing" is a soft signal in any case: we measure how deeply a deduction engine has to
-reason and rate the board from that. It is not formally decidable, and the project does not
-pretend otherwise.)
+Hints may stall when their supported techniques find nothing further; that does
+not establish that guessing is necessary. Queens, Star Battle and Sudoku warn
+before optionally revealing a mistaken entry. Other games report contradictions
+found by their own checks. Notes are not proof for Trio/Sudoku hints; crosses,
+grass and placed tracks can be assumptions in the games that use them.
 
-[Why Star Battle is not logic-gated →](docs/journal.md#the-second-puzzle-type)
+Leaderboard results are reported by the client and are intended for casual play,
+not cheat-proof competition. Backend setup and service limits are documented in
+[the leaderboard guide](docs/leaderboard-setup.md). Normal puzzle play works
+without that integration.
 
-**Train Tracks** — connect two given edge endpoints with one continuous track, matching
-all row and column counts. No branches or closed loops. Starting October 14, 2026,
-each day offers **Small 8×8**, **Medium 10×10**, and **Large 12×12**. These describe
-board size, not difficulty. New boards use every row and column, scatter extra
-givens, and have a proven unique solution; no logic-only guarantee is claimed.
-Historical 7×7 boards remain playable with their original rules and contents.
-
-The ? marker commits a cell to track while its direction is undecided. It counts
-towards row and column limits, just like a shaped track; × marks do not count.
-Choose a track shape or clear every ? before completing the route.
-
-Explained hints use clue counts, matching connections and fixed edge endpoints.
-Apply move records an empty cell, definite track (?) or a forced shape as one
-undoable move. Hints rely on your tracks and crosses as assumptions and may stall;
-they do not search or guarantee a logic-only solution. Shown hints are saved with
-unfinished attempts and counted in solve results.
-
-Unfinished Train Tracks boards and elapsed time save independently in this browser.
-Time pauses between page visits; Undo and Redo belong to the current visit. Finished boards
-start fresh for replay while the original solve stays in stats. Appearance defaults
-to Auto, following the system, with Light and Dark overrides.
-
-**Word Paths** — find four English words of lengths 3, 4, 5 and 6 on a 5×5
-letter grid. Trace orthogonally, use every letter once and never overlap words.
-A legal word can lead to a dead end; Undo lets you try another path. Each board
-has one complete cover against its versioned vocabulary. New boards accept
-16,781 words from SCOWL while answers use a familiar 748-word pool; original
-boards retain their frozen vocabulary. Uniqueness is not claimed across every
-English word. No difficulty rating is claimed. Hint reveals a starting cell for
-a remaining word; Reveal next letter uncovers more of its path only when asked.
-Each revealed letter counts as a hint, including after reloading or resetting.
-Hints preserve your accepted words and check that the rest of the board can
-still be completed. A dead end prompts Undo; an unfinished search is reported
-separately. Your current selection stays unchanged; trace and submit as usual.
-Daily progress and results are separate from the [ten-board preview](https://tristrange.github.io/daily-puzzles/#/preview/word-paths).
-
-**Trio** — balance sun, moon and star on a 9×9 board: three of each per
-row and column, no three identical symbols consecutively, and adjacent same/different
-clues. [Play the daily archive](https://tristrange.github.io/daily-puzzles/#/archive?game=trio).
-Each daily board is uniquely solvable and completes through direct deductions.
-It includes pencil notes, Undo/Redo, confirmed Reset, explained hints and saved attempts.
-Clear notes removes all pencil marks in one undoable move, keeping placed symbols.
-Hints highlight their target and supporting cells; Apply move places a forced
-symbol or updates one cell's candidate notes, with Undo available until solved.
-The [five-board preview](https://tristrange.github.io/daily-puzzles/#/preview/trio)
-retains separate attempts and never affects daily stats. No difficulty rating is claimed.
-
-**Tents** — one daily 10×10 board with 18 tents.
-[Play the daily archive](https://tristrange.github.io/daily-puzzles/#/archive?game=tents).
-Pair every tree with one orthogonally adjacent tent, match the row/column totals,
-and keep tents apart, including diagonally. A tent can border several trees;
-the completed board must allow a one-to-one pairing. Daily boards have nonzero
-clues throughout, a verified unique tent placement, no immediate singleton-tree
-or full-line opening, and an offline line-pattern completion without guessing.
-The current explained hints may stall; no difficulty rating is claimed.
-Tent, Grass and Erase brushes support tap/drag and keyboard play, Undo/Redo,
-confirmed Reset and separately saved active-time attempts. Grass is optional for
-completion but is an assumption for hints. Daily solves support Stats, streaks,
-sharing and optional leaderboards. The backlog starts September 26, 2026.
-The [nine-board preview](https://tristrange.github.io/daily-puzzles/#/preview/tents?board=7)
-retains its original boards and separate saved attempts; preview solves do not
-enter daily Stats or leaderboards. Boards 1–6 are 8×8 and Boards 7–9 are 10×10.
-
----
-
-## Add to your Home Screen
+## Install and play offline
 
 On iPhone, open the site in Safari and choose **Share → Add to Home Screen**.
-Keep **Open as Web App** enabled if shown, then tap **Add**. The icon launches
-Daily Puzzles in its own window, with Auto appearance following your system.
+After the first online visit, wait for **App ready offline**. Today downloads its
+available daily boards; opening Archive downloads the puzzles it loads. Saved
+boards can then be played without a connection. New or unopened daily puzzles
+still need internet.
 
-After the first online visit, wait for **App ready offline**. Today saves its
-available boards; opening the archive saves recent puzzles across all games. Those boards
-can then be played without a connection. New or unopened puzzles need internet.
+The installed app and Safari have separate progress and downloads. Open the
+installed app online before relying on it offline. Clearing site data or browser
+cache eviction can remove saved data; progress does not sync between devices.
+Losing an anonymous leaderboard identity also loses self-service access to its
+published results. When an update is ready, close every open app window and
+reopen it to activate the update.
 
-Safari and the installed iPhone app keep separate progress, stats, settings and
-downloads. Open the installed app online before relying on it offline.
-All six games resume unfinished games after reload; Undo history starts fresh.
-Today, Archive, Stats and Leaderboards follow the player's local calendar day and
-roll over at midnight even if the app stays open. Browser cache eviction or
-clearing site data can remove downloads. Updates wait until all app windows
-close; finish your game, then close and reopen them. Progress does not sync
-between devices.
-Optional leaderboard participation belongs to each browser identity; losing that
-identity also loses self-service access to its published results.
+## Puzzle guarantees
 
-## Why it is built this way
+Every daily board is checked for a unique solution. For Word Paths, uniqueness
+means one complete cover within that board's frozen vocabulary, not every word
+in the English language. A valid individual word can still lead to a dead end.
 
-### One file, two languages
+Queens and Trio daily generation also require logical completion. Tents uses an
+offline line-pattern completion check. Star Battle and Train Tracks guarantee
+uniqueness without claiming that the live hint engines can finish every board.
+Sudoku previews have independent exact-solver and deduction certificates.
 
-The engine writes `app/public/puzzles/<date>.json`; the app reads it. **Neither runs
-the other at runtime.** Schema fixtures and the frozen English vocabulary are
-shared reference data. That boundary is why the file format is owned by neither language:
-[`schema/puzzle.schema.json`](schema/puzzle.schema.json) is validated by `jsonschema` in
-Python and `ajv` in TypeScript, so the two parsers cannot drift apart.
-
-Parsing agreement is necessary but not sufficient — a board can be structurally valid and
-logically broken. So [`conformance/`](conformance/) extends the same idea from parsing to
-*reasoning*, and to the small tables both sides would otherwise copy:
-
-| Suite | Pins |
-| --- | --- |
-| `schema-cases/` | what a file may say, and which rule rejects a bad one |
-| `board-cases/` | which board is legal, and **which rule** rejects an illegal one |
-| `hint-cases/` | what each side *deduces* from a player's live board |
-| `hint-baseline` | the same, over 1,299 generated positions rather than a dozen curated ones |
-| `id-cases/` | puzzle id naming — a spelling the two disagree on is a puzzle that is published, correct, and unfindable |
-| `band-cases/` | difficulty band names, which the engine prints and the player reads |
-
-Every expectation is asserted from both languages.
-
-### The puzzle is a pure function of its seed
-
-Given a seed, the engine produces the same board forever, so any puzzle can be replayed and
-checked. The nightly publisher regenerates and verifies every committed file, which means
-a change that would quietly drift the archive fails CI before a player ever sees it.
-
----
+Seeds, generator versions and vocabulary versions preserve historical boards.
+Published files are committed and replay-verified; existing archive files are
+not rewritten when a generator changes. No solution arrays are shipped in
+puzzle definitions. Validation and hints run locally; client-side computation
+is not a security boundary.
 
 ## Architecture
 
-```
+```text
 daily-puzzles/
-  engine/       Python: generator, exact solver, deduction engine, difficulty
-  app/          TypeScript: React UI, game state, client-side hint engine
-  schema/       puzzle.schema.json — the single source of truth for the format
-  conformance/  fixtures both languages must agree on
-  docs/         design notes, measurements and the build log
+  app/                  React, TypeScript and Vite; game UI and pure domain rules
+    public/puzzles/     Committed daily puzzle JSON
+  engine/               Python generators, exact solvers and deduction engines
+  schema/               Shared puzzle-file schema
+  conformance/          Shared parsing, rule, hint and identity fixtures
+  backend/leaderboard/  Optional Supabase migrations, tests and catalog sync
+  docs/                 Design notes, measurements, setup guides and build journal
 ```
 
-The app keeps its own `Board` model rather than sharing the engine's. That is genuine
-shared domain, not accidental duplication: the browser cannot run the Python engine, and
-the app's hint engine has to run against the player's *live* board rather than a stored
-solution. The suites above are what keep the two copies honest.
+The Python engine runs offline and in CI, not in the browser. The app reads its
+JSON output and owns player state and live hints. Shared fixtures check agreement
+between the two implementations. Puzzle definitions, saved progress and daily
+assignment remain separate. Sudoku currently uses dedicated preview definitions
+rather than the daily schema and publisher.
 
-The board is a semantic ARIA grid — `role=grid` over `role=row`/`role=gridcell`, a roving
-tabindex, full keyboard play and a screen-reader label per cell — so a keyboard-only player
-drives the game end to end.
+GitHub Actions fills missing daily slots, checks archive replay and deploys the
+static site. App checks always run. Known frontend/documentation-only PRs skip
+engine work; main pushes run full validation. Engine tests and archive replay
+run in parallel, and deployment waits for both plus the app gate.
 
----
+## Local development
 
-## Setup
+Use **Node.js 22.12+** (CI uses Node 22). Python work additionally requires
+**Python 3.13+** and **uv**. The app can run against committed puzzle data without
+starting Python or configuring Supabase.
 
-Requires Python 3.13+ (`uv`) and Node 22+.
-
-```sh
-brew install uv node
-
-cd engine && uv sync && cd ..
-cd app    && npm install && cd ..
-```
-
-## Commands
-
-Engine:
-
-```sh
-cd engine
-uv run pytest        # unit + property-based tests
-uv run ruff check .  # lint
-uv run ruff format . # format
-uv run pyright       # strict type check
-uv run python -m tools.generate --date 2026-10-01   # one puzzle, plus an ASCII render
-uv run python -m tools.generate --date 2026-10-14-tracks-large --type train-tracks # 12x12
-uv run python -m tools.generate --date 2026-10-21-tents --type tents # daily 10x10
-uv run python -m tools.publish  --out ../app/public/puzzles   # fill the archive
-uv run python -m tools.verify   --dir ../app/public/puzzles   # replay every committed file
-uv run python -m tools.benchmark_tracks --out /tmp/tracks-probe.json # probe 8/10/12 boards
-uv run python -m tools.tents_preview  # independently verify all nine Tents previews
-```
-
-App:
+From the repository root:
 
 ```sh
 cd app
-npm test         # unit + the shared conformance suites
+npm ci
+npm run dev
+```
+
+Open the URL Vite prints. For Sudoku, append `#/preview/sudoku?board=1`.
+
+App checks and production preview, from `app/`:
+
+```sh
+npm test
 npm run typecheck
 npm run lint
-npm run dev      # dev server
-npm run build    # production build
+npm run build
+npm run preview
 ```
 
-Both suites must be green in the same commit. A fixture change and the code change that
-motivated it belong together.
+Engine setup and checks, from `engine/`:
 
----
-
-## CI feedback
-
-Frontend/documentation-only PRs run the app checks and skip the engine suite.
-Puzzle files, engine code, shared schema/conformance data, CI files and unknown
-paths still require engine tests and archive verification. Missing diff history
-falls back to full checks. Main pushes and manual/publisher dispatches always
-run full validation before deployment.
-
-Engine tests and full archive replay run in parallel on separate GitHub runners.
-The existing `engine` gate requires both to pass; deployment still waits for that
-gate and the app checks. No tests or archive verification are skipped to gain speed.
-
-New commits cancel older CI runs for that PR; main/deployment runs are preserved.
-The engine test output includes its slowest cases to guide further improvements.
-Check routing locally with `python3 -m unittest discover -s .github/scripts`.
-
-## The file format
-
-```json
-{
-  "id": "2026-10-11",
-  "type": "queens",
-  "seed": 1912550966,
-  "generatorVersion": 1,
-  "board": {"size": 3, "regions": [0, 0, 0, 1, 1, 2, 2, 2, 2]},
-  "difficulty": 4
-}
+```sh
+uv sync --frozen
+uv run pytest -q
+uv run pyright
+uv run ruff check .
+uv run ruff format --check .
+uv run python -m tools.verify --dir ../app/public/puzzles
+uv run python -m tools.schema_ids --check
+uv run python -m tools.sudoku_preview  # verify the three fixed preview certificates
 ```
 
-- `board` holds everything describing the grid, so the shape belongs to the game rather
-  than the envelope.
-- `regions` is row-major, one region id per cell, length exactly `size * size`.
-- `seed` drives a pinned SplitMix64 stream — **not** Python's `random`, whose output is not
-  stable across versions — so any puzzle replays exactly.
-- `regionCapacity` is omitted for Queens and required for Star Battle. Keeping it in the
-  format is what lets one solver serve both.
+For a Pages-style production build, set `BASE_PATH=/daily-puzzles/` when running
+`npm run build`. See [engine usage](engine/README.md) for generation commands and
+[pipeline documentation](docs/pipeline.md) before publishing new daily boards.
 
-- Solutions are **never shipped to the client**. Hints are computed live from the player's
-  current board, which is leak-proof and more useful, because a hint can explain *why* a cell
-  is forced rather than just revealing it.
+## Contributing and further reading
 
-The schema handles structure. The invariants it cannot express — array length tied to
-`size`, contiguous region ids, region connectivity — are enforced in code on both sides,
-which is what the board-level conformance suite is for.
+Keep changes focused and run checks appropriate to the affected code. Include
+shared fixture updates with the behavior they describe. Use branches such as
+`feat/new-game` or `fix/mobile-input`; feature/behavior PRs are reviewed and merged
+by the maintainer. Repository workflow guidance is in [AGENTS.md](AGENTS.md).
 
----
-
-## Deep dives
-
-- **[docs/engine.md](docs/engine.md)** — the exact solution counter, the seeded generator,
-  the deduction engine and its difficulty bands, the weekly ramp, and the measurements
-  behind them.
-- **[docs/app.md](docs/app.md)** — routing, the accessible board, the ported hint engine,
-  input, colour science, stats and share text.
-- **[docs/pipeline.md](docs/pipeline.md)** — publishing, replay verification, and the
-  deployment arrangement.
-- **[docs/puzzle-model.md](docs/puzzle-model.md)** — the domain model, and the reasoning
-  behind the file format.
-- **[docs/journal.md](docs/journal.md)** — the build log: milestones, rejected
-  alternatives, and the bugs that were found rather than avoided.
-
----
-
-## Conventions
-
-- Commits are concise and imperative, e.g. `Add solution counter`.
-- Every puzzle file is committed. Puzzle history is visible in `git log`.
-- Keep puzzle play local and independent of the optional leaderboard service.
-  Additional infrastructure needs an explicit scope decision.
-
-
-## Contribution naming
-
-Use purpose-based branch prefixes such as `feat/word-paths-gameplay` and
-`fix/mobile-tracing`. Pull request titles use the matching `feat:` or `fix:`
-prefix. Feature PRs are reviewed and merged by the maintainer.
+- [App architecture and controls](docs/app.md)
+- [Engine, difficulty and measurements](docs/engine.md)
+- [Puzzle model and file format](docs/puzzle-model.md)
+- [Publishing, CI and deployment](docs/pipeline.md)
+- [Leaderboard setup](docs/leaderboard-setup.md)
+- [Build journal](docs/journal.md)

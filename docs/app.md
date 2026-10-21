@@ -211,8 +211,8 @@ the time.
 Every placement, mark and clear is a pure state transition pushed onto a 100-entry undo
 stack — a button and Ctrl/Command+Z pop it. Because the history stores whole states
 rather than inverse actions, undo is exact even for an auto-mark sprawl. The timer is
-zero-cost to the engine: it counts up while the attempt is open and freezes at the
-solve instant; there is no server to check with, so the only clock that matters is the
+zero-cost to the engine: it counts only while the puzzle page is visible and focused,
+and freezes at the solve instant; there is no server to check with, so the only clock that matters is the
 player's.
 
 Unfinished Queens and Star Battle attempts are saved by `lib/marksProgress.ts` under
@@ -545,3 +545,18 @@ notes. Entering a number removes that digit from peer notes through the shared
 Erasing does not recreate notes. Selecting a filled digit highlights all matches
 and their rows/columns below the selected cell's visual emphasis. Save keys and
 fingerprints are unchanged, so existing preview attempts resume normally.
+
+
+## Shared focused-play clock
+
+All six daily games and their previews, including Sudoku, use `usePlayClock`. It
+accumulates monotonic time only while the document is visible and has focus.
+Blur, focus, visibility and page lifecycle events settle the interval immediately;
+a periodic tick updates the display and existing saves. Losing focus pauses time
+even when the puzzle remains visible beside another application. Returning to
+focus resumes the same attempt; completion freezes the exact duration.
+
+Display, saved progress, solve records, shares and leaderboard submissions all use
+that accumulated duration. Save keys/formats and existing solved records are
+unchanged; earlier page-time or visibility-only totals cannot be reconstructed
+and remain as recorded. Reset and Undo/Redo do not restart the clock.

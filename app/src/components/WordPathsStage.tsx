@@ -1,9 +1,9 @@
 import { useLeaderboard } from '../lib/useLeaderboard'
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useId, useMemo, useRef, useState } from 'react'
 import type { Puzzle } from '../domain/puzzle'
 import type { WordGrid } from '../domain/wordPaths'
 import { createWordGame, clearTrace, traceCell, submitWord, undoWord, resetWordGame, isWordSolved, spellPath, type WordGame } from '../domain/wordGame'
-import { advanceWordClock } from '../domain/wordClock'
+import { usePlayClock } from '../lib/usePlayClock'
 import { formatTime } from '../domain/game'
 import { puzzleOfToday } from '../domain/dates'
 import { clearWordProgress, readWordProgress, storeWordProgress } from '../lib/wordProgress'
@@ -24,8 +24,6 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
   const [game, setGame] = useState<WordGame>(() => initial?.game ?? createWordGame(grid))
   const current = useRef(game)
   const history = useMoveHistory<WordGame>()
-  const clock = useRef({ elapsedMs: initial?.elapsedMs ?? 0, lastAt: 0, visible: false })
-  const [elapsed, setElapsed] = useState(initial?.elapsedMs ?? 0)
   const [saving, setSaving] = useState(true)
   const [message, setMessage] = useState('')
   const stage = useRef<HTMLDivElement>(null)
@@ -47,34 +45,13 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
   const instructionsId = useId()
   const solved = isWordSolved(game)
 
-  const settle = useCallback(() => {
-    clock.current = advanceWordClock(clock.current, performance.now(), !document.hidden)
-    return Math.floor(clock.current.elapsedMs)
-  }, [])
-  useEffect(() => {
-    if (solved) return
-    clock.current = { ...clock.current, lastAt: performance.now(), visible: !document.hidden }
-    const save = () => {
-      if (completed.current) return
-      const time = settle()
-      setElapsed(time)
-      setSaving(storeWordProgress(puzzle.id, current.current, time, preview, hintsUsed.current))
-    }
-    const timer = setInterval(save, 500)
-    document.addEventListener('visibilitychange', save)
-    window.addEventListener('pagehide', save)
-    return () => {
-      clearInterval(timer)
-      document.removeEventListener('visibilitychange', save)
-      window.removeEventListener('pagehide', save)
-      if (!completed.current) storeWordProgress(puzzle.id, current.current, settle(), preview, hintsUsed.current)
-    }
-  }, [preview, puzzle.id, settle, solved])
-
+  const { elapsed, settle, stop } = usePlayClock(initial?.elapsedMs ?? 0, time => {
+    setSaving(storeWordProgress(puzzle.id, current.current, time, preview, hintsUsed.current))
+  })
   const change = (next: WordGame) => {
     current.current = next
     setGame(next)
-    setSaving(storeWordProgress(puzzle.id, next, Math.floor(clock.current.elapsedMs), preview, hintsUsed.current))
+    setSaving(storeWordProgress(puzzle.id, next, settle(), preview, hintsUsed.current))
   }
   const select = (cell: number): readonly number[] => {
     if (completed.current) return current.current.trace
@@ -95,10 +72,9 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
     history.remember(clearTrace(before))
     change(result.game)
     if (!isWordSolved(result.game)) return
-    const time = settle()
+    const time = stop()
     completed.current = true
     clearWordProgress(puzzle.id, preview, grid.vocabularyVersion)
-    setElapsed(time)
     if (!preview) {
       const when = Date.now()
       const earlier = readStoredStats().find((record) => record.id === puzzle.id)
