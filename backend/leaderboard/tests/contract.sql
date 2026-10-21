@@ -59,6 +59,7 @@ select pg_temp.rejects('insert into public.leaderboard_results default values', 
 select pg_temp.rejects('select public.submit_result(current_date::text, ''Alice'', 60000, 0)', '42501');
 select pg_temp.rejects('select public.remove_my_results()', '42501');
 select pg_temp.rejects('select public.register_leaderboard_puzzles(''[]'')', '42501');
+select pg_temp.rejects('drop table public.leaderboard_results', '42501');
 reset role;
 
 -- Different owners tie at 60 s / zero hints; 1 s / one hint ranks third.
@@ -80,6 +81,7 @@ select pg_temp.check_true(public.submit_result(current_date::text, 'Changed', 0,
 select pg_temp.check_true(public.get_leaderboard(current_date::text)->'entries'->2->>'nickname' = 'Carol', 'retry cannot replace score');
 select pg_temp.rejects('update public.leaderboard_results set nickname = ''Forged''', '42501');
 select pg_temp.rejects('delete from public.leaderboard_results', '42501');
+select pg_temp.rejects('drop table public.leaderboard_results', '42501');
 select pg_temp.rejects('select * from public.leaderboard_results', '42501');
 select pg_temp.rejects('select public.register_leaderboard_puzzles(''[]'')', '42501');
 select pg_temp.rejects('select public.get_leaderboard((current_date + 3)::text)', '22023');
@@ -156,5 +158,22 @@ select pg_temp.check_true(not exists(select from public.leaderboard_puzzles wher
 select pg_temp.rejects(format('select public.register_leaderboard_puzzles(%L)', jsonb_build_array(
   jsonb_build_object('puzzle_id', (current_date - 100)::text || '-tracks-small', 'puzzle_type', 'train-tracks',
     'puzzle_day', (current_date - 100)::text, 'width',8,'height',8,'size_label',null))::text), '23514');
+-- SQL-like input is data, even when it bypasses all browser validation.
+savepoint hostile_inputs;
+set local role authenticated;
+select set_config('request.jwt.claims', jsonb_build_object('sub', md5('39')::uuid)::text, true);
+select pg_temp.rejects(format('select public.submit_result(%L, %L, 1000, 0)',
+  (current_date - 25)::text, 'x''; DROP TABLE auth.users;--'), '22023');
+select pg_temp.rejects(format('select public.submit_result(%L, %L, 1000, 0)',
+  (current_date - 25)::text, ''' OR true --'), '22023');
+select pg_temp.rejects(format('select public.get_leaderboard(%L)',
+  current_date::text || ''' OR true --'), '22023');
+select pg_temp.check_true(public.submit_result((current_date - 25)::text,
+  'DROP TABLE users', 1000, 0)->>'status' = 'created', 'SQL keywords are harmless nickname text');
+reset role;
+select pg_temp.check_true(exists(select from public.leaderboard_results
+  where user_id = md5('39')::uuid and nickname = 'DROP TABLE users')
+  and (select count(*) from auth.users) = 40, 'SQL-like nickname stored literally; users retained');
+rollback to savepoint hostile_inputs;
 rollback;
 \echo 'Leaderboard SQL contract passed'
