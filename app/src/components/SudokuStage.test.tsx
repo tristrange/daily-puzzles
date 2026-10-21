@@ -23,6 +23,68 @@ async function click(name: string) {
   expect(button, name).toBeDefined(); await act(async () => button.click())
 }
 async function mount() { await act(async () => root.render(<SudokuStage board={board} />)) }
+async function pointer(type: string, i: number, pointerType = 'mouse', pointerId = 1) {
+  const event = new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, clientX: i })
+  Object.defineProperties(event, { pointerId: { value: pointerId }, pointerType: { value: pointerType } })
+  await act(async () => cell(i).dispatchEvent(event))
+}
+function pointerEnvironment() {
+  Object.defineProperty(document, 'elementFromPoint', { configurable: true, value: (x: number) => cell(x) })
+  HTMLElement.prototype.setPointerCapture = vi.fn()
+  HTMLElement.prototype.hasPointerCapture = () => true
+  HTMLElement.prototype.releasePointerCapture = vi.fn()
+}
+
+it.each(['mouse', 'touch'])('drag-selects with %s and edits group notes as one saved move', async pointerType => {
+  const cells = [...board.givens], notes = Array<number>(81).fill(0)
+  cells[4] = 6; notes[0] = 256
+  storeSudokuProgress(board, { cells, notes }, 0, 0)
+  await mount(); pointerEnvironment()
+  await pointer('pointerdown', 0, pointerType)
+  if (pointerType === 'touch') await pointer('lostpointercapture', 0, pointerType) // implicit cell capture transfers to the grid
+  for (const i of [1, 2, 3, 4, 2]) await pointer('pointermove', i, pointerType)
+  await pointer('pointerup', 2, pointerType)
+  await act(async () => cell(2).dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 })))
+  expect(container.querySelectorAll('[aria-selected="true"]')).toHaveLength(5)
+  expect(container.querySelector('[role="grid"]')?.getAttribute('aria-multiselectable')).toBe('true')
+  expect(readSudokuProgress(board)?.game.notes[2]).toBe(0) // selection itself never edits
+  await click('Enter 9')
+  expect(readSudokuProgress(board)?.game.notes.slice(0, 5)).toEqual([256, 0, 256, 0, 0])
+  expect(readSudokuProgress(board)?.game.cells.slice(0, 5)).toEqual([0, 1, 0, 3, 6])
+  expect([...container.querySelectorAll('button')].find(b => b.textContent === 'Notes')?.getAttribute('aria-pressed')).toBe('false')
+  await click('Undo'); expect(readSudokuProgress(board)?.game.notes.slice(0, 5)).toEqual([256, 0, 0, 0, 0])
+  await click('Redo'); await click('Enter 9')
+  expect(readSudokuProgress(board)?.game.notes.slice(0, 5)).toEqual([0, 0, 0, 0, 0])
+  await click('Undo'); await click('Erase')
+  expect(readSudokuProgress(board)?.game.cells[4]).toBe(6)
+  expect(readSudokuProgress(board)?.game.notes[0]).toBe(0)
+  await act(async () => cell(2).click()); await click('Enter 5')
+  expect(container.querySelectorAll('[aria-selected="true"]')).toHaveLength(1)
+  expect(readSudokuProgress(board)?.game.cells[2]).toBe(5)
+})
+
+it('extends selection with Shift-arrow and Shift-click, including when the focus is a given', async () => {
+  await mount(); await act(async () => cell(0).focus())
+  await act(async () => cell(0).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', shiftKey: true, bubbles: true })))
+  await act(async () => cell(2).dispatchEvent(new MouseEvent('click', { shiftKey: true, bubbles: true })))
+  await act(async () => cell(1).dispatchEvent(new KeyboardEvent('keydown', { key: '9', bubbles: true })))
+  expect(readSudokuProgress(board)?.game.notes.slice(0, 3)).toEqual([256, 0, 256])
+  expect(readSudokuProgress(board)?.game.cells.slice(0, 3)).toEqual([0, 1, 0])
+  await act(async () => cell(2).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true })))
+  expect(container.querySelectorAll('[aria-selected="true"]')).toHaveLength(1)
+})
+
+it('ends a cancelled drag before later pointer movement can extend the selection', async () => {
+  await mount(); pointerEnvironment()
+  await pointer('pointerdown', 0); await pointer('pointermove', 2)
+  await pointer('pointercancel', 2); await pointer('pointermove', 3)
+  expect(container.querySelectorAll('[aria-selected="true"]')).toHaveLength(2)
+  await pointer('pointerdown', 4); await pointer('pointermove', 5, 'mouse', 2)
+  await act(async () => container.querySelector('[role="grid"]')!.dispatchEvent(Object.assign(new Event('lostpointercapture', { bubbles: true }), { pointerId: 1 })))
+  await pointer('pointermove', 6)
+  expect(container.querySelectorAll('[aria-selected="true"]')).toHaveLength(1)
+  expect(readSudokuProgress(board)).toBeNull()
+})
 
 it('selects without editing, enters notes/values, clears notes and restores full history', async () => {
   await mount()
@@ -123,4 +185,27 @@ it('collapses supporting deductions without hiding the conclusion or Apply actio
   expect(details.textContent).toContain('R2C2: 4, 5')
   expect(readSudokuProgress(hard)?.hints).toBe(1)
   await click('Apply move'); expect(readSudokuProgress(hard)?.game.notes[59]).toBe(79)
+})
+
+it('dims a digit at nine placements, excluding notes, and restores it after edits or history', async () => {
+  const digit = 6, cells = [...board.givens], notes = Array<number>(81).fill(0)
+  for (const [i, value] of proof.samples[0]!.solution.entries()) if (value === digit && i !== index) cells[i] = digit
+  notes[index] = 1 << (digit - 1)
+  storeSudokuProgress(board, { cells, notes }, 0, 0)
+  await mount()
+  const picker = () => container.querySelector<HTMLButtonElement>('[aria-label="Enter 6"]')!
+  expect(picker().dataset['allPlaced']).toBe('false')
+  await click('Enter 6')
+  expect(picker().dataset['allPlaced']).toBe('true')
+  expect(picker().getAttribute('aria-description')).toBe('9 of 9 placed')
+  expect(picker().disabled).toBe(false)
+  await click('Undo'); expect(picker().dataset['allPlaced']).toBe('false')
+  await click('Redo'); expect(picker().dataset['allPlaced']).toBe('true')
+  await click('Erase'); expect(picker().dataset['allPlaced']).toBe('false')
+  await click('Undo')
+  await act(async () => root.unmount()); root = createRoot(container); await mount()
+  expect(picker().dataset['allPlaced']).toBe('true')
+  await act(async () => cell(2).click()); await click('Enter 6')
+  expect(picker().getAttribute('aria-description')).toBe('10 of 9 placed')
+  expect(picker().disabled).toBe(false)
 })

@@ -230,7 +230,14 @@ export function RulesPage() {
         earlier reasoning. Apply move is optional and undoable. Notes never prove hints.
         A wrong number first produces a free general warning; Show the mistake reveals
         one correction and counts as a hint. Undo and Reset do not refund shown hints.
-        Select a filled cell to softly highlight matching numbers and their rows and columns.</p>
+        Select a filled cell to softly highlight matching numbers and their rows and columns.
+        Picker digits dim once nine are placed, including givens. They remain usable;
+        this count does not confirm that the placements are correct.</p>
+      <p>Drag over cells, Shift-click or use Shift with the arrow keys to select several
+        cells. Digits update notes in the empty selected cells even with Notes off;
+        filled cells stay unchanged. A digit is added wherever missing, or removed
+        when every empty selected cell already has it. Erase clears their notes.
+        Each group edit takes one Undo. Select one cell to return to normal entry.</p>
       <p><Link to="/preview/sudoku">Try Easy, Medium and Hard</Link>. Each preview has
         one independently verified solution and finishes through its supported logical
         techniques. Medium requires more than singles; Hard requires more than our

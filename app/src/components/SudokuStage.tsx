@@ -15,6 +15,7 @@ export function SudokuStage({ board }: { board: Board }) {
   const history = useMoveHistory<SudokuGame>(), completed = useRef(false), hints = useRef(initial?.hints ?? 0)
   const [shownHints, setShownHints] = useState(initial?.hints ?? 0)
   const [selected, setSelected] = useState(() => Math.max(0, board.givens.indexOf(0)))
+  const [selection, setSelection] = useState<readonly number[]>([selected])
   const [pencil, setPencil] = useState(false), [solved, setSolved] = useState(false), [saving, setSaving] = useState(true)
   const [message, setMessage] = useState(''), [hint, setHint] = useState<SudokuHint | null>(null), [mistake, setMistake] = useState<number | null>(null)
   const stage = useRef<HTMLDivElement>(null), hintButton = useRef<HTMLButtonElement>(null)
@@ -33,7 +34,18 @@ export function SudokuStage({ board }: { board: Board }) {
     if (completed.current || next === current.current) return
     history.remember(current.current); change(next); setMessage(feedback)
   }
-  const enter = (value: number, cell = selected) => commit(editSudoku(board, current.current, cell, value, pencil))
+  const select = (cell: number, extend = false) => {
+    setSelected(cell)
+    setSelection(previous => extend ? previous.includes(cell) ? previous : [...previous, cell] : [cell])
+  }
+  const enter = (value: number, cell = selected) => {
+    if (selection.length === 1) { commit(editSudoku(board, current.current, cell, value, pencil)); return }
+    const empty = selection.filter(i => current.current.cells[i] === 0), bit = 1 << (value - 1)
+    const remove = empty.every(i => current.current.notes[i]! & bit)
+    let next = current.current
+    for (const i of empty) if (!value || Boolean(next.notes[i]! & bit) === remove) next = editSudoku(board, next, i, value, true)
+    commit(next)
+  }
   const undo = () => {
     if (completed.current) return
     const next = history.undo(current.current)
@@ -82,7 +94,9 @@ export function SudokuStage({ board }: { board: Board }) {
     else if (event.key.toLowerCase() === 'n') { event.preventDefault(); setPencil(!pencil) }
     else if (event.key.toLowerCase() === 'h') { event.preventDefault(); requestHint() }
   }
-  const editable = !solved && board.givens[selected] === 0
+  const editable = !solved && (selection.length > 1 ? selection.some(i => game.cells[i] === 0) : board.givens[selected] === 0)
+  const placedCounts = Array<number>(10).fill(0)
+  for (const value of game.cells) placedCounts[value]!++
   return <div className="sudoku-game" ref={stage} onKeyDown={keyboard}>
     <div className="sudoku-workspace">
       <div className="sudoku-controls">
@@ -97,14 +111,15 @@ export function SudokuStage({ board }: { board: Board }) {
           <button type="button" className="tool-button" ref={hintButton} disabled={solved} aria-label="Get an explained hint" aria-expanded={hint !== null || mistake !== null}
             aria-controls={hint || mistake !== null ? hintId : undefined} onClick={requestHint}>Hint</button>
         </div>
-        <div className="sudoku-keypad" role="group" aria-label={pencil ? 'Note digits' : 'Enter a number'}>
+        <div className="sudoku-keypad" role="group" aria-label={pencil || selection.length > 1 ? 'Note digits' : 'Enter a number'}>
           {Array.from({ length: 9 }, (_, i) => i + 1).map(value => <button type="button" className="tool-button" key={value} disabled={!editable}
+            data-all-placed={placedCounts[value]! >= 9} aria-description={`${placedCounts[value]} of 9 placed`}
             aria-label={`Enter ${value}`} onClick={() => enter(value)}>{value}</button>)}
           <button type="button" className="tool-button" disabled={!editable} onClick={() => enter(0)}>Erase</button>
         </div>
-        <p className="sudoku-mode">{pencil ? 'Notes on · tap digits to mark possibilities' : 'Select a cell, then enter a number'}</p>
+        <p className="sudoku-mode" role="status">{selection.length > 1 ? `${selection.length} cells selected · digits update notes in empty cells` : pencil ? 'Notes on · tap digits to mark possibilities' : 'Select a cell, then enter a number'}</p>
       </div>
-      <SudokuBoard board={board} game={game} selected={selected} locked={solved} conflicts={conflicts} hint={hint} instructionsId={instructionsId} onSelect={setSelected} />
+      <SudokuBoard board={board} game={game} selected={selected} selection={selection} locked={solved} conflicts={conflicts} hint={hint} instructionsId={instructionsId} onSelect={select} />
     </div>
     <p className={`sudoku-feedback${conflicts.size ? ' error' : ''}`} role="status">{solved ? `Solved in ${formatTime(elapsed)} with ${shownHints} hint${shownHints === 1 ? '' : 's'}! Choose another level to keep playing.`
       : message || (conflicts.size ? `${conflicts.size} cells repeat a number in a row, column or box. You can keep editing or Undo.` : '\u00a0')}</p>
@@ -114,6 +129,7 @@ export function SudokuStage({ board }: { board: Board }) {
       onApply={acceptHint} onDismiss={dismiss} onShowCell={showCell} />}
     {!saving && !solved && <p className="status error" role="status">Progress can&rsquo;t be saved. Keep this page open to retain your attempt.</p>}
     <p className="word-note" id={instructionsId}>Digits 1–9 once in every row, column and 3×3 box. Given numbers are fixed.
-      Select a cell, then tap a number. Arrows move; 1–9 enter; N toggles notes; Delete erases; H explains a hint; Ctrl/Cmd+Z undoes; Ctrl/Cmd+Shift+Z redoes.</p>
+      Select a cell, then tap a number. Drag, Shift-click or Shift-arrow to select multiple cells; digits then update notes in empty cells, and Erase clears their notes.
+      Arrows move; 1–9 enter; N toggles notes; Delete erases; H explains a hint; Ctrl/Cmd+Z undoes; Ctrl/Cmd+Shift+Z redoes.</p>
   </div>
 }
