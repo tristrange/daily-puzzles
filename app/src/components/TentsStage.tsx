@@ -39,7 +39,7 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
   const stage = useRef<HTMLDivElement>(null), hintButton = useRef<HTMLButtonElement>(null)
   const instructionsId = useId(), pickerId = useId(), hintId = useId()
   const conflicts = tentsConflicts(board, game)
-  const reasons = useMemo(() => hint ? [hint.reason] : [], [hint])
+  const reasons = useMemo(() => hint ? hint.reason.split('\n') : [], [hint])
 
   const settle = useCallback(() => {
     clock.current = advanceWordClock(clock.current, performance.now(), !document.hidden && !completed.current)

@@ -59,13 +59,16 @@ export function RulesPage() {
         Right-click erases. Trees are fixed. 1 or T places a tent; 2 or G marks grass;
         Enter or Space applies the picker; Delete or Backspace erases.</p>
       <p>Hint or H explains a deduction from tree adjacency, non-touching or line counts.
+        It can also compare the possible arrangements of one row or column: if all
+        use a cell it must be a tent; if none use it, mark grass. Short lists of
+        remaining positions are shown in the explanation.
         Apply move places a tent or grass as one undoable move. Target and support cells
         are highlighted. Your tents and grass are assumptions; a mistaken mark can mislead hints.
         Hints may run out before you finish; a stall is reported without guessing. Shown hints are counted even if undone or reset.</p>
       <p><Link to="/preview/tents">Try the Tents previews</Link>. Each has a verified unique
         tent placement. Preview attempts save separately and do not affect daily stats or leaderboards.
         Boards 1–6 are 8×8; Boards 7–9 are a larger 10×10 playtest. Boards 4–9 use every row and column.
-        The 10×10 boards go beyond the current hint rules, so hints may run out before you finish.
+        Both sizes support explained hints, including row and column arrangements.
         These boards are for playtesting; no difficulty rating is claimed.</p>
 
       <h2 id="queens" tabIndex={-1}>Queens</h2>
