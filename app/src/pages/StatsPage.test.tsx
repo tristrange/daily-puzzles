@@ -42,6 +42,7 @@ function renderHistory(records: readonly Stored[], url = '/stats'): string {
 }
 
 afterEach(() => {
+  vi.useRealTimers()
   vi.unstubAllGlobals()
 })
 
@@ -89,7 +90,47 @@ describe('the family counts', () => {
 })
 
 
-describe('recent solves by game', () => {
+describe('stats and recent solves by game', () => {
+  it('summarises only the selected game while preserving the all-games totals', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-10-22T12:00:00Z'))
+    const html = renderHistory([
+      { ...solve('2026-10-20-trio', 'trio', 1), elapsedMs: 120_000, hints: 1 },
+      { ...solve('2026-10-21-trio', 'trio', 2), elapsedMs: 240_000, hints: 2 },
+      { ...solve('2026-10-22', 'queens', 3), elapsedMs: 60_000, hints: 7 },
+    ], '/stats?game=trio')
+    const trio = html.match(/<dl[^>]*aria-label="Trio statistics"[^>]*>(.*?)<\/dl>/)?.[1]
+    const all = html.match(/<dl[^>]*aria-label="All games statistics"[^>]*>(.*?)<\/dl>/)?.[1]
+    expect(trio).toContain('<dt>Solved</dt><dd>2</dd>')
+    expect(trio).toContain('<dt>Average</dt><dd>3:00</dd>')
+    expect(trio).toContain('<dt>Fastest</dt><dd>2:00</dd>')
+    expect(trio).toContain('<dt>Hints used</dt><dd>3</dd>')
+    expect(trio).toContain('<dt>Current streak</dt><dd>2 days</dd>')
+    expect(trio).toContain('<dt>Best streak</dt><dd>2 days</dd>')
+    expect(all).toContain('<dt>Solved</dt><dd>3</dd>')
+    expect(all).toContain('<dt>Average</dt><dd>2:20</dd>')
+    expect(all).toContain('<dt>Fastest</dt><dd>1:00</dd>')
+    expect(all).toContain('<dt>Hints used</dt><dd>10</dd>')
+    expect(all).toContain('<dt>Current streak</dt><dd>3 days</dd>')
+  })
+
+  it('uses all solves of the selected game for its average, beyond the ten recent entries', () => {
+    const html = renderHistory([
+      ...Array.from({ length: 12 }, (_, i) => ({
+        ...solve(`2026-10-${String(i + 1).padStart(2, '0')}-trio`, 'trio', i),
+        elapsedMs: i === 0 ? 600_000 : 120_000,
+      })),
+      solve('2026-10-12', 'queens', 12),
+    ], '/stats?game=trio')
+    const trio = html.match(/<dl[^>]*aria-label="Trio statistics"[^>]*>(.*?)<\/dl>/)?.[1]
+    expect(trio).toContain('<dt>Solved</dt><dd>12</dd>')
+    expect(trio).toContain('<dt>Average</dt><dd>2:40</dd>')
+    const recent = html.slice(html.indexOf('Recent solves'))
+    expect(recent.match(/href="\/archive\//g)).toHaveLength(10)
+    expect(recent).not.toContain('href="/archive/2026-10-01-trio"')
+    expect(recent).not.toContain('href="/archive/2026-10-12"')
+  })
+
   it('filters by the recorded game without changing the all-games overview', () => {
     const html = renderHistory([
       solve('2026-10-05', 'queens', 2),
@@ -114,6 +155,7 @@ describe('recent solves by game', () => {
   it('shows an empty selected game without hiding history controls', () => {
     const html = renderHistory([solve('2026-10-05', 'queens', 1)], '/stats?game=word-paths')
     expect(html).toContain('No Word Paths solves yet.')
+    expect(html).not.toContain('aria-label="Word Paths statistics"')
     expect(html).toContain('Clear all stats')
     expect(html.slice(html.indexOf('Recent solves'))).not.toContain('href="/archive/2026-10-05"')
   })

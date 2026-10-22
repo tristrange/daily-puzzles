@@ -60,7 +60,8 @@ previews also remain available with separate progress.
 - Saved unfinished attempts and timers that pause while the page is hidden or unfocused. Today offers Resume; Undo/Redo history belongs to the current visit. Reset asks for confirmation.
 - Explained logic hints with target/support highlights and optional, undoable moves. Word Paths reveals a starting cell, then additional letters on request.
 - Notes and Clear notes in Trio and Sudoku. Shown hint counts survive Undo, Reset and reload.
-- Per-game archives and personal stats, first-solve times, daily streaks and shareable results.
+- Per-game archives and personal stats, with overall and per-game solve counts,
+  average/fastest times, streaks and hints used. First solves count; results are shareable.
 - Optional per-puzzle leaderboards showing nickname, time and hints, accessible after solving and from navigation. Browsing requires no signup; joining uses an anonymous browser identity, without email or password.
 
 Hints may stall when their supported techniques find nothing further; that does

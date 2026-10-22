@@ -1118,7 +1118,8 @@
   margin-top: 18px;
 }
 
-.content h2.page-title {
+.content h2.page-title,
+.recent-solves h3.page-title {
   font-size: 1.25rem;
   letter-spacing: -0.025em;
   margin-top: 2rem;
