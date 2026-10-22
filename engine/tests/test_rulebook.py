@@ -54,10 +54,11 @@ SHARED_SIZE = 8
 
 @pytest.fixture(scope="module")
 def generated_puzzles() -> dict[PuzzleType, Puzzle]:
-    # Registry/shape checks share real samples; replay still regenerates independently.
+    # Seed 2 avoids Star Battle's slow rejection search; replay still regenerates for real.
     return {
         book.puzzle_type: book.generate(
-            seed=7, puzzle_id=puzzle_id(date(2026, 10, 12), book.puzzle_type)
+            seed=2 if book.puzzle_type is PuzzleType.STAR_BATTLE else 7,
+            puzzle_id=puzzle_id(date(2026, 10, 12), book.puzzle_type),
         )
         for book in rulebooks()
     }
