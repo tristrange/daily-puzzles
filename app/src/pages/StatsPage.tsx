@@ -3,8 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { PUZZLE_TYPES } from '../domain/board'
 import { formatPuzzleLabel } from '../domain/dates'
 import { DEFAULT_PUZZLE_TYPE, PUZZLE_TYPE_LABEL, PUZZLE_TYPE_PUBLISHED } from '../domain/games'
-import { sudokuVariantOf } from '../domain/sudokuLevels'
-import { trackVariantOf } from '../domain/trackSizes'
+import { SUDOKU_VARIANTS, sudokuVariantOf } from '../domain/sudokuLevels'
+import { TRACK_VARIANTS, trackVariantOf } from '../domain/trackSizes'
 import { formatTime } from '../domain/game'
 import {
   clearStats,
@@ -46,8 +46,12 @@ function StatsSummary({ stats, label }: { stats: Stats; label: string }) {
 }
 
 export function StatsPage() {
-  const [params] = useSearchParams()
+  const [params, setParams] = useSearchParams()
   const type = PUZZLE_TYPES.find(type => type === params.get('game') && PUZZLE_TYPE_PUBLISHED[type]) ?? DEFAULT_PUZZLE_TYPE
+  const variants = type === 'sudoku' ? SUDOKU_VARIANTS : type === 'train-tracks'
+    ? [...TRACK_VARIANTS, { name: 'original', label: 'Original' }] : []
+  const variant = variants.find(variant => variant.name === params.get('variant')) ?? null
+  const gameLabel = `${PUZZLE_TYPE_LABEL[type]}${variant ? ` ${variant.label}` : ''}`
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
   // A snapshot read once per visit, as on the archive page: the history is not
   // going to change while the page is open, and re-reading it per render would
@@ -60,7 +64,10 @@ export function StatsPage() {
   const importInput = useRef<HTMLInputElement>(null)
   const todayId = useToday(timeZone)
   const stats = summarise(records, todayId)
-  const gameRecords = records.filter(record => record.puzzleType === type)
+  const gameRecords = records.filter(record => record.puzzleType === type && (
+    variant === null || (type === 'sudoku' ? sudokuVariantOf(record.id)?.name
+      : trackVariantOf(record.id)?.name ?? 'original') === variant.name
+  ))
   const gameStats = summarise(gameRecords, todayId)
   const recent = mostRecentSolves(gameRecords, RECENT_LIMIT)
   // Which families the history actually spans: never padded out with one the
@@ -137,7 +144,7 @@ export function StatsPage() {
           <StatsSummary stats={stats} label="All games statistics" />
           {solveCounts !== null && <p className="status">{solveCounts}.</p>}
           <section aria-labelledby="game-stats-heading">
-            <h2 className="page-title" id="game-stats-heading">{PUZZLE_TYPE_LABEL[type]} stats</h2>
+            <h2 className="page-title" id="game-stats-heading">{gameLabel} stats</h2>
             <nav className="game-picker" aria-label="Stats game">
               {PUZZLE_TYPES.filter(type => PUZZLE_TYPE_PUBLISHED[type]).map(game => (
                 <Link key={game} to={`/stats?game=${game}`} aria-current={game === type ? 'page' : undefined}>
@@ -145,13 +152,22 @@ export function StatsPage() {
                 </Link>
               ))}
             </nav>
+            {variants.length > 0 && <label className="stats-filter">
+              {type === 'sudoku' ? 'Level' : 'Size'}
+              <select value={variant?.name ?? ''} onChange={event => setParams(
+                event.target.value ? { game: type, variant: event.target.value } : { game: type }
+              )}>
+                <option value="">{type === 'sudoku' ? 'All levels' : 'All sizes'}</option>
+                {variants.map(variant => <option key={variant.name} value={variant.name}>{variant.label}</option>)}
+              </select>
+            </label>}
             {gameStats.solved > 0 && <>
-              <StatsSummary stats={gameStats} label={`${PUZZLE_TYPE_LABEL[type]} statistics`} />
-              <p className="status">Streaks use consecutive puzzle dates for this game.</p>
+              <StatsSummary stats={gameStats} label={`${gameLabel} statistics`} />
+              <p className="status">Streaks use consecutive puzzle dates for this selection.</p>
             </>}
             <section className="recent-solves" aria-labelledby="recent-solves-heading">
               <h3 className="page-title" id="recent-solves-heading">Recent solves</h3>
-              {recent.length === 0 && <p className="status">No {PUZZLE_TYPE_LABEL[type]} solves yet.</p>}
+              {recent.length === 0 && <p className="status">No {gameLabel} solves yet.</p>}
               <ul className="archive">
                 {recent.map((record) => (
                   <li key={record.id}>

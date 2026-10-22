@@ -207,3 +207,57 @@ it('distinguishes daily Sudoku levels and links each exact puzzle', () => {
   }
   expect(html).toContain('<dt>Solved</dt><dd>3</dd>')
 })
+
+describe('stats by level and size', () => {
+  it.each([
+    { game: 'sudoku', variant: 'hard', other: 'easy', suffix: 'sudoku', label: 'Sudoku Hard' },
+    { game: 'train-tracks', variant: 'large', other: 'small', suffix: 'tracks', label: 'Train Tracks Large' },
+  ])('filters $game summaries and recent solves together', ({ game, variant, other, suffix, label }) => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-10-22T12:00:00Z'))
+    const html = renderHistory([
+      { ...solve(`2026-10-21-${suffix}-${variant}`, game, 1), elapsedMs: 120_000, hints: 1 },
+      { ...solve(`2026-10-22-${suffix}-${variant}`, game, 2), elapsedMs: 240_000, hints: 2 },
+      { ...solve(`2026-10-22-${suffix}-${other}`, game, 3), elapsedMs: 600_000, hints: 7 },
+    ], `/stats?game=${game}&variant=${variant}`)
+    const selected = html.match(new RegExp(`<dl[^>]*aria-label="${label} statistics"[^>]*>(.*?)</dl>`))?.[1]
+    const all = html.match(/<dl[^>]*aria-label="All games statistics"[^>]*>(.*?)<\/dl>/)?.[1]
+    expect(selected).toContain('<dt>Solved</dt><dd>2</dd>')
+    expect(selected).toContain('<dt>Average</dt><dd>3:00</dd>')
+    expect(selected).toContain('<dt>Fastest</dt><dd>2:00</dd>')
+    expect(selected).toContain('<dt>Hints used</dt><dd>3</dd>')
+    expect(selected).toContain('<dt>Current streak</dt><dd>2 days</dd>')
+    expect(all).toContain('<dt>Solved</dt><dd>3</dd>')
+    expect(all).toContain('<dt>Average</dt><dd>5:20</dd>')
+    expect(all).toContain('<dt>Hints used</dt><dd>10</dd>')
+    expect(all).toContain('<dt>Current streak</dt><dd>2 days</dd>')
+    const recent = html.slice(html.indexOf('Recent solves'))
+    expect(recent).toContain(`href="/archive/2026-10-21-${suffix}-${variant}"`)
+    expect(recent).not.toContain(`href="/archive/2026-10-22-${suffix}-${other}"`)
+    expect(html).toContain('href="/stats?game=trio"')
+  })
+
+  it('keeps legacy Train Tracks solves available as Original', () => {
+    const html = renderHistory([
+      solve('2026-10-16-tracks', 'train-tracks', 1),
+      { ...solve('2026-10-17-tracks-small', 'train-tracks', 2), elapsedMs: 120_000 },
+    ], '/stats?game=train-tracks&variant=original')
+    const original = html.match(/<dl[^>]*aria-label="Train Tracks Original statistics"[^>]*>(.*?)<\/dl>/)?.[1]
+    expect(original).toContain('<dt>Solved</dt><dd>1</dd>')
+    expect(original).toContain('<dt>Average</dt><dd>1:00</dd>')
+    const recent = html.slice(html.indexOf('Recent solves'))
+    expect(recent).toContain('href="/archive/2026-10-16-tracks"')
+    expect(recent).not.toContain('href="/archive/2026-10-17-tracks-small"')
+  })
+
+  it('falls back to all levels for an unrelated size, and explains an empty valid level', () => {
+    const records = [solve('2026-10-21-sudoku-easy', 'sudoku', 1)]
+    const invalid = renderHistory(records, '/stats?game=sudoku&variant=large')
+    expect(invalid).toContain('aria-label="Sudoku statistics"')
+    expect(invalid).toContain('href="/archive/2026-10-21-sudoku-easy"')
+    const empty = renderHistory(records, '/stats?game=sudoku&variant=hard')
+    expect(empty).toContain('No Sudoku Hard solves yet.')
+    expect(empty).not.toContain('aria-label="Sudoku Hard statistics"')
+    expect(empty).toContain('Clear all stats')
+  })
+})
