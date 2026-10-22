@@ -81,7 +81,7 @@ tools and three workflows do it.
 cd engine
 uv run python -m tools.publish --out ../app/public/puzzles   # fill the gap to lead days ahead
 uv run python -m tools.publish --out ../app/public/puzzles --check  # fail if a required slot is missing
-uv run python -m tools.verify --dir ../app/public/puzzles    # replay every committed puzzle
+uv run python -m tools.verify --dir ../app/public/puzzles --jobs 2  # replay every committed puzzle
 ```
 
 `tools/publish.py` scans the archive for missing puzzles and fills them from the first
@@ -121,6 +121,11 @@ on the next run. `tools/verify.py`
 re-parses every committed puzzle, checks that its envelope ID matches its filename,
 and calls `verify_replay` on it, so a generator change
 that would have drifted the archive fails loudly before anything is merged.
+
+CI and daily publishing use two replay workers. Each file still receives the full
+parse, identity, replay, ramp and canonical-byte checks. Results are consumed in
+filename order, so the Star Battle repeat window and diagnostics stay deterministic.
+Omit `--jobs` for serial verification, or set it to the worker count available locally.
 
 Verify also checks each Queens file against the ramp for its weekday, and treats a break
 as a **failure** rather than a remark: a missing band from `RAMP_START` onwards, a board

@@ -1,7 +1,7 @@
 """Re-verify every committed puzzle: shape and byte-for-byte replay.
 
 Usage:
-    python -m tools.verify [--dir ../app/public/puzzles]
+    python -m tools.verify [--dir ../app/public/puzzles] [--jobs 2]
 
 Every published puzzle must still parse against the schema/board rules and must
 regenerate byte-for-byte from its own seed (`verify_replay`). This is the daily
@@ -19,7 +19,10 @@ left by publish, which enforces the rule only when it generates a file.
 from __future__ import annotations
 
 import argparse
+import multiprocessing
 import sys
+from concurrent.futures import ProcessPoolExecutor
+from contextlib import nullcontext
 from datetime import date, timedelta
 from pathlib import Path
 from typing import NamedTuple
@@ -139,71 +142,95 @@ def _ramp_check(day_text: str, puzzle_type: PuzzleType, puzzle: Puzzle) -> RampC
     return RampCheck(f"ramp {band} (target {target.level_name})")
 
 
+class FileCheck(NamedTuple):
+    day: date
+    puzzle: Puzzle
+    raw: str
+    ramp: RampCheck
+
+
+def _check_file(path: Path) -> FileCheck | str | None:
+    split = split_puzzle_id(path.stem)
+    if split is None:
+        return None
+    day, name_type = split
+    try:
+        raw = path.read_text(encoding="utf-8")
+        puzzle = load_puzzle(path)
+        if puzzle.id != path.stem:
+            raise ValueError(f"filename {path.stem} does not match envelope id {puzzle.id}")
+        verify_replay(puzzle)
+        # The app derives the game from the filename; a mismatch would mislabel it.
+        if puzzle.puzzle_type is not name_type:
+            raise ValueError(
+                f"filename says {name_type.value}, file declares {puzzle.puzzle_type.value}"
+            )
+        ramp = _ramp_check(day.isoformat(), puzzle.puzzle_type, puzzle)
+    except (PuzzleParseError, ValueError) as error:
+        return str(error)
+    return FileCheck(day, puzzle, raw, ramp)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="tools.verify")
     parser.add_argument("--dir", type=Path, default=Path("./puzzles"))
+    parser.add_argument("--jobs", type=int, default=1, help="parallel replay workers (default: 1)")
     args = parser.parse_args(argv)
+    if args.jobs < 1:
+        parser.error("--jobs must be at least 1")
 
     total = 0
     failed: list[str] = []
     star_layouts_seen: list[tuple[date, tuple[tuple[int, ...], ...]]] = []
-    for path in sorted(args.dir.glob("*.json")):
-        split = split_puzzle_id(path.stem)
-        if split is None:
-            print(f"skip {path.name} (not a date-keyed puzzle file)")
-            continue
-        day, name_type = split
-        total += 1
-        try:
-            raw = path.read_text(encoding="utf-8")
-            puzzle = load_puzzle(path)
-            if puzzle.id != path.stem:
-                raise ValueError(f"filename {path.stem} does not match envelope id {puzzle.id}")
-            verify_replay(puzzle)
-            # The suffix and the declared type are two claims about one file, and
-            # a disagreement means the archive and the app disagree about what the
-            # file is: the app derives the type from the name, so a file that lies
-            # about its own type is shown under the wrong game's heading.
-            if puzzle.puzzle_type is not name_type:
-                raise ValueError(
-                    f"filename says {name_type.value}, file declares {puzzle.puzzle_type.value}"
-                )
-            ramp = _ramp_check(day.isoformat(), puzzle.puzzle_type, puzzle)
-        except (PuzzleParseError, ValueError) as error:
-            failed.append(f"{path}: {error}")
-            print(f"{path.name}: FAILED ({error})")
-            continue
-        if ramp.problem is not None:
-            # A board that breaks the ramp is a failed verification, not a note:
-            # this is the check that stops the pipeline shipping it.
-            problem = f"RAMP MISMATCH ({ramp.problem})"
-            failed.append(f"{path}: {problem}")
-            print(f"{path.name}: FAILED ({problem})")
-            continue
-        # A board added with a replay-valid seed bypasses publish and its
-        # repeat rule; failing here keeps the archive invariant whatever the
-        # file's origin.
-        if problem := _star_repeat_problem(day, puzzle, star_layouts_seen):
-            failed.append(f"{path}: {problem}")
-            print(f"{path.name}: FAILED ({problem})")
-            continue
-        # Replaying the seed proves the *puzzle* is unchanged; it says nothing
-        # about the bytes. A file reformatted by hand or by a different writer
-        # still verifies, and the archive then stops being byte-stable, which is
-        # the property the next schema migration depends on. One committed file
-        # was already in this state, with identical data and expanded arrays.
-        if dumps_puzzle(puzzle) != raw:
-            problem = "not in canonical form (arrays must stay on one line)"
-            failed.append(f"{path}: {problem}")
-            print(f"{path.name}: FAILED ({problem})")
-            continue
-        width, height = rulebook_for(puzzle.puzzle_type).dimensions(puzzle)
-        label = f"{path.name}: ok ({width}x{height}"
-        label += f", seed {puzzle.seed}, v{puzzle.generator_version}, replay match"
-        if ramp.note:
-            label += f", {ramp.note}"
-        label += ")"
-        print(label)
+    paths = sorted(args.dir.glob("*.json"))
+    with (
+        ProcessPoolExecutor(max_workers=args.jobs, mp_context=multiprocessing.get_context("spawn"))
+        if args.jobs > 1
+        else nullcontext()
+    ) as pool:
+        # map preserves filename order, including the cross-file Star Battle check.
+        checks = map(_check_file, paths) if pool is None else pool.map(_check_file, paths)
+        for path, check in zip(paths, checks, strict=True):
+            if check is None:
+                print(f"skip {path.name} (not a date-keyed puzzle file)")
+                continue
+            total += 1
+            if isinstance(check, str):
+                failed.append(f"{path}: {check}")
+                print(f"{path.name}: FAILED ({check})")
+                continue
+            day, puzzle, raw, ramp = check
+            if ramp.problem is not None:
+                # A board that breaks the ramp is a failed verification, not a note:
+                # this is the check that stops the pipeline shipping it.
+                problem = f"RAMP MISMATCH ({ramp.problem})"
+                failed.append(f"{path}: {problem}")
+                print(f"{path.name}: FAILED ({problem})")
+                continue
+            # A board added with a replay-valid seed bypasses publish and its
+            # repeat rule; failing here keeps the archive invariant whatever the
+            # file's origin.
+            if problem := _star_repeat_problem(day, puzzle, star_layouts_seen):
+                failed.append(f"{path}: {problem}")
+                print(f"{path.name}: FAILED ({problem})")
+                continue
+            # Replaying the seed proves the *puzzle* is unchanged; it says nothing
+            # about the bytes. A file reformatted by hand or by a different writer
+            # still verifies, and the archive then stops being byte-stable, which is
+            # the property the next schema migration depends on. One committed file
+            # was already in this state, with identical data and expanded arrays.
+            if dumps_puzzle(puzzle) != raw:
+                problem = "not in canonical form (arrays must stay on one line)"
+                failed.append(f"{path}: {problem}")
+                print(f"{path.name}: FAILED ({problem})")
+                continue
+            width, height = rulebook_for(puzzle.puzzle_type).dimensions(puzzle)
+            label = f"{path.name}: ok ({width}x{height}"
+            label += f", seed {puzzle.seed}, v{puzzle.generator_version}, replay match"
+            if ramp.note:
+                label += f", {ramp.note}"
+            label += ")"
+            print(label)
 
     if failed:
         print(f"\n{len(failed)} of {total} puzzles FAILED:", file=sys.stderr)
