@@ -232,7 +232,7 @@ is testable without a browser.
 
 Two decisions are worth knowing:
 
-- **The first solve of a day is the one that counts.** Replaying a puzzle leaves the
+- **The first solve of a puzzle is the one that counts.** Replaying a puzzle leaves the
   record alone rather than overwriting it, because "when did you first get this" is what
   a streak is answering -- and because a second attempt at a puzzle you have already
   solved is played knowing the answer, so its time would flatter the record. The banner
@@ -242,6 +242,13 @@ Two decisions are worth knowing:
 - **An unplayed today does not break the streak.** A streak counts back from yesterday
   when today is still unsolved, so the number does not read zero every morning and become
   something a player stops looking at.
+
+The Stats page retains the all-games overview and uses its game picker for a
+per-game summary and recent solves. Each summary shows solved count, average and
+fastest time, hints used, and current/best streaks across all recorded first
+solves, before the recent list is limited to ten. Sizes and levels are combined
+within their game. Streaks count consecutive puzzle dates, with each date counted
+once even when several variants were solved.
 
 `mostRecentSolves` orders by `solvedAt`, not by puzzle id. The records themselves are
 sorted by day, which is what the arithmetic wants, but "recently solved" is a statement

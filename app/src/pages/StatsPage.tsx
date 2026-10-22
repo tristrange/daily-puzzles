@@ -13,6 +13,7 @@ import {
   mostRecentSolves,
   readStoredStats,
   summarise,
+  type Stats,
 } from '../lib/stats'
 import { useToday } from '../lib/useToday'
 
@@ -25,6 +26,23 @@ const MAX_IMPORT_BYTES = 5 * 1024 * 1024
 /** A stat that has nothing to report yet, so it is not shown as a zero. */
 function stat(label: string, value: string | null): { label: string; value: string } | null {
   return value === null ? null : { label, value }
+}
+
+function StatsSummary({ stats, label }: { stats: Stats; label: string }) {
+  const tiles = [
+    stat('Solved', String(stats.solved)),
+    stat('Current streak', stats.currentStreak === 0 ? '—' : `${stats.currentStreak} day${stats.currentStreak === 1 ? '' : 's'}`),
+    stat('Best streak', `${stats.bestStreak} day${stats.bestStreak === 1 ? '' : 's'}`),
+    stat('Fastest', stats.fastestMs === null ? null : formatTime(stats.fastestMs)),
+    stat('Average', stats.averageMs === null ? null : formatTime(stats.averageMs)),
+    stat('Hints used', String(stats.hints)),
+  ].filter((tile): tile is { label: string; value: string } => tile !== null)
+
+  return <dl className="stats-grid" aria-label={label}>
+    {tiles.map(tile => <div className="stat" key={tile.label}>
+      <dt>{tile.label}</dt><dd>{tile.value}</dd>
+    </div>)}
+  </dl>
 }
 
 export function StatsPage() {
@@ -42,7 +60,9 @@ export function StatsPage() {
   const importInput = useRef<HTMLInputElement>(null)
   const todayId = useToday(timeZone)
   const stats = summarise(records, todayId)
-  const recent = mostRecentSolves(records.filter(record => record.puzzleType === type), RECENT_LIMIT)
+  const gameRecords = records.filter(record => record.puzzleType === type)
+  const gameStats = summarise(gameRecords, todayId)
+  const recent = mostRecentSolves(gameRecords, RECENT_LIMIT)
   // Which families the history actually spans: never padded out with one the
   // player has not played, and never missing one they have.
   const solveCounts = formatSolveCounts(stats.byType)
@@ -90,15 +110,6 @@ export function StatsPage() {
     }
   }
 
-  const tiles = [
-    stat('Solved', String(stats.solved)),
-    stat('Current streak', stats.currentStreak === 0 ? '—' : `${stats.currentStreak} day${stats.currentStreak === 1 ? '' : 's'}`),
-    stat('Best streak', `${stats.bestStreak} day${stats.bestStreak === 1 ? '' : 's'}`),
-    stat('Fastest', stats.fastestMs === null ? null : formatTime(stats.fastestMs)),
-    stat('Average', stats.averageMs === null ? null : formatTime(stats.averageMs)),
-    stat('Hints used', String(stats.hints)),
-  ].filter((tile): tile is { label: string; value: string } => tile !== null)
-
   return (
     <section>
       <h1 className="page-title">Your stats</h1>
@@ -123,39 +134,39 @@ export function StatsPage() {
         <>
           <p className="status">Kept in this browser only. <Link to="/leaderboards">Optional leaderboards</Link> publish only results you choose to share.</p>
           <h2 className="page-title">All games</h2>
-          <dl className="stats-grid">
-            {tiles.map((tile) => (
-              <div className="stat" key={tile.label}>
-                <dt>{tile.label}</dt>
-                <dd>{tile.value}</dd>
-              </div>
-            ))}
-          </dl>
+          <StatsSummary stats={stats} label="All games statistics" />
           {solveCounts !== null && <p className="status">{solveCounts}.</p>}
-          <section className="recent-solves" aria-labelledby="recent-solves-heading">
-            <h2 className="page-title" id="recent-solves-heading">Recent solves</h2>
-            <nav className="game-picker" aria-label="Recent solves game">
+          <section aria-labelledby="game-stats-heading">
+            <h2 className="page-title" id="game-stats-heading">{PUZZLE_TYPE_LABEL[type]} stats</h2>
+            <nav className="game-picker" aria-label="Stats game">
               {PUZZLE_TYPES.filter(type => PUZZLE_TYPE_PUBLISHED[type]).map(game => (
                 <Link key={game} to={`/stats?game=${game}`} aria-current={game === type ? 'page' : undefined}>
                   {PUZZLE_TYPE_LABEL[game]}
                 </Link>
               ))}
             </nav>
-            {recent.length === 0 && <p className="status">No {PUZZLE_TYPE_LABEL[type]} solves yet.</p>}
-            <ul className="archive">
-              {recent.map((record) => (
-                <li key={record.id}>
-                  <Link to={`/archive/${record.id}`}>{formatPuzzleLabel(record.id, timeZone)}</Link>{' '}
-                  <span className="stat-detail">
-                    {PUZZLE_TYPE_LABEL[record.puzzleType ?? 'queens']}
-                    {record.puzzleType === 'sudoku' && sudokuVariantOf(record.id) && ` ${sudokuVariantOf(record.id)!.label}`}
-                    {record.puzzleType === 'train-tracks' && trackVariantOf(record.id) && ` ${trackVariantOf(record.id)!.label}`}
-                    {' · '}{formatTime(record.elapsedMs)}
-                    {record.hints > 0 && ` · ${record.hints} hint${record.hints === 1 ? '' : 's'}`}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            {gameStats.solved > 0 && <>
+              <StatsSummary stats={gameStats} label={`${PUZZLE_TYPE_LABEL[type]} statistics`} />
+              <p className="status">Streaks use consecutive puzzle dates for this game.</p>
+            </>}
+            <section className="recent-solves" aria-labelledby="recent-solves-heading">
+              <h3 className="page-title" id="recent-solves-heading">Recent solves</h3>
+              {recent.length === 0 && <p className="status">No {PUZZLE_TYPE_LABEL[type]} solves yet.</p>}
+              <ul className="archive">
+                {recent.map((record) => (
+                  <li key={record.id}>
+                    <Link to={`/archive/${record.id}`}>{formatPuzzleLabel(record.id, timeZone)}</Link>{' '}
+                    <span className="stat-detail">
+                      {PUZZLE_TYPE_LABEL[record.puzzleType ?? 'queens']}
+                      {record.puzzleType === 'sudoku' && sudokuVariantOf(record.id) && ` ${sudokuVariantOf(record.id)!.label}`}
+                      {record.puzzleType === 'train-tracks' && trackVariantOf(record.id) && ` ${trackVariantOf(record.id)!.label}`}
+                      {' · '}{formatTime(record.elapsedMs)}
+                      {record.hints > 0 && ` · ${record.hints} hint${record.hints === 1 ? '' : 's'}`}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
           </section>
         </>
       )}
