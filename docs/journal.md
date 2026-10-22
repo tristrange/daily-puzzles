@@ -2180,3 +2180,41 @@ Review caught keyboard focus losing its automatic scroll; pointer focus now
 suppresses scrolling while keyboard navigation reveals the destination, verified
 in a short browser viewport. The touch regression also covers implicit pointer
 capture transferring from a cell to the grid without ending the drag.
+
+## 2026-10-22 — Daily Sudoku
+
+Sudoku now publishes three separate 9x9 levels each day, activated October 21.
+The production schema and shared identity contract require a matching level in
+the ID and board. Fifteen original boards cover October 21–25; the existing 180
+archive files and preview definitions are unchanged. Their exact/logic
+certificates and replay timings are in
+[the launch measurement](measurements/daily-sudoku-launch.json). All fifteen
+accepted seeds replay in about 1.7 seconds locally. A failed generation batch
+advances to fresh candidates; replay never searches the rejected candidates.
+
+The existing Sudoku stage now supports daily first-solve Stats, result/spoiler
+sharing and optional leaderboard offering, while preserving preview progress,
+notes, drag selection, hints and focused timers. Today groups three level links;
+Archive, Stats and Leaderboards retain their exact level IDs. The stage remains
+lazy loaded. See [Today](images/daily-sudoku-today.png),
+[daily play](images/daily-sudoku-desktop.png) and
+[phone layout](images/daily-sudoku-phone.png).
+
+All 783 engine tests and 912 app tests pass, along with typechecks, engine
+lint/format, app lint and the Pages-base build. App lint retains the existing
+TracksStage warning. Independent review found no actionable issue. Browser QA
+covers a complete daily solve, hint application/history, saved notes/reload,
+Stats, archive and leaderboard level navigation, Today solved/resume states and
+the original preview. Hosted submission was not exercised locally; the local
+preview has no leaderboard configuration. Physical iPhone and screen-reader
+checks remain manual.
+
+The catalog's five relevant checks expand in migration 003, preserving scores,
+grants, policies and RPCs. Real PostgreSQL 18.6 checks covered clean installation,
+upgrades/retries and concurrent first submissions; CI uses PostgreSQL 17. The
+maintainer confirmed successful application to Supabase before release.
+
+Repeat publication through October 24 changed no files. Attempting to fill the
+older games' October 25 slots encountered a long existing Queens seed search;
+that run was stopped and only Sudoku's October 25 buffer was added. Other games'
+generation policies and their nightly publisher remain unchanged.

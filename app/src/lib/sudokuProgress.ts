@@ -1,12 +1,15 @@
-/** Sudoku preview snapshots are separate from every daily game and solve history. */
+/** Preview and daily attempts have separate storage namespaces. */
+import { puzzleTypeOf } from '../domain/dates'
+import { sudokuVariantOf } from '../domain/sudokuLevels'
 import { isSudokuSolved, sudokuDigit, type SudokuBoard, type SudokuGame } from '../domain/sudoku'
-const key = (board: SudokuBoard) => `daily-puzzles.sudoku-preview.v1.${board.id}`
+const key = (board: SudokuBoard, daily: boolean) => `daily-puzzles.${daily ? 'sudoku' : 'sudoku-preview'}.v1.${board.id}`
 const fingerprint = (board: SudokuBoard) => JSON.stringify([board.level, board.givens])
 const count = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
 
-export function readSudokuProgress(board: SudokuBoard): { game: SudokuGame; elapsedMs: number; hints: number } | null {
+export function readSudokuProgress(board: SudokuBoard, daily = false): { game: SudokuGame; elapsedMs: number; hints: number } | null {
+  if (daily && (puzzleTypeOf(board.id) !== 'sudoku' || sudokuVariantOf(board.id)?.name !== board.level)) return null
   try {
-    const raw: unknown = JSON.parse(localStorage.getItem(key(board)) ?? 'null')
+    const raw: unknown = JSON.parse(localStorage.getItem(key(board, daily)) ?? 'null')
     if (!raw || typeof raw !== 'object') return null
     const data = raw as Record<string, unknown>, cells = data['cells'], notes = data['notes']
     if (data['version'] !== 1 || data['board'] !== fingerprint(board) || !count(data['elapsedMs']) || !count(data['hints'])
@@ -18,11 +21,12 @@ export function readSudokuProgress(board: SudokuBoard): { game: SudokuGame; elap
   } catch { return null }
 }
 
-export function storeSudokuProgress(board: SudokuBoard, game: SudokuGame, elapsedMs: number, hints: number): boolean {
+export function storeSudokuProgress(board: SudokuBoard, game: SudokuGame, elapsedMs: number, hints: number, daily = false): boolean {
+  if (daily && (puzzleTypeOf(board.id) !== 'sudoku' || sudokuVariantOf(board.id)?.name !== board.level)) return false
   if (!count(elapsedMs) || !count(hints)) return false
   try {
-    if (isSudokuSolved(board, game.cells)) localStorage.removeItem(key(board))
-    else localStorage.setItem(key(board), JSON.stringify({ version: 1, board: fingerprint(board), ...game, elapsedMs, hints }))
+    if (isSudokuSolved(board, game.cells)) localStorage.removeItem(key(board, daily))
+    else localStorage.setItem(key(board, daily), JSON.stringify({ version: 1, board: fingerprint(board), ...game, elapsedMs, hints }))
     return true
   } catch { return false }
 }

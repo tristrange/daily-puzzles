@@ -52,6 +52,16 @@ from .generator import (
 from .render import render_board, render_grid
 from .solver import DEFAULT_LIMIT, iter_solutions
 from .solver import count_solutions as count_board_solutions
+from .sudoku import SIDE as SUDOKU_SIZE
+from .sudoku import Level, SudokuGrid
+from .sudoku import solve as solve_sudoku
+from .sudoku_deduce import DeductionResult
+from .sudoku_deduce import deduce as deduce_sudoku
+from .sudoku_gen import GENERATOR_VERSION as SUDOKU_GENERATOR_VERSION
+from .sudoku_gen import MAX_ATTEMPTS as SUDOKU_SEED_BATCH_SIZE
+from .sudoku_gen import SudokuGenerationError
+from .sudoku_gen import generate as generate_sudoku_grid
+from .sudoku_levels import SUDOKU_START, SUDOKU_VARIANTS, sudoku_variant
 from .tents import TentsGrid
 from .tents import solutions as tents_solutions
 from .tents_gen import GENERATOR_VERSION as TENTS_GENERATOR_VERSION
@@ -161,6 +171,9 @@ class Rulebook(ABC):
     #: puzzle — and the app's own parser would both choke on.
     published: bool = True
 
+    #: Move beyond a failed generation batch instead of retrying its rejected seeds.
+    seed_batch_size: int = 1
+
     #: Stars per line, or `None` when the type's regions each hold exactly one.
     default_stars_per_row: int | None = None
 
@@ -189,7 +202,7 @@ class Rulebook(ABC):
     @abstractmethod
     def count_solutions(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
         *,
         limit: int = DEFAULT_LIMIT,
     ) -> int:
@@ -198,10 +211,10 @@ class Rulebook(ABC):
     @abstractmethod
     def deduce(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
         *,
         allow_guesses: bool = True,
-    ) -> DeductionTrace | LogicResult | None:
+    ) -> DeductionTrace | LogicResult | DeductionResult | None:
         """Deduce what `board` forces, or `None` if this type has no such engine."""
 
     @abstractmethod
@@ -254,7 +267,7 @@ class Rulebook(ABC):
     @abstractmethod
     def parse_board(
         self, record: dict[str, Any], *, generator_version: int = 1
-    ) -> Board | TrackGrid | WordGrid | TrioGrid | TentsGrid:
+    ) -> Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid:
         """The board a file's `board` object describes.
 
         The schema has already refused the shapes it can express, so this reads the
@@ -267,7 +280,7 @@ class Rulebook(ABC):
 
     @abstractmethod
     def board_to_dict(
-        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid
+        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid
     ) -> dict[str, JsonValue]:
         """The schema-shaped `board` object for `board`.
 
@@ -277,7 +290,9 @@ class Rulebook(ABC):
         """
 
 
-def as_marks_board(board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid) -> Board:
+def as_marks_board(
+    board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
+) -> Board:
     """`board`, if it is a marks board.
 
     A caller is handed whatever the file carried, so anything that reads marks
@@ -344,7 +359,7 @@ class MarkRulebook(Rulebook):
 
     def count_solutions(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
         *,
         limit: int = DEFAULT_LIMIT,
     ) -> int:
@@ -352,7 +367,7 @@ class MarkRulebook(Rulebook):
 
     def deduce(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
         *,
         allow_guesses: bool = True,
     ) -> DeductionTrace | None:
@@ -421,7 +436,7 @@ class MarkRulebook(Rulebook):
         )
 
     def board_to_dict(
-        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid
+        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid
     ) -> dict[str, JsonValue]:
         marks = as_marks_board(board)
         data: dict[str, JsonValue] = {
@@ -504,7 +519,7 @@ class TrackRulebook(Rulebook):
 
     def count_solutions(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
         *,
         limit: int = DEFAULT_LIMIT,
     ) -> int:
@@ -514,7 +529,7 @@ class TrackRulebook(Rulebook):
 
     def deduce(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
         *,
         allow_guesses: bool = True,
     ) -> DeductionTrace | None:
@@ -593,7 +608,7 @@ class TrackRulebook(Rulebook):
         return TrackGrid(width, height, row_clues, col_clues, givens)
 
     def board_to_dict(
-        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid
+        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid
     ) -> dict[str, JsonValue]:
         if not isinstance(board, TrackGrid):
             raise GenerationError("train-tracks writes a track grid, not a marks board")
@@ -662,7 +677,7 @@ class WordPathRulebook(Rulebook):
 
     def count_solutions(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
         *,
         limit: int = DEFAULT_LIMIT,
     ) -> int:
@@ -673,7 +688,7 @@ class WordPathRulebook(Rulebook):
 
     def deduce(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
         *,
         allow_guesses: bool = True,
     ) -> None:
@@ -700,7 +715,7 @@ class WordPathRulebook(Rulebook):
         return "\n".join([f"{puzzle.id} seed={puzzle.seed} size={grid.width}x{grid.height}", *rows])
 
     @staticmethod
-    def _grid(board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid) -> WordGrid:
+    def _grid(board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid) -> WordGrid:
         if not isinstance(board, WordGrid):
             raise GenerationError("word-paths needs a word grid")
         return board
@@ -723,7 +738,7 @@ class WordPathRulebook(Rulebook):
         )
 
     def board_to_dict(
-        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid
+        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid
     ) -> dict[str, JsonValue]:
         grid = self._grid(board)
         return {
@@ -780,7 +795,7 @@ class TrioRulebook(Rulebook):
 
     def count_solutions(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
         *,
         limit: int = DEFAULT_LIMIT,
     ) -> int:
@@ -788,7 +803,7 @@ class TrioRulebook(Rulebook):
 
     def deduce(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
         *,
         allow_guesses: bool = True,
     ) -> LogicResult:
@@ -814,7 +829,7 @@ class TrioRulebook(Rulebook):
         return "\n".join([f"{puzzle.id} seed={puzzle.seed} size={TRIO_SIZE}x{TRIO_SIZE}", *rows])
 
     @staticmethod
-    def _grid(board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid) -> TrioGrid:
+    def _grid(board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid) -> TrioGrid:
         if not isinstance(board, TrioGrid):
             raise GenerationError("trio needs a trio grid")
         return board
@@ -848,7 +863,7 @@ class TrioRulebook(Rulebook):
         )
 
     def board_to_dict(
-        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid
+        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid
     ) -> dict[str, JsonValue]:
         grid = self._grid(board)
         return {
@@ -905,7 +920,7 @@ class TentsRulebook(Rulebook):
 
     def count_solutions(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
         *,
         limit: int = DEFAULT_LIMIT,
     ) -> int:
@@ -913,7 +928,7 @@ class TentsRulebook(Rulebook):
 
     def deduce(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
         *,
         allow_guesses: bool = True,
     ) -> None:
@@ -940,7 +955,7 @@ class TentsRulebook(Rulebook):
         return "\n".join([f"{puzzle.id} seed={puzzle.seed} size={grid.size}x{grid.size}", *rows])
 
     @staticmethod
-    def _grid(board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid) -> TentsGrid:
+    def _grid(board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid) -> TentsGrid:
         if not isinstance(board, TentsGrid):
             raise GenerationError("tents needs a tents grid")
         return board
@@ -966,7 +981,7 @@ class TentsRulebook(Rulebook):
         return TentsGrid(size, trees, rows, cols)
 
     def board_to_dict(
-        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid
+        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid
     ) -> dict[str, JsonValue]:
         grid = self._grid(board)
         return {
@@ -975,6 +990,128 @@ class TentsRulebook(Rulebook):
             "rowClues": list(grid.rows),
             "colClues": list(grid.cols),
         }
+
+
+class SudokuRulebook(Rulebook):
+    """Three daily levels, each unique and certified by its own logical band."""
+
+    puzzle_type = PuzzleType.SUDOKU
+    id_suffix = "-sudoku"
+    on_ramp = False
+    rated = False
+    logic_only = True
+    default_size = SUDOKU_SIZE
+    seed_batch_size = SUDOKU_SEED_BATCH_SIZE
+
+    def daily_ids(self, day: date) -> tuple[str, ...]:
+        return (
+            tuple(f"{day.isoformat()}{v.suffix}" for v in SUDOKU_VARIANTS)
+            if day >= SUDOKU_START
+            else ()
+        )
+
+    def generate(
+        self,
+        *,
+        seed: int,
+        puzzle_id: str,
+        size: int | None = None,
+        stars_per_row: int | None = None,
+        max_attempts: int | None = None,
+    ) -> Puzzle:
+        if any(value is not None for value in (size, stars_per_row, max_attempts)):
+            raise GenerationError("sudoku uses a fixed versioned recipe, without overrides")
+        parsed = split_puzzle_id(puzzle_id)
+        variant = sudoku_variant(puzzle_id)
+        if parsed is None or parsed[1] is not self.puzzle_type or variant is None:
+            raise GenerationError("sudoku requires a canonical date-sudoku-level id")
+        try:
+            accepted_seed, grid = generate_sudoku_grid(seed, variant.name)
+        except (ValueError, SudokuGenerationError) as error:
+            raise GenerationError(str(error)) from error
+        return Puzzle(puzzle_id, self.puzzle_type, accepted_seed, SUDOKU_GENERATOR_VERSION, grid)
+
+    def count_solutions(
+        self,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
+        *,
+        limit: int = DEFAULT_LIMIT,
+    ) -> int:
+        if type(limit) is not int or not 1 <= limit <= DEFAULT_LIMIT:
+            raise ValueError("Sudoku solution limit must be 1 or 2")
+        return min(limit, len(solve_sudoku(self._grid(board)).solutions))
+
+    def deduce(
+        self,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
+        *,
+        allow_guesses: bool = True,
+    ) -> DeductionResult:
+        del allow_guesses
+        grid = self._grid(board)
+        return deduce_sudoku(grid, grid.level)
+
+    def replay(self, puzzle: Puzzle) -> Puzzle:
+        if puzzle.generator_version != SUDOKU_GENERATOR_VERSION:
+            raise GenerationError(
+                f"unsupported sudoku generator version {puzzle.generator_version}"
+            )
+        grid = self._grid(puzzle.board)
+        variant = sudoku_variant(puzzle.id)
+        if variant is None or grid.level != variant.name:
+            raise GenerationError("sudoku id level must match board level")
+        try:
+            accepted_seed, regenerated = generate_sudoku_grid(
+                puzzle.seed, grid.level, max_attempts=1
+            )
+        except ValueError as error:
+            raise GenerationError(str(error)) from error
+        return Puzzle(
+            puzzle.id, self.puzzle_type, accepted_seed, SUDOKU_GENERATOR_VERSION, regenerated
+        )
+
+    def dimensions(self, puzzle: Puzzle) -> tuple[int, int]:
+        self._grid(puzzle.board)
+        return 9, 9
+
+    def render(self, puzzle: Puzzle) -> str:
+        grid = self._grid(puzzle.board)
+        rows = [
+            "".join(f" {v}" if v else " ." for v in grid.givens[start : start + 9])
+            for start in range(0, 81, 9)
+        ]
+        return "\n".join([f"{puzzle.id} seed={puzzle.seed} size=9x9", *rows])
+
+    @staticmethod
+    def _grid(
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
+    ) -> SudokuGrid:
+        if not isinstance(board, SudokuGrid):
+            raise GenerationError("sudoku needs a sudoku grid")
+        return board
+
+    def parse_board(self, record: dict[str, Any], *, generator_version: int = 1) -> SudokuGrid:
+        if generator_version != SUDOKU_GENERATOR_VERSION:
+            raise BoardError(f"unsupported sudoku generator version {generator_version}")
+        if require_int(record.get("size"), "board.size") != SUDOKU_SIZE:
+            raise BoardError("sudoku size must be 9")
+        level = record.get("level")
+        if level not in ("easy", "medium", "hard"):
+            raise BoardError("sudoku level must be easy, medium or hard")
+        return SudokuGrid(
+            tuple(
+                require_int(v, "board.givens[]")
+                for v in require_list(record.get("givens"), "board.givens")
+            ),
+            level,
+        )
+
+    def board_to_dict(
+        self,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
+    ) -> dict[str, JsonValue]:
+        grid = self._grid(board)
+        return {"size": 9, "level": grid.level, "givens": list(grid.givens)}
 
 
 _RULEBOOKS: Final[dict[PuzzleType, Rulebook]] = {
@@ -992,6 +1129,7 @@ _RULEBOOKS: Final[dict[PuzzleType, Rulebook]] = {
     PuzzleType.WORD_PATHS: WordPathRulebook(),
     PuzzleType.TRIO: TrioRulebook(),
     PuzzleType.TENTS: TentsRulebook(),
+    PuzzleType.SUDOKU: SudokuRulebook(),
 }
 
 
@@ -1053,9 +1191,24 @@ def verify_replay(puzzle: Puzzle) -> Puzzle:
     return regenerated
 
 
-def puzzle_id(day: date, puzzle_type: PuzzleType, *, track_size: TrackSize | None = None) -> str:
+def puzzle_id(
+    day: date,
+    puzzle_type: PuzzleType,
+    *,
+    track_size: TrackSize | None = None,
+    sudoku_level: Level | None = None,
+) -> str:
     """Name a family slot, optionally selecting a named Train Tracks board."""
     book = rulebook_for(puzzle_type)
+    if sudoku_level is not None and book.puzzle_type is not PuzzleType.SUDOKU:
+        raise RulebookError("only sudoku has named logical levels")
+    if book.puzzle_type is PuzzleType.SUDOKU:
+        if track_size is not None:
+            raise RulebookError("only train-tracks has named board sizes")
+        variant = next((v for v in SUDOKU_VARIANTS if v.name == (sudoku_level or "easy")), None)
+        if variant is None:
+            raise RulebookError(f"unknown sudoku level {sudoku_level}")
+        return f"{day.isoformat()}{variant.suffix}"
     if track_size is None:
         return f"{day.isoformat()}{book.id_suffix}"
     if book.puzzle_type is not PuzzleType.TRAIN_TRACKS:
@@ -1078,6 +1231,8 @@ def split_puzzle_id(value: str) -> tuple[date, PuzzleType] | None:
         suffixes = (book.id_suffix,)
         if book.puzzle_type is PuzzleType.TRAIN_TRACKS:
             suffixes += tuple(v.suffix for v in TRACK_VARIANTS)
+        elif book.puzzle_type is PuzzleType.SUDOKU:
+            suffixes = tuple(v.suffix for v in SUDOKU_VARIANTS)
         for suffix in suffixes:
             if suffix and not value.endswith(suffix):
                 continue

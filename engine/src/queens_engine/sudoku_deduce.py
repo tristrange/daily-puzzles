@@ -4,11 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from itertools import combinations
-from typing import Literal
 
 from .sudoku import ALL, CELL_COUNT, COLUMNS, PEERS, ROWS, UNITS, SudokuGrid, is_solution
+from .sudoku import Level as Level  # noqa: PLC0414 -- preserve the preview API
 
-Level = Literal["easy", "medium", "hard"]
 PAIR = 2
 LINE_COUNT = len(ROWS) + len(COLUMNS)
 LEVELS: tuple[Level, ...] = ("easy", "medium", "hard")

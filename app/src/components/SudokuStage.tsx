@@ -1,3 +1,9 @@
+import type { Puzzle } from '../domain/puzzle'
+import { puzzleOfToday } from '../domain/dates'
+import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } from '../lib/stats'
+import { buildShareText, buildSudokuSolutionShareText, copyText, puzzleShareLink } from '../lib/share'
+import { useLeaderboard } from '../lib/useLeaderboard'
+import { SolvedPanel } from './SolvedPanel'
 import { useId, useRef, useState, type KeyboardEvent } from 'react'
 import { createSudokuGame, editSudoku, isSudokuSolved, sudokuCellName, sudokuConflicts, sudokuDigits, sudokuSingle, type SudokuBoard as Board, type SudokuGame } from '../domain/sudoku'
 import { applySudokuHint, findSudokuHint, type SudokuHint } from '../domain/sudokuHints'
@@ -9,8 +15,15 @@ import { HintPanel, MistakeWarning } from './HintPanel'
 import { ResetButton } from './ResetButton'
 import { SudokuBoard } from './SudokuBoard'
 
-export function SudokuStage({ board }: { board: Board }) {
-  const [initial] = useState(() => readSudokuProgress(board))
+export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) {
+  const daily = puzzle !== undefined
+  const [stats, setStats] = useState<Stats | null>(null)
+  const [firstSolve, setFirstSolve] = useState<SolveRecord | null>(null)
+  const [candidate, setCandidate] = useState<SolveRecord | null>(null)
+  const [copied, setCopied] = useState<'idle' | 'result' | 'solution' | 'failed'>('idle')
+  const [shareText, setShareText] = useState<string | null>(null)
+  const { offerSolve } = useLeaderboard()
+  const [initial] = useState(() => readSudokuProgress(board, daily))
   const [game, setGame] = useState(() => initial?.game ?? createSudokuGame(board)), current = useRef(game)
   const history = useMoveHistory<SudokuGame>(), completed = useRef(false), hints = useRef(initial?.hints ?? 0)
   const [shownHints, setShownHints] = useState(initial?.hints ?? 0)
@@ -21,13 +34,24 @@ export function SudokuStage({ board }: { board: Board }) {
   const stage = useRef<HTMLDivElement>(null), hintButton = useRef<HTMLButtonElement>(null)
   const instructionsId = useId(), hintId = useId(), conflicts = sudokuConflicts(game.cells)
   const { elapsed, settle, stop } = usePlayClock(initial?.elapsedMs ?? 0, time => {
-    setSaving(storeSudokuProgress(board, current.current, time, hints.current))
+    setSaving(storeSudokuProgress(board, current.current, time, hints.current, daily))
   })
-  const save = () => { setSaving(storeSudokuProgress(board, current.current, settle(), hints.current)) }
+  const save = () => { setSaving(storeSudokuProgress(board, current.current, settle(), hints.current, daily)) }
   const clearHint = () => { setHint(null); setMistake(null) }
   const change = (next: SudokuGame) => {
     current.current = next; setGame(next); clearHint()
-    if (isSudokuSolved(board, next.cells)) { stop(); completed.current = true; setSolved(true) }
+    if (isSudokuSolved(board, next.cells)) {
+      const elapsedMs = stop()
+      if (puzzle) {
+        // oxlint-disable-next-line react/purity -- Called by player events, never during render.
+        const when = Date.now(), earlier = readStoredStats().find(record => record.id === puzzle.id)
+        const record: SolveRecord = { id: puzzle.id, puzzleType: 'sudoku', size: 9, elapsedMs, hints: hints.current, solvedAt: when }
+        setFirstSolve(earlier ?? null)
+        setStats(summarise(storeSolve(record), puzzleOfToday(new Date(when), Intl.DateTimeFormat().resolvedOptions().timeZone)))
+        if (!earlier) { setCandidate(record); offerSolve(record) }
+      }
+      completed.current = true; setSolved(true)
+    }
     save()
   }
   const commit = (next: SudokuGame, feedback = '') => {
@@ -94,6 +118,16 @@ export function SudokuStage({ board }: { board: Board }) {
     else if (event.key.toLowerCase() === 'n') { event.preventDefault(); setPencil(!pencil) }
     else if (event.key.toLowerCase() === 'h') { event.preventDefault(); requestHint() }
   }
+  const share = async (variant: 'result' | 'solution') => {
+    if (!puzzle) return
+    const counted = firstSolve ?? { elapsedMs: elapsed, hints: hints.current }
+    const result = { puzzleId: puzzle.id, puzzleType: 'sudoku' as const, width: 9, height: 9,
+      elapsedMs: counted.elapsedMs, hints: counted.hints, streak: stats?.currentStreak ?? 0, link: puzzleShareLink(puzzle.id) }
+    const text = variant === 'solution' ? buildSudokuSolutionShareText(result, game.cells) : buildShareText(result)
+    const ok = await copyText(text)
+    setCopied(ok ? variant : 'failed'); setShareText(ok ? null : text)
+    setMessage(ok ? 'Share text copied to the clipboard.' : 'Could not reach the clipboard — the share text is shown below, ready to copy.')
+  }
   const editable = !solved && (selection.length > 1 ? selection.some(i => game.cells[i] === 0) : board.givens[selected] === 0)
   const placedCounts = Array<number>(10).fill(0)
   for (const value of game.cells) placedCounts[value]!++
@@ -121,8 +155,9 @@ export function SudokuStage({ board }: { board: Board }) {
       </div>
       <SudokuBoard board={board} game={game} selected={selected} selection={selection} locked={solved} conflicts={conflicts} hint={hint} instructionsId={instructionsId} onSelect={select} />
     </div>
-    <p className={`sudoku-feedback${conflicts.size ? ' error' : ''}`} role="status">{solved ? `Solved in ${formatTime(elapsed)} with ${shownHints} hint${shownHints === 1 ? '' : 's'}! Choose another level to keep playing.`
+    <p className={`sudoku-feedback${conflicts.size ? ' error' : ''}`} role="status">{solved ? message || `Solved in ${formatTime(elapsed)} with ${shownHints} hint${shownHints === 1 ? '' : 's'}!${daily ? '' : ' Choose another level to keep playing.'}`
       : message || (conflicts.size ? `${conflicts.size} cells repeat a number in a row, column or box. You can keep editing or Undo.` : '\u00a0')}</p>
+    {daily && <SolvedPanel puzzleId={puzzle?.id} candidate={candidate} solved={solved} firstSolve={firstSolve} streak={stats?.currentStreak ?? 0} copied={copied} shareText={shareText} onShare={share} />}
     {mistake !== null && <MistakeWarning id={hintId} message="Your numbers lead to a contradiction. Check your entries, or try Undo." onReveal={revealMistake} onDismiss={dismiss} />}
     {hint && <HintPanel id={hintId} location={sudokuCellName(hint.cell)} title={hint.correction ? 'Clear this entry' : sudokuSingle(hint.candidates) ? `Place ${sudokuDigits(hint.candidates)[0]}` : 'Narrow the possibilities'}
       reasons={hint.reasons} supportingReasons={hint.supportingReasons} effect={hint.correction || sudokuSingle(hint.candidates) ? '' : `Apply updates this cell's notes to ${sudokuDigits(hint.candidates).join(', ')}. The cell stays empty.`}

@@ -1,4 +1,4 @@
-/** Preview-only standard Sudoku; no production family or date registration. */
+/** Standard 9×9 Sudoku, shared by daily puzzles and isolated previews. */
 export const SUDOKU_LEVELS = ['easy', 'medium', 'hard'] as const
 export type SudokuLevel = typeof SUDOKU_LEVELS[number]
 export interface SudokuBoard { readonly id: string; readonly level: SudokuLevel; readonly givens: readonly number[] }
@@ -83,4 +83,21 @@ export function solveSudoku(board: SudokuBoard, maxNodes = 200_000): SudokuSolut
   }
   visit()
   return exhausted ? { kind: 'incomplete' } : answers.length === 1 ? { kind: 'unique', cells: answers[0]! } : { kind: answers.length ? 'multiple' : 'none' }
+}
+
+export class SudokuGridError extends Error {}
+
+export class SudokuGrid implements SudokuBoard {
+  readonly id: string
+  readonly level: SudokuLevel
+  readonly givens: readonly number[]
+  readonly size = 9
+  readonly width = 9
+  readonly height = 9
+  readonly cellCount = 81
+  constructor(id: string, level: unknown, givens: unknown) {
+    if (!SUDOKU_LEVELS.includes(level as SudokuLevel) || !Array.isArray(givens) || givens.length !== 81
+      || !givens.every(sudokuDigit) || sudokuConflicts(givens).size) throw new SudokuGridError('Invalid Sudoku givens or level')
+    this.id = id; this.level = level as SudokuLevel; this.givens = [...givens]
+  }
 }

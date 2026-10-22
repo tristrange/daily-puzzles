@@ -1,0 +1,214 @@
+{
+  "purpose": "Daily launch: accepted seed replay and exact/logical certificates; no runtime answers",
+  "activationDay": "2026-10-21",
+  "through": "2026-10-25",
+  "puzzles": [
+    {
+      "id": "2026-10-21-sudoku-easy",
+      "seed": 3927953325,
+      "level": "easy",
+      "givens": 36,
+      "exactNodes": 45,
+      "rules": {
+        "peer": 47,
+        "naked-single": 45
+      },
+      "replaySeconds": 0.031108
+    },
+    {
+      "id": "2026-10-21-sudoku-hard",
+      "seed": 1732749504,
+      "level": "hard",
+      "givens": 24,
+      "exactNodes": 198,
+      "rules": {
+        "peer": 119,
+        "naked-single": 47,
+        "hidden-single": 9,
+        "locked-candidate": 13,
+        "hidden-triple": 3
+      },
+      "replaySeconds": 0.173059
+    },
+    {
+      "id": "2026-10-21-sudoku-medium",
+      "seed": 1028756702,
+      "level": "medium",
+      "givens": 28,
+      "exactNodes": 311,
+      "rules": {
+        "peer": 98,
+        "hidden-single": 19,
+        "locked-candidate": 12,
+        "naked-single": 32,
+        "naked-pair": 1
+      },
+      "replaySeconds": 0.124087
+    },
+    {
+      "id": "2026-10-22-sudoku-easy",
+      "seed": 2384295239,
+      "level": "easy",
+      "givens": 36,
+      "exactNodes": 45,
+      "rules": {
+        "peer": 11,
+        "naked-single": 45
+      },
+      "replaySeconds": 0.019421
+    },
+    {
+      "id": "2026-10-22-sudoku-hard",
+      "seed": 1487748955,
+      "level": "hard",
+      "givens": 24,
+      "exactNodes": 679,
+      "rules": {
+        "peer": 113,
+        "naked-single": 44,
+        "hidden-single": 12,
+        "x-wing": 1
+      },
+      "replaySeconds": 0.144967
+    },
+    {
+      "id": "2026-10-22-sudoku-medium",
+      "seed": 2760910939,
+      "level": "medium",
+      "givens": 28,
+      "exactNodes": 92,
+      "rules": {
+        "peer": 94,
+        "naked-single": 45,
+        "hidden-single": 7,
+        "locked-candidate": 2
+      },
+      "replaySeconds": 0.087849
+    },
+    {
+      "id": "2026-10-23-sudoku-easy",
+      "seed": 287110294,
+      "level": "easy",
+      "givens": 36,
+      "exactNodes": 45,
+      "rules": {
+        "peer": 51,
+        "naked-single": 45
+      },
+      "replaySeconds": 0.032424
+    },
+    {
+      "id": "2026-10-23-sudoku-hard",
+      "seed": 4190919839,
+      "level": "hard",
+      "givens": 24,
+      "exactNodes": 556,
+      "rules": {
+        "peer": 111,
+        "naked-single": 45,
+        "hidden-single": 12,
+        "locked-candidate": 5,
+        "hidden-triple": 2
+      },
+      "replaySeconds": 0.155385
+    },
+    {
+      "id": "2026-10-23-sudoku-medium",
+      "seed": 2146172058,
+      "level": "medium",
+      "givens": 28,
+      "exactNodes": 275,
+      "rules": {
+        "peer": 105,
+        "hidden-single": 13,
+        "locked-candidate": 3,
+        "naked-single": 40
+      },
+      "replaySeconds": 0.122807
+    },
+    {
+      "id": "2026-10-24-sudoku-easy",
+      "seed": 1215314105,
+      "level": "easy",
+      "givens": 36,
+      "exactNodes": 100,
+      "rules": {
+        "naked-single": 40,
+        "peer": 58,
+        "hidden-single": 5
+      },
+      "replaySeconds": 0.046522
+    },
+    {
+      "id": "2026-10-24-sudoku-hard",
+      "seed": 3818445033,
+      "level": "hard",
+      "givens": 25,
+      "exactNodes": 1796,
+      "rules": {
+        "peer": 118,
+        "hidden-single": 18,
+        "locked-candidate": 9,
+        "naked-triple": 2,
+        "naked-pair": 2,
+        "naked-single": 37
+      },
+      "replaySeconds": 0.251099
+    },
+    {
+      "id": "2026-10-24-sudoku-medium",
+      "seed": 4208893734,
+      "level": "medium",
+      "givens": 28,
+      "exactNodes": 384,
+      "rules": {
+        "naked-single": 41,
+        "peer": 95,
+        "hidden-single": 11,
+        "locked-candidate": 4
+      },
+      "replaySeconds": 0.122868
+    },
+    {
+      "id": "2026-10-25-sudoku-easy",
+      "seed": 852526314,
+      "level": "easy",
+      "givens": 36,
+      "exactNodes": 45,
+      "rules": {
+        "peer": 40,
+        "naked-single": 45
+      },
+      "replaySeconds": 0.035138
+    },
+    {
+      "id": "2026-10-25-sudoku-hard",
+      "seed": 970268127,
+      "level": "hard",
+      "givens": 24,
+      "exactNodes": 1087,
+      "rules": {
+        "peer": 114,
+        "naked-single": 48,
+        "hidden-single": 7,
+        "locked-candidate": 15,
+        "x-wing": 3
+      },
+      "replaySeconds": 0.273392
+    },
+    {
+      "id": "2026-10-25-sudoku-medium",
+      "seed": 3378078591,
+      "level": "medium",
+      "givens": 28,
+      "exactNodes": 137,
+      "rules": {
+        "peer": 106,
+        "naked-single": 50,
+        "hidden-single": 2,
+        "locked-candidate": 2
+      },
+      "replaySeconds": 0.098137
+    }
+  ]
+}

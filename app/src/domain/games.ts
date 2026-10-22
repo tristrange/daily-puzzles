@@ -35,6 +35,7 @@ export const PUZZLE_TYPE_SUFFIX: Record<PuzzleType, string> = {
   'word-paths': '-words',
   trio: '-trio',
   tents: '-tents',
+  sudoku: '-sudoku',
 }
 
 /**
@@ -53,6 +54,7 @@ export const PUZZLE_TYPE_PUBLISHED: Record<PuzzleType, boolean> = {
   'word-paths': true,
   trio: true,
   tents: true,
+  sudoku: true,
 }
 
 export const WORD_PATHS_START = wordPaths.activationDay
@@ -84,6 +86,7 @@ export const PUZZLE_TYPE_HAS_HINTS: Record<PuzzleType, boolean> = {
   'word-paths': true,
   trio: true,
   tents: true,
+  sudoku: true,
 }
 
 export const PUZZLE_TYPE_LABEL: Record<PuzzleType, string> = {
@@ -93,6 +96,7 @@ export const PUZZLE_TYPE_LABEL: Record<PuzzleType, string> = {
   'word-paths': 'Word Paths',
   trio: 'Trio',
   tents: 'Tents',
+  sudoku: 'Sudoku',
 }
 
 /**
@@ -125,4 +129,5 @@ export const PUZZLE_PIECE: Record<PuzzleType, { noun: string; plural: string; gl
   'word-paths': { noun: 'word', plural: 'words', glyph: 'A' },
   trio: { noun: 'symbol', plural: 'symbols', glyph: '☀' },
   tents: { noun: 'tent', plural: 'tents', glyph: '⛺' },
+  sudoku: { noun: 'digit', plural: 'digits', glyph: '9' },
 }

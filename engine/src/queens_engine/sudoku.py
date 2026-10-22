@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Literal
+
+Level = Literal["easy", "medium", "hard"]
 
 SIDE = 9
 CELL_COUNT = SIDE * SIDE
@@ -25,8 +28,11 @@ ALL = 511
 @dataclass(frozen=True)
 class SudokuGrid:
     givens: tuple[int, ...]
+    level: Level = "easy"
 
     def __post_init__(self) -> None:
+        if self.level not in ("easy", "medium", "hard"):
+            raise ValueError("level must be easy, medium or hard")
         object.__setattr__(self, "givens", tuple(self.givens))
         if len(self.givens) != CELL_COUNT or any(
             type(v) is not int or not 0 <= v <= SIDE for v in self.givens

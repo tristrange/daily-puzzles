@@ -25,7 +25,8 @@ contents of
 once. It creates the tables, private rate counter and restricted RPC functions
 in one transaction. Reapplying it fails without dropping the existing data.
 Then apply [`002_tents.sql`](../backend/leaderboard/migrations/002_tents.sql)
-to support all six puzzle families before synchronizing the catalog.
+and [`003_sudoku.sql`](../backend/leaderboard/migrations/003_sudoku.sql)
+to support all seven puzzle families before synchronizing the catalog.
 Never run `tests/auth-fixture.sql` on Supabase: that file belongs only in the
 disposable local test database. Configure CAPTCHA before enabling anonymous
 sign-ins; the provider toggles alone do not activate publishing in the app.
@@ -53,6 +54,29 @@ preserves any Tents results already submitted. Do not drop Tents catalog rows,
 delete results, rerun `001`, or restore the narrower checks once Tents data
 exists. Disabling cloud features via the public build variables remains an
 option if needed.
+
+### Upgrade an existing project for daily Sudoku
+
+Before merging or deploying the daily Sudoku release, open the existing
+Supabase project's **SQL Editor**, create a new query, paste the complete contents
+of [`003_sudoku.sql`](../backend/leaderboard/migrations/003_sudoku.sql), and click
+**Run**. Apply `002_tents.sql` first if it has not already been applied. Do not
+rerun `001_leaderboards.sql`.
+
+Migration `003` replaces only five catalog check constraints in one transaction:
+the permitted family, canonical ID, date/family pairing, permitted size label,
+and ID/label pairing. Sudoku IDs require `-sudoku-easy`, `-sudoku-medium` or
+`-sudoku-hard`; each requires 9x9 dimensions and its matching Easy, Medium or
+Hard label. An unsized `-sudoku` ID is rejected. Existing catalog rows, results,
+rate limits, RLS, grants and RPC signatures remain intact. It validates existing
+rows and can be retried safely, including after Sudoku scores have been stored.
+A failure rolls back the whole transaction; resolve the error before deploying.
+
+After the migration succeeds, merge and deploy normally. The trusted catalog
+sync registers each committed level separately. Confirm an existing game's
+ranking still loads and each Sudoku level has its own ranking. For rollback,
+redeploy the previous app and leave `003` applied; preserve Sudoku catalog rows
+and scores and keep the expanded constraints.
 
 ## 2. Prepare free signup protection
 
@@ -127,9 +151,10 @@ accepts no database URL, exposes no host port and cannot run against a hosted
 database. A test-only Auth fixture supplies the roles and `auth.uid()` context;
 the checks exercise real PostgreSQL permissions, rankings, duplicates, owner
 deletion, write limits and concurrent first submissions.
-The harness tests both a clean `001` + `002` install and a seeded `001` upgrade,
-including a repeated `002`, unchanged rows/security/RPCs, Tents submissions and
-rejection of mismatched family/ID pairs. These checks do not prove
+The harness tests a clean `001` + `002` + `003` install and seeded upgrades from
+`001` through `002` and `003`, including repeated migrations, unchanged
+rows/security/RPCs, retained Tents and Sudoku scores, separate Sudoku levels and
+rejection of mismatched family/ID/level metadata. These checks do not prove
 Supabase HTTP authentication or CAPTCHA; the two real anonymous sessions in the
 activation checks below cover those. No new npm/Python packages are needed here.
 
@@ -176,7 +201,7 @@ the setting across tabs and removing results may wait for an in-flight request.
 
 Activation order for a new project or rebuild:
 
-1. Apply `001_leaderboards.sql`, then `002_tents.sql`, and run the database checks.
+1. Apply `001_leaderboards.sql`, `002_tents.sql`, then `003_sudoku.sql`, and run the database checks.
 2. Configure CAPTCHA and anonymous sign-ins; leave paid options disabled.
 3. Add the server-only GitHub secret and synchronize the known puzzle catalog.
 4. Set the three public GitHub variables and deploy the app.

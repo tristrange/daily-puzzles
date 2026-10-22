@@ -17,7 +17,7 @@ export function RulesPage() {
     <section className="rules">
       <h1 className="page-title">How to play</h1>
       <p className="status">
-        Fresh Queens, Star Battle, Train Tracks, Word Paths, Trio and Tents puzzles arrive every day.
+        Fresh Queens, Star Battle, Train Tracks, Word Paths, Trio, Tents and Sudoku puzzles arrive every day.
         Past puzzles stay in the <Link to="/archive">archive</Link>.
       </p>
       <nav className="game-picker" aria-label="Game rules">
@@ -26,7 +26,6 @@ export function RulesPage() {
             {PUZZLE_TYPE_LABEL[type]}
           </Link>
         ))}
-        <Link to={{ pathname: '/how-to-play', hash: '#sudoku' }}>Sudoku preview</Link>
       </nav>
 
       <h2 id="controls" tabIndex={-1}>Shared controls</h2>
@@ -238,16 +237,16 @@ export function RulesPage() {
         filled cells stay unchanged. A digit is added wherever missing, or removed
         when every empty selected cell already has it. Erase clears their notes.
         Each group edit takes one Undo. Select one cell to return to normal entry.</p>
-      <p><Link to="/preview/sudoku">Try Easy, Medium and Hard</Link>. Each preview has
+      <p>Choose a daily Easy, Medium or Hard puzzle. Each has
         one independently verified solution and finishes through its supported logical
         techniques. Medium requires more than singles; Hard requires more than our
-        Medium techniques. These are provisional project ratings. Attempts save
-        separately and do not affect daily stats, streaks or leaderboards.</p>
+        Medium techniques. These are provisional project ratings. <Link to="/preview/sudoku">Practice boards</Link> remain available;
+        their attempts save separately and do not affect daily stats, streaks or leaderboards.</p>
 
       <h2>Finishing, sharing and stats</h2>
       <p>A solved board locks and offers a result to share, optionally including the finished
         board as a spoiler. Your first solve of each puzzle is recorded; replaying it does
-        not overwrite that time. Each Train Tracks size counts as its own puzzle.</p>
+        not overwrite that time. Each Train Tracks size and Sudoku level counts as its own puzzle.</p>
       <p>Stats stay in this browser. Clearing site data removes
         them. A streak counts each day once, however many puzzles you solve.</p>
       <p><Link to="/leaderboards">Leaderboards</Link> are optional. Joining publishes your

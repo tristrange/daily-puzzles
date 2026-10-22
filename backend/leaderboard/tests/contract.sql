@@ -24,6 +24,10 @@ select public.register_leaderboard_puzzles(jsonb_agg(jsonb_build_object(
   'puzzle_day', current_date::text, 'width', size, 'height', size, 'size_label', label)))
 from (values ('small', 8, 'Small'), ('medium', 10, 'Medium'), ('large', 12, 'Large')) v(variant, size, label);
 select public.register_leaderboard_puzzles(jsonb_agg(jsonb_build_object(
+  'puzzle_id', current_date::text || '-sudoku-' || level, 'puzzle_type', 'sudoku',
+  'puzzle_day', current_date::text, 'width', 9, 'height', 9, 'size_label', label)))
+from (values ('easy', 'Easy'), ('medium', 'Medium'), ('hard', 'Hard')) v(level, label);
+select public.register_leaderboard_puzzles(jsonb_agg(jsonb_build_object(
   'puzzle_id', current_date::text || suffix, 'puzzle_type', family,
   'puzzle_day', current_date::text, 'width', size, 'height', size, 'size_label', null)))
 from (values ('star-battle', '-star', 9), ('word-paths', '-words', 5),
@@ -39,13 +43,28 @@ do $$ declare family text; suffix text; candidate jsonb; begin
   for family, suffix in
     select a.family, b.suffix
     from (values ('queens', ''), ('star-battle', '-star'), ('train-tracks', '-tracks'),
-      ('word-paths', '-words'), ('trio', '-trio'), ('tents', '-tents')) a(family, suffix)
+      ('word-paths', '-words'), ('trio', '-trio'), ('tents', '-tents'), ('sudoku', '-sudoku-easy')) a(family, suffix)
     cross join (values ('queens', ''), ('star-battle', '-star'), ('train-tracks', '-tracks'),
-      ('word-paths', '-words'), ('trio', '-trio'), ('tents', '-tents')) b(family, suffix)
+      ('word-paths', '-words'), ('trio', '-trio'), ('tents', '-tents'), ('sudoku', '-sudoku-easy')) b(family, suffix)
     where a.family <> b.family
   loop
     candidate := jsonb_build_array(jsonb_build_object('puzzle_id', current_date::text || suffix,
       'puzzle_type', family, 'puzzle_day', current_date::text, 'width',10,'height',10));
+    perform pg_temp.rejects(format('select public.register_leaderboard_puzzles(%L)', candidate::text), '23514');
+  end loop;
+end $$;
+
+-- Sudoku requires a level suffix, matching label and standard dimensions.
+do $$ declare suffix text; label text; width integer; height integer; candidate jsonb; begin
+  for suffix, label, width, height in select * from (values
+    ('-sudoku', 'Easy', 9, 9), ('-sudoku-expert', 'Hard', 9, 9),
+    ('-sudoku-easy', 'Medium', 9, 9), ('-sudoku-medium', null, 9, 9),
+    ('-sudoku-hard', 'Easy', 9, 9), ('-sudoku-easy', 'Easy', 8, 9),
+    ('-sudoku-hard', 'Hard', 9, 8)) v(suffix, label, width, height)
+  loop
+    candidate := jsonb_build_array(jsonb_build_object('puzzle_id', current_date::text || suffix,
+      'puzzle_type', 'sudoku', 'puzzle_day', current_date::text,
+      'width',width,'height',height,'size_label',label));
     perform pg_temp.rejects(format('select public.register_leaderboard_puzzles(%L)', candidate::text), '23514');
   end loop;
 end $$;
@@ -111,6 +130,14 @@ select pg_temp.check_true(public.submit_result(current_date::text || '-tents', '
 select pg_temp.check_true(public.get_leaderboard(current_date::text || '-tents')->'entries' =
   '[{"rank":1,"nickname":"Tents","elapsed_ms":12345,"hints":0,"is_you":true}]'::jsonb, 'Tents ranking and owner');
 select pg_temp.check_true(public.get_leaderboard(current_date::text || '-trio')->>'total' = '0', 'Tents separate from Trio');
+select pg_temp.check_true(public.submit_result(current_date::text || '-sudoku-easy', 'Sudoku', 54321, 1)->>'status' = 'created', 'Sudoku first submit');
+select pg_temp.check_true(public.submit_result(current_date::text || '-sudoku-easy', 'Changed', 1, 0)->>'status' = 'existing', 'Sudoku retry');
+select pg_temp.check_true(public.get_leaderboard(current_date::text || '-sudoku-easy')->'entries' =
+  '[{"rank":1,"nickname":"Sudoku","elapsed_ms":54321,"hints":1,"is_you":true}]'::jsonb, 'Sudoku retains first result');
+select pg_temp.check_true(public.get_leaderboard(current_date::text || '-sudoku-medium')->>'total' = '0', 'Sudoku Medium separate');
+select pg_temp.check_true(public.get_leaderboard(current_date::text || '-sudoku-hard')->>'total' = '0', 'Sudoku Hard separate');
+select pg_temp.check_true(public.submit_result(current_date::text || '-sudoku-medium', 'Sudoku', 43210, 0)->>'status' = 'created', 'Sudoku Medium first submit');
+select pg_temp.check_true(public.submit_result(current_date::text || '-sudoku-hard', 'Sudoku', 65432, 2)->>'status' = 'created', 'Sudoku Hard first submit');
 
 -- Outside-top-25 owner gets their own rank without exposing private columns.
 do $$ begin for n in 1..26 loop
