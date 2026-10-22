@@ -129,8 +129,10 @@ retaining its original practice definitions and separate preview saves.
 
 GitHub Actions fills missing daily slots, checks archive replay and deploys the
 static site. App checks always run. Known frontend/documentation-only PRs skip
-engine work; main pushes run full validation. Engine tests and archive replay
+engine work; main pushes always run engine checks. Engine tests and archive replay
 run in parallel, and deployment waits for both plus the app gate.
+Engine CI checks a ten-seed Word Paths sample; a weekly/manual job checks all 100.
+Full archive uniqueness and replay verification still gate every deployment.
 
 ## Local development
 
@@ -171,6 +173,11 @@ uv run python -m tools.verify --dir ../app/public/puzzles
 uv run python -m tools.schema_ids --check
 uv run python -m tools.sudoku_preview  # verify the three fixed preview certificates
 ```
+
+`pytest -q` includes the full Word Paths seed sweep. For the same selection as
+normal engine CI, use `uv run pytest -q -m 'not generator_sweep'`. To run just the
+100-seed sweep, use
+`uv run pytest tests/test_word_paths_contract.py -q -k independent_cover_solver`.
 
 For a Pages-style production build, set `BASE_PATH=/daily-puzzles/` when running
 `npm run build`. See [engine usage](engine/README.md) for generation commands and

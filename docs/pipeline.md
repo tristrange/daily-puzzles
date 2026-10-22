@@ -21,11 +21,23 @@ lives in `ci.yml` rather than in a workflow of its own: it reuses the verificati
 of repeating it.
 
 The engine's `tests` and `archive` matrix jobs run on separate runners in parallel.
-The first runs pytest, pyright and ruff; the second replays the full archive and
-checks the schema ID pattern. Both must succeed for the stable `engine` gate to
-pass. Failure, cancellation, unexpected skips or routing failure cannot produce
-a green gate. Known frontend-only PRs skip both legs and the gate, as before;
-main and publisher dispatches always require the full checks.
+The first runs pytest (excluding `generator_sweep`), pyright and ruff; the second
+replays the full archive and checks the schema ID pattern. Both must succeed for
+the stable `engine` gate to pass. Failure, cancellation, unexpected skips or routing
+failure cannot produce a green gate. Known frontend-only PRs skip both legs and
+the gate, as before; main and publisher dispatches always require both checks.
+
+Word Paths checks ten evenly spaced generation seeds (0, 10, …, 90) against an
+independent solver on each engine run. The other ninety carry the
+`generator_sweep` pytest marker. `engine-sweep.yml` checks all 100 every Monday at
+04:43 UTC and can also be started manually in Actions. That wider sample does
+not block deployment; every committed puzzle still passes the unchanged archive
+uniqueness and replay gate. Plain `uv run pytest -q` includes all seeds locally.
+
+Publisher window tests keep real Queens generation on small boards and load
+committed companions to check scheduling, restart and file-writing behavior.
+Separate generation, seed-retry and replay tests keep using the real engines.
+No production generator or validation budget is reduced.
 
 **The daily publisher has to ask for the deploy explicitly.** This is the one part of the
 arrangement that is counter-intuitive. A commit made with the default `GITHUB_TOKEN`

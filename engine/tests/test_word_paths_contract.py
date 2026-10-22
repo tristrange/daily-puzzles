@@ -106,14 +106,20 @@ def test_shared_samples_and_rejections() -> None:
             parse_puzzle(mutated)
 
 
-def test_one_hundred_seeds_match_the_independent_cover_solver() -> None:
+@pytest.mark.parametrize(
+    "seed",
+    [
+        pytest.param(seed, marks=pytest.mark.generator_sweep) if seed % 10 else seed
+        for seed in range(100)
+    ],
+)
+def test_seed_matches_the_independent_cover_solver(seed: int) -> None:
     book = rulebook_for(PuzzleType.WORD_PATHS)
-    for seed in range(100):
-        puzzle = book.generate(seed=seed, puzzle_id="2026-10-14-words")
-        assert isinstance(puzzle.board, WordGrid)
-        assert len(reference_covers(puzzle.board, v2_vocabulary())) == 1
-        assert len(vocabulary_paths(puzzle.board, v2_vocabulary())) <= 12
-        assert verify_replay(puzzle) == puzzle
+    puzzle = book.generate(seed=seed, puzzle_id="2026-10-14-words")
+    assert isinstance(puzzle.board, WordGrid)
+    assert len(reference_covers(puzzle.board, v2_vocabulary())) == 1
+    assert len(vocabulary_paths(puzzle.board, v2_vocabulary())) <= 12
+    assert verify_replay(puzzle) == puzzle
 
 
 def test_existing_cli_generates_and_verifies_word_files(tmp_path: Path) -> None:

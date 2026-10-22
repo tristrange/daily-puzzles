@@ -59,7 +59,7 @@ jobs:
         run: uv sync --frozen
       - name: Test
         if: matrix.check == 'tests'
-        run: uv run pytest -q --durations=15
+        run: uv run pytest -q -m 'not generator_sweep' --durations=15
       - name: Typecheck
         if: matrix.check == 'tests'
         run: uv run pyright

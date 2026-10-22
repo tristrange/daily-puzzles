@@ -8,7 +8,6 @@ from collections.abc import Generator
 from contextlib import contextmanager, redirect_stdout
 from dataclasses import replace
 from datetime import date, timedelta
-from functools import cache
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Self
@@ -73,10 +72,24 @@ def cheap_publish() -> Generator[None]:
 class TestPublishWindow:
     @pytest.fixture(scope="class", autouse=True)
     @staticmethod
-    def reuse_star_generation() -> Generator[None]:
-        # Window tests reuse identical immutable boards; seed retries and file IO stay real.
-        book = rulebook_for(PuzzleType.STAR_BATTLE)
-        with patch.object(book, "generate", side_effect=cache(book.generate)):
+    def reuse_archived_companions() -> Generator[None]:
+        # Keep cheap real Queens publishing; companions only exercise scheduling and file IO.
+        archive = Path(__file__).resolve().parents[2] / "app" / "public" / "puzzles"
+        generate = publish._generate  # pyright: ignore[reportPrivateUsage]
+
+        def archived(
+            puzzle_type: PuzzleType,
+            day_id: str,
+            seed: int,
+            avoid_layouts: set[tuple[tuple[int, ...], ...]] | None = None,
+        ) -> tuple[Puzzle, float | None]:
+            if rulebook_for(puzzle_type).on_ramp:
+                return generate(puzzle_type, day_id, seed, avoid_layouts)
+            puzzle = load_puzzle(archive / f"{day_id}.json")
+            assert puzzle.puzzle_type is puzzle_type
+            return puzzle, None
+
+        with patch.object(publish, "_generate", side_effect=archived):
             yield
 
     def test_existing_dates_are_skipped(self, tmp_path: Path) -> None:
@@ -480,9 +493,8 @@ class TestVerifyRamp:
         # it only passed while the ramp check was reading the filename.
         day = self.MONDAY
         star_id = f"{day}-star"
-        puzzle = rulebook_for(PuzzleType.STAR_BATTLE).generate(
-            seed=seed_from_date(star_id), puzzle_id=star_id
-        )
+        # Seed 2 is a quick real 9x9 draw; this checks ramp exemption.
+        puzzle = rulebook_for(PuzzleType.STAR_BATTLE).generate(seed=2, puzzle_id=star_id)
         assert puzzle.difficulty is None
         (tmp_path / f"{star_id}.json").write_text(dumps_puzzle(puzzle), encoding="utf-8")
 
