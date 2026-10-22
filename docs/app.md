@@ -246,9 +246,13 @@ Two decisions are worth knowing:
 The Stats page retains the all-games overview and uses its game picker for a
 per-game summary and recent solves. Each summary shows solved count, average and
 fastest time, hints used, and current/best streaks across all recorded first
-solves, before the recent list is limited to ten. Sizes and levels are combined
-within their game. Streaks count consecutive puzzle dates, with each date counted
-once even when several variants were solved.
+solves, before the recent list is limited to ten. Sudoku's level filter and Train
+Tracks' size filter narrow both the summary and recent solves. They default to all
+levels/sizes; Original includes legacy Train Tracks boards without a size suffix.
+The selection is kept in the URL, and changing games clears it. The all-games
+overview and backup/clear controls always cover the entire history. Streaks count
+consecutive puzzle dates for the selection, with each date counted once even when
+several variants were solved.
 
 `mostRecentSolves` orders by `solvedAt`, not by puzzle id. The records themselves are
 sorted by day, which is what the arithmetic wants, but "recently solved" is a statement

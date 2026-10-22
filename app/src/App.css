@@ -1066,6 +1066,7 @@
 }
 
 .recent-solves { max-width: 44rem; }
+.stats-filter { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
 
 .stats-grid {
   display: grid;
@@ -1183,13 +1184,13 @@
 .leaderboard-remove { margin-top: 1rem; }
 .leaderboard-join { display: grid; gap: .5rem; padding: 1rem; margin-top: 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: 1rem; }
 .leaderboard-join .leaderboard-note, .leaderboard-join .status { margin: 0; padding: 0; }
-.leaderboard-join input:not([type="checkbox"]), .leaderboard-filters select, .leaderboard-filters input { min-width: 0; max-width: 100%; min-height: 2.75rem; padding: .55rem .65rem; border: 1px solid var(--border); border-radius: .65rem; background: var(--bg); color: var(--text-h); font: inherit; font-size: 1rem; }
+.leaderboard-join input:not([type="checkbox"]), .leaderboard-filters select, .leaderboard-filters input, .stats-filter select { min-width: 0; max-width: 100%; min-height: 2.75rem; padding: .55rem .65rem; border: 1px solid var(--border); border-radius: .65rem; background: var(--bg); color: var(--text-h); font: inherit; font-size: 1rem; }
 .leaderboard-consent { display: flex; align-items: flex-start; gap: .6rem; line-height: 1.5; margin-block: .5rem; }
 .leaderboard-consent input { flex: none; width: 1.2rem; height: 1.2rem; margin: .15rem 0 0; accent-color: var(--accent); }
 .leaderboard-verification { min-height: 9rem; }
 .leaderboard-filters { display: flex; flex-wrap: wrap; gap: .75rem; margin-block: 1rem; }
 .leaderboard-filters label { display: grid; gap: .35rem; flex: 1 1 9rem; min-width: 0; }
-.leaderboard-panel :is(button, input, select):focus-visible, .leaderboard-filters :is(input, select):focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.leaderboard-panel :is(button, input, select):focus-visible, .leaderboard-filters :is(input, select):focus-visible, .stats-filter select:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 
 @media (prefers-reduced-motion: reduce) {
   .nav-link,
