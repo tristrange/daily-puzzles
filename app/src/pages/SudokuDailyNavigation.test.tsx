@@ -14,6 +14,24 @@ const probes = () => levels.map((level, i) => {
     board: { size: 9, level, givens: raw[i]!.givens } }), elapsedMs: level === 'medium' ? 12345 : null }
 })
 
+it('rejects direct Sudoku leaderboard links before launch and accepts all levels from launch onward', () => {
+  vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-22T12:00:00Z'))
+  try {
+    for (const level of levels) for (const day of ['2026-10-20', '2026-10-21', '2026-10-22']) {
+      const id = `${day}-sudoku-${level}`
+      const html = renderToStaticMarkup(<MemoryRouter initialEntries={[`/leaderboards?id=${id}`]}><LeaderboardsPage /></MemoryRouter>)
+      if (day === '2026-10-20') {
+        expect(html).toContain('Choose a published puzzle')
+        expect(html).not.toContain('Play this puzzle')
+        expect(html).not.toContain('aria-label="Puzzle leaderboard"')
+      } else {
+        expect(html).toContain(`href="/archive/${id}"`)
+        expect(html).toContain('aria-label="Puzzle leaderboard"')
+      }
+    }
+  } finally { vi.useRealTimers() }
+})
+
 it('groups Today into one Sudoku card with exact level links, resume and solved states', () => {
   const html = renderToStaticMarkup(<MemoryRouter><TodayCards probes={probes()} solved={new Set(['2026-10-21-sudoku-hard'])} /></MemoryRouter>)
   expect(html.match(/game-card game-sudoku/g)).toHaveLength(1)

@@ -13,7 +13,7 @@ export function LeaderboardsPage() {
   const today = useToday(Intl.DateTimeFormat().resolvedOptions().timeZone)
   const requested = params.get('id') ?? today
   const parsed = puzzleIdParts(requested)
-  const valid = parsed !== null && parsed.day <= today
+  const valid = parsed !== null && parsed.day <= today && (parsed.type !== 'sudoku' || parsed.day >= SUDOKU_START)
   const day = valid ? parsed.day : today, type = valid ? parsed.type : 'queens'
   const sudokuVariant = valid && type === 'sudoku' ? sudokuVariantOf(requested) : null
   const variant = valid && type === 'train-tracks' ? trackVariantOf(requested) : null
