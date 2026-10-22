@@ -71,7 +71,7 @@ jobs:
         run: uv run ruff format --check .
       - name: Verify published puzzles
         if: matrix.check == 'archive'
-        run: uv run python -m tools.verify --dir ../app/public/puzzles
+        run: uv run python -m tools.verify --dir ../app/public/puzzles --jobs 2
       - name: Schema id pattern matches the manifest
         if: matrix.check == 'archive'
         run: uv run python -m tools.schema_ids --check

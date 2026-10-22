@@ -170,7 +170,7 @@ uv run pytest -q
 uv run pyright
 uv run ruff check .
 uv run ruff format --check .
-uv run python -m tools.verify --dir ../app/public/puzzles
+uv run python -m tools.verify --dir ../app/public/puzzles --jobs 2
 uv run python -m tools.schema_ids --check
 uv run python -m tools.sudoku_preview  # verify the three fixed preview certificates
 ```

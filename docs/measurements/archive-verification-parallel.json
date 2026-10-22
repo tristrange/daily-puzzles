@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-22",
+  "base_commit": "5d25fed",
+  "puzzles": 203,
+  "environment": "Local macOS Apple Silicon, Python 3.13.15; one run per mode",
+  "serial_seconds": 179.5,
+  "two_workers_seconds": 104.7,
+  "wall_time_reduction_percent": 41.7,
+  "both_exit_codes_zero": true,
+  "identical_stdout": true,
+  "identical_stderr": true,
+  "serial_replay_seconds_by_game": {
+    "star-battle": 98.89,
+    "tents": 0.43,
+    "train-tracks": 18.05,
+    "trio": 5.09,
+    "queens": 55.14,
+    "word-paths": 0.76,
+    "sudoku": 0.87
+  },
+  "commands": [
+    "cd engine",
+    "uv run python -m tools.verify --dir ../app/public/puzzles",
+    "uv run python -m tools.verify --dir ../app/public/puzzles --jobs 2"
+  ],
+  "scope": "Full archive replay with all validations; no puzzle files or generation algorithms changed. GitHub runner timing is reported separately in the PR."
+}
