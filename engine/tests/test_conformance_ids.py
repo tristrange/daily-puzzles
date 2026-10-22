@@ -46,7 +46,8 @@ def test_every_declared_suffix_is_the_whole_id_after_the_day() -> None:
     `day + suffix` by definition, so assert that and nothing weaker.
     """
     for entry in MANIFEST["types"]:
-        assert puzzle_id(date(2026, 10, 4), entry["type"]) == f"2026-10-04{entry['suffix']}"
+        suffix = "-sudoku-easy" if entry["type"] == "sudoku" else entry["suffix"]
+        assert puzzle_id(date(2026, 10, 4), entry["type"]) == f"2026-10-04{suffix}"
 
 
 def test_schema_accepts_every_declared_family_id() -> None:
@@ -58,7 +59,8 @@ def test_schema_accepts_every_declared_family_id() -> None:
     """
     compiled = re.compile(current_pattern())
     for entry in MANIFEST["types"]:
-        identifier = f"2026-10-04{entry['suffix']}"
+        suffix = "-sudoku-easy" if entry["type"] == "sudoku" else entry["suffix"]
+        identifier = f"2026-10-04{suffix}"
         assert compiled.match(identifier), f"schema rejects {identifier}"
 
 

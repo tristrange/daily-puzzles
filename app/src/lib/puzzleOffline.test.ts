@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import sudoku from '../data/sudoku-previews.json'
 import queens from '../../public/puzzles/2026-10-15.json'
 import star from '../../public/puzzles/2026-10-15-star.json'
 import tracks from '../../../conformance/id-cases/tracks-large.accept.json'
@@ -28,7 +29,7 @@ it('discovers saved puzzles across families when offline', async () => {
   expect(found.map(puzzle => puzzle.id)).toEqual([queens.id, star.id, wordsV2.id])
 })
 
-it.each([queens, star, tracks, wordsV1, wordsV2])('saves and reopens $id offline with its original rules', async (raw) => {
+it.each([queens, star, tracks, wordsV1, wordsV2, ...sudoku.map(board => ({ id: `2026-10-21-sudoku-${board.level}`, type: 'sudoku', seed: 1, generatorVersion: 1, board: { size: 9, level: board.level, givens: board.givens } }))])('saves and reopens $id offline with its original rules', async (raw) => {
   const online = await loadPuzzle(raw.id, async () => json(raw))
   expect(put).toHaveBeenCalledOnce()
   expect(open).toHaveBeenCalledWith('daily-puzzles.puzzles:/:v1')

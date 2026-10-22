@@ -210,7 +210,7 @@ def _generate(
         try:
             puzzle = book.generate(seed=seed, puzzle_id=day_id)
         except GenerationError:
-            seed = (seed + 1) % (2**32)
+            seed = (seed + book.seed_batch_size) % (2**32)
             continue
         if (
             avoid_layouts is not None

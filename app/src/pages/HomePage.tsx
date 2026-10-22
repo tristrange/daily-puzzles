@@ -4,9 +4,10 @@ import type { PuzzleType } from '../domain/board'
 import { formatPuzzleLabel, puzzleIdsForDay, puzzleTypeOf } from '../domain/dates'
 import { DEFAULT_PUZZLE_TYPE, DIFFICULTY_LABEL, PUZZLE_TYPE_LABEL, PUZZLE_PIECE } from '../domain/games'
 import { probePuzzles, type ProbedPuzzle } from '../lib/puzzles'
+import { sudokuVariantOf } from '../domain/sudokuLevels'
 import { trackVariantOf } from '../domain/trackSizes'
 import { formatTime } from '../domain/game'
-import { isMarksPuzzle, isTracksPuzzle, isTrioPuzzle, isTentsPuzzle, type Puzzle } from '../domain/puzzle'
+import { isMarksPuzzle, isTracksPuzzle, isTrioPuzzle, isTentsPuzzle, isSudokuPuzzle, type Puzzle } from '../domain/puzzle'
 import { WordGrid } from '../domain/wordPaths'
 import { readStoredStats } from '../lib/stats'
 import { useToday } from '../lib/useToday'
@@ -24,6 +25,7 @@ const DESCRIPTION: Record<PuzzleType, string> = {
   'word-paths': 'Find words along adjoining letters. Use every letter once.',
   trio: 'Balance sun, moon and star. Three of each in every row and column.',
   tents: 'Pair every tree with a tent. Match the counts and keep tents apart.',
+  sudoku: 'Digits 1–9 once in every row, column and box.',
 }
 
 // Keep full save validation, including the Word Paths vocabulary, out of the initial bundle.
@@ -31,6 +33,7 @@ async function savedTime(puzzle: Puzzle): Promise<number | null> {
   if (isMarksPuzzle(puzzle)) return (await import('../lib/marksProgress')).readMarksProgress(puzzle.id, puzzle.board)?.elapsedMs ?? null
   if (isTracksPuzzle(puzzle)) return (await import('../lib/trackProgress')).readTrackProgress(puzzle.id, puzzle.board)?.elapsedMs ?? null
   if (isTrioPuzzle(puzzle)) return (await import('../lib/trioProgress')).readTrioProgress(puzzle.board, true)?.elapsedMs ?? null
+  if (isSudokuPuzzle(puzzle)) return (await import('../lib/sudokuProgress')).readSudokuProgress(puzzle.board, true)?.elapsedMs ?? null
   if (isTentsPuzzle(puzzle)) return (await import('../lib/tentsProgress')).readTentsProgress(puzzle.board, true)?.elapsedMs ?? null
   return puzzle.board instanceof WordGrid ? (await import('../lib/wordProgress')).readWordProgress(puzzle.id, puzzle.board)?.elapsedMs ?? null : null
 }
@@ -90,7 +93,7 @@ export function HomePage() {
         <TodayCards probes={ready.probes} solved={solved} />
       )}
       <div className="today-more">
-        <Link to="/preview/sudoku">Try the Sudoku preview <span aria-hidden="true">→</span></Link>
+        <Link to="/preview/sudoku">Sudoku practice boards <span aria-hidden="true">→</span></Link>
         <p>Another round?</p>
         <Link to="/archive">Explore the archive <span aria-hidden="true">→</span></Link>
         <Link to="/stats">Your progress <span aria-hidden="true">→</span></Link>
@@ -115,7 +118,7 @@ export function TodayCards({ probes, solved }: {
     <ul className="game-cards">
       {[...groups].map(([family, entries]) => {
         const probe = entries[0]!
-        const sized = family === 'train-tracks' && trackVariantOf(probe.id) !== null
+        const sized = family === 'sudoku' || family === 'train-tracks' && trackVariantOf(probe.id) !== null
         const again = solved.has(probe.id)
         const elapsed = !again ? probe.elapsedMs ?? null : null
         return (
@@ -134,8 +137,8 @@ export function TodayCards({ probes, solved }: {
             {sized ? (
               <ul className="track-variants">
                 {entries.map((entry) => {
-                  const variant = trackVariantOf(entry.id)!
-                  const label = `${variant.label} · ${variant.side}×${variant.side}`
+                  const variant = family === 'sudoku' ? sudokuVariantOf(entry.id)! : trackVariantOf(entry.id)!
+                  const label = 'side' in variant ? `${variant.label} · ${variant.side}×${variant.side}` : variant.label
                   const again = solved.has(entry.id)
                   const elapsed = !again ? entry.elapsedMs ?? null : null
                   return (
@@ -146,7 +149,7 @@ export function TodayCards({ probes, solved }: {
                         </div>
                       ) : (
                         <Link className="tool-button track-choice" to={`/archive/${entry.id}`}
-                          aria-label={`${elapsed === null ? 'Play' : 'Resume'} Train Tracks ${variant.label}${again ? ' again' : elapsed !== null ? ` at ${formatTime(elapsed)}` : ''}`}>
+                          aria-label={`${elapsed === null ? 'Play' : 'Resume'} ${PUZZLE_TYPE_LABEL[family]} ${variant.label}${again ? ' again' : elapsed !== null ? ` at ${formatTime(elapsed)}` : ''}`}>
                           <span>{label}</span>
                           <span className={again ? 'solved' : ''}>{again ? 'Solved' : elapsed !== null ? `Resume · ${formatTime(elapsed)}` : 'Play'} <span aria-hidden="true">↗</span></span>
                         </Link>

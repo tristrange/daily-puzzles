@@ -156,3 +156,12 @@ it('filters daily Tents solves and retains the normal result link', () => {
   expect(html).not.toContain('href="/archive/2026-10-18"')
   expect(html).toContain('Tents')
 })
+
+it('distinguishes daily Sudoku levels and links each exact puzzle', () => {
+  const html = renderHistory(['easy', 'medium', 'hard'].map((level, i) => solve(`2026-10-21-sudoku-${level}`, 'sudoku', i + 1)), '/stats?game=sudoku')
+  for (const label of ['Easy', 'Medium', 'Hard']) {
+    expect(html).toContain(`Sudoku ${label}`)
+    expect(html).toContain(`href="/archive/2026-10-21-sudoku-${label.toLowerCase()}"`)
+  }
+  expect(html).toContain('<dt>Solved</dt><dd>3</dd>')
+})

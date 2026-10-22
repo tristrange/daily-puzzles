@@ -14,10 +14,12 @@ sql < tests/auth-fixture.sql
 sql < migrations/001_leaderboards.sql
 sql -c 'create database leaderboard_upgrade template postgres'
 sql < migrations/002_tents.sql
+sql < migrations/003_sudoku.sql
 sql < tests/contract.sql
 
 # Preserve live-style data and security state while upgrading, then retry 002.
 sql -d leaderboard_upgrade < tests/upgrade-before.sql
+sql -d leaderboard_upgrade < tests/upgrade-snapshot.sql
 sql -d leaderboard_upgrade < migrations/002_tents.sql
 sql -d leaderboard_upgrade < tests/upgrade-after.sql
 sql -d leaderboard_upgrade <<'SQL'
@@ -35,6 +37,30 @@ do $$ begin
     where r.puzzle_id = '2020-01-01-tents' and nickname = 'Existing Tents' and elapsed_ms = 12345
     and hints = 0 and puzzle_type = 'tents' and width = 10 and height = 10) <> 1
   then raise exception 'Repeated migration did not preserve existing Tents data'; end if;
+end $$;
+SQL
+
+# Upgrade all six existing families, then retry after storing a Sudoku result.
+sql -d leaderboard_upgrade < tests/upgrade-snapshot.sql
+sql -d leaderboard_upgrade < migrations/003_sudoku.sql
+sql -d leaderboard_upgrade < tests/upgrade-after.sql
+sql -d leaderboard_upgrade <<'SQL'
+select public.register_leaderboard_puzzles('[{"puzzle_id":"2020-01-01-sudoku-easy","puzzle_type":"sudoku","puzzle_day":"2020-01-01","width":9,"height":9,"size_label":"Easy"}]');
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', jsonb_build_object('sub', md5('39')::uuid)::text, true);
+select public.submit_result('2020-01-01-sudoku-easy', 'Existing Sudoku', 54321, 1);
+commit;
+SQL
+sql -d leaderboard_upgrade < tests/upgrade-snapshot.sql
+sql -d leaderboard_upgrade < migrations/003_sudoku.sql
+sql -d leaderboard_upgrade < tests/upgrade-after.sql
+sql -d leaderboard_upgrade <<'SQL'
+do $$ begin
+  if (select count(*) from public.leaderboard_results r join public.leaderboard_puzzles p using (puzzle_id)
+    where r.puzzle_id = '2020-01-01-sudoku-easy' and nickname = 'Existing Sudoku' and elapsed_ms = 54321
+    and hints = 1 and puzzle_type = 'sudoku' and width = 9 and height = 9 and size_label = 'Easy') <> 1
+  then raise exception 'Repeated migration did not preserve existing Sudoku data'; end if;
 end $$;
 SQL
 sql -d leaderboard_upgrade < tests/contract.sql

@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { PUZZLE_TYPES } from '../domain/board'
 import { formatPuzzleLabel } from '../domain/dates'
 import { DEFAULT_PUZZLE_TYPE, PUZZLE_TYPE_LABEL, PUZZLE_TYPE_PUBLISHED } from '../domain/games'
+import { sudokuVariantOf } from '../domain/sudokuLevels'
 import { trackVariantOf } from '../domain/trackSizes'
 import { formatTime } from '../domain/game'
 import {
@@ -147,6 +148,7 @@ export function StatsPage() {
                   <Link to={`/archive/${record.id}`}>{formatPuzzleLabel(record.id, timeZone)}</Link>{' '}
                   <span className="stat-detail">
                     {PUZZLE_TYPE_LABEL[record.puzzleType ?? 'queens']}
+                    {record.puzzleType === 'sudoku' && sudokuVariantOf(record.id) && ` ${sudokuVariantOf(record.id)!.label}`}
                     {record.puzzleType === 'train-tracks' && trackVariantOf(record.id) && ` ${trackVariantOf(record.id)!.label}`}
                     {' · '}{formatTime(record.elapsedMs)}
                     {record.hints > 0 && ` · ${record.hints} hint${record.hints === 1 ? '' : 's'}`}

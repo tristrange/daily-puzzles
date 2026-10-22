@@ -39,6 +39,7 @@ from queens_engine import (
     verify_replay,
 )
 from queens_engine.rulebook import RulebookError
+from queens_engine.sudoku import SudokuGrid
 from queens_engine.tracks_gen import TrackGenerationError
 from queens_engine.trio import SIDE as TRIO_SIZE
 from queens_engine.trio import TrioGrid
@@ -250,7 +251,7 @@ class TestTheShapeOfAPuzzle:
         width, height = book.dimensions(puzzle)
         # Read off the board, not off the size the generator was asked for: the claim
         # is that the rulebook describes the board it was handed.
-        if isinstance(puzzle.board, TrioGrid):
+        if isinstance(puzzle.board, TrioGrid | SudokuGrid):
             assert (width, height) == (TRIO_SIZE, TRIO_SIZE)
             assert width * height == len(puzzle.board.givens)
         else:

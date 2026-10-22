@@ -5,6 +5,11 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import raw from '../data/sudoku-previews.json'
 import playtest from '../domain/fixtures/sudoku-hard-playtest.json'
 import proof from '../../../docs/measurements/sudoku-preview.json'
+import type { Puzzle } from '../domain/puzzle'
+import { readStoredStats } from '../lib/stats'
+import { LeaderboardContext } from '../lib/useLeaderboard'
+import { createLeaderboardStore } from '../lib/leaderboardProgress'
+import { MemoryRouter } from 'react-router-dom'
 import { parseSudokuBoards } from '../domain/sudoku'
 import { readSudokuProgress, storeSudokuProgress } from '../lib/sudokuProgress'
 import { SudokuStage } from './SudokuStage'
@@ -208,4 +213,40 @@ it('dims a digit at nine placements, excluding notes, and restores it after edit
   await act(async () => cell(2).click()); await click('Enter 6')
   expect(picker().getAttribute('aria-description')).toBe('10 of 9 placed')
   expect(picker().disabled).toBe(false)
+})
+
+it('records a daily first solve, shares the exact level and preserves preview progress and replay result', async () => {
+  const daily = { ...board, id: '2026-10-21-sudoku-easy' }
+  const puzzle = { id: daily.id, puzzleType: 'sudoku', seed: 123, generatorVersion: 1, board: daily, difficulty: null } as unknown as Puzzle
+  const cells = [...proof.samples[0]!.solution]; cells[index] = 0
+  const game = { cells, notes: Array<number>(81).fill(0) }
+  storeSudokuProgress(board, game, 9000, 1)
+  storeSudokuProgress(daily, game, 12000, 2, true)
+  const previewSave = localStorage.getItem(`daily-puzzles.sudoku-preview.v1.${board.id}`)
+  const offerSolve = vi.fn()
+  const leaderboard = { ...createLeaderboardStore(null, null, null), offerSolve }
+  const renderDaily = () => root.render(<MemoryRouter><LeaderboardContext.Provider value={leaderboard}><SudokuStage board={daily} puzzle={puzzle} /></LeaderboardContext.Provider></MemoryRouter>)
+  await act(async () => renderDaily())
+  await click(`Enter ${proof.samples[0]!.solution[index]}`)
+  expect(container.textContent).toContain('Solved — nice!')
+  expect(readSudokuProgress(daily, true)).toBeNull()
+  expect(localStorage.getItem(`daily-puzzles.sudoku-preview.v1.${board.id}`)).toBe(previewSave)
+  const first = readStoredStats()[0]!
+  expect(first).toMatchObject({ id: daily.id, puzzleType: 'sudoku', size: 9, hints: 2 })
+  expect(first.elapsedMs).toBeGreaterThanOrEqual(12000)
+  expect(offerSolve).toHaveBeenCalledExactlyOnceWith(first)
+  await click('Copy result')
+  expect(container.querySelector<HTMLTextAreaElement>('.share-text')?.value).toContain('Sudoku Easy 9×9')
+  expect(container.querySelector<HTMLTextAreaElement>('.share-text')?.value).toContain(`/#/archive/${daily.id}`)
+  await click('Copy with solution')
+  expect(container.querySelector<HTMLTextAreaElement>('.share-text')?.value).toContain(proof.samples[0]!.solution.slice(0, 9).join(' '))
+  await act(async () => root.unmount()); root = createRoot(container)
+  storeSudokuProgress(daily, game, 1000, 0, true)
+  await act(async () => renderDaily())
+  await click(`Enter ${proof.samples[0]!.solution[index]}`)
+  expect(container.textContent).toContain('your first solve')
+  expect(readStoredStats()).toEqual([first])
+  expect(offerSolve).toHaveBeenCalledTimes(1)
+  await click('Copy result')
+  expect(container.querySelector<HTMLTextAreaElement>('.share-text')?.value).toContain('2 hints')
 })

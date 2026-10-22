@@ -1,6 +1,6 @@
 # Daily Puzzles
 
-Six daily puzzle games and a Sudoku preview, built as a portfolio and learning
+Seven daily puzzle games, built as a portfolio and learning
 project. A Python engine generates and verifies original boards; a React and
 TypeScript app plays them in the browser. The site is hosted on GitHub Pages.
 
@@ -22,27 +22,32 @@ Supabase backend.
 | **Word Paths** | 5×5, English | Trace four orthogonal words of lengths 3, 4, 5 and 6, using every letter once without overlap. |
 | **Trio** | 9×9 | Place three suns, moons and stars in every row and column. No three identical symbols consecutively; respect adjacent same/different clues. |
 | **Tents** | 10×10, 18 tents | Pair trees with orthogonally adjacent tents, match row/column counts and keep tents apart, including diagonally. Each tree and tent must have a one-to-one pairing. |
+| **Sudoku** | Easy, Medium and Hard, all 9×9 | Fill each row, column and 3×3 box with 1–9 exactly once. All three levels publish every day. |
 
 Train Tracks sizes describe dimensions, not difficulty. New boards use every row
 and column; older 7×7 boards remain playable with their original rules. The `?`
 marker means definite track with an undecided shape and counts toward clues.
 
-### Sudoku preview
+### Sudoku levels and controls
 
-**[Try Easy, Medium and Hard](https://tristrange.github.io/daily-puzzles/#/preview/sudoku?board=1)**
-— one original 9×9 board per level, selected below the board. Sudoku is not yet
-published daily.
+Easy, Medium and Hard publish separately each day from October 21, 2026.
+The [three fixed preview boards](https://tristrange.github.io/daily-puzzles/#/preview/sudoku?board=1)
+remain available for practice.
 
 Select a cell, then use the keypad or keyboard. Notes mark candidates; entering
 a number removes it from peer notes in its row, column and box. Clear notes,
 Undo/Redo and confirmed Reset are available. Selecting a number softly highlights
-matching numbers and their rows/columns. Explained hints show remaining candidates
-and keep supporting deductions expandable.
+matching numbers and their rows/columns. Picker digits dim at nine placements,
+without claiming that the entries are correct. Drag over cells or use Shift-click
+or Shift-arrow to select several; digits then update notes in empty selected
+cells even with Notes off. A group edit takes one Undo. Explained hints show
+remaining candidates and keep supporting deductions expandable.
 
 Each board has a verified unique solution and a complete logical solve. The
 levels describe the techniques required by the project's solver and remain
-provisional pending playtesting. Preview attempts save separately and never
-count toward daily stats, streaks or leaderboards.
+provisional project ratings. Each daily level has its own result and leaderboard;
+streaks count calendar days once. Preview attempts save separately and never count
+toward daily stats, streaks or leaderboards.
 
 Earlier [Word Paths](https://tristrange.github.io/daily-puzzles/#/preview/word-paths),
 [Trio](https://tristrange.github.io/daily-puzzles/#/preview/trio) and
@@ -90,10 +95,12 @@ Every daily board is checked for a unique solution. For Word Paths, uniqueness
 means one complete cover within that board's frozen vocabulary, not every word
 in the English language. A valid individual word can still lead to a dead end.
 
-Queens and Trio daily generation also require logical completion. Tents uses an
+Queens, Trio and Sudoku daily generation also require logical completion. Tents uses an
 offline line-pattern completion check. Star Battle and Train Tracks guarantee
 uniqueness without claiming that the live hint engines can finish every board.
-Sudoku previews have independent exact-solver and deduction certificates.
+Sudoku levels have independent exact-solver and deduction certificates: Easy uses
+singles; Medium adds locked candidates and pairs; Hard adds triples and X-wing.
+Medium must require more than Easy techniques, and Hard more than Medium.
 
 Seeds, generator versions and vocabulary versions preserve historical boards.
 Published files are committed and replay-verified; existing archive files are
@@ -117,8 +124,8 @@ daily-puzzles/
 The Python engine runs offline and in CI, not in the browser. The app reads its
 JSON output and owns player state and live hints. Shared fixtures check agreement
 between the two implementations. Puzzle definitions, saved progress and daily
-assignment remain separate. Sudoku currently uses dedicated preview definitions
-rather than the daily schema and publisher.
+assignment remain separate. Sudoku uses the daily schema and publisher while
+retaining its original practice definitions and separate preview saves.
 
 GitHub Actions fills missing daily slots, checks archive replay and deploys the
 static site. App checks always run. Known frontend/documentation-only PRs skip
@@ -139,7 +146,8 @@ npm ci
 npm run dev
 ```
 
-Open the URL Vite prints. For Sudoku, append `#/preview/sudoku?board=1`.
+Open the URL Vite prints and choose a daily game. For Sudoku practice, append
+`#/preview/sudoku?board=1`.
 
 App checks and production preview, from `app/`:
 

@@ -24,6 +24,35 @@ async function fixture() {
 const url = 'https://example.supabase.co'
 const secretKey = 'sb_secret_private-test-value'
 
+test('reads three Sudoku levels as separate 9x9 boards with level labels', async () => {
+  const dir = await directory()
+  for (const level of ['easy', 'medium', 'hard']) {
+    const id = `2026-10-21-sudoku-${level}`
+    await writeFile(join(dir, `${id}.json`), JSON.stringify({
+      id, type:'sudoku', generatorVersion:1, board:{size:9, level, givens:Array(81).fill(0)},
+    }))
+  }
+  assert.deepEqual(await readCatalog(dir), ['easy', 'hard', 'medium'].map(level => ({
+    puzzle_id:`2026-10-21-sudoku-${level}`, puzzle_type:'sudoku', puzzle_day:'2026-10-21',
+    width:9, height:9, size_label:level[0].toUpperCase() + level.slice(1),
+  })))
+})
+
+test('rejects Sudoku metadata with a mismatched level, invalid dimensions or unsized ID', async () => {
+  for (const [suffix, board] of [
+    ['-sudoku', {size:9, level:'easy'}],
+    ['-sudoku-easy', {size:9, level:'medium'}],
+    ['-sudoku-hard', {size:9, level:'expert'}],
+    ['-sudoku-easy', {size:8, level:'easy'}],
+    ['-sudoku-easy', {width:9, height:9, level:'easy'}],
+  ]) {
+    const dir = await directory()
+    const id = `2026-10-21${suffix}`
+    await writeFile(join(dir, `${id}.json`), JSON.stringify({id, type:'sudoku', board}))
+    await assert.rejects(readCatalog(dir))
+  }
+})
+
 test('reads only metadata for all six games, named sizes and original Tracks', async () => {
   const dir = await directory()
   for (const id of ['2026-10-19', '2026-10-19-star', '2026-10-19-words', '2026-10-19-trio',
@@ -51,6 +80,8 @@ test('rejects corrupt or foreign metadata before making any request', async () =
     {id:'2026-10-19-star',type:'queens',board:{size:7}},
     {id:'2026-10-19-tents',type:'trio',board:{size:10}},
     {id:'2026-10-19-trio',type:'tents',board:{size:10}},
+    {id:'2026-10-21-sudoku-easy',type:'queens',board:{size:9}},
+    {id:'2026-10-21',type:'sudoku',board:{size:9,level:'easy'}},
     {id:'2026-10-19-tents',type:'tents',board:{width:10,height:10}},
     {id:'2026-10-19',type:'unknown',board:{size:7}},
     {id:'2026-10-19',type:'queens',board:{size:0}},

@@ -24,6 +24,10 @@
     {
       "type": "tents",
       "suffix": "-tents"
+    },
+    {
+      "type": "sudoku",
+      "suffix": "-sudoku"
     }
   ],
   "cases": [
@@ -96,6 +100,21 @@
       "id": "2026-10-21-tents",
       "day": "2026-10-21",
       "type": "tents"
+    },
+    {
+      "id": "2026-10-21-sudoku-easy",
+      "day": "2026-10-21",
+      "type": "sudoku"
+    },
+    {
+      "id": "2026-10-21-sudoku-medium",
+      "day": "2026-10-21",
+      "type": "sudoku"
+    },
+    {
+      "id": "2026-10-21-sudoku-hard",
+      "day": "2026-10-21",
+      "type": "sudoku"
     }
   ],
   "unparsed": [
@@ -121,7 +140,13 @@
     "2026-10-19-trio-trio",
     "2026-02-30-tents",
     "2026-10-21-tent",
-    "2026-10-21-tents-tents"
+    "2026-10-21-tents-tents",
+    "2026-10-21-sudoku",
+    "2026-02-30-sudoku-easy",
+    "20261021-sudoku-easy",
+    "2026-10-21-sudoku-expert",
+    "2026-10-21-sudoku-Easy",
+    "2026-10-21-sudoku-easy-hard"
   ],
   "trainTracks": {
     "activationDay": "2026-10-14",
@@ -725,6 +750,147 @@
           ]
         }
       }
+    },
+    {
+      "file": "../schema-cases/sudoku-easy.accept.json",
+      "valid": true
+    },
+    {
+      "file": "../schema-cases/sudoku-medium.accept.json",
+      "valid": true
+    },
+    {
+      "file": "../schema-cases/sudoku-hard.accept.json",
+      "valid": true
+    },
+    {
+      "file": "../schema-cases/sudoku-easy.accept.json",
+      "valid": false,
+      "overrides": {
+        "id": "2026-10-21-sudoku-hard"
+      }
+    },
+    {
+      "file": "../schema-cases/sudoku-easy.accept.json",
+      "valid": false,
+      "overrides": {
+        "id": "2026-02-30-sudoku-easy"
+      }
+    },
+    {
+      "file": "../schema-cases/sudoku-easy.accept.json",
+      "valid": false,
+      "overrides": {
+        "id": "20261021-sudoku-easy"
+      }
+    },
+    {
+      "file": "../schema-cases/sudoku-easy.accept.json",
+      "valid": false,
+      "overrides": {
+        "board": {
+          "size": 9,
+          "level": "easy",
+          "givens": [
+            1,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "file": "../schema-cases/sudoku-easy.accept.json",
+      "valid": false,
+      "overrides": {
+        "id": "2026-10-21-sudoku-easy",
+        "type": "queens"
+      }
+    },
+    {
+      "file": "../schema-cases/queens-minimal.accept.json",
+      "valid": false,
+      "overrides": {
+        "id": "2026-10-21-sudoku-easy"
+      }
     }
   ],
   "wordPaths": {
@@ -786,6 +952,35 @@
         "2026-10-16-trio",
         "2026-10-16-tents"
       ]
+    },
+    {
+      "day": "2026-10-20",
+      "ids": [
+        "2026-10-20",
+        "2026-10-20-star",
+        "2026-10-20-tracks-small",
+        "2026-10-20-tracks-medium",
+        "2026-10-20-tracks-large",
+        "2026-10-20-words",
+        "2026-10-20-trio",
+        "2026-10-20-tents"
+      ]
+    },
+    {
+      "day": "2026-10-21",
+      "ids": [
+        "2026-10-21",
+        "2026-10-21-star",
+        "2026-10-21-tracks-small",
+        "2026-10-21-tracks-medium",
+        "2026-10-21-tracks-large",
+        "2026-10-21-words",
+        "2026-10-21-trio",
+        "2026-10-21-tents",
+        "2026-10-21-sudoku-easy",
+        "2026-10-21-sudoku-medium",
+        "2026-10-21-sudoku-hard"
+      ]
     }
   ],
   "trio": {
@@ -793,5 +988,25 @@
   },
   "tents": {
     "activationDay": "2026-09-26"
+  },
+  "sudoku": {
+    "activationDay": "2026-10-21",
+    "variants": [
+      {
+        "name": "easy",
+        "suffix": "-sudoku-easy",
+        "label": "Easy"
+      },
+      {
+        "name": "medium",
+        "suffix": "-sudoku-medium",
+        "label": "Medium"
+      },
+      {
+        "name": "hard",
+        "suffix": "-sudoku-hard",
+        "label": "Hard"
+      }
+    ]
   }
 }

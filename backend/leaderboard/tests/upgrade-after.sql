@@ -16,7 +16,8 @@ do $$ declare saved public.leaderboard_upgrade_snapshot%rowtype; begin
       'public.leaderboard_puzzles'::regclass, 'public.leaderboard_results'::regclass,
       'leaderboard_private.submission_limits'::regclass) and conname not in (
         'leaderboard_puzzles_puzzle_type_check', 'leaderboard_puzzles_puzzle_id_check',
-        'leaderboard_puzzles_check1'))
+        'leaderboard_puzzles_check1', 'leaderboard_puzzles_size_label_check',
+        'leaderboard_puzzles_check2'))
   then raise exception 'Upgrade changed security, RPCs or unrelated constraints'; end if;
   if exists (select from pg_constraint where conrelid = 'public.leaderboard_puzzles'::regclass and not convalidated)
   then raise exception 'Upgrade did not validate the catalog constraints'; end if;

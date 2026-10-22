@@ -17,6 +17,8 @@
  * correct, and never fetched.
  */
 
+import { SUDOKU_START, SUDOKU_VARIANTS } from './sudokuLevels'
+import type { SudokuLevel } from './sudoku'
 import { PUZZLE_TYPES, type PuzzleType } from './board'
 import { TRACK_SIZES_START, TRACK_VARIANTS, type TrackSize } from './trackSizes'
 import {
@@ -64,6 +66,7 @@ export function puzzleIdParts(value: string): PuzzleIdParts | null {
   for (const type of PUZZLE_TYPES) {
     const suffixes = type === 'train-tracks'
       ? [PUZZLE_TYPE_SUFFIX[type], ...TRACK_VARIANTS.map((v) => v.suffix)]
+      : type === 'sudoku' ? SUDOKU_VARIANTS.map(v => v.suffix)
       : [PUZZLE_TYPE_SUFFIX[type]]
     for (const suffix of suffixes) {
       if (suffix !== '' && !value.endsWith(suffix)) continue
@@ -118,8 +121,14 @@ export function companionPuzzleId(id: string): string {
 }
 
 /** The id `type`'s puzzle carries for `day`, e.g. `2026-10-01-star`. */
-export function puzzleIdFor(day: string, type: PuzzleType, trackSize?: TrackSize): string {
+export function puzzleIdFor(day: string, type: PuzzleType, trackSize?: TrackSize, sudokuLevel?: SudokuLevel): string {
   if (!isCalendarDay(day)) throw new RangeError(`${day} is not a YYYY-MM-DD date`)
+  if (type === 'sudoku') {
+    const variant = SUDOKU_VARIANTS.find(v => v.name === (sudokuLevel ?? 'easy'))
+    if (!variant || trackSize !== undefined) throw new RangeError('only named Sudoku levels are supported')
+    return `${day}${variant.suffix}`
+  }
+  if (sudokuLevel !== undefined) throw new RangeError('Sudoku level requires Sudoku')
   if (trackSize !== undefined) {
     const variant = TRACK_VARIANTS.find((v) => v.name === trackSize)
     if (type !== 'train-tracks' || variant === undefined) {
@@ -145,9 +154,11 @@ export function puzzleIdsForDay(day: string): string[] {
   return PUZZLE_TYPES.filter((type) => PUZZLE_TYPE_PUBLISHED[type] &&
     (type !== 'word-paths' || day >= WORD_PATHS_START) &&
     (type !== 'trio' || day >= TRIO_START) &&
-    (type !== 'tents' || day >= TENTS_START)).flatMap((type) =>
+    (type !== 'tents' || day >= TENTS_START) &&
+    (type !== 'sudoku' || day >= SUDOKU_START)).flatMap((type) =>
     type === 'train-tracks' && day >= TRACK_SIZES_START
       ? TRACK_VARIANTS.map((v) => puzzleIdFor(day, type, v.name))
+      : type === 'sudoku' ? SUDOKU_VARIANTS.map(v => puzzleIdFor(day, type, undefined, v.name))
       : [puzzleIdFor(day, type)],
   )
 }

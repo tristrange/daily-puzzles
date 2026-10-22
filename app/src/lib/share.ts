@@ -13,6 +13,7 @@
 
 import type { Board, PuzzleType } from '../domain/board'
 import { PUZZLE_TYPE_LABEL } from '../domain/games'
+import { sudokuVariantOf } from '../domain/sudokuLevels'
 import { trackVariantOf } from '../domain/trackSizes'
 import { formatTime } from '../domain/game'
 import { PIECE_GLYPHS, TrackGrid } from '../domain/tracks'
@@ -141,7 +142,7 @@ export function buildSolutionShareText(
 
 function headerLines(result: ShareResult): [string, string] {
   const hints = result.hints === 0 ? 'no hints' : `${result.hints} hint${result.hints === 1 ? '' : 's'}`
-  const variant = result.puzzleType === 'train-tracks' ? trackVariantOf(result.puzzleId) : null
+  const variant = result.puzzleType === 'train-tracks' ? trackVariantOf(result.puzzleId) : result.puzzleType === 'sudoku' ? sudokuVariantOf(result.puzzleId) : null
   return [
     `Daily Puzzles — ${PUZZLE_TYPE_LABEL[result.puzzleType]}${result.previewBoard === undefined ? '' : ` preview · Board ${result.previewBoard}`}${variant ? ` ${variant.label}` : ''} ${result.width}×${result.height}`,
     `${formatTime(result.elapsedMs)} · ${hints}`,
@@ -249,5 +250,11 @@ export function buildTentsSolutionShareText(result: ShareResult, board: TentsBoa
     const cell = row * board.size + col
     return board.trees.includes(cell) ? '🌳' : game[cell] === 1 ? '⛺' : '⬛'
   }).join(''))
+  return [...headerLines(result), '', ...rows, '', ...(result.streak > 1 ? [`${result.streak}-day streak`] : []), result.link].join('\n')
+}
+
+/** Explicit spoiler share: all nine completed digit rows. */
+export function buildSudokuSolutionShareText(result: ShareResult, cells: readonly number[]): string {
+  const rows = Array.from({ length: 9 }, (_, row) => cells.slice(row * 9, row * 9 + 9).join(' '))
   return [...headerLines(result), '', ...rows, '', ...(result.streak > 1 ? [`${result.streak}-day streak`] : []), result.link].join('\n')
 }

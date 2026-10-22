@@ -74,10 +74,11 @@ uv run python -m tools.verify --dir ../app/public/puzzles    # replay every comm
 
 `tools/publish.py` scans the archive for missing puzzles and fills them from the first
 missing day through today plus a `--lead` (default 3). Each rulebook owns its daily
-slots. Before October 14, 2026 a complete day carries Queens, Star Battle and one
-legacy 7x7 Train Tracks board. From that date it carries **five puzzles**: Queens,
-Star Battle, Small 8x8, Medium 10x10 and Large 12x12 Train Tracks. The shared ID
-manifest pins activation and dimensions; named variants stay in one puzzle family.
+slots. The shared ID manifest pins each family's activation and variants. From
+October 21, 2026 a complete day carries **eleven puzzles**: Queens, Star Battle,
+Small 8x8, Medium 10x10 and Large 12x12 Train Tracks, Word Paths, Trio, Tents,
+and Easy, Medium and Hard 9x9 Sudoku. Earlier days retain their original required
+slots; named variants stay in one puzzle family.
 Already committed legacy boards (including October 14–16) remain archive extras.
 The archive probes their original IDs as well as the current daily slots; the
 chooser and publisher use only the required slots.
@@ -87,6 +88,13 @@ ramp and logic-only gate; Star Battle retains its unique-solution and nearby-lay
 checks. Train Tracks uses generator version 3's deterministic search budgets and
 proves uniqueness without claiming a difficulty rating. A failed off-ramp seed is
 bumped at most 32 times; failure never substitutes a smaller board or drops a slot.
+
+Sudoku slots carry `-sudoku-easy`, `-sudoku-medium` and `-sudoku-hard` suffixes.
+The board's level must match its ID. Its versioned generator accepts only a unique
+solution completed by the requested techniques; Medium and Hard must stall under
+the preceding level. A failed search never substitutes an easier level. Committed
+files contain givens only, and full archive verification replays their seed and
+checks the same guarantees. Preview boards and progress stay separate.
 
 Skipping is per puzzle rather than per day, which is what makes this safe to run against
 an archive published before companions existed: a committed Queens board does not stop
