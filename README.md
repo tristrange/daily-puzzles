@@ -60,6 +60,9 @@ previews also remain available with separate progress.
 - Saved unfinished attempts and timers that pause while the page is hidden or unfocused. Today offers Resume; Undo/Redo history belongs to the current visit. Reset asks for confirmation.
 - Explained logic hints with target/support highlights and optional, undoable moves. Word Paths reveals a starting cell, then additional letters on request.
 - Notes and Clear notes in Trio and Sudoku. Shown hint counts survive Undo, Reset and reload.
+- [Learn Sudoku techniques](https://tristrange.github.io/daily-puzzles/#/learn): three
+  guided exercises on locked candidates, naked pairs and X-wing, with prepared notes,
+  highlighted patterns, answer feedback and explanations. Completion saves separately.
 - Per-game archives and personal stats, with Sudoku level and Train Tracks size filters.
   Overall and per-game summaries show solve counts, average/fastest times, streaks and
   hints used. First solves count; results are shareable.

@@ -12,6 +12,8 @@ const PuzzlePage = lazy(() => import('./pages/PuzzlePage').then((module) => ({ d
 const RulesPage = lazy(() => import('./pages/RulesPage').then((module) => ({ default: module.RulesPage })))
 const StarBattlePage = lazy(() => import('./pages/StarBattlePage').then((module) => ({ default: module.StarBattlePage })))
 const StatsPage = lazy(() => import('./pages/StatsPage').then((module) => ({ default: module.StatsPage })))
+const LearnPage = lazy(() => import('./pages/LearnPage').then((module) => ({ default: module.LearnPage })))
+const SudokuLessonPage = lazy(() => import('./pages/LearnPage').then((module) => ({ default: module.SudokuLessonPage })))
 const TrioPreviewPage = lazy(() => import('./pages/TrioPreviewPage').then((module) => ({ default: module.TrioPreviewPage })))
 const TentsPreviewPage = lazy(() => import('./pages/TentsPreviewPage').then((module) => ({ default: module.TentsPreviewPage })))
 const SudokuPreviewPage = lazy(() => import('./pages/SudokuPreviewPage').then((module) => ({ default: module.SudokuPreviewPage })))
@@ -37,6 +39,8 @@ function App() {
             <Route path="preview/tents" element={<TentsPreviewPage />} />
             <Route path="preview/sudoku" element={<SudokuPreviewPage />} />
             <Route path="stats" element={<StatsPage />} />
+            <Route path="learn" element={<LearnPage />} />
+            <Route path="learn/sudoku/:lessonId" element={<SudokuLessonPage />} />
             <Route path="how-to-play" element={<RulesPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
