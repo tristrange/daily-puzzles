@@ -2218,3 +2218,32 @@ Repeat publication through October 24 changed no files. Attempting to fill the
 older games' October 25 slots encountered a long existing Queens seed search;
 that run was stopped and only Sudoku's October 25 buffer was added. Other games'
 generation policies and their nightly publisher remain unchanged.
+
+## 2026-10-23 — Nurikabe engine foundation
+
+The first Nurikabe slice adds an immutable square grid, a complete-board rule
+checker, and bounded exact solution counting. Numbered islands have the required
+size, distinct islands stay separate, and the nonempty sea remains connected
+without a 2×2 pool. Diagonal island contact is allowed. The engine README records
+the standard rules and an original uniquely solvable 5×5 example.
+
+Search uses connected island shapes to enforce size and connectivity before it
+combines candidates. One budget covers island enumeration and compatibility
+checks. Exhaustion raises even after finding an answer; only an exhaustive
+single-answer result proves uniqueness. The solver stops after two distinct
+answers. Large islands can exhaust the budget, and the 10×10 input cap is not a
+completion or difficulty guarantee.
+
+The required engine suite passes 839 tests, with 90 weekly generator cases
+excluded by the existing CI policy. All 43 new focused cases pass. Their
+independent oracle covers all 624 nonempty 2×2 clue configurations and selected
+3×3 boards. A separate exhaustive catalog confirms every satisfiable 2×2 and
+3×3 clue layout, 247 in total. Independent review checked four 4×4 cases against
+all 65,536 complete assignments each and found no correctness issues. Full
+Pyright, Ruff lint, and format checks pass; the README example executes.
+
+This PR changes no app, public puzzle files, daily registration, schema,
+publisher, leaderboard, or database. It provides no playable preview or human
+logical-difficulty rating. Preview construction and logical deductions remain
+follow-ups. App and archive checks were not repeated locally because their
+inputs and production paths are unchanged; existing GitHub checks still apply.

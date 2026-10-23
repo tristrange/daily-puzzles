@@ -247,3 +247,37 @@ a stall under the preceding band. These describe supported techniques, not human
 solve times. The [measurement report](../docs/measurements/sudoku-preview.json)
 contains offline answers and traces; app definitions contain only givens and IDs.
 Sudoku is not registered with the daily publisher yet.
+
+## Nurikabe engine foundation
+
+`nurikabe.py` provides immutable `NurikabeGrid(size, clues)`, complete-board
+validation, and bounded exact counting. Sizes 2 through 10 are accepted. Clues
+are row-major integers, with zero for an unnumbered cell. Solutions contain
+`SEA = 0` and `LAND = 1` for every cell. Unknown marks are not complete answers.
+
+Each orthogonally connected land island contains exactly one clue and has that
+many cells. Numbered cells are land. Islands may touch diagonally, but cannot
+share an edge. The sea is nonempty and orthogonally connected, without any
+all-sea 2×2 square. These are the [standard Nurikabe rules](https://www.nikoli.co.jp/en/puzzles/nurikabe/).
+
+`solve` returns zero, one, or two distinct answers. One means proven unique.
+Its default 200,000-node budget covers root entry, every connected-island growth
+attempt including revisits, and each candidate compatibility inspection.
+`NurikabeSearchLimitError` means inconclusive, even after one answer is found.
+A zero budget always raises. Large islands may exhaust the budget before
+combination search starts. The size cap does not guarantee completion.
+
+This original 5×5 example has one answer. Run it with the engine environment
+and `PYTHONPATH=src`:
+
+```python
+from queens_engine.nurikabe import NurikabeGrid, solve
+
+rows = ((1, 0, 0, 2, 0), (0, 1, 0, 0, 0), (0, 0, 0, 1, 0), (2, 0, 0, 0, 0), (0, 0, 0, 2, 0))
+result = solve(NurikabeGrid(5, tuple(value for row in rows for value in row)))
+assert len(result.solutions) == 1
+```
+
+Run `uv run pytest -q tests/test_nurikabe.py` for the independent tiny-board
+oracle and rule checks. This foundation adds no playable preview, generator,
+hints, or daily publishing. The next milestone is verified preview construction.
