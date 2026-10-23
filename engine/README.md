@@ -279,5 +279,8 @@ assert len(result.solutions) == 1
 ```
 
 Run `uv run pytest -q tests/test_nurikabe.py` for the independent tiny-board
-oracle and rule checks. This foundation adds no playable preview, generator,
-hints, or daily publishing. The next milestone is verified preview construction.
+oracle and rule checks. The playable preview has three original boards, one 5×5
+and two 7×7. `uv run python -m tools.nurikabe_preview` verifies the actual app
+catalog and its offline certificate; `--write-report` refreshes the certificate
+only after all boards prove unique. Browser data contains clues only. There is
+no generator, logical-difficulty rating, hint system, or daily publishing yet.

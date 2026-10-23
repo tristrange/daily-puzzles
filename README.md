@@ -54,6 +54,17 @@ Earlier [Word Paths](https://tristrange.github.io/daily-puzzles/#/preview/word-p
 [Tents](https://tristrange.github.io/daily-puzzles/#/preview/tents?board=7)
 previews also remain available with separate progress.
 
+### Nurikabe preview
+
+[Try three original Nurikabe boards](https://tristrange.github.io/daily-puzzles/#/preview/nurikabe?board=1):
+one 5×5 introduction and two 7×7 boards. Shade a connected sea around numbered
+islands, with no solid 2×2 sea square. Land dots are optional working notes.
+Tap, drag, or use the keyboard; Undo, Redo, confirmed Reset, focused timers,
+and separate preview saves follow the other games.
+
+Every preview has a verified unique solution. There are no hints or difficulty
+ratings yet. These attempts do not count toward daily stats or leaderboards.
+
 ## Playing features
 
 - Responsive boards, keyboard controls, Light/Dark themes and Auto following the system.
@@ -177,6 +188,7 @@ uv run ruff format --check .
 uv run python -m tools.verify --dir ../app/public/puzzles --jobs 2
 uv run python -m tools.schema_ids --check
 uv run python -m tools.sudoku_preview  # verify the three fixed preview certificates
+uv run python -m tools.nurikabe_preview  # verify Nurikabe boards and offline certificates
 ```
 
 `pytest -q` includes the full Word Paths seed sweep. For the same selection as

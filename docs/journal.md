@@ -2247,3 +2247,37 @@ publisher, leaderboard, or database. It provides no playable preview or human
 logical-difficulty rating. Preview construction and logical deductions remain
 follow-ups. App and archive checks were not repeated locally because their
 inputs and production paths are unchanged; existing GitHub checks still apply.
+
+## 2026-10-23 — Playable Nurikabe preview
+
+The preview now has one original 5×5 introduction and two original 7×7 boards.
+Each has an exhaustive unique-solution certificate. The browser receives only
+clues; answers and exact-search evidence stay in the offline report. Run
+`uv run python -m tools.nurikabe_preview` from `engine/` to recheck the actual
+catalog and certificate. No generator or difficulty rating is claimed.
+
+Players shade sea; unshaded cells form the islands, and explicit land dots are
+optional. Local warnings cover confirmed merged or oversized islands and 2×2
+sea squares. Unfinished connectivity is not a mistake. Completion checks every
+rule against the player's marks without a hidden answer or browser solver.
+
+The new lazy route has a Today link, dedicated rules, separate fingerprinted
+preview saves, focused-play timing, and the existing history and confirmed Reset
+controls. One drag takes one Undo; cancelled gestures restore the preceding
+board. Desktop controls sit beside the board; the phone layout uses a compact
+picker above it. Daily registration, stats, leaderboards, publishing, and the
+database are unchanged. Hints remain a follow-up.
+
+All 942 app tests and 861 required engine tests pass. The existing 90 weekly
+generator cases remain outside the required run. Full typechecks, the Pages-base
+production build, engine lint and formatting pass. App lint retains the existing
+TracksStage warning. Independent review found no actionable issues and matched
+the TypeScript checker against Python across 50,544 ternary 2×2 states.
+
+Live desktop verification covered vertical painting, one-step Undo/Redo, and
+saved reload. A 393px phone layout has no horizontal overflow. See
+[phone layout](images/nurikabe-preview-phone.png). Reset displayed its native
+confirmation, which blocked browser automation, including dismissal attempts.
+Accept/cancel and completed-play behavior pass automated component tests, but
+live completion, Light-mode interaction, and native confirmation dismissal were
+not verified. Physical iPhone and VoiceOver checks remain manual.
