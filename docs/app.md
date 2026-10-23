@@ -558,6 +558,27 @@ and their rows/columns below the selected cell's visual emphasis. Save keys and
 fingerprints are unchanged, so existing preview attempts resume normally.
 
 
+## Sudoku technique lessons
+
+`/learn` introduces three short exercises: locked candidates, naked pairs and
+X-wing. `/learn/sudoku/:lessonId` opens an exercise directly. Learn is also linked
+from Today and the Sudoku rules. These are prepared positions for practising one
+deduction, rather than full timed puzzles.
+
+Each original board in `app/src/data/sudoku-lessons.json` has an independent Python
+certificate in `docs/measurements/sudoku-lessons.json`. The app replays its existing
+deduction engine until the teaching step, preserving the notes established before
+it. The existing Sudoku board shows a solid target and dashed pattern cells. The
+learner selects the candidates that remain; only a correct answer marks completion.
+Showing the explanation updates the target notes and offers a retry, without
+marking an unanswered exercise complete. Next lesson resets the exercise state.
+
+Completion uses the separate `daily-puzzles:sudoku-lessons:v1` browser key. Stored
+values are restricted to known lesson IDs; blocked storage leaves the exercise
+usable and reports that completion was not saved. Daily progress, Stats, clocks
+and leaderboard submission are outside the lesson flow. The lazy lesson chunk and
+its embedded boards join the existing offline shell cache during production builds.
+
 ## Shared focused-play clock
 
 All six daily games and their previews, including Sudoku, use `usePlayClock`. It
