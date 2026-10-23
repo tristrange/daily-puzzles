@@ -26,6 +26,7 @@ export function RulesPage() {
             {PUZZLE_TYPE_LABEL[type]}
           </Link>
         ))}
+        <Link to={{ pathname: '/how-to-play', hash: '#nurikabe' }}>Nurikabe preview</Link>
       </nav>
 
       <h2 id="controls" tabIndex={-1}>Shared controls</h2>
@@ -243,6 +244,24 @@ export function RulesPage() {
         techniques. Medium requires more than singles; Hard requires more than our
         Medium techniques. These are provisional project ratings. <Link to="/preview/sudoku">Practice boards</Link> remain available;
         their attempts save separately and do not affect daily stats, streaks or leaderboards.</p>
+
+      <h2 id="nurikabe" tabIndex={-1}>Nurikabe</h2>
+      <h3>Rules</h3>
+      <ul>
+        <li>Shade cells to form one connected sea. Connections run up, down, left and right.</li>
+        <li>Each unshaded island contains exactly one number, and its area equals that number.</li>
+        <li>Islands cannot touch along an edge. Diagonal contact is allowed.</li>
+        <li>The sea cannot contain a solid 2×2 square.</li>
+        <li>Numbered cells are fixed land. Land dots are optional; unshaded cells form the islands when the puzzle is complete.</li>
+      </ul>
+      <h3>Controls</h3>
+      <p>Pick Sea, Land or Erase, then tap or drag. Tap again to clear the same mark.
+        One drag is one Undo. Right-click erases. Arrows and Home/End move between cells.
+        Keys 1 or S shade sea; 2 or L marks land; 0, Delete or Backspace erases.
+        Enter or Space uses the picker. The shared Undo, Redo and confirmed Reset controls apply.</p>
+      <p><Link to="/preview/nurikabe">Try the three-board Nurikabe preview</Link>.
+        Attempts save separately in this browser. Preview solves do not affect daily stats,
+        streaks or leaderboards. Hints are not available yet.</p>
 
       <h2>Finishing, sharing and stats</h2>
       <p>A solved board locks and offers a result to share, optionally including the finished
