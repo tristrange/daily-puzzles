@@ -6,6 +6,19 @@ for the architecture and commands.
 The package `queens_engine` is pure Python with no web dependencies. Everything under
 `tools/` is a thin CLI on top of it.
 
+## Checking Sudoku lessons
+
+The five Learn exercises use original committed boards. Recheck their unique
+solutions, prepared candidates and teaching patterns from this directory:
+
+```sh
+uv run python -m tools.sudoku_lessons
+```
+
+Use `--write-report` to refresh the offline certificates after a deliberate lesson
+change. It validates the entire catalog before writing. Neither command searches
+for new boards. Answers remain in the review report and outside the app imports.
+
 ## Generating a puzzle
 
 `tools/generate.py` produces a unique-solution puzzle and prints its ASCII render (the
