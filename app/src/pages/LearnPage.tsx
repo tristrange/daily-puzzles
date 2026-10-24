@@ -9,7 +9,7 @@ export function LearnPage() {
   const [completed] = useState(readCompletedLessons)
   return <section className="learn-page">
     <h1 className="page-title">Learn to solve</h1>
-    <p className="page-intro">Practice Sudoku deductions with three short, guided exercises.</p>
+    <p className="page-intro">Practice Sudoku deductions with {SUDOKU_LESSONS.length} short, guided exercises.</p>
     <p className="status">{completed.length} of {SUDOKU_LESSONS.length} completed · Saved in this browser.</p>
     <ol className="lesson-cards">
       {SUDOKU_LESSONS.map((lesson, index) => <li key={lesson.id}>
@@ -77,7 +77,7 @@ function LessonExercise({ lesson }: { lesson: SudokuLesson }) {
           {explained && <button type="button" className="tool-button" onClick={() => { setAnswer(step.before); setSelected(step.cell); setResult('idle') }}>Try again</button>}
         </div>
         <p className="lesson-feedback" role="status" aria-live="polite">
-          {result === 'incorrect' && 'Not quite. Revisit the dashed pattern and try again, or open the explanation.'}
+          {result === 'incorrect' && 'Not quite. Revisit the pattern and try again, or open the explanation.'}
           {result === 'correct' && `Lesson complete. ${sudokuCellName(step.cell)} can retain ${sudokuDigits(step.after).join(', ')}.`}
           {result === 'revealed' && `The remaining candidates are ${sudokuDigits(step.after).join(', ')}. Try again to practice this deduction.`}
         </p>

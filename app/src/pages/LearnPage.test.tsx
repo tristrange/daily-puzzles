@@ -50,7 +50,7 @@ it('teaches one deduction, rejects an unchanged answer and saves only lesson com
   expect(document.activeElement).toBe(container.querySelector('h1'))
   expect(container.querySelector('[role="status"]')?.textContent).toBe('')
   await click('All lessons')
-  expect(container.textContent).toContain('1 of 3 completed')
+  expect(container.textContent).toContain('1 of 5 completed')
 })
 
 it('lets a learner reveal an explanation and retry without marking an unanswered lesson complete', async () => {
@@ -79,6 +79,36 @@ it('offers a way back for an unknown lesson link', async () => {
 it('counts only known, distinct completed lessons from browser storage', async () => {
   localStorage.setItem('daily-puzzles:sudoku-lessons:v1', JSON.stringify(['pairs', 'pairs', 'unknown', null]))
   await mount('/learn')
-  expect(container.textContent).toContain('1 of 3 completed')
+  expect(container.textContent).toContain('1 of 5 completed')
   expect(container.querySelectorAll('.lesson-completed')).toHaveLength(1)
+})
+
+it.each([
+  { id: 'hidden-pairs', target: '63', supports: ['65'], remove: [3, 5, 7, 9], remaining: '2, 8' },
+  { id: 'naked-triples', target: '34', supports: ['16', '52', '79'], remove: [1, 3], remaining: '2, 6' },
+])('lets learners reveal, retry and complete $id with its full pattern visible', async lesson => {
+  await mount(`/learn/sudoku/${lesson.id}`)
+  expect(container.querySelector('[data-hint="target"]')?.getAttribute('data-cell')).toBe(lesson.target)
+  expect([...container.querySelectorAll('[data-hint="support"]')].map(cell => cell.getAttribute('data-cell'))).toEqual(lesson.supports)
+  await click('Show explanation')
+  expect(container.querySelector('[role="status"]')?.textContent).toContain(lesson.remaining)
+  expect(localStorage.length).toBe(0)
+  expect(container.querySelectorAll('fieldset:disabled')).toHaveLength(1)
+  await click('Try again')
+  expect(container.querySelector('[role="status"]')?.textContent).toBe('')
+  await click('Check answer')
+  expect(container.querySelector('[role="status"]')?.textContent).toContain('Not quite')
+  for (const digit of lesson.remove) await click(`Keep ${digit}`)
+  await click('Check answer')
+  expect(container.querySelector('[role="status"]')?.textContent).toContain('Lesson complete')
+  expect(container.querySelector(`[data-cell="${lesson.target}"]`)?.getAttribute('aria-label')).toContain(`notes ${lesson.remaining}`)
+  expect(JSON.parse(localStorage.getItem('daily-puzzles:sudoku-lessons:v1') ?? 'null')).toEqual([lesson.id])
+})
+
+it('preserves all three existing completion IDs in the expanded catalog', async () => {
+  localStorage.setItem('daily-puzzles:sudoku-lessons:v1', JSON.stringify(['locked-candidates', 'pairs', 'x-wing']))
+  await mount('/learn')
+  expect(container.textContent).toContain('3 of 5 completed')
+  expect([...container.querySelectorAll('.lesson-cards li')].filter(card => card.textContent?.includes('Practice again')).map(card => card.querySelector('h2')?.textContent)).toEqual(['Locked candidates', 'Naked pairs', 'X-wing'])
+  expect(container.querySelectorAll('.lesson-cards li')).toHaveLength(5)
 })

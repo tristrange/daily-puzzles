@@ -2281,3 +2281,36 @@ confirmation, which blocked browser automation, including dismissal attempts.
 Accept/cancel and completed-play behavior pass automated component tests, but
 live completion, Light-mode interaction, and native confirmation dismissal were
 not verified. Physical iPhone and VoiceOver checks remain manual.
+
+## 2026-10-25 — More Sudoku techniques in Learn
+
+Hidden pairs and naked triples join the existing guided exercises before X-wing.
+The hidden pair starts with two digits confined to two cells despite extra notes.
+The triple uses three different two-digit note sets in one column. Both ask which
+candidates remain, with the existing feedback, explanation and retry controls.
+Original lesson IDs, prepared positions and completion records are preserved.
+
+Pattern highlights now follow an explicit policy. Naked subsets show every
+pattern cell. Hidden pairs show cells containing the reserved digits, including
+the solid target. Locked candidates and X-wing retain their existing highlights.
+The app's daily puzzle, hint and leaderboard paths are unchanged.
+
+`uv run python -m tools.sudoku_lessons` recomputes all five offline certificates
+from committed givens and compares them with the report. It checks exact
+uniqueness, deduction replay, prepared notes and the new subset geometries.
+`--write-report` writes only after the complete catalog passes. Searches for the
+two original boards were bounded development work and are absent from tests.
+Solutions stay outside runtime imports.
+
+All 949 app tests pass. The targeted Python Sudoku and lesson tests pass 19 cases.
+Full app and engine typechecks, lint, engine formatting and the Pages-base build
+pass, with the existing TracksStage lint warning unchanged. Independent review
+found no actionable code issues and confirmed the original three certificates.
+The full engine suite and archive replay are left to the existing GitHub checks.
+
+Live browser checks covered both answers, incorrect feedback, explanation/retry,
+keyboard input, navigation and persisted lesson completion. Desktop Auto/Dark and
+Light layouts and a 393px phone layout were checked. The phone board fits without
+horizontal scrolling. See the [desktop lesson](images/learn-subsets-desktop.png)
+and [phone lesson](images/learn-subsets-phone.png). Physical iPhone and VoiceOver
+checks remain manual.
