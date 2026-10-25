@@ -71,10 +71,11 @@ ratings yet. These attempts do not count toward daily stats or leaderboards.
 - Saved unfinished attempts and timers that pause while the page is hidden or unfocused. Today offers Resume; Undo/Redo history belongs to the current visit. Reset asks for confirmation.
 - Explained logic hints with target/support highlights and optional, undoable moves. Word Paths reveals a starting cell, then additional letters on request.
 - Notes and Clear notes in Trio and Sudoku. Shown hint counts survive Undo, Reset and reload.
-- [Learn Sudoku techniques](https://tristrange.github.io/daily-puzzles/#/learn): five
-  guided exercises on locked candidates, naked pairs, hidden pairs, naked triples and
-  X-wing. Prepared notes, highlighted patterns, answer feedback and explanations help
-  you practise one deduction at a time. Completion saves separately.
+- [Learn Sudoku techniques](https://tristrange.github.io/daily-puzzles/#/learn): three
+  exercises each for locked candidates, naked pairs, hidden pairs, naked triples and
+  X-wing. Start with a guided example, then practise two new positions with optional
+  pattern clues. Feedback and explanations help you practise one deduction at a time.
+  Progress saves separately for each exercise and technique.
 - Per-game archives and personal stats, with Sudoku level and Train Tracks size filters.
   Overall and per-game summaries show solve counts, average/fastest times, streaks and
   hints used. First solves count; results are shareable.

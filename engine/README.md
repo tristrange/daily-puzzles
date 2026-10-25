@@ -8,8 +8,9 @@ The package `queens_engine` is pure Python with no web dependencies. Everything 
 
 ## Checking Sudoku lessons
 
-The five Learn exercises use original committed boards. Recheck their unique
-solutions, prepared candidates and teaching patterns from this directory:
+The 15 Learn exercises use original committed boards, three per technique.
+From this directory, recheck their unique solutions, prepared candidates and
+teaching patterns:
 
 ```sh
 uv run python -m tools.sudoku_lessons
@@ -17,7 +18,8 @@ uv run python -m tools.sudoku_lessons
 
 Use `--write-report` to refresh the offline certificates after a deliberate lesson
 change. It validates the entire catalog before writing. Neither command searches
-for new boards. Answers remain in the review report and outside the app imports.
+for new boards. Exercise descriptors and givens share one catalog with the app.
+Answers remain in the review report and outside the app imports.
 
 ## Generating a puzzle
 

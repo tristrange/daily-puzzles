@@ -1072,7 +1072,12 @@
 .lesson-cards li { display: flex; flex-direction: column; align-items: start; padding: 1.25rem; border: 1px solid var(--border); border-radius: 1.1rem; background: var(--surface); }
 .lesson-cards h2 { font-size: 1.2rem; margin: .5rem 0 0; }
 .lesson-cards p:not(.eyebrow) { font-size: .875rem; line-height: 1.6; margin-bottom: 1.5rem; }
-.lesson-cards .tool-button { margin-top: auto; }
+.lesson-exercise-links { display: grid; gap: .5rem; width: 100%; margin-top: auto; }
+.lesson-exercise-links .tool-button { display: flex; justify-content: space-between; gap: .75rem; width: 100%; text-align: left; }
+.lesson-cards .lesson-progress { margin: 0 0 .75rem; }
+.lesson-exercise-links .lesson-completed { margin: 0; }
+.lesson-siblings { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.25rem; }
+.lesson-siblings [aria-current='page'] { border-color: var(--accent); background: var(--accent-border); color: var(--accent); }
 .lesson-completed { color: var(--hint); font-size: .8125rem; margin-top: .75rem; }
 .lesson-back { display: inline-flex; align-items: center; min-height: 2.75rem; color: var(--text); }
 .lesson-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .4rem 1rem; margin: 0 0 1.25rem; }

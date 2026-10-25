@@ -2314,3 +2314,38 @@ Light layouts and a 393px phone layout were checked. The phone board fits withou
 horizontal scrolling. See the [desktop lesson](images/learn-subsets-desktop.png)
 and [phone lesson](images/learn-subsets-phone.png). Physical iPhone and VoiceOver
 checks remain manual.
+
+## 2026-10-25. Sudoku practice sets
+
+Each of the five Learn techniques now has three exercises, for 15 in total.
+The original guided examples keep their IDs, givens, prepared notes and complete
+certificate entries. Ten additional original positions give players repeated
+practice with different cells and digits. All 15 source boards and prepared
+positions are distinct.
+
+Technique cards show three full-width exercise links and completion out of three.
+The first example remains guided. Later exercises keep the target visible and
+offer an optional clue for the pattern. Correct answers and explanations reveal
+the complete pattern. Revealing does not complete an exercise. Retry and exercise
+navigation reset clue visibility. Completion uses the existing browser key, and
+Next exercise stays within the current technique.
+
+Exercise descriptors and givens share one JSON catalog used by the app and the
+independent Python verifier. The verifier requires three exercises per technique,
+stable IDs, distinct sources, exact uniqueness and matching deduction traces.
+Finite searches for new examples are development-only work. Daily puzzle rules,
+hints, stats and leaderboard behavior are unchanged.
+
+All 960 app tests and 20 targeted Python Sudoku/lesson tests pass. Full typechecks,
+lint, Python formatting, the Pages-base build and the 15-exercise certificate
+command pass. The existing TracksStage lint warning remains. Independent review
+confirmed all five originals and found no actionable issues. The full engine
+suite and archive replay remain covered by the GitHub checks.
+
+Browser checks cover initially hidden practice clues, clue persistence after an
+incorrect answer, exact answers, explanation without completion, retry, sibling
+navigation and saved progress after reload. The phone layout has no horizontal
+overflow at 393px. Desktop Auto/Dark and phone Light layouts were inspected.
+See the [technique cards](images/learn-practice-desktop.png) and
+[phone practice](images/learn-practice-phone.png). Physical iPhone and VoiceOver
+checks remain manual.

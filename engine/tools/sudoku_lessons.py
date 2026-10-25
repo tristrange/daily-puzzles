@@ -31,13 +31,79 @@ class Recipe:
     support: Literal["group", "retained", "removed"]
 
 
-RECIPES = (
-    Recipe("locked-candidates", 42218, "medium", "locked-candidate", "removed"),
-    Recipe("pairs", 42068, "medium", "naked-pair", "group"),
-    Recipe("hidden-pairs", 52336, "medium", "hidden-pair", "retained"),
-    Recipe("naked-triples", 52384, "hard", "naked-triple", "group"),
-    Recipe("x-wing", 43763, "hard", "x-wing", "removed"),
+@dataclass(frozen=True)
+class Technique:
+    id: str
+    level: Level
+    rule: str
+    support: Literal["group", "retained", "removed"]
+
+
+TECHNIQUES = (
+    Technique("locked-candidates", "medium", "locked-candidate", "removed"),
+    Technique("pairs", "medium", "naked-pair", "group"),
+    Technique("hidden-pairs", "medium", "hidden-pair", "retained"),
+    Technique("naked-triples", "hard", "naked-triple", "group"),
+    Technique("x-wing", "hard", "x-wing", "removed"),
 )
+EXERCISES_PER_TECHNIQUE = 3
+CELL_COUNT = 81
+DIGIT_COUNT = 9
+
+
+def read_catalog(data: Path) -> list[tuple[list[int], Recipe]]:
+    raw: object = json.loads(data.read_text())
+    if not isinstance(raw, dict):
+        raise ValueError("lesson catalog must be an object")
+    positions = cast(dict[str, object], raw)
+    if set(positions) != {item.id for item in TECHNIQUES}:
+        raise ValueError("lesson givens must match the five-technique catalog")
+    catalog: list[tuple[list[int], Recipe]] = []
+    ids: set[str] = set()
+    seeds: set[int] = set()
+    boards: set[tuple[int, ...]] = set()
+    for technique in TECHNIQUES:
+        raw_exercises = positions[technique.id]
+        if not isinstance(raw_exercises, list):
+            raise ValueError("technique exercises must be a list")
+        exercises = cast(list[object], raw_exercises)
+        if len(exercises) != EXERCISES_PER_TECHNIQUE:
+            raise ValueError("each technique must have three ordered exercises")
+        for index, raw_exercise in enumerate(exercises):
+            expected_id = technique.id if index == 0 else f"{technique.id}-{index + 1}"
+            if not isinstance(raw_exercise, dict):
+                raise ValueError("invalid exercise descriptor")
+            exercise = cast(dict[str, object], raw_exercise)
+            if set(exercise) != {"id", "seed", "givens", "cue"}:
+                raise ValueError("invalid exercise descriptor")
+            identifier, seed, givens, cue = (
+                exercise["id"],
+                exercise["seed"],
+                exercise["givens"],
+                exercise["cue"],
+            )
+            if not isinstance(identifier, str) or identifier != expected_id or identifier in ids:
+                raise ValueError("exercise IDs must preserve the ordered catalog")
+            if type(seed) is not int or not 0 <= seed < 2**32 or seed in seeds:
+                raise ValueError("exercise seeds must be distinct uint32 values")
+            if not isinstance(givens, list):
+                raise ValueError("exercise givens must be a list")
+            values = cast(list[object], givens)
+            if (
+                len(values) != CELL_COUNT
+                or any(type(value) is not int or not 0 <= value <= DIGIT_COUNT for value in values)
+                or tuple(cast(list[int], values)) in boards
+                or not isinstance(cue, str)
+                or not cue.strip()
+            ):
+                raise ValueError("exercises need distinct source boards and a clue")
+            cells = cast(list[int], values)
+            ids.add(identifier)
+            seeds.add(seed)
+            boards.add(tuple(cells))
+            recipe = Recipe(identifier, seed, technique.level, technique.rule, technique.support)
+            catalog.append((cells, recipe))
+    return catalog
 
 
 class StepCertificate(TypedDict):
@@ -61,7 +127,9 @@ class Certificate(TypedDict):
     support: list[int]
 
 
-def check_witness(step: Step, masks: list[int], support: list[int]) -> None:
+def check_witness(
+    step: Step, masks: list[int], support: list[int], *, original_triple: bool = True
+) -> None:
     if step.rule == "hidden-pair":
         reserved = step.after
         places = [cell for cell in step.group if masks[cell] & reserved]
@@ -84,10 +152,10 @@ def check_witness(step: Step, masks: list[int], support: list[int]) -> None:
             or step.cell in support
             or not any({*support, step.cell} <= set(unit) for unit in UNITS)
             or union.bit_count() != TRIPLE
-            or len({masks[cell] for cell in support}) < PAIR
+            or (original_triple and len({masks[cell] for cell in support}) < PAIR)
             or any(not 1 < masks[cell].bit_count() <= TRIPLE for cell in support)
             or step.after != step.before & ~union
-            or step.after.bit_count() < PAIR
+            or (original_triple and step.after.bit_count() < PAIR)
         ):
             raise ValueError("naked triple must reserve three digits in three visible unit cells")
 
@@ -116,7 +184,7 @@ def certify(givens: list[int], recipe: Recipe, *, max_nodes: int) -> Certificate
             ]
             if any(single(masks[cell]) for cell in support):
                 raise ValueError("pattern cells must have visible notes")
-            check_witness(step, masks, support)
+            check_witness(step, masks, support, original_triple=recipe.id == "naked-triples")
             return Certificate(
                 id=recipe.id,
                 seed=recipe.seed,
@@ -144,15 +212,14 @@ def certify(givens: list[int], recipe: Recipe, *, max_nodes: int) -> Certificate
 def verify(
     data: Path, report: Path, *, write_report: bool = False, max_nodes: int = MAX_NODES
 ) -> None:
-    positions = cast(dict[str, list[int]], json.loads(data.read_text()))
-    if set(positions) != {recipe.id for recipe in RECIPES}:
-        raise ValueError("lesson givens must match the five-lesson catalog")
     certificates = [
-        certify(positions[recipe.id], recipe, max_nodes=max_nodes) for recipe in RECIPES
+        certify(givens, recipe, max_nodes=max_nodes) for givens, recipe in read_catalog(data)
     ]
+    if len({tuple(item["candidates"]) for item in certificates}) != len(certificates):
+        raise ValueError("exercises must have distinct prepared positions")
     document = {
         "purpose": (
-            "Independent Python certificates for five original lesson positions; "
+            "Independent Python certificates for 15 original lesson positions; "
             "solutions are review-only data."
         ),
         "lessons": certificates,
@@ -182,7 +249,7 @@ def main() -> None:
     parser.add_argument("--write-report", action="store_true")
     args = parser.parse_args()
     verify(DATA, REPORT, write_report=args.write_report)
-    print("Verified five Sudoku lessons against exact solutions and deterministic deductions")
+    print("Verified 15 Sudoku exercises against exact solutions and deterministic deductions")
 
 
 if __name__ == "__main__":

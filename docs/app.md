@@ -560,31 +560,37 @@ fingerprints are unchanged, so existing preview attempts resume normally.
 
 ## Sudoku technique lessons
 
-`/learn` introduces five short exercises: locked candidates, naked pairs, hidden
-pairs, naked triples and X-wing. `/learn/sudoku/:lessonId` opens an exercise
-directly. Learn is also linked from Today and the Sudoku rules. These are prepared positions for practising one
-deduction, rather than full timed puzzles.
+`/learn` groups 15 exercises into five techniques: locked candidates, naked pairs,
+hidden pairs, naked triples and X-wing. Each technique has three exercise links
+and its own completion count. `/learn/sudoku/:lessonId` opens an exercise directly.
+Learn is also linked from Today and the Sudoku rules. These are prepared positions
+for practising one deduction, rather than full timed puzzles.
 
 Each original board in `app/src/data/sudoku-lessons.json` has an independent Python
 certificate in `docs/measurements/sudoku-lessons.json`. The app replays its existing
 deduction engine until the teaching step, preserving the notes established before
-it. The existing Sudoku board shows a solid target and dashed pattern cells. The
-learner selects the candidates that remain; only a correct answer marks completion.
-Showing the explanation updates the target notes and offers a retry, without
-marking an unanswered exercise complete. Next lesson resets the exercise state.
+it. The JSON groups exercise IDs, seeds, givens and clues under each technique.
+The first exercise retains its original board and ID, with a solid target and
+dashed pattern cells. Exercises two and three initially show only the target.
+Show a clue reveals their pattern cells and cue. A correct answer or Show
+explanation also reveals the pattern. Only a correct answer marks completion.
+Try again hides a practice clue, and navigating between exercises resets temporary
+state. Next exercise stays within the technique. Sibling links let players choose
+any exercise directly.
 
 Hidden pairs highlight the two cells reserved for the retained digits. The target
 belongs to that pair and keeps the solid outline. Naked pairs and triples highlight
 every pattern cell, including a cell that shares no removed digit with the target.
-The triple exercise uses three different two-digit note sets in one column.
+The original triple exercise uses three different two-digit note sets in one column.
 
-From `engine/`, run `uv run python -m tools.sudoku_lessons` to recompute all five
+From `engine/`, run `uv run python -m tools.sudoku_lessons` to recompute all 15
 certificates and compare them with the committed report. `--write-report` refreshes
 the report after every position passes exact uniqueness, deduction replay and
 pattern checks. The command uses committed givens and performs no seed search.
 
 Completion uses the separate `daily-puzzles:sudoku-lessons:v1` browser key. Stored
-values are restricted to known lesson IDs; blocked storage leaves the exercise
+values are restricted to known exercise IDs. Original completions remain valid,
+and each added exercise has its own ID. Blocked storage leaves the exercise
 usable and reports that completion was not saved. Daily progress, Stats, clocks
 and leaderboard submission are outside the lesson flow. The lazy lesson chunk and
 its embedded boards join the existing offline shell cache during production builds.

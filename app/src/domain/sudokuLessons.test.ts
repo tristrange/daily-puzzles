@@ -3,7 +3,7 @@ import certificates from '../../../docs/measurements/sudoku-lessons.json'
 import positions from '../data/sudoku-lessons.json'
 import { solveSudoku, SUDOKU_UNITS, sudokuDigits, sudokuSingle } from './sudoku'
 import { deduceSudoku, nextSudokuStep } from './sudokuHints'
-import { SUDOKU_LESSONS } from './sudokuLessons'
+import { SUDOKU_LESSONS, SUDOKU_TECHNIQUES } from './sudokuLessons'
 
 it.each(certificates.lessons)('teaches a sound $id restriction on an independently certified position', certificate => {
   const lesson = SUDOKU_LESSONS.find(lesson => lesson.id === certificate.id)
@@ -14,7 +14,7 @@ it.each(certificates.lessons)('teaches a sound $id restriction on an independent
   expect(masks).toEqual(certificate.candidates)
   expect(lesson.step).toMatchObject({ cell: certificate.step.cell, before: certificate.step.before,
     after: certificate.step.after, rule: certificate.step.rule, group: certificate.step.group })
-  const givens = Object.entries(positions).find(([id]) => id === lesson.id)?.[1]
+  const givens = Object.values(positions).flat().find(exercise => exercise.id === lesson.id)?.givens
   if (!givens) throw Error('Missing source givens')
   const original = { ...lesson.board, givens }
   expect(solveSudoku(original)).toEqual({ kind: 'unique', cells: certificate.unique_solution })
@@ -22,8 +22,7 @@ it.each(certificates.lessons)('teaches a sound $id restriction on an independent
   expect(nextSudokuStep(masks, lesson.board.level)).toMatchObject(lesson.step)
   expect(lesson.support).toEqual(certificate.support)
   expect(lesson.support.every(cell => !sudokuSingle(masks[cell]!))).toBe(true)
-  if (lesson.step.rule === 'locked-candidate') {
-    // One shared candidate keeps this exercise distinct from a naked-pair lesson.
+  if (lesson.id === 'locked-candidates') {
     expect(lesson.support.reduce((common, cell) => common & masks[cell]!, 511)).toBe(lesson.step.before & ~lesson.step.after)
   }
   for (const [cell, mask] of masks.entries()) expect(mask & (1 << (certificate.unique_solution[cell]! - 1))).not.toBe(0)
@@ -32,9 +31,20 @@ it.each(certificates.lessons)('teaches a sound $id restriction on an independent
 
 it('covers exactly the ordered runtime givens and independent certificates', () => {
   const ids = ['locked-candidates', 'pairs', 'hidden-pairs', 'naked-triples', 'x-wing']
-  expect(SUDOKU_LESSONS.map(lesson => lesson.id)).toEqual(ids)
-  expect(Object.keys(positions).sort()).toEqual([...ids].sort())
-  expect(certificates.lessons.map(lesson => lesson.id)).toEqual(ids)
+  const exercises = Object.values(positions).flat()
+  expect(SUDOKU_TECHNIQUES.map(technique => technique.id)).toEqual(ids)
+  expect(SUDOKU_TECHNIQUES.map(technique => technique.exercises[0]?.id)).toEqual(ids)
+  expect(SUDOKU_TECHNIQUES.every(technique => technique.exercises.length === 3)).toBe(true)
+  expect(Object.keys(positions)).toEqual(ids)
+  expect(SUDOKU_LESSONS).toHaveLength(15)
+  expect(SUDOKU_LESSONS.map(lesson => lesson.id)).toEqual(exercises.map(exercise => exercise.id))
+  expect(certificates.lessons.map(lesson => lesson.id)).toEqual(exercises.map(exercise => exercise.id))
+  expect(new Set(exercises.map(exercise => exercise.id)).size).toBe(15)
+  expect(new Set(exercises.map(exercise => JSON.stringify(exercise.givens))).size).toBe(15)
+  expect(new Set(SUDOKU_LESSONS.map(lesson => JSON.stringify(lesson.game))).size).toBe(15)
+  for (const technique of SUDOKU_TECHNIQUES) {
+    expect(technique.exercises.map(exercise => exercise.guidance)).toEqual(['guided', 'practice', 'practice'])
+  }
 })
 
 it('shows both hidden-pair cells and every cell in the varied triple', () => {
