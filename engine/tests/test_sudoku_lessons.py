@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 from tools import sudoku_lessons
-from tools.sudoku_lessons import DATA, RECIPES, REPORT, certify, verify
+from tools.sudoku_lessons import DATA, REPORT, certify, read_catalog, verify
 
 from queens_engine.sudoku import SudokuSearchLimitError
 from queens_engine.sudoku_deduce import Step
@@ -12,11 +12,11 @@ from queens_engine.sudoku_deduce import Step
 def test_committed_lessons_match_exact_solutions_and_full_replay() -> None:
     verify(DATA, REPORT)
     certificates = json.loads(REPORT.read_text())["lessons"]
-    assert [item["id"] for item in certificates] == [recipe.id for recipe in RECIPES]
-    hidden = certificates[2]
+    assert [item["id"] for item in certificates] == [recipe.id for _, recipe in read_catalog(DATA)]
+    hidden = next(item for item in certificates if item["id"] == "hidden-pairs")
     assert hidden["step"]["after"].bit_count() == 2
     assert hidden["step"]["cell"] in hidden["support"]
-    triple = certificates[3]
+    triple = next(item for item in certificates if item["id"] == "naked-triples")
     masks = triple["candidates"]
     assert len({masks[cell] for cell in triple["support"]}) == 3
     assert all(masks[cell].bit_count() == 2 for cell in triple["support"])
@@ -46,7 +46,7 @@ def test_exhausted_exact_budget_or_invalid_lesson_writes_nothing(tmp_path: Path)
     assert data.read_bytes() == before
     assert report.read_text() == "existing report"
     positions = json.loads(data.read_text())
-    positions["x-wing"] = [0] * 81
+    positions["x-wing"][2]["givens"] = [0] * 81
     data.write_text(json.dumps(positions))
     with pytest.raises(ValueError, match="exactly one solution"):
         verify(data, report, write_report=True)
@@ -54,8 +54,8 @@ def test_exhausted_exact_budget_or_invalid_lesson_writes_nothing(tmp_path: Path)
 
 
 def test_new_subset_witnesses_reject_incomplete_pattern_support() -> None:
-    positions = json.loads(DATA.read_text())
-    certificate = certify(positions["naked-triples"], RECIPES[3], max_nodes=200_000)
+    givens, recipe = next(item for item in read_catalog(DATA) if item[1].id == "naked-triples")
+    certificate = certify(givens, recipe, max_nodes=200_000)
     raw = certificate["step"]
     masks = certificate["candidates"]
     masks[raw["cell"]] = 35
@@ -64,3 +64,22 @@ def test_new_subset_witnesses_reject_incomplete_pattern_support() -> None:
     sudoku_lessons.check_witness(step, masks, certificate["support"])
     with pytest.raises(ValueError, match="three visible"):
         sudoku_lessons.check_witness(step, masks, certificate["support"][1:])
+
+
+def test_catalog_preserves_original_ids_and_requires_distinct_boards(tmp_path: Path) -> None:
+    catalog = read_catalog(DATA)
+    assert len(catalog) == 15
+    assert [recipe.id for _, recipe in catalog][::3] == [
+        "locked-candidates",
+        "pairs",
+        "hidden-pairs",
+        "naked-triples",
+        "x-wing",
+    ]
+    assert len({tuple(givens) for givens, _ in catalog}) == 15
+    positions = json.loads(DATA.read_text())
+    positions["pairs"][2]["givens"] = positions["pairs"][1]["givens"]
+    data = tmp_path / "givens.json"
+    data.write_text(json.dumps(positions))
+    with pytest.raises(ValueError, match="distinct source boards"):
+        read_catalog(data)
