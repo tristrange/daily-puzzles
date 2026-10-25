@@ -1,3 +1,4 @@
+import { PlayTimer } from './PlayTimer'
 import { useLeaderboard } from '../lib/useLeaderboard'
 import { useId, useRef, useState } from 'react'
 import { createTrioGame, editTrio, isTrioSolved, TRIO_NAMES, trioConflicts, type TrioAction, type TrioBoard as Board, type TrioGame, type TrioValue } from '../domain/trio'
@@ -42,9 +43,10 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
   const instructionsId = useId(), pickerId = useId(), hintId = useId()
   const conflicts = trioConflicts(board, game.cells)
 
-  const { elapsed, settle, stop } = usePlayClock(initial?.elapsedMs ?? 0, time => {
+  const { time, settle, stop, restartAttempt } = usePlayClock(initial ?? { elapsedMs: 0 }, time => {
     setSaving(storeTrioProgress(board, current.current, time, daily, hintsUsed.current))
   })
+  const elapsed = time.elapsedMs
   const save = () => { setSaving(storeTrioProgress(board, current.current, settle(), daily, hintsUsed.current)) }
   const change = (next: TrioGame) => { current.current = next; setGame(next) }
   const begin = () => { before.current = current.current; setHint(null) }
@@ -59,13 +61,13 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
     else if (previous !== current.current) {
       history.remember(previous)
       if (isTrioSolved(board, current.current.cells)) {
-        const elapsedMs = stop()
+        const stoppedTime = stop()
         if (puzzle) {
           const when = Date.now()
           const earlier = readStoredStats().find(record => record.id === puzzle.id)
           setFirstSolve(earlier ?? null)
           const record: SolveRecord = { id: puzzle.id, puzzleType: 'trio', size: 9,
-            elapsedMs, hints: hintsUsed.current, solvedAt: when }
+            ...stoppedTime, hints: hintsUsed.current, solvedAt: when }
           setStats(summarise(storeSolve(record), puzzleOfToday(new Date(when), Intl.DateTimeFormat().resolvedOptions().timeZone)))
           if (!earlier) { setCandidate(record); offerSolve(record) }
         }
@@ -97,8 +99,9 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
     if (completed.current || before.current) return
     setHint(null)
     history.remember(current.current)
+    restartAttempt()
     change(createTrioGame(board))
-    setMessage('Board cleared. Undo brings it back; the clock keeps running.')
+    setMessage('Board cleared. Undo brings it back; total time and hints are kept.')
     save()
   }
   const clearNotes = () => {
@@ -152,7 +155,7 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
     <div className="trio-workspace">
       <div className="trio-controls">
         <div className="puzzle-tools">
-          <span className="timer" role="timer" aria-label="Elapsed active time">{formatTime(elapsed)}</span>
+          <PlayTimer time={time} />
           <button className="tool-button" type="button" onClick={undo} disabled={solved || !history.canUndo}>Undo</button>
           <button className="tool-button" type="button" onClick={redo} disabled={solved || !history.canRedo}>Redo</button>
           <ResetButton onReset={reset} disabled={solved || game.cells.every((v, i) => v === board.givens[i] && game.notes[i] === 0)} />

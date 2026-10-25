@@ -1,3 +1,4 @@
+import { PlayTimer } from './PlayTimer'
 import { useLeaderboard } from '../lib/useLeaderboard'
 import { useId, useMemo, useRef, useState } from 'react'
 import type { Puzzle } from '../domain/puzzle'
@@ -45,9 +46,10 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
   const instructionsId = useId()
   const solved = isWordSolved(game)
 
-  const { elapsed, settle, stop } = usePlayClock(initial?.elapsedMs ?? 0, time => {
+  const { time, settle, stop, restartAttempt } = usePlayClock(initial ?? { elapsedMs: 0 }, time => {
     setSaving(storeWordProgress(puzzle.id, current.current, time, preview, hintsUsed.current))
   })
+  const elapsed = time.elapsedMs
   const change = (next: WordGame) => {
     current.current = next
     setGame(next)
@@ -72,7 +74,7 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
     history.remember(clearTrace(before))
     change(result.game)
     if (!isWordSolved(result.game)) return
-    const time = stop()
+    const stoppedTime = stop()
     completed.current = true
     clearWordProgress(puzzle.id, preview, grid.vocabularyVersion)
     if (!preview) {
@@ -80,11 +82,11 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
       const earlier = readStoredStats().find((record) => record.id === puzzle.id)
       setFirstSolve(earlier ?? null)
       const record: SolveRecord = { id: puzzle.id, puzzleType: puzzle.puzzleType, size: grid.width,
-        elapsedMs: time, hints: hintsUsed.current, solvedAt: when }
+        ...stoppedTime, hints: hintsUsed.current, solvedAt: when }
       setStats(summarise(storeSolve(record), puzzleOfToday(new Date(when), timeZone)))
       if (!earlier) { setCandidate(record); offerSolve(record) }
     }
-    setMessage(`Solved in ${formatTime(time)}!`)
+    setMessage(`Solved in ${formatTime(stoppedTime.elapsedMs)}!`)
   }
   const undo = () => {
     if (completed.current) return
@@ -106,8 +108,9 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
     if (completed.current) return
     setHint(null)
     history.remember(current.current)
+    restartAttempt()
     change(resetWordGame(current.current))
-    setMessage('Board cleared. Undo brings it back; the clock keeps running.')
+    setMessage('Board cleared. Undo brings it back; total time and hints are kept.')
   }
   const countHint = () => {
     hintsUsed.current += 1
@@ -160,7 +163,7 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
   return (
     <div className="word-game" ref={stage}>
       <div className="puzzle-tools">
-        <span className="timer" role="timer" aria-label="Elapsed active time">{formatTime(elapsed)}</span>
+        <PlayTimer time={time} />
         <button className="tool-button" type="button" onClick={undo} disabled={solved || (!history.canUndo && game.words.length === 0)}>Undo</button>
         <button className="tool-button" type="button" onClick={redo} disabled={solved || !history.canRedo}>Redo</button>
         <ResetButton onReset={reset} disabled={solved || (game.words.length === 0 && game.trace.length === 0)} />

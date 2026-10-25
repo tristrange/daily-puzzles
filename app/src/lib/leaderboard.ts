@@ -1,10 +1,11 @@
+import { attemptTime, validPlayTime, type PlayTime } from './playTime'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { isPuzzleId } from '../domain/dates'
 
 export type LeaderboardConfig = { readonly url: string; readonly publishableKey: string; readonly siteKey: string }
-export type LeaderboardEntry = { readonly rank: number; readonly nickname: string; readonly elapsed_ms: number; readonly hints: number; readonly is_you: boolean }
+export type LeaderboardEntry = { readonly rank: number; readonly nickname: string; readonly elapsed_ms: number; readonly attempt_elapsed_ms?: number; readonly hints: number; readonly is_you: boolean }
 export type LeaderboardSnapshot = { readonly entries: readonly LeaderboardEntry[]; readonly total: number; readonly own_entry: LeaderboardEntry | null }
-export type LeaderboardResult = { readonly id: string; readonly nickname: string; readonly elapsedMs: number; readonly hints: number }
+export type LeaderboardResult = PlayTime & { readonly id: string; readonly nickname: string; readonly hints: number }
 
 export function parseLeaderboardConfig(values: Record<string, unknown>): LeaderboardConfig | null {
   const url = values['VITE_SUPABASE_URL'], publishableKey = values['VITE_SUPABASE_PUBLISHABLE_KEY'], siteKey = values['VITE_TURNSTILE_SITE_KEY']
@@ -35,10 +36,14 @@ export function isLeaderboardNickname(value: unknown): value is string {
 function object(value: unknown): Record<string, unknown> | null {
   return typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : null
 }
-function entry(value: unknown, total: number): value is LeaderboardEntry {
+function entry(value: unknown, total: number): LeaderboardEntry | null {
   const row = object(value)
-  return row !== null && isScoreNumber(row['rank']) && row['rank'] >= 1 && row['rank'] <= total
-    && isLeaderboardNickname(row['nickname']) && isScoreNumber(row['elapsed_ms']) && isScoreNumber(row['hints']) && typeof row['is_you'] === 'boolean'
+  if (!row) return null
+  const { rank, nickname, elapsed_ms, hints, is_you } = row
+  if (!isScoreNumber(rank) || rank < 1 || rank > total || !isLeaderboardNickname(nickname)
+    || !isScoreNumber(elapsed_ms) || !isScoreNumber(hints) || typeof is_you !== 'boolean') return null
+  const attempt = attemptTime(row['attempt_elapsed_ms'], elapsed_ms).attemptElapsedMs
+  return { rank, nickname, elapsed_ms, hints, is_you, ...(attempt === undefined ? {} : { attempt_elapsed_ms: attempt }) }
 }
 const unavailable = () => new Error('Leaderboard unavailable. Please try again.')
 
@@ -48,9 +53,16 @@ export async function readLeaderboard(client: SupabaseClient, puzzleId: string):
   if (error) throw error.code === '22023' ? new Error('This leaderboard is not available yet.') : unavailable()
   const board = object(data)
   if (!board || !isScoreNumber(board['total']) || !Array.isArray(board['entries']) || board['entries'].length > 25
-    || board['entries'].length > board['total'] || !board['entries'].every(row => entry(row, board['total'] as number))
-    || (board['own_entry'] !== null && (!entry(board['own_entry'], board['total']) || !board['own_entry'].is_you))) throw unavailable()
-  return { entries: board['entries'] as LeaderboardEntry[], total: board['total'], own_entry: board['own_entry'] as LeaderboardEntry | null }
+    || board['entries'].length > board['total']) throw unavailable()
+  const entries: LeaderboardEntry[] = []
+  for (const value of board['entries']) {
+    const row = entry(value, board['total'])
+    if (!row) throw unavailable()
+    entries.push(row)
+  }
+  const own = board['own_entry'] === null ? null : entry(board['own_entry'], board['total'])
+  if (board['own_entry'] !== null && (!own || !own.is_you)) throw unavailable()
+  return { entries, total: board['total'], own_entry: own }
 }
 
 async function ownerAuthorization(client: SupabaseClient, expectedOwner: string): Promise<string> {
@@ -60,10 +72,10 @@ async function ownerAuthorization(client: SupabaseClient, expectedOwner: string)
 }
 
 export async function submitLeaderboardResult(client: SupabaseClient, result: LeaderboardResult, expectedOwner: string): Promise<'created' | 'existing'> {
-  if (!isPuzzleId(result.id) || !isLeaderboardNickname(result.nickname) || !isScoreNumber(result.elapsedMs) || !isScoreNumber(result.hints)) throw unavailable()
+  if (!isPuzzleId(result.id) || !isLeaderboardNickname(result.nickname) || !validPlayTime(result) || !isScoreNumber(result.hints)) throw unavailable()
   const authorization = await ownerAuthorization(client, expectedOwner)
   const { data, error } = await client.rpc('submit_result', { p_puzzle_id: result.id, p_nickname: result.nickname,
-    p_elapsed_ms: result.elapsedMs, p_hints: result.hints }).setHeader('Authorization', authorization).abortSignal(AbortSignal.timeout(15_000))
+    p_elapsed_ms: result.elapsedMs, p_hints: result.hints, ...(result.attemptElapsedMs === undefined ? {} : { p_attempt_elapsed_ms: result.attemptElapsedMs }) }).setHeader('Authorization', authorization).abortSignal(AbortSignal.timeout(15_000))
   const status = object(data)?.['status']
   if (error || (status !== 'created' && status !== 'existing')) throw unavailable()
   return status

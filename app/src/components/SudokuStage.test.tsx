@@ -43,7 +43,7 @@ function pointerEnvironment() {
 it.each(['mouse', 'touch'])('drag-selects with %s and edits group notes as one saved move', async pointerType => {
   const cells = [...board.givens], notes = Array<number>(81).fill(0)
   cells[4] = 6; notes[0] = 256
-  storeSudokuProgress(board, { cells, notes }, 0, 0)
+  storeSudokuProgress(board, { cells, notes }, { elapsedMs: 0 }, 0)
   await mount(); pointerEnvironment()
   await pointer('pointerdown', 0, pointerType)
   if (pointerType === 'touch') await pointer('lostpointercapture', 0, pointerType) // implicit cell capture transfers to the grid
@@ -155,7 +155,7 @@ it('resumes notes/time and completes through keyboard input without daily stats'
 
 it('cleans peer notes in the same saved, undoable move as number entry', async () => {
   const notes = Array<number>(81).fill(0); notes[2] = 96 // 6, 7, same row as first cell
-  storeSudokuProgress(board, { cells: [...board.givens], notes }, 0, 0)
+  storeSudokuProgress(board, { cells: [...board.givens], notes }, { elapsedMs: 0 }, 0)
   await mount(); await click('Enter 6')
   expect(readSudokuProgress(board)?.game.notes[2]).toBe(64)
   await click('Undo'); expect(readSudokuProgress(board)?.game.notes[2]).toBe(96)
@@ -179,7 +179,7 @@ it('highlights matching digits and their rows/columns, and clears them on an emp
 
 it('collapses supporting deductions without hiding the conclusion or Apply action', async () => {
   const hard = parseSudokuBoards(raw)[2]!
-  storeSudokuProgress(hard, { cells: playtest.cells.flat(), notes: playtest.notes.flat().map(text => [...text].reduce((mask, digit) => mask | (1 << (Number(digit) - 1)), 0)) }, 0, 0)
+  storeSudokuProgress(hard, { cells: playtest.cells.flat(), notes: playtest.notes.flat().map(text => [...text].reduce((mask, digit) => mask | (1 << (Number(digit) - 1)), 0)) }, { elapsedMs: 0 }, 0)
   await act(async () => root.render(<SudokuStage board={hard} />)); await click('Get an explained hint')
   const details = container.querySelector<HTMLDetailsElement>('.hint-panel details')!
   expect(details).not.toBeNull()
@@ -196,7 +196,7 @@ it('dims a digit at nine placements, excluding notes, and restores it after edit
   const digit = 6, cells = [...board.givens], notes = Array<number>(81).fill(0)
   for (const [i, value] of proof.samples[0]!.solution.entries()) if (value === digit && i !== index) cells[i] = digit
   notes[index] = 1 << (digit - 1)
-  storeSudokuProgress(board, { cells, notes }, 0, 0)
+  storeSudokuProgress(board, { cells, notes }, { elapsedMs: 0 }, 0)
   await mount()
   const picker = () => container.querySelector<HTMLButtonElement>('[aria-label="Enter 6"]')!
   expect(picker().dataset['allPlaced']).toBe('false')
@@ -220,8 +220,8 @@ it('records a daily first solve, shares the exact level and preserves preview pr
   const puzzle = { id: daily.id, puzzleType: 'sudoku', seed: 123, generatorVersion: 1, board: daily, difficulty: null } as unknown as Puzzle
   const cells = [...proof.samples[0]!.solution]; cells[index] = 0
   const game = { cells, notes: Array<number>(81).fill(0) }
-  storeSudokuProgress(board, game, 9000, 1)
-  storeSudokuProgress(daily, game, 12000, 2, true)
+  storeSudokuProgress(board, game, { elapsedMs: 9000 }, 1)
+  storeSudokuProgress(daily, game, { elapsedMs: 12000 }, 2, true)
   const previewSave = localStorage.getItem(`daily-puzzles.sudoku-preview.v1.${board.id}`)
   const offerSolve = vi.fn()
   const leaderboard = { ...createLeaderboardStore(null, null, null), offerSolve }
@@ -241,7 +241,7 @@ it('records a daily first solve, shares the exact level and preserves preview pr
   await click('Copy with solution')
   expect(container.querySelector<HTMLTextAreaElement>('.share-text')?.value).toContain(proof.samples[0]!.solution.slice(0, 9).join(' '))
   await act(async () => root.unmount()); root = createRoot(container)
-  storeSudokuProgress(daily, game, 1000, 0, true)
+  storeSudokuProgress(daily, game, { elapsedMs: 1000 }, 0, true)
   await act(async () => renderDaily())
   await click(`Enter ${proof.samples[0]!.solution[index]}`)
   expect(container.textContent).toContain('your first solve')

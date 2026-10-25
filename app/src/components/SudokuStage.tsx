@@ -1,3 +1,4 @@
+import { PlayTimer } from './PlayTimer'
 import type { Puzzle } from '../domain/puzzle'
 import { puzzleOfToday } from '../domain/dates'
 import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } from '../lib/stats'
@@ -33,19 +34,20 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
   const [message, setMessage] = useState(''), [hint, setHint] = useState<SudokuHint | null>(null), [mistake, setMistake] = useState<number | null>(null)
   const stage = useRef<HTMLDivElement>(null), hintButton = useRef<HTMLButtonElement>(null)
   const instructionsId = useId(), hintId = useId(), conflicts = sudokuConflicts(game.cells)
-  const { elapsed, settle, stop } = usePlayClock(initial?.elapsedMs ?? 0, time => {
+  const { time, settle, stop, restartAttempt } = usePlayClock(initial ?? { elapsedMs: 0 }, time => {
     setSaving(storeSudokuProgress(board, current.current, time, hints.current, daily))
   })
+  const elapsed = time.elapsedMs
   const save = () => { setSaving(storeSudokuProgress(board, current.current, settle(), hints.current, daily)) }
   const clearHint = () => { setHint(null); setMistake(null) }
   const change = (next: SudokuGame) => {
     current.current = next; setGame(next); clearHint()
     if (isSudokuSolved(board, next.cells)) {
-      const elapsedMs = stop()
+      const stoppedTime = stop()
       if (puzzle) {
         // oxlint-disable-next-line react/purity -- Called by player events, never during render.
         const when = Date.now(), earlier = readStoredStats().find(record => record.id === puzzle.id)
-        const record: SolveRecord = { id: puzzle.id, puzzleType: 'sudoku', size: 9, elapsedMs, hints: hints.current, solvedAt: when }
+        const record: SolveRecord = { id: puzzle.id, puzzleType: 'sudoku', size: 9, ...stoppedTime, hints: hints.current, solvedAt: when }
         setFirstSolve(earlier ?? null)
         setStats(summarise(storeSolve(record), puzzleOfToday(new Date(when), Intl.DateTimeFormat().resolvedOptions().timeZone)))
         if (!earlier) { setCandidate(record); offerSolve(record) }
@@ -135,11 +137,11 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
     <div className="sudoku-workspace">
       <div className="sudoku-controls">
         <div className="puzzle-tools">
-          <span className="timer" role="timer" aria-label="Elapsed active time">{formatTime(elapsed)}</span>
+          <PlayTimer time={time} />
           <button type="button" className="tool-button" disabled={solved || !history.canUndo} onClick={undo}>Undo</button>
           <button type="button" className="tool-button" disabled={solved || !history.canRedo} onClick={redo}>Redo</button>
           <ResetButton disabled={solved || game.cells.every((v, i) => v === board.givens[i] && !game.notes[i])}
-            onReset={() => commit(createSudokuGame(board), 'Board cleared. Undo brings it back; the clock keeps running.')} />
+            onReset={() => { if (completed.current) return; restartAttempt(); commit(createSudokuGame(board), 'Board cleared. Undo restores the board. Total time and hints are kept.') }} />
           <button type="button" className="tool-button" disabled={solved} aria-pressed={pencil} onClick={() => setPencil(!pencil)}>Notes</button>
           <button type="button" className="tool-button" disabled={solved || !game.notes.some(Boolean)} onClick={() => commit({ cells: game.cells, notes: Array<number>(81).fill(0) }, 'All notes cleared. Undo brings them back.')}>Clear notes</button>
           <button type="button" className="tool-button" ref={hintButton} disabled={solved} aria-label="Get an explained hint" aria-expanded={hint !== null || mistake !== null}

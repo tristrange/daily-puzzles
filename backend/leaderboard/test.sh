@@ -15,7 +15,9 @@ sql < migrations/001_leaderboards.sql
 sql -c 'create database leaderboard_upgrade template postgres'
 sql < migrations/002_tents.sql
 sql < migrations/003_sudoku.sql
+sql < migrations/20261025113819_reset_attempt_time.sql
 sql < tests/contract.sql
+sql < tests/attempt-contract.sql
 
 # Preserve live-style data and security state while upgrading, then retry 002.
 sql -d leaderboard_upgrade < tests/upgrade-before.sql
@@ -63,7 +65,29 @@ do $$ begin
   then raise exception 'Repeated migration did not preserve existing Sudoku data'; end if;
 end $$;
 SQL
+sql -d leaderboard_upgrade < tests/attempt-upgrade-before.sql
+sql -d leaderboard_upgrade < migrations/20261025113819_reset_attempt_time.sql
+sql -d leaderboard_upgrade < tests/attempt-upgrade-after.sql
 sql -d leaderboard_upgrade < tests/contract.sql
+sql -d leaderboard_upgrade < tests/attempt-contract.sql
+sql -d leaderboard_upgrade <<'SQL'
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', jsonb_build_object('sub', md5('38')::uuid)::text, true);
+select public.submit_result('2020-01-01-sudoku-easy', 'Reset Sudoku', 54321, 1, 1234);
+commit;
+SQL
+sql -d leaderboard_upgrade < tests/attempt-upgrade-before.sql
+sql -d leaderboard_upgrade < migrations/20261025113819_reset_attempt_time.sql
+sql -d leaderboard_upgrade < tests/attempt-upgrade-after.sql
+sql -d leaderboard_upgrade <<'SQL'
+do $$ begin
+  if (select attempt_elapsed_ms from public.leaderboard_results where nickname = 'Reset Sudoku') is distinct from 1234::bigint
+  then raise exception 'Repeated migration changed known attempt metadata'; end if;
+end $$;
+SQL
+sql -d leaderboard_upgrade < tests/contract.sql
+sql -d leaderboard_upgrade < tests/attempt-contract.sql
 
 # Separate connections race for one first result; either may win, never both.
 sql <<'SQL'

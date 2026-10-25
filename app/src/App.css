@@ -1573,3 +1573,7 @@
   --motif-color: light-dark(#276b41, #8ac79d);
   --motif-wash: light-dark(#edf4e8, #25332b);
 }
+
+.play-timer { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; }
+.play-timer .timer-value small, .attempt-timer, .leaderboard-attempt { font-size: .75rem; font-weight: 400; color: var(--text); }
+.attempt-timer { white-space: nowrap; }

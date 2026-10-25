@@ -9,7 +9,7 @@ it('isolates validated preview attempts and preserves notes, active time and sho
     setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) })
   const [board, other] = parseSudokuBoards(raw)
   const game = editSudoku(board!, createSudokuGame(board!), board!.givens.indexOf(0), 9, true)
-  expect(storeSudokuProgress(board!, game, 4321, 2)).toBe(true)
+  expect(storeSudokuProgress(board!, game, { elapsedMs: 4321 }, 2)).toBe(true)
   expect(readSudokuProgress(board!)).toEqual({ game, elapsedMs: 4321, hints: 2 })
   expect(readSudokuProgress(other!)).toBeNull()
   const [key, value] = [...values][0]!, saved = JSON.parse(value)
@@ -19,7 +19,7 @@ it('isolates validated preview attempts and preserves notes, active time and sho
   }
   vi.stubGlobal('localStorage', { getItem: () => { throw Error('blocked') }, setItem: () => { throw Error('blocked') } })
   expect(readSudokuProgress(board!)).toBeNull()
-  expect(storeSudokuProgress(board!, game, 4321, 2)).toBe(false)
+  expect(storeSudokuProgress(board!, game, { elapsedMs: 4321 }, 2)).toBe(false)
 })
 
 it('keeps daily levels separate from previews and rejects stale daily fingerprints', () => {
@@ -29,8 +29,8 @@ it('keeps daily levels separate from previews and rejects stale daily fingerprin
   const preview = parseSudokuBoards(raw)[0]!
   const board = { ...preview, id: '2026-10-21-sudoku-easy' }
   const game = editSudoku(board, createSudokuGame(board), board.givens.indexOf(0), 9, true)
-  storeSudokuProgress(preview, game, 1000, 1)
-  storeSudokuProgress(board, game, 2000, 2, true)
+  storeSudokuProgress(preview, game, { elapsedMs: 1000 }, 1)
+  storeSudokuProgress(board, game, { elapsedMs: 2000 }, 2, true)
   expect(readSudokuProgress(board, true)).toEqual({ game, elapsedMs: 2000, hints: 2 })
   expect(values.has(`daily-puzzles.sudoku.v1.${board.id}`)).toBe(true)
   expect(readSudokuProgress(board)).toBeNull()

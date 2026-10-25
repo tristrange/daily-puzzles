@@ -81,7 +81,7 @@ it('commits a painted stroke as one history entry and rolls back interrupted or 
 it('completes from sea shading, locks the result and clears only its preview save', async () => {
   const solution: NurikabeGame = proof.samples[0]!.solution.map((mark, cell) => mark === 0 ? 1 : board.clues[cell] ? 2 : 0)
   const last = solution.lastIndexOf(1), unfinished = solution.map((mark, cell) => cell === last ? 0 : mark)
-  storeNurikabeProgress(board, unfinished, 5000)
+  storeNurikabeProgress(board, unfinished, { elapsedMs: 5000 })
   localStorage.setItem('daily-puzzles.stats', 'keep')
   await act(async () => root.render(<NurikabeStage board={board} />))
   await key(last, 's')

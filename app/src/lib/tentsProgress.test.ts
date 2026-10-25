@@ -9,7 +9,7 @@ it('restores only valid unfinished attempts for this exact preview board', () =>
   vi.stubGlobal('localStorage', { getItem: (k: string) => values.get(k) ?? null,
     setItem: (k: string, v: string) => values.set(k, v), removeItem: (k: string) => values.delete(k) })
   const board = parseTentsBoard(raw[0]), game = editTent(board, createTentsGame(board), 0, 2)
-  expect(storeTentsProgress(board, game, 4321, 2)).toBe(true)
+  expect(storeTentsProgress(board, game, { elapsedMs: 4321 }, 2)).toBe(true)
   expect(readTentsProgress(board)).toEqual({ game, elapsedMs: 4321, hints: 2 })
   expect(readTentsProgress(parseTentsBoard(raw[1]))).toBeNull()
   const [key, text] = [...values][0]!, saved = JSON.parse(text)
@@ -28,5 +28,5 @@ it('keeps play usable when storage is blocked', () => {
   vi.stubGlobal('localStorage', { getItem: () => { throw Error() }, setItem: () => { throw Error() } })
   const board = parseTentsBoard(raw[0])
   expect(readTentsProgress(board)).toBeNull()
-  expect(storeTentsProgress(board, createTentsGame(board), 0, 0)).toBe(false)
+  expect(storeTentsProgress(board, createTentsGame(board), { elapsedMs: 0 }, 0)).toBe(false)
 })

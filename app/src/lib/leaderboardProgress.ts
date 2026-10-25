@@ -1,3 +1,4 @@
+import { attemptTime } from './playTime'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { SolveRecord } from './stats'
 import { isPuzzleId } from '../domain/dates'
@@ -19,7 +20,7 @@ function parse(raw: string | null, project: string): Progress {
       || saved.pending.some(result => !result || !isPuzzleId(result.id) || !isLeaderboardNickname(result.nickname)
         || !isScoreNumber(result.elapsedMs) || !isScoreNumber(result.hints))
       || new Set(saved.pending.map(result => result.id)).size !== saved.pending.length) return empty
-    return { ...saved, pending: saved.enabled ? saved.pending : [] }
+    return { ...saved, pending: saved.enabled ? saved.pending.map(({ attemptElapsedMs, ...result }) => ({ ...result, ...attemptTime(attemptElapsedMs, result.elapsedMs) })) : [] }
   } catch { return empty }
 }
 
@@ -111,7 +112,7 @@ export function createLeaderboardStore(config: LeaderboardConfig | null, client:
           if (owner !== identity || removing || storageFailed) return
         }
         if (saved.pending.length >= 100) { overflow = true; emit(); return }
-        persist({ ...saved, pending: [...saved.pending, { id: record.id, nickname: saved.nickname, elapsedMs: record.elapsedMs, hints: record.hints }] })
+        persist({ ...saved, pending: [...saved.pending, { id: record.id, nickname: saved.nickname, elapsedMs: record.elapsedMs, ...attemptTime(record.attemptElapsedMs, record.elapsedMs), hints: record.hints }] })
         notice = 'Result queued.'; emit()
       })
       void retry()

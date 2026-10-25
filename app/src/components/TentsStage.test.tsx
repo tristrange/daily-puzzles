@@ -76,7 +76,7 @@ it('shows a line arrangement before applying one saved, undoable tent', async ()
     rowClues: [2, 0, 1, 0, 0, 0, 0, 0], colClues: [1, 1, 1, 0, 0, 0, 0, 0] })
   const open = [0, 1, 2, 16, 17, 18]
   const game = createTentsGame(board).map((_, cell) => board.trees.includes(cell) || open.includes(cell) ? 0 : 2)
-  storeTentsProgress(board, game, 5000, 2)
+  storeTentsProgress(board, game, { elapsedMs: 5000 }, 2)
   await act(async () => root.render(<TentsStage board={board} />))
   await click('Hint')
   expect(container.querySelector('.hint-panel')?.textContent).toContain('Possible tent columns: 1, 3')
@@ -122,7 +122,7 @@ it.each([0, 6])('completes preview %s without adding daily stats', async index =
   const solution = proof.samples[index]!.solution, last = solution.at(-1)!
   const game = createTentsGame(board).map((_, cell) => cell !== last && solution.includes(cell) ? 1 as const : 0 as const)
   localStorage.setItem(STATS_STORAGE_KEY, '[]')
-  storeTentsProgress(board, game, 5000, 2)
+  storeTentsProgress(board, game, { elapsedMs: 5000 }, 2)
   await act(async () => root.render(<TentsStage board={board} />))
   expect(container.querySelectorAll('[role="gridcell"]')).toHaveLength(board.size ** 2)
   await key(last, 'End')
@@ -141,9 +141,9 @@ it('finishes daily Tents, shares the first result, and keeps preview progress an
   const puzzle: Puzzle = { id: board.id, puzzleType: 'tents', seed: 123, generatorVersion: 1, board, difficulty: null }
   const solution = proof.samples[6]!.solution, last = solution.at(-1)!
   const game = createTentsGame(board).map((_, cell) => cell !== last && solution.includes(cell) ? 1 as const : 0 as const)
-  storeTentsProgress(preview, game, 9000, 1)
+  storeTentsProgress(preview, game, { elapsedMs: 9000 }, 1)
   const previewSave = localStorage.getItem(`daily-puzzles.tents-preview.v1.${preview.id}`)
-  storeTentsProgress(board, game, 5000, 2, true)
+  storeTentsProgress(board, game, { elapsedMs: 5000 }, 2, true)
   expect(readTentsProgress(board)).toBeNull()
   await act(async () => root.render(<MemoryRouter><TentsStage board={board} puzzle={puzzle} /></MemoryRouter>))
   expect(cell(solution[0]!).getAttribute('aria-label')).toContain('Tent')
@@ -165,7 +165,7 @@ it('finishes daily Tents, shares the first result, and keeps preview progress an
   expect(vi.mocked(copyText).mock.lastCall![0]).toContain('🌳')
   await act(async () => root.unmount())
   root = createRoot(container)
-  storeTentsProgress(board, game, 9000, 7, true)
+  storeTentsProgress(board, game, { elapsedMs: 9000 }, 7, true)
   await act(async () => root.render(<MemoryRouter><TentsStage board={board} puzzle={puzzle} /></MemoryRouter>))
   await key(last, '1')
   expect(container.querySelector('.solved-banner')?.textContent).toContain('your first solve')

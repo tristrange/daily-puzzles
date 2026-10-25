@@ -1,3 +1,4 @@
+import { attemptTime, validPlayTime, type PlayTime } from './playTime'
 /**
  * Unfinished Queens and Star Battle attempts, isolated by full puzzle ID.
  *
@@ -17,7 +18,7 @@ import { isSolved, type GameState } from '../domain/game'
 
 export type MarksProgress = {
   readonly game: GameState
-  readonly elapsedMs: number
+  readonly elapsedMs: number; readonly attemptElapsedMs?: number
   readonly hints: number
 }
 
@@ -61,16 +62,16 @@ export function readMarksProgress(id: string, board: Board): MarksProgress | nul
       clearMarksProgress(id)
       return null
     }
-    return { game, elapsedMs, hints }
+    return { game, elapsedMs, ...attemptTime(saved['attemptElapsedMs'], elapsedMs), hints }
   } catch {
     return null
   }
 }
 
-export function storeMarksProgress(id: string, game: GameState, elapsedMs: number, hints = 0): boolean {
+export function storeMarksProgress(id: string, game: GameState, time: PlayTime, hints = 0): boolean {
   const type = puzzleTypeOf(id)
   if ((type !== 'queens' && type !== 'star-battle') || game.board.puzzleType !== type
-    || !Number.isSafeInteger(elapsedMs) || elapsedMs < 0
+    || !validPlayTime(time)
     || !Number.isSafeInteger(hints) || hints < 0) return false
   if (isSolved(game)) {
     clearMarksProgress(id)
@@ -82,7 +83,7 @@ export function storeMarksProgress(id: string, game: GameState, elapsedMs: numbe
       board: fingerprint(game.board),
       queens: [...game.queens].sort((a, b) => a - b),
       marks: [...game.marks].sort((a, b) => a - b),
-      elapsedMs,
+      ...time,
       hints,
     }))
     return true

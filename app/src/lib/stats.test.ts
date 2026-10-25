@@ -594,3 +594,16 @@ describe('clearStats', () => {
     expect(map.size).toBe(0)
   })
 })
+
+it('retains valid latest-attempt metadata and preserves old results with malformed decoration', () => {
+  const legacy = { id: '2026-10-19', puzzleType: 'queens', size: 7, elapsedMs: 60000, hints: 2, solvedAt: 1000 }
+  for (const attemptElapsedMs of [0, 1000, 60000]) {
+    expect(parseStats(JSON.stringify([{ ...legacy, attemptElapsedMs }]))).toEqual([{ ...legacy, attemptElapsedMs }])
+  }
+  for (const attemptElapsedMs of [undefined, null, -1, .5, 60001, Number.MAX_SAFE_INTEGER + 1, '10']) {
+    expect(parseStats(JSON.stringify([{ ...legacy, attemptElapsedMs }]))).toEqual([legacy])
+  }
+  const first = { ...legacy, puzzleType: 'queens' as const, attemptElapsedMs: 1000 }
+  expect(addSolve([first], { ...first, attemptElapsedMs: 0, elapsedMs: 1 })).toEqual([first])
+  expect(summarise([first], legacy.id)).toMatchObject({ averageMs: 60000, fastestMs: 60000 })
+})

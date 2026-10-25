@@ -43,7 +43,7 @@ function playing(game = createWordGame(grid), hints = 0) {
     setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) })
   vi.stubGlobal('document', { hidden: false, hasFocus: () => true })
   const puzzle: Puzzle = { id: '2026-10-19-words', puzzleType: 'word-paths', seed: 1, generatorVersion: 2, board: grid, difficulty: null }
-  storeWordProgress(puzzle.id, game, 5000, false, hints)
+  storeWordProgress(puzzle.id, game, { elapsedMs: 5000 }, false, hints)
   const render = () => { hooks.cursor = 0; return children(WordPathsStage({ puzzle, grid, timeZone: 'UTC' })) }
   const board = () => render().find((el) => el.type === WordPathsBoard)!.props
   const panel = () => render().find((el) => el.type === HintPanel)

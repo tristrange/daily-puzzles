@@ -1,24 +1,34 @@
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react'
+import type { PlayTime } from './playTime'
 import { advanceWordClock } from '../domain/wordClock'
 
 const pageActive = () => !document.hidden && document.hasFocus()
 
-/** One focused-play duration for the display, saves and final result. */
-export function usePlayClock(initialElapsedMs: number, onSave: (elapsedMs: number) => void) {
-  const [elapsed, setElapsed] = useState(initialElapsedMs)
-  const clock = useRef({ elapsedMs: initialElapsedMs, lastAt: 0, visible: false })
+export function usePlayClock(initial: PlayTime, onSave: (time: PlayTime) => void) {
+  const [time, setTime] = useState(initial)
+  const baseline = useRef(initial.attemptElapsedMs === undefined ? null : initial.elapsedMs - initial.attemptElapsedMs)
+  const clock = useRef({ elapsedMs: initial.elapsedMs, lastAt: 0, visible: false })
   const stopped = useRef(false), timer = useRef<ReturnType<typeof setInterval> | null>(null)
   const save = useEffectEvent(onSave)
   const advance = useCallback((active: boolean) => {
     clock.current = advanceWordClock(clock.current, performance.now(), active && !stopped.current)
-    return Math.floor(clock.current.elapsedMs)
+    return { elapsedMs: Math.floor(clock.current.elapsedMs), ...(baseline.current === null ? {}
+      : { attemptElapsedMs: Math.floor(Math.max(0, clock.current.elapsedMs - baseline.current)) }) }
   }, [])
   const settle = useCallback(() => advance(pageActive()), [advance])
+  const restartAttempt = useCallback(() => {
+    if (stopped.current) return advance(false)
+    advance(pageActive())
+    baseline.current = clock.current.elapsedMs
+    const snapshot = { elapsedMs: Math.floor(clock.current.elapsedMs), attemptElapsedMs: 0 }
+    setTime(snapshot)
+    return snapshot
+  }, [advance])
   const stop = useCallback(() => {
     const time = advance(false)
     stopped.current = true
     if (timer.current !== null) clearInterval(timer.current)
-    setElapsed(time)
+    setTime(time)
     return time
   }, [advance])
   useEffect(() => {
@@ -27,7 +37,7 @@ export function usePlayClock(initialElapsedMs: number, onSave: (elapsedMs: numbe
     const flush = (active: boolean) => {
       if (stopped.current) return
       const time = advance(active)
-      setElapsed(time); save(time)
+      setTime(time); save(time)
     }
     const refresh = () => flush(pageActive()), pause = () => flush(false)
     timer.current = setInterval(refresh, 500)
@@ -42,5 +52,5 @@ export function usePlayClock(initialElapsedMs: number, onSave: (elapsedMs: numbe
       pause()
     }
   }, [advance])
-  return { elapsed, settle, stop }
+  return { time, settle, stop, restartAttempt }
 }

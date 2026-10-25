@@ -597,7 +597,7 @@ its embedded boards join the existing offline shell cache during production buil
 
 ## Shared focused-play clock
 
-All six daily games and their previews, including Sudoku, use `usePlayClock`. It
+All daily games and their previews use `usePlayClock`, including the Nurikabe preview. It
 accumulates monotonic time only while the document is visible and has focus.
 Blur, focus, visibility and page lifecycle events settle the interval immediately;
 a periodic tick updates the display and existing saves. Losing focus pauses time
@@ -605,6 +605,10 @@ even when the puzzle remains visible beside another application. Returning to
 focus resumes the same attempt; completion freezes the exact duration.
 
 Display, saved progress, solve records, shares and leaderboard submissions all use
-that accumulated duration. Save keys/formats and existing solved records are
-unchanged; earlier page-time or visibility-only totals cannot be reconstructed
-and remain as recorded. Reset and Undo/Redo do not restart the clock.
+that accumulated duration. A confirmed Reset establishes a private baseline for
+the secondary Since reset timer. Both times pause and freeze together. Undo/Redo
+restore the board without changing either timer. Progress keeps its keys and
+version, with optional `attemptElapsedMs` metadata that also travels through the
+first solve and publication queue. Leaderboards display known attempt times in
+parentheses and still rank by hints, then total time. Earlier totals and solved
+records remain as recorded; historical reset times cannot be reconstructed.

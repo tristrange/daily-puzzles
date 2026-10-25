@@ -57,15 +57,15 @@ afterEach(async () => {
 })
 
 function saveAttempts() {
-  storeMarksProgress(puzzles[0]!.id, createGame(marksBoard(puzzles[0]!)), 272000)
-  storeMarksProgress(puzzles[1]!.id, createGame(marksBoard(puzzles[1]!)), 65000)
+  storeMarksProgress(puzzles[0]!.id, createGame(marksBoard(puzzles[0]!)), { elapsedMs: 272000 })
+  storeMarksProgress(puzzles[1]!.id, createGame(marksBoard(puzzles[1]!)), { elapsedMs: 65000 })
   for (const [index, puzzle] of puzzles.slice(2, 5).entries()) {
-    storeTrackProgress(puzzle.id, createTracksGame(puzzle.board as TrackGrid), (index + 1) * 60000)
+    storeTrackProgress(puzzle.id, createTracksGame(puzzle.board as TrackGrid), { elapsedMs: (index + 1) * 60000 })
   }
-  storeWordProgress(puzzles[5]!.id, createWordGame(puzzles[5]!.board as WordGrid), 90000)
-  storeTrioProgress(puzzles[6]!.board as TrioGrid, createTrioGame(puzzles[6]!.board as TrioGrid), 125000, true)
-  storeTentsProgress(puzzles[7]!.board as TentsGrid, createTentsGame(puzzles[7]!.board as TentsGrid), 180000, 0, true)
-  for (const puzzle of puzzles.slice(8)) storeSudokuProgress(puzzle.board as SudokuGrid, createSudokuGame(puzzle.board as SudokuGrid), 245000, 2, true)
+  storeWordProgress(puzzles[5]!.id, createWordGame(puzzles[5]!.board as WordGrid), { elapsedMs: 90000 })
+  storeTrioProgress(puzzles[6]!.board as TrioGrid, createTrioGame(puzzles[6]!.board as TrioGrid), { elapsedMs: 125000 }, true)
+  storeTentsProgress(puzzles[7]!.board as TentsGrid, createTentsGame(puzzles[7]!.board as TentsGrid), { elapsedMs: 180000 }, 0, true)
+  for (const puzzle of puzzles.slice(8)) storeSudokuProgress(puzzle.board as SudokuGrid, createSudokuGame(puzzle.board as SudokuGrid), { elapsedMs: 245000 }, 2, true)
 }
 
 async function render() {
@@ -120,7 +120,7 @@ it('ignores stale saves and blocked storage instead of advertising a broken resu
 })
 
 it('offers a valid zero-time save without confusing it with a missing attempt', async () => {
-  storeMarksProgress(puzzles[0]!.id, createGame(marksBoard(puzzles[0]!)), 0)
+  storeMarksProgress(puzzles[0]!.id, createGame(marksBoard(puzzles[0]!)), { elapsedMs: 0 })
   await render()
   expect(link('Resume Queens at 0:00')).not.toBeNull()
   expect(link('Play Star Battle')).not.toBeNull()
