@@ -13,7 +13,10 @@ const RulesPage = lazy(() => import('./pages/RulesPage').then((module) => ({ def
 const StarBattlePage = lazy(() => import('./pages/StarBattlePage').then((module) => ({ default: module.StarBattlePage })))
 const StatsPage = lazy(() => import('./pages/StatsPage').then((module) => ({ default: module.StatsPage })))
 const LearnPage = lazy(() => import('./pages/LearnPage').then((module) => ({ default: module.LearnPage })))
-const SudokuLessonPage = lazy(() => import('./pages/LearnPage').then((module) => ({ default: module.SudokuLessonPage })))
+const SudokuLessonPage = lazy(() => import('./pages/SudokuLessonPage').then((module) => ({ default: module.SudokuLessonPage })))
+const SudokuCoursePage = lazy(() => import('./pages/SudokuCoursePage').then(module => ({ default: module.SudokuCoursePage })))
+const StarBattleCoursePage = lazy(() => import('./pages/StarBattleCoursePage').then(module => ({ default: module.StarBattleCoursePage })))
+const StarBattleLessonPage = lazy(() => import('./pages/StarBattleLessonPage').then(module => ({ default: module.StarBattleLessonPage })))
 const TrioPreviewPage = lazy(() => import('./pages/TrioPreviewPage').then((module) => ({ default: module.TrioPreviewPage })))
 const NurikabePreviewPage = lazy(() => import('./pages/NurikabePreviewPage').then((module) => ({ default: module.NurikabePreviewPage })))
 const TentsPreviewPage = lazy(() => import('./pages/TentsPreviewPage').then((module) => ({ default: module.TentsPreviewPage })))
@@ -42,6 +45,9 @@ function App() {
             <Route path="preview/sudoku" element={<SudokuPreviewPage />} />
             <Route path="stats" element={<StatsPage />} />
             <Route path="learn" element={<LearnPage />} />
+            <Route path="learn/sudoku" element={<SudokuCoursePage />} />
+            <Route path="learn/star-battle" element={<StarBattleCoursePage />} />
+            <Route path="learn/star-battle/:lessonId" element={<StarBattleLessonPage />} />
             <Route path="learn/sudoku/:lessonId" element={<SudokuLessonPage />} />
             <Route path="how-to-play" element={<RulesPage />} />
             <Route path="*" element={<NotFoundPage />} />

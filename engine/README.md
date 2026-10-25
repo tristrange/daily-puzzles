@@ -21,6 +21,23 @@ change. It validates the entire catalog before writing. Neither command searches
 for new boards. Exercise descriptors and givens share one catalog with the app.
 Answers remain in the review report and outside the app imports.
 
+## Checking Star Battle lessons
+
+The frozen catalog contains twelve prepared positions, three per technique. From
+this directory, verify exact unique solutions, the displayed stars and crosses,
+first forced moves, source hashes and independent remaining-capacity witnesses:
+
+```sh
+.venv/bin/python -m tools.star_battle_lessons
+.venv/bin/pytest -q tests/test_star_battle_lessons.py tests/test_sudoku_lessons.py
+```
+
+The command reads only the fixed corpus and referenced baseline positions. It does
+not search for examples or regenerate the hint baseline. `--write-report` writes
+`docs/measurements/star-battle-lessons.json` after the whole catalog passes. The
+runtime catalog contains only one target move per exercise. Full solutions belong
+to the review report and are never imported by the app.
+
 ## Generating a puzzle
 
 `tools/generate.py` produces a unique-solution puzzle and prints its ASCII render (the

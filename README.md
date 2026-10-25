@@ -71,11 +71,12 @@ ratings yet. These attempts do not count toward daily stats or leaderboards.
 - Saved unfinished attempts and timers that pause while the page is hidden or unfocused. Today offers Resume; Undo/Redo history belongs to the current visit. Reset asks for confirmation and restarts a separate Since reset timer. Total focused time and shown hints are kept, including through Undo and reload. Leaderboards rank by hints then total time; a parenthetical duration shows the latest attempt when known.
 - Explained logic hints with target/support highlights and optional, undoable moves. Word Paths reveals a starting cell, then additional letters on request.
 - Notes and Clear notes in Trio and Sudoku. Shown hint counts survive Undo, Reset and reload.
-- [Learn Sudoku techniques](https://tristrange.github.io/daily-puzzles/#/learn): three
-  exercises each for locked candidates, naked pairs, hidden pairs, naked triples and
-  X-wing. Start with a guided example, then practise two new positions with optional
-  pattern clues. Feedback and explanations help you practise one deduction at a time.
-  Progress saves separately for each exercise and technique.
+- [Learn to solve](https://tristrange.github.io/daily-puzzles/#/learn) offers game courses
+  with three exercises per technique. Sudoku has 15 exercises from locked candidates
+  through pairs, triples and X-wing. Star Battle has 12 exercises from last spaces
+  through group reservations. Start with a guided example, then practise two prepared
+  positions with optional clues. Check answers or reveal explanations without a timer.
+  Completion saves separately for each game and exercise.
 - Per-game archives and personal stats, with Sudoku level and Train Tracks size filters.
   Overall and per-game summaries show solve counts, average/fastest times, streaks and
   hints used. First solves count; results are shareable.

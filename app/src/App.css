@@ -1577,3 +1577,8 @@
 .play-timer { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; }
 .play-timer .timer-value small, .attempt-timer, .leaderboard-attempt { font-size: .75rem; font-weight: 400; color: var(--text); }
 .attempt-timer { white-space: nowrap; }
+.lesson-responses { display: flex; flex-wrap: wrap; gap: .5rem; }
+.lesson-responses .tool-button[aria-pressed='true'] { border-color: var(--accent); background: var(--accent-border); color: var(--accent); }
+.lesson-responses .tool-button:disabled { opacity: 1; }
+.lesson-evidence details { font-size: .8125rem; overflow-wrap: anywhere; }
+.lesson-evidence summary { cursor: pointer; padding-block: .5rem; }

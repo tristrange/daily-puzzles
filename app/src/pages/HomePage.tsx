@@ -94,7 +94,7 @@ export function HomePage() {
       )}
       <div className="today-more">
         <Link to="/preview/nurikabe">Try Nurikabe <span aria-hidden="true">→</span></Link>
-        <Link to="/learn">Learn Sudoku techniques <span aria-hidden="true">→</span></Link>
+        <Link to="/learn">Learn to solve <span aria-hidden="true">→</span></Link>
         <Link to="/preview/sudoku">Sudoku practice boards <span aria-hidden="true">→</span></Link>
         <p>Another round?</p>
         <Link to="/archive">Explore the archive <span aria-hidden="true">→</span></Link>

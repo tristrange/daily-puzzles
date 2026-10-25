@@ -4,7 +4,9 @@ import { createRoot, type Root } from 'react-dom/client'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { STATS_STORAGE_KEY } from '../lib/stats'
-import { LearnPage, SudokuLessonPage } from './LearnPage'
+import { LearnPage } from './LearnPage'
+import { SudokuLessonPage } from './SudokuLessonPage'
+import { SudokuCoursePage } from './SudokuCoursePage'
 
 let container: HTMLDivElement, root: Root
 beforeEach(() => {
@@ -19,6 +21,7 @@ afterEach(async () => {
 async function mount(url = '/learn/sudoku/locked-candidates') {
   await act(async () => root.render(<MemoryRouter initialEntries={[url]}>
     <Routes><Route path="/learn" element={<LearnPage />} />
+      <Route path="/learn/sudoku" element={<SudokuCoursePage />} />
       <Route path="/learn/sudoku/:lessonId" element={<SudokuLessonPage />} /></Routes>
   </MemoryRouter>))
 }
@@ -73,12 +76,12 @@ it('keeps exercises usable when saving completion is blocked', async () => {
 it('offers a way back for an unknown lesson link', async () => {
   await mount('/learn/sudoku/missing')
   expect(container.textContent).toContain('Lesson not found')
-  expect(container.querySelector('a')?.getAttribute('href')).toBe('/learn')
+  expect(container.querySelector('a')?.getAttribute('href')).toBe('/learn/sudoku')
 })
 
 it('counts only known, distinct completed lessons from browser storage', async () => {
   localStorage.setItem('daily-puzzles:sudoku-lessons:v1', JSON.stringify(['pairs', 'pairs', 'unknown', null]))
-  await mount('/learn')
+  await mount('/learn/sudoku')
   expect(container.textContent).toContain('1 of 15 completed')
   expect(container.querySelectorAll('.lesson-completed')).toHaveLength(1)
 })
@@ -107,7 +110,7 @@ it.each([
 
 it('preserves old completion IDs and groups fifteen exercises into five technique cards', async () => {
   localStorage.setItem('daily-puzzles:sudoku-lessons:v1', JSON.stringify(['locked-candidates', 'pairs', 'x-wing']))
-  await mount('/learn')
+  await mount('/learn/sudoku')
   expect(container.textContent).toContain('3 of 15 completed')
   expect(container.querySelectorAll('.lesson-completed')).toHaveLength(3)
   expect(container.querySelectorAll('.lesson-exercise-links a')).toHaveLength(15)

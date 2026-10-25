@@ -218,7 +218,7 @@ export function RulesPage() {
         Preview solves do not affect daily stats or streaks. No difficulty rating yet.</p>
 
       <h2 id="sudoku" tabIndex={-1}>Sudoku</h2>
-      <p><Link to="/learn">Learn Sudoku techniques</Link> with short exercises on locked candidates, naked pairs and X-wing.</p>
+      <p><Link to="/learn/sudoku">Learn Sudoku techniques</Link> with short exercises on locked candidates, naked pairs and X-wing.</p>
       <p>Fill the 9×9 board with digits 1–9, once in every row, column and 3×3 box.
         Given numbers are fixed. Notes are optional and do not count as filled cells.</p>
       <p>Select a cell, then tap a number or press 1–9. N toggles Notes; tap digits
