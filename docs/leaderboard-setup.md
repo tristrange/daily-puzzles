@@ -26,7 +26,9 @@ once. It creates the tables, private rate counter and restricted RPC functions
 in one transaction. Reapplying it fails without dropping the existing data.
 Then apply [`002_tents.sql`](../backend/leaderboard/migrations/002_tents.sql)
 and [`003_sudoku.sql`](../backend/leaderboard/migrations/003_sudoku.sql)
-to support all seven puzzle families before synchronizing the catalog.
+to support all seven puzzle families before synchronizing the catalog. Then apply
+[`20261025113819_reset_attempt_time.sql`](../backend/leaderboard/migrations/20261025113819_reset_attempt_time.sql)
+for optional since-reset durations.
 Never run `tests/auth-fixture.sql` on Supabase: that file belongs only in the
 disposable local test database. Configure CAPTCHA before enabling anonymous
 sign-ins; the provider toggles alone do not activate publishing in the app.
@@ -77,6 +79,34 @@ sync registers each committed level separately. Confirm an existing game's
 ranking still loads and each Sudoku level has its own ranking. For rollback,
 redeploy the previous app and leave `003` applied; preserve Sudoku catalog rows
 and scores and keep the expanded constraints.
+
+### Upgrade an existing project for reset timers
+
+Before merging or deploying the reset timer release, open the existing Supabase
+project's **SQL Editor** and create a new query. Paste the complete contents of
+[`20261025113819_reset_attempt_time.sql`](../backend/leaderboard/migrations/20261025113819_reset_attempt_time.sql)
+and click **Run**. Apply `001`, `002`, and `003` first on a fresh project.
+Do not rerun `001` on an existing project.
+
+The transaction adds nullable `attempt_elapsed_ms` and replaces `submit_result`
+with one five-argument signature. Its trailing parameter defaults to null, so
+existing four-argument clients keep working without an ambiguous overload.
+Existing rows retain null. Known durations must be safe nonnegative integers no
+greater than total `elapsed_ms`. The migration restores authenticated-only
+submission permission and requests a PostgREST schema reload.
+
+Apply the migration before deploying the app. New clients send the optional
+parameter only for a solve after Reset. An older server can reject that new
+parameter; the local result and queued payload remain available for Retry after
+the upgrade. Verify an existing ranking loads, then publish a reset solve and
+check its total and parenthetical since-reset duration. Ranking still uses
+fewest hints followed by total focused time. The first result remains immutable.
+
+The migration can be rerun, including after new metadata has been stored.
+A failure rolls back the transaction. Resolve the SQL error before deployment.
+For rollback, redeploy the previous app and leave the migration applied.
+Preserve the new column and existing results. Older clients ignore the optional
+response property, which is omitted for legacy rows.
 
 ## 2. Prepare free signup protection
 
@@ -152,9 +182,12 @@ database. A test-only Auth fixture supplies the roles and `auth.uid()` context;
 the checks exercise real PostgreSQL permissions, rankings, duplicates, owner
 deletion, write limits and concurrent first submissions.
 The harness tests a clean `001` + `002` + `003` install and seeded upgrades from
-`001` through `002` and `003`, including repeated migrations, unchanged
-rows/security/RPCs, retained Tents and Sudoku scores, separate Sudoku levels and
-rejection of mismatched family/ID/level metadata. These checks do not prove
+`001` through `002` and `003`, followed by the attempt timing migration. It checks
+repeated migrations, preserved rows and permissions, retained Tents and Sudoku
+scores, separate Sudoku levels, and rejection of mismatched family metadata.
+Attempt checks cover old and new callers, first-result retention, total-time
+ranking, legacy JSON, optional metadata inside and outside the top 25, and retry
+after metadata has been stored. These checks do not prove
 Supabase HTTP authentication or CAPTCHA; the two real anonymous sessions in the
 activation checks below cover those. No new npm/Python packages are needed here.
 

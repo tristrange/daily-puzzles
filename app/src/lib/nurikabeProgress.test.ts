@@ -11,7 +11,7 @@ it('restores only this exact unfinished preview and clears completion without to
   vi.stubGlobal('localStorage', { getItem: (key: string) => values.get(key) ?? null,
     setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) })
   const game = editNurikabeCell(board, createNurikabeGame(board), 1, 1)
-  expect(storeNurikabeProgress(board, game, 4321)).toBe(true)
+  expect(storeNurikabeProgress(board, game, { elapsedMs: 4321 })).toBe(true)
   expect(readNurikabeProgress(board)).toEqual({ game, elapsedMs: 4321 })
   expect(readNurikabeProgress(boards[1]!)).toBeNull()
   const key = `daily-puzzles.nurikabe-preview.v1.${board.id}`
@@ -24,7 +24,7 @@ it('restores only this exact unfinished preview and clears completion without to
   const solution: NurikabeGame = proof.samples[0]!.solution.map((mark, cell) => mark === 0 ? 1 : board.clues[cell] ? 2 : 0)
   values.set(key, JSON.stringify({ ...saved, game: solution }))
   expect(readNurikabeProgress(board)).toBeNull()
-  expect(storeNurikabeProgress(board, solution, 5000)).toBe(true)
+  expect(storeNurikabeProgress(board, solution, { elapsedMs: 5000 })).toBe(true)
   expect(values.has(key)).toBe(false)
   expect(values.get('daily-puzzles.stats')).toBe('keep')
   values.set(key, '{')
@@ -34,5 +34,5 @@ it('restores only this exact unfinished preview and clears completion without to
 it('reports blocked storage without preventing play', () => {
   vi.stubGlobal('localStorage', { getItem: () => { throw Error() }, setItem: () => { throw Error() } })
   expect(readNurikabeProgress(board)).toBeNull()
-  expect(storeNurikabeProgress(board, createNurikabeGame(board), 0)).toBe(false)
+  expect(storeNurikabeProgress(board, createNurikabeGame(board), { elapsedMs: 0 })).toBe(false)
 })

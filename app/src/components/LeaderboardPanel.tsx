@@ -14,10 +14,10 @@ export function LeaderboardTable({ board }: { board: LeaderboardSnapshot }) {
       <caption className="sr-only">Puzzle results, ranked by hints used then elapsed time</caption>
       <thead><tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col">Time</th><th scope="col">Hints</th></tr></thead>
       <tbody>{rows.map((entry, position) => <tr key={position} className={`${entry.is_you ? 'is-you' : ''}${position === board.entries.length ? ' own-outside' : ''}`}>
-        <td>{entry.rank}</td><th scope="row">{entry.nickname}{entry.is_you && <span className="leaderboard-you">You</span>}</th><td>{formatTime(entry.elapsed_ms)}</td><td>{entry.hints}</td>
+        <td>{entry.rank}</td><th scope="row">{entry.nickname}{entry.is_you && <span className="leaderboard-you">You</span>}</th><td>{formatTime(entry.elapsed_ms)}{entry.attempt_elapsed_ms !== undefined && <small className="leaderboard-attempt"> ({formatTime(entry.attempt_elapsed_ms)} since reset)</small>}</td><td>{entry.hints}</td>
       </tr>)}</tbody>
     </table>
-    <p className="leaderboard-note">{board.total} player{board.total === 1 ? '' : 's'} · Fewest hints, then fastest time. Tied scores share rank.</p>
+    <p className="leaderboard-note">{board.total} player{board.total === 1 ? '' : 's'} · Fewest hints, then fastest total time. Tied scores share rank.</p>
   </>
 }
 

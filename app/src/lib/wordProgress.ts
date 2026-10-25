@@ -1,3 +1,4 @@
+import { attemptTime, validPlayTime, type PlayTime } from './playTime'
 /** Word Paths attempts; preview and daily records never share a key. */
 import { puzzleTypeOf } from '../domain/dates'
 import { createWordGame, isWordSolved, spellPath, submitWord, type WordGame } from '../domain/wordGame'
@@ -6,7 +7,7 @@ import type { WordGrid } from '../domain/wordPaths'
 const key = (id: string, preview: boolean, version: 1 | 2 = 1) => `daily-puzzles.word-progress.${preview ? 'preview.' : ''}${id}${version === 1 ? '' : '.v2'}`
 const fingerprint = (grid: WordGrid) => JSON.stringify([grid.width, grid.height, grid.letters, grid.wordLengths])
 
-export function readWordProgress(id: string, grid: WordGrid, preview = false): { game: WordGame; elapsedMs: number; hints: number } | null {
+export function readWordProgress(id: string, grid: WordGrid, preview = false): { game: WordGame; elapsedMs: number; attemptElapsedMs?: number; hints: number } | null {
   if (puzzleTypeOf(id) !== 'word-paths') return null
   try {
     const raw: unknown = JSON.parse(localStorage.getItem(key(id, preview, grid.vocabularyVersion)) ?? 'null')
@@ -36,12 +37,12 @@ export function readWordProgress(id: string, grid: WordGrid, preview = false): {
       clearWordProgress(id, preview, grid.vocabularyVersion)
       return null
     }
-    return { game: { ...game, trace }, elapsedMs, hints }
+    return { game: { ...game, trace }, elapsedMs, ...attemptTime(data['attemptElapsedMs'], elapsedMs), hints }
   } catch { return null }
 }
 
-export function storeWordProgress(id: string, game: WordGame, elapsedMs: number, preview = false, hints = 0): boolean {
-  if (puzzleTypeOf(id) !== 'word-paths' || !Number.isSafeInteger(elapsedMs) || elapsedMs < 0
+export function storeWordProgress(id: string, game: WordGame, time: PlayTime, preview = false, hints = 0): boolean {
+  if (puzzleTypeOf(id) !== 'word-paths' || !validPlayTime(time)
     || !Number.isSafeInteger(hints) || hints < 0) return false
   if (isWordSolved(game)) {
     clearWordProgress(id, preview, game.grid.vocabularyVersion)
@@ -49,7 +50,7 @@ export function storeWordProgress(id: string, game: WordGame, elapsedMs: number,
   }
   try {
     localStorage.setItem(key(id, preview, game.grid.vocabularyVersion), JSON.stringify({
-      version: 1, board: fingerprint(game.grid), words: game.words, trace: game.trace, elapsedMs, hints,
+      version: 1, board: fingerprint(game.grid), words: game.words, trace: game.trace, ...time, hints,
     }))
     return true
   } catch { return false }

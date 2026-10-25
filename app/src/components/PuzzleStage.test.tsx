@@ -8,6 +8,7 @@ import { marksBoard } from '../domain/helpers'
 import { readStoredStats } from '../lib/stats'
 import { clearMarksProgress, readMarksProgress, storeMarksProgress } from '../lib/marksProgress'
 import { PuzzleStage } from './PuzzleView'
+import { PlayTimer } from './PlayTimer'
 import { InteractiveBoard } from './InteractiveBoard'
 
 const publication = vi.hoisted(() => ({ offerSolve: vi.fn() }))
@@ -62,7 +63,7 @@ afterEach(() => {
 
 it('warns before revealing a wrong star and applies its removal with Undo/Redo', () => {
   const { board, click, panel, warning, puzzle, markBoard } = playing(star, (puzzle, board) => {
-    storeMarksProgress(puzzle.id, { board, queens: new Set([0]), marks: new Set([1]) }, 1000, 2)
+    storeMarksProgress(puzzle.id, { board, queens: new Set([0]), marks: new Set([1]) }, { elapsedMs: 1000 }, 2)
   })
   click('Hint')
   expect(warning()).toBeDefined()
@@ -86,7 +87,7 @@ it('warns before revealing a wrong star and applies its removal with Undo/Redo',
 
 it('clears one wrong cross without placing a queen or changing other marks', () => {
   const { board, click, panel, warning, puzzle, markBoard } = playing(queen, (puzzle, board) => {
-    storeMarksProgress(puzzle.id, { board, queens: new Set([3]), marks: new Set([0, 5]) }, 0, 0)
+    storeMarksProgress(puzzle.id, { board, queens: new Set([3]), marks: new Set([0, 5]) }, { elapsedMs: 0 }, 0)
   })
   click('Hint')
   expect(warning()).toBeDefined()
@@ -105,7 +106,7 @@ it('clears one wrong cross without placing a queen or changing other marks', () 
 it.each([['Queens', queen], ['Star Battle', star]] as const)(
   '%s can dismiss a warning or keep playing without revealing or counting a correction', (_, raw) => {
     const { board, click, panel, warning, puzzle, markBoard, render } = playing(raw, (puzzle, board) => {
-      storeMarksProgress(puzzle.id, { board, queens: new Set([0]), marks: new Set() }, 0, 0)
+      storeMarksProgress(puzzle.id, { board, queens: new Set([0]), marks: new Set() }, { elapsedMs: 0 }, 0)
     })
     click('Hint')
     click('Hint')
@@ -163,12 +164,12 @@ it('restores an unfinished attempt with its board, hints and elapsed time', () =
       board,
       queens: new Set([3, 5, 12, 19]),
       marks: new Set([8]),
-    }, 1234, 2)
+    }, { elapsedMs: 1234 }, 2)
   })
   const game = board()['game'] as { queens: Set<number>; marks: Set<number> }
   expect(game.queens).toEqual(new Set([3, 5, 12, 19]))
   expect(game.marks).toEqual(new Set([8]))
-  expect(render().find((element) => element.props['role'] === 'timer')!.props['children']).toBe('0:01')
+  expect(render().find((element) => element.type === PlayTimer)!.props['time']).toMatchObject({ elapsedMs: 1234 })
   ;(board()['onToggleQueen'] as (cell: number) => void)(21)
   expect(board()['locked']).toBe(true)
   expect(readStoredStats()).toMatchObject([{ id: puzzle.id, hints: 2 }])

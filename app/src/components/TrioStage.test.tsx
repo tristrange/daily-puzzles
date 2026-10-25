@@ -53,7 +53,7 @@ const cell = raw[0]!.givens.indexOf(0)
 function nearlySolved(board: Board, elapsed: number, daily = false, hints = 0) {
   const cells = [...pilot.samples[0]!.solution] as TrioValue[]
   cells[cell] = 0
-  storeTrioProgress(board, { cells, notes: Array<number>(81).fill(0) }, elapsed, daily, hints)
+  storeTrioProgress(board, { cells, notes: Array<number>(81).fill(0) }, { elapsedMs: elapsed }, daily, hints)
 }
 function finish(playing: ReactElement<Record<string, unknown>>) {
   ;(playing.props['onBegin'] as () => void)()
@@ -71,7 +71,7 @@ it.each([false, true])('clears all notes as one saved, undoable move (daily: %s)
   cells[empty[0]!] = 3
   notes[empty[1]!] = 1
   notes[empty[2]!] = 7
-  storeTrioProgress(board, { cells, notes }, 5000, daily, 2)
+  storeTrioProgress(board, { cells, notes }, { elapsedMs: 5000 }, daily, 2)
   const render = () => { hooks.cursor = 0; return children(TrioStage({ board, ...(puzzle ? { puzzle } : {}) })) }
   const button = (name: string) => render().find(element => element.type === 'button' && element.props['children'] === name)
   const playing = () => render().find(element => element.type === TrioBoard)!.props

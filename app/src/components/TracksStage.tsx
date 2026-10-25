@@ -1,3 +1,4 @@
+import { PlayTimer } from './PlayTimer'
 import { useLeaderboard } from '../lib/useLeaderboard'
 import { usePlayClock } from '../lib/usePlayClock'
 /** Track pieces and directional rules need their own stage; controls and hint presentation are shared. */
@@ -79,9 +80,10 @@ export function TracksStage({
 
   useEffect(() => { currentGame.current = game }, [game])
 
-  const { elapsed, settle, stop } = usePlayClock(initialProgress?.elapsedMs ?? 0, time => {
+  const { time, settle, stop, restartAttempt } = usePlayClock(initialProgress ?? { elapsedMs: 0 }, time => {
     setSavingAvailable(storeTrackProgress(puzzle.id, currentGame.current, time, hintsUsed.current))
   })
+  const elapsed = time.elapsedMs
 
   // Nothing is flagged until the player has placed something. The givens are
   // pieces, and a given whose far end faces an empty cell is an unfinished board
@@ -102,18 +104,18 @@ export function TracksStage({
   // prevents is silent: the board renders locked, the clock runs on, and nothing
   // is ever stored.
   const recordSolve = useCallback((when: number) => {
-    const time = stop()
+    const stoppedTime = stop()
     completed.current = true
     clearTrackProgress(puzzle.id)
     setSolvedAt(when)
     // Read before storing, so a replay can be told why its time was not kept.
     const earlier = readStoredStats().find((record) => record.id === puzzle.id)
     const record: SolveRecord = { id: puzzle.id, puzzleType: puzzle.puzzleType, size: grid.width,
-      elapsedMs: time, hints: hintsUsed.current, solvedAt: when }
+      ...stoppedTime, hints: hintsUsed.current, solvedAt: when }
     setStats(summarise(storeSolve(record), puzzleOfToday(new Date(when), timeZone)))
     if (!earlier) { setCandidate(record); offerSolve(record) }
     setFirstSolve(earlier ?? null)
-    setAnnouncement(`Solved in ${formatTime(time)}!`)
+    setAnnouncement(`Solved in ${formatTime(stoppedTime.elapsedMs)}!`)
   }, [grid.width, puzzle.id, puzzle.puzzleType, stop, timeZone, offerSolve])
 
   // Arrived already solved. `solvedAt` is the guard, exactly as it is for a
@@ -193,6 +195,7 @@ export function TracksStage({
 
   const reset = () => {
     if (solved || strokeStart.current !== null || isEmpty(game)) return
+    restartAttempt()
     applyGame(resetGame(game))
     setAnnouncement('Board cleared. Undo brings it back.')
   }
@@ -274,9 +277,7 @@ export function TracksStage({
       <div className="tracks-workspace">
         <div className="tracks-controls">
           <div className="puzzle-tools">
-            <span className="timer" role="timer" aria-label="Elapsed time">
-              {formatTime(shownTime)}
-            </span>
+            <PlayTimer time={time} />
             <button
               type="button"
               className="tool-button"

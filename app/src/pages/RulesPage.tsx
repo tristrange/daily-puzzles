@@ -41,7 +41,7 @@ export function RulesPage() {
           <tr><th scope="row">Ctrl / Cmd + Shift + Z<br />Ctrl + Y</th><td>Redo an undone move. Making a new move clears Redo.</td></tr>
         </tbody>
       </table>
-      <p>Timers count only while the puzzle page is visible and focused. Switching tabs, minimizing the window or using another app pauses the clock. Reset asks for confirmation before clearing your attempt; accumulated time is kept. You can Undo a reset.
+      <p>Timers count only while the puzzle page is visible and focused. Switching tabs, minimizing the window or using another app pauses the clock. Reset asks for confirmation before clearing your moves. Total time and shown hints are kept, and a separate Since reset timer restarts. Undo restores the board without changing either timer.
         Undo and Redo history lasts while the puzzle is open and is cleared by reloading or leaving it.
         Rules links inside a game open a new tab so you can consult them without leaving your board.</p>
 
@@ -208,7 +208,7 @@ export function RulesPage() {
         and are not checked. Placing a symbol clears that cell&rsquo;s notes.</p>
       <p>Keys 1, 2 and 3 place sun, moon and star; Enter or Space uses the picker.
         N toggles Notes. Delete, Backspace or 0 erases. Arrow keys and Home/End move
-        around the board; Ctrl/Cmd+Z undoes and Ctrl/Cmd+Shift+Z redoes. Reset asks for confirmation, keeps accumulated time and can be undone.</p>
+        around the board; Ctrl/Cmd+Z undoes and Ctrl/Cmd+Shift+Z redoes. Reset asks for confirmation and restarts Since reset. Total time and hints are kept. Undo restores only the board.</p>
       <p>Hint explains a deduction and highlights its target with a solid outline and supporting cells with dashed outlines.
         Apply move places a forced symbol or updates one cell&rsquo;s notes to the remaining possibilities.
         Nothing changes until you apply; Undo restores the previous move. Hints ignore your notes as evidence.

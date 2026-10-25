@@ -32,13 +32,13 @@ const starGame: GameState = { board: starBoard, queens: new Set([0, 2]), marks: 
 describe('marks progress', () => {
   it('restores queens, crosses, shown hints and elapsed time under the full ID', () => {
     const values = memoryStorage()
-    expect(storeMarksProgress(queenPuzzle.id, queenGame, 1234, 2)).toBe(true)
+    expect(storeMarksProgress(queenPuzzle.id, queenGame, { elapsedMs: 1234 }, 2)).toBe(true)
     expect(readMarksProgress(queenPuzzle.id, queenBoard)).toEqual({
       game: queenGame,
       elapsedMs: 1234,
       hints: 2,
     })
-    expect(storeMarksProgress(starPuzzle.id, starGame, 4321, 1)).toBe(true)
+    expect(storeMarksProgress(starPuzzle.id, starGame, { elapsedMs: 4321 }, 1)).toBe(true)
     expect(readMarksProgress(starPuzzle.id, starBoard)).toEqual({
       game: starGame,
       elapsedMs: 4321,
@@ -52,17 +52,17 @@ describe('marks progress', () => {
 
   it('rejects a different board, the wrong family, and a foreign ID', () => {
     memoryStorage()
-    storeMarksProgress(queenPuzzle.id, queenGame, 1000)
+    storeMarksProgress(queenPuzzle.id, queenGame, { elapsedMs: 1000 })
     expect(readMarksProgress(queenPuzzle.id, otherQueenBoard)).toBeNull()
     expect(readMarksProgress(queenPuzzle.id, starBoard)).toBeNull()
     expect(readMarksProgress('2026-10-14-tracks', queenBoard)).toBeNull()
-    expect(storeMarksProgress(queenPuzzle.id, starGame, 1000)).toBe(false)
-    expect(storeMarksProgress(starPuzzle.id, queenGame, 1000)).toBe(false)
+    expect(storeMarksProgress(queenPuzzle.id, starGame, { elapsedMs: 1000 })).toBe(false)
+    expect(storeMarksProgress(starPuzzle.id, queenGame, { elapsedMs: 1000 })).toBe(false)
   })
 
   it('reads an old snapshot without a hint count as zero', () => {
     const values = memoryStorage()
-    storeMarksProgress(queenPuzzle.id, queenGame, 1000, 3)
+    storeMarksProgress(queenPuzzle.id, queenGame, { elapsedMs: 1000 }, 3)
     const [key, raw] = [...values][0]!
     const saved = JSON.parse(raw)
     delete saved.hints
@@ -86,7 +86,7 @@ describe('marks progress', () => {
     ['overlapping mark', { marks: [3] }],
   ])('rejects an invalid %s snapshot', (_, override) => {
     const values = memoryStorage()
-    storeMarksProgress(queenPuzzle.id, queenGame, 1000)
+    storeMarksProgress(queenPuzzle.id, queenGame, { elapsedMs: 1000 })
     const [key, raw] = [...values][0]!
     values.set(key, JSON.stringify({ ...JSON.parse(raw), ...override }))
     expect(readMarksProgress(queenPuzzle.id, queenBoard)).toBeNull()
@@ -94,7 +94,7 @@ describe('marks progress', () => {
 
   it('rejects corrupt JSON and tolerates unavailable storage', () => {
     const values = memoryStorage()
-    storeMarksProgress(queenPuzzle.id, queenGame, 1000)
+    storeMarksProgress(queenPuzzle.id, queenGame, { elapsedMs: 1000 })
     values.set([...values.keys()][0]!, '{')
     expect(readMarksProgress(queenPuzzle.id, queenBoard)).toBeNull()
     vi.stubGlobal('localStorage', {
@@ -103,13 +103,13 @@ describe('marks progress', () => {
       removeItem: () => { throw new Error('blocked') },
     })
     expect(readMarksProgress(queenPuzzle.id, queenBoard)).toBeNull()
-    expect(storeMarksProgress(queenPuzzle.id, queenGame, 1000)).toBe(false)
+    expect(storeMarksProgress(queenPuzzle.id, queenGame, { elapsedMs: 1000 })).toBe(false)
     expect(() => clearMarksProgress(queenPuzzle.id)).not.toThrow()
   })
 
   it('clears a solved snapshot and refuses to store another one', () => {
     const values = memoryStorage()
-    storeMarksProgress(queenPuzzle.id, queenGame, 1000)
+    storeMarksProgress(queenPuzzle.id, queenGame, { elapsedMs: 1000 })
     const [key, raw] = [...values][0]!
     values.set(key, JSON.stringify({
       ...JSON.parse(raw),
@@ -119,22 +119,22 @@ describe('marks progress', () => {
     expect(readMarksProgress(queenPuzzle.id, queenBoard)).toBeNull()
     expect(values.size).toBe(0)
 
-    storeMarksProgress(queenPuzzle.id, queenGame, 1000)
+    storeMarksProgress(queenPuzzle.id, queenGame, { elapsedMs: 1000 })
     const solved: GameState = {
       board: queenBoard,
       queens: new Set([3, 5, 12, 19, 21]),
       marks: new Set(),
     }
     expect(isSolved(solved)).toBe(true)
-    expect(storeMarksProgress(queenPuzzle.id, solved, 2000, 1)).toBe(true)
+    expect(storeMarksProgress(queenPuzzle.id, solved, { elapsedMs: 2000 }, 1)).toBe(true)
     expect(values.size).toBe(0)
   })
 
   it('rejects invalid durations and hint counts instead of writing them', () => {
     memoryStorage()
-    expect(storeMarksProgress(queenPuzzle.id, queenGame, -1)).toBe(false)
-    expect(storeMarksProgress(queenPuzzle.id, queenGame, 0.5)).toBe(false)
-    expect(storeMarksProgress(queenPuzzle.id, queenGame, 1000, -1)).toBe(false)
-    expect(storeMarksProgress(queenPuzzle.id, queenGame, 1000, 0.5)).toBe(false)
+    expect(storeMarksProgress(queenPuzzle.id, queenGame, { elapsedMs: -1 })).toBe(false)
+    expect(storeMarksProgress(queenPuzzle.id, queenGame, { elapsedMs: 0.5 })).toBe(false)
+    expect(storeMarksProgress(queenPuzzle.id, queenGame, { elapsedMs: 1000 }, -1)).toBe(false)
+    expect(storeMarksProgress(queenPuzzle.id, queenGame, { elapsedMs: 1000 }, 0.5)).toBe(false)
   })
 })

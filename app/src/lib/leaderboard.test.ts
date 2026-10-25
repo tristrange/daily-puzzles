@@ -121,3 +121,28 @@ it('uses the supplied durable storage after startup storage failure recovers', a
   expect(JSON.parse(values.get('daily-puzzles:leaderboard:auth:example.supabase.co') ?? 'null')?.user.id).toBe('persistent-player')
   await client.auth.stopAutoRefresh()
 })
+
+it('retains optional attempt metadata and drops malformed decoration without losing valid rows', async () => {
+  for (const attempt_elapsed_ms of [0, 60000]) {
+    const row = { ...alice, attempt_elapsed_ms }
+    respond({ entries: [row], total: 26, own_entry: { ...row, is_you: true } })
+    const board = await readLeaderboard(createLeaderboardClient(config), '2026-10-19')
+    expect(board.entries).toEqual([row])
+    expect(board.own_entry).toEqual({ ...row, is_you: true })
+  }
+  for (const attempt_elapsed_ms of [null, -1, .5, 60001, Number.MAX_SAFE_INTEGER + 1, '10']) {
+    respond({ entries: [{ ...alice, attempt_elapsed_ms }], total: 1, own_entry: null })
+    expect((await readLeaderboard(createLeaderboardClient(config), '2026-10-19')).entries).toEqual([alice])
+  }
+})
+
+it('publishes a known zero attempt while rejecting invalid attempt writes', async () => {
+  const requests = respond({ status: 'created' }), client = authorizedClient()
+  const result = { id: '2026-10-19', nickname: 'Alice', elapsedMs: 60000, attemptElapsedMs: 0, hints: 2 }
+  await submitLeaderboardResult(client, result, 'player-a')
+  expect(requests[0]?.body).toEqual({ p_puzzle_id: result.id, p_nickname: 'Alice', p_elapsed_ms: 60000, p_hints: 2, p_attempt_elapsed_ms: 0 })
+  for (const attemptElapsedMs of [-1, .5, 60001, Number.MAX_SAFE_INTEGER + 1]) {
+    await expect(submitLeaderboardResult(client, { ...result, attemptElapsedMs }, 'player-a')).rejects.toThrow()
+  }
+  expect(requests).toHaveLength(1)
+})

@@ -1,3 +1,4 @@
+import { PlayTimer } from './PlayTimer'
 import { useLeaderboard } from '../lib/useLeaderboard'
 import type { Puzzle } from '../domain/puzzle'
 import { puzzleOfToday } from '../domain/dates'
@@ -39,9 +40,10 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
   const conflicts = tentsConflicts(board, game)
   const reasons = useMemo(() => hint ? hint.reason.split('\n') : [], [hint])
 
-  const { elapsed, settle, stop } = usePlayClock(initial?.elapsedMs ?? 0, time => {
+  const { time, settle, stop, restartAttempt } = usePlayClock(initial ?? { elapsedMs: 0 }, time => {
     setSaving(storeTentsProgress(board, current.current, time, hintsUsed.current, daily))
   })
+  const elapsed = time.elapsedMs
   const save = () => { setSaving(storeTentsProgress(board, current.current, settle(), hintsUsed.current, daily)) }
   const change = (next: TentsGame) => { current.current = next; setGame(next) }
   const begin = () => { if (!completed.current) { before.current = current.current; setHint(null) } }
@@ -55,13 +57,13 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
     else if (previous !== current.current) {
       history.remember(previous)
       if (isTentsSolved(board, current.current)) {
-        const elapsedMs = stop()
+        const stoppedTime = stop()
         if (puzzle) {
           const when = Date.now()
           const earlier = readStoredStats().find(record => record.id === puzzle.id)
           setFirstSolve(earlier ?? null)
           const record: SolveRecord = { id: puzzle.id, puzzleType: 'tents', size: board.size,
-            elapsedMs, hints: hintsUsed.current, solvedAt: when }
+            ...stoppedTime, hints: hintsUsed.current, solvedAt: when }
           setStats(summarise(storeSolve(record), puzzleOfToday(new Date(when), Intl.DateTimeFormat().resolvedOptions().timeZone)))
           if (!earlier) { setCandidate(record); offerSolve(record) }
         }
@@ -84,8 +86,9 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
   }
   const reset = () => {
     if (completed.current || before.current || !current.current.some(Boolean)) return
+    restartAttempt()
     setHint(null); history.remember(current.current); change(createTentsGame(board))
-    setMessage('Board cleared. Undo brings it back; the clock keeps running.'); save()
+    setMessage('Board cleared. Undo brings it back; total time and hints are kept.'); save()
   }
   const requestHint = () => {
     if (completed.current || before.current) return
@@ -125,7 +128,7 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
     <div className="tents-workspace">
       <div className="tents-controls">
         <div className="puzzle-tools">
-          <span className="timer" role="timer" aria-label="Elapsed active time">{formatTime(elapsed)}</span>
+          <PlayTimer time={time} />
           <button className="tool-button" type="button" onClick={undo} disabled={solved || !history.canUndo}>Undo</button>
           <button className="tool-button" type="button" onClick={redo} disabled={solved || !history.canRedo}>Redo</button>
           <ResetButton onReset={reset} disabled={solved || !game.some(Boolean)} />

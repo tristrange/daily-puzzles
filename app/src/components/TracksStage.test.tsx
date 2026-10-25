@@ -43,7 +43,7 @@ function playing(grid: TrackGrid, savedHints = 0) {
   vi.stubGlobal('localStorage', { getItem: (key: string) => values.get(key) ?? null,
     setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) })
   const puzzle: Puzzle = { id: '2026-10-19-tracks-small', puzzleType: 'train-tracks', seed: 1, generatorVersion: 1, board: grid, difficulty: null }
-  storeTrackProgress(puzzle.id, createTracksGame(grid), 5000, savedHints)
+  storeTrackProgress(puzzle.id, createTracksGame(grid), { elapsedMs: 5000 }, savedHints)
   const render = () => { hooks.cursor = 0; return children(TracksStage({ puzzle, grid, timeZone: 'UTC' })) }
   const board = () => render().find((el) => el.type === TracksBoard)!.props
   const panel = () => render().find((el) => el.type === HintPanel)

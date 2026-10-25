@@ -331,3 +331,29 @@ it('does not report a failed session read as storage failure while queuing', asy
   expect(store.getSnapshot().message).toContain('session')
   expect(store.getSnapshot().message).not.toContain('storage')
 })
+
+it('preserves the solve snapshot through opt-in, offline queue, reload and retry', async () => {
+  const f = fixture(), store = createLeaderboardStore(config, f.client, f.storage)
+  f.setResponse(async () => new Response('{}', { status: 503 }))
+  const record = { ...solve, attemptElapsedMs: 1500 }
+  await store.join('Alice', 'captcha', record)
+  expect(store.getSnapshot().pendingCount).toBe(1)
+  const pending = JSON.parse(f.storage.getItem(leaderboardProgressKey(config.url))!).pending
+  expect(pending).toEqual([{ id: solve.id, nickname: 'Alice', elapsedMs: 60000, attemptElapsedMs: 1500, hints: 2 }])
+  const reopened = createLeaderboardStore(config, f.client, f.storage)
+  f.setResponse(async () => new Response(JSON.stringify({ status: 'created' })))
+  await reopened.retry()
+  expect(reopened.getSnapshot().pendingCount).toBe(0)
+  expect(f.requests.length).toBeGreaterThan(1)
+  for (const request of f.requests) expect(request.body).toEqual({ p_puzzle_id: solve.id, p_nickname: 'Alice', p_elapsed_ms: 60000, p_attempt_elapsed_ms: 1500, p_hints: 2 })
+})
+
+it('drops malformed pending attempt decoration while preserving its legacy score', async () => {
+  const f = fixture(), store = createLeaderboardStore(config, f.client, f.storage)
+  await store.join('Alice', 'captcha')
+  const key = leaderboardProgressKey(config.url), saved = JSON.parse(f.storage.getItem(key)!)
+  f.storage.setItem(key, JSON.stringify({ ...saved, pending: [{ id: solve.id, nickname: 'Alice', elapsedMs: 60000, hints: 2, attemptElapsedMs: 60001 }] }))
+  const reopened = createLeaderboardStore(config, f.client, f.storage)
+  await reopened.retry()
+  expect(f.requests[0]?.body).toEqual({ p_puzzle_id: solve.id, p_nickname: 'Alice', p_elapsed_ms: 60000, p_hints: 2 })
+})

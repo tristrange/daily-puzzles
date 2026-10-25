@@ -1,3 +1,4 @@
+import { PlayTimer } from './PlayTimer'
 import { useId, useRef, useState } from 'react'
 import { createNurikabeGame, editNurikabeCell, isNurikabeSolved, nurikabeConflicts, type NurikabeBoard as Board, type NurikabeGame, type NurikabeMark } from '../domain/nurikabe'
 import { formatTime } from '../domain/game'
@@ -16,9 +17,10 @@ export function NurikabeStage({ board }: { board: Board }) {
   const [brush, setBrush] = useState<NurikabeMark>(1)
   const history = useMoveHistory<NurikabeGame>(), instructionsId = useId(), pickerId = useId()
   const conflicts = nurikabeConflicts(board, game)
-  const { elapsed, settle, stop } = usePlayClock(initial?.elapsedMs ?? 0, time => {
+  const { time, settle, stop, restartAttempt } = usePlayClock(initial ?? { elapsedMs: 0 }, time => {
     setSaving(storeNurikabeProgress(board, before.current ?? current.current, time))
   })
+  const elapsed = time.elapsedMs
   const save = () => setSaving(storeNurikabeProgress(board, current.current, settle()))
   const change = (next: NurikabeGame) => { current.current = next; setGame(next) }
   const begin = () => { if (!completed.current) before.current = current.current }
@@ -53,14 +55,15 @@ export function NurikabeStage({ board }: { board: Board }) {
     if (completed.current) return
     cancel()
     if (!current.current.some((mark, cell) => board.clues[cell] === 0 && mark !== 0)) return
+    restartAttempt()
     history.remember(current.current); change(createNurikabeGame(board))
-    setMessage('Board cleared. Undo brings it back; the clock keeps running.'); save()
+    setMessage('Board cleared. Undo brings it back; total time and hints are kept.'); save()
   }
   return <div className="nurikabe-game">
     <div className="nurikabe-workspace">
       <div className="nurikabe-controls">
         <div className="puzzle-tools">
-          <span className="timer" role="timer" aria-label="Elapsed active time">{formatTime(elapsed)}</span>
+          <PlayTimer time={time} />
           <button type="button" className="tool-button" disabled={solved || !history.canUndo} onClick={undo}>Undo</button>
           <button type="button" className="tool-button" disabled={solved || !history.canRedo} onClick={redo}>Redo</button>
           <ResetButton disabled={solved || !dirty} onReset={reset} />

@@ -1,3 +1,4 @@
+import { PlayTimer } from './PlayTimer'
 import { SolvedPanel } from './SolvedPanel'
 import { useLeaderboard } from '../lib/useLeaderboard'
 import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState } from 'react'
@@ -106,9 +107,10 @@ export function PuzzleStage({
   // as one step instead of one step per cell painted.
   const strokeStart = useRef<GameState | null>(null)
 
-  const { elapsed, settle, stop } = usePlayClock(initialProgress?.elapsedMs ?? 0, time => {
+  const { time, settle, stop, restartAttempt } = usePlayClock(initialProgress ?? { elapsedMs: 0 }, time => {
     setSavingAvailable(storeMarksProgress(puzzle.id, currentGame.current, time, hintsUsed.current))
   })
+  const elapsed = time.elapsedMs
 
   const conflictList = useMemo(() => conflicts(game), [game])
   const conflictCells = useMemo(() => {
@@ -141,7 +143,7 @@ export function PuzzleStage({
   }
 
   const recordSolve = (when: number) => {
-    const time = stop()
+    const stoppedTime = stop()
     completed.current = true
     clearMarksProgress(puzzle.id)
     setSolvedAt(when)
@@ -150,11 +152,11 @@ export function PuzzleStage({
     // Recorded once, at the moment it happens, and never revised: a replay is
     // played knowing the answer, so its time would flatter the record.
     const record: SolveRecord = { id: puzzle.id, puzzleType: puzzle.puzzleType, size: board.size,
-      elapsedMs: time, hints: hintsUsed.current, solvedAt: when }
+      ...stoppedTime, hints: hintsUsed.current, solvedAt: when }
     setStats(summarise(storeSolve(record), puzzleOfToday(new Date(when), timeZone)))
     if (!earlier) { setCandidate(record); offerSolve(record) }
     setFirstSolve(earlier ?? null)
-    setAnnouncement(`Solved in ${formatTime(time)}!`)
+    setAnnouncement(`Solved in ${formatTime(stoppedTime.elapsedMs)}!`)
   }
 
   const applyGame = (next: GameState, before: GameState = game) => {
@@ -249,10 +251,10 @@ export function PuzzleStage({
    * and a single Undo brings the whole board back after confirmation. It also
    * clears the hint panel so it cannot describe a board that no longer exists.
    *
-   * Reset preserves accumulated play time; correcting the board is not a new attempt.
    */
   const reset = () => {
     if (solved || strokeStart.current !== null || isEmpty(game)) return
+    restartAttempt()
     applyGame(resetGame(game))
     setAnnouncement('Board cleared. Undo brings it back.')
   }
@@ -387,9 +389,7 @@ export function PuzzleStage({
   return (
     <div className="marks-game" ref={stage}>
       <div className="puzzle-tools">
-        <span className="timer" role="timer" aria-label="Elapsed time">
-          {formatTime(shownTime)}
-        </span>
+        <PlayTimer time={time} />
         <button
           type="button"
           className="tool-button"

@@ -1,3 +1,4 @@
+import { attemptTime } from './playTime'
 /**
  * Local solve history: what this browser has finished, and what that adds up to.
  *
@@ -24,6 +25,7 @@ export type SolveRecord = {
   readonly puzzleType: PuzzleType
   readonly size: number
   readonly elapsedMs: number
+  readonly attemptElapsedMs?: number
   readonly hints: number
   readonly solvedAt: number
 }
@@ -97,7 +99,7 @@ function toRecord(value: unknown): SolveRecord | null {
   if (!isWholeNumber(solvedAt)) return null
   const canonicalId = migratedId(id, puzzleType)
   if (puzzleTypeOf(canonicalId) !== puzzleType) return null
-  return { id: canonicalId, puzzleType, size, elapsedMs, hints, solvedAt }
+  return { id: canonicalId, puzzleType, size, elapsedMs, ...attemptTime(entry['attemptElapsedMs'], elapsedMs), hints, solvedAt }
 }
 
 /**

@@ -28,7 +28,7 @@ function gridFor(data: unknown): TrackGrid {
 describe('Train Tracks progress', () => {
   it('restores hint counts, accepts legacy snapshots and rejects invalid counts', () => {
     const values = memoryStorage(), grid = gridFor(small)
-    storeTrackProgress(small.id, createTracksGame(grid), 1000, 3)
+    storeTrackProgress(small.id, createTracksGame(grid), { elapsedMs: 1000 }, 3)
     expect(readTrackProgress(small.id, grid)?.hints).toBe(3)
     const [key, value] = [...values][0]!
     const snapshot = JSON.parse(value)
@@ -39,7 +39,7 @@ describe('Train Tracks progress', () => {
       values.set(key, JSON.stringify({ ...snapshot, hints }))
       expect(readTrackProgress(small.id, grid)).toBeNull()
     }
-    expect(storeTrackProgress(small.id, createTracksGame(grid), 1000, -1)).toBe(false)
+    expect(storeTrackProgress(small.id, createTracksGame(grid), { elapsedMs: 1000 }, -1)).toBe(false)
   })
   it('keeps all three boards, notes and times under distinct full IDs', () => {
     const values = memoryStorage()
@@ -48,7 +48,7 @@ describe('Train Tracks progress', () => {
       const free = grid.givens.flatMap((piece, cell) => piece === 0 ? [cell] : [])
       let game = applyBrush(createTracksGame(grid), free[0]!, CROSS)
       game = applyBrush(game, free[1]!, MAYBE)
-      expect(storeTrackProgress(data.id, game, (index + 1) * 1000)).toBe(true)
+      expect(storeTrackProgress(data.id, game, { elapsedMs: (index + 1) * 1000 })).toBe(true)
       const restored = readTrackProgress(data.id, grid)
       expect(restored?.game.pieces).toEqual(game.pieces)
       expect(restored?.elapsedMs).toBe((index + 1) * 1000)
@@ -66,7 +66,7 @@ describe('Train Tracks progress', () => {
   ])('ignores invalid snapshot $version $board $elapsedMs', (override) => {
     const values = memoryStorage()
     const grid = gridFor(small)
-    storeTrackProgress(small.id, createTracksGame(grid), 1000)
+    storeTrackProgress(small.id, createTracksGame(grid), { elapsedMs: 1000 })
     const [key, value] = [...values][0]!
     values.set(key, JSON.stringify({ ...JSON.parse(value), ...override }))
     expect(readTrackProgress(small.id, grid)).toBeNull()
@@ -76,7 +76,7 @@ describe('Train Tracks progress', () => {
     const values = memoryStorage()
     const grid = gridFor(small)
     for (const mutateGiven of [true, false]) {
-      storeTrackProgress(small.id, createTracksGame(grid), 1000)
+      storeTrackProgress(small.id, createTracksGame(grid), { elapsedMs: 1000 })
       const [key, value] = [...values][0]!
       const snapshot = JSON.parse(value)
       const cell = grid.givens.findIndex((piece) => mutateGiven ? piece !== 0 : piece === 0)
@@ -89,7 +89,7 @@ describe('Train Tracks progress', () => {
   it('restores onto an equivalent newly loaded grid, never a different one', () => {
     memoryStorage()
     const grid = gridFor(small)
-    storeTrackProgress(small.id, createTracksGame(grid), 1000)
+    storeTrackProgress(small.id, createTracksGame(grid), { elapsedMs: 1000 })
     expect(readTrackProgress(small.id, gridFor(small))?.elapsedMs).toBe(1000)
     expect(readTrackProgress(small.id, gridFor(medium))).toBeNull()
   })
@@ -97,7 +97,7 @@ describe('Train Tracks progress', () => {
   it('ignores corrupt JSON and unavailable storage without stopping play', () => {
     const values = memoryStorage()
     const grid = gridFor(small)
-    storeTrackProgress(small.id, createTracksGame(grid), 1000)
+    storeTrackProgress(small.id, createTracksGame(grid), { elapsedMs: 1000 })
     const key = [...values.keys()][0]!
     values.set(key, '{broken')
     expect(readTrackProgress(small.id, grid)).toBeNull()
@@ -107,7 +107,7 @@ describe('Train Tracks progress', () => {
       removeItem: () => { throw new Error('blocked') },
     })
     expect(readTrackProgress(small.id, grid)).toBeNull()
-    expect(storeTrackProgress(small.id, createTracksGame(grid), 1000)).toBe(false)
+    expect(storeTrackProgress(small.id, createTracksGame(grid), { elapsedMs: 1000 })).toBe(false)
     expect(() => clearTrackProgress(small.id)).not.toThrow()
   })
 
@@ -115,13 +115,13 @@ describe('Train Tracks progress', () => {
     const values = memoryStorage()
     const grid = new TrackGrid(3, 1, [3], [1, 1, 1], [1, 0, 1])
     const id = '2026-10-16-tracks'
-    storeTrackProgress(id, createTracksGame(grid), 1000)
+    storeTrackProgress(id, createTracksGame(grid), { elapsedMs: 1000 })
     const [key, value] = [...values][0]!
     values.set(key, JSON.stringify({ ...JSON.parse(value), pieces: [1, 1, 1] }))
     expect(readTrackProgress(id, grid)).toBeNull()
     expect(values.size).toBe(0)
-    storeTrackProgress(id, createTracksGame(grid), 1000)
-    storeTrackProgress(id, applyBrush(createTracksGame(grid), 1, 1), 2000)
+    storeTrackProgress(id, createTracksGame(grid), { elapsedMs: 1000 })
+    storeTrackProgress(id, applyBrush(createTracksGame(grid), 1, 1), { elapsedMs: 2000 })
     expect(values.size).toBe(0)
   })
 })

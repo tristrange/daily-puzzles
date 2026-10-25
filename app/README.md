@@ -82,6 +82,23 @@ visually hidden `aria-live` region so screen-reader users hear them without the
 whole grid being re-read.
 
 
+## Total and since-reset time
+
+Every playable stage uses `usePlayClock` with one fractional focused-time counter.
+`PlayTime.elapsedMs` remains the total used for ranking, statistics, and shares.
+A confirmed Reset establishes a private baseline and exposes `attemptElapsedMs`.
+The shared display labels Total and Since reset after that first reset.
+Undo and Redo restore only the board. Completion freezes both times at the same
+instant. Learn has no timer.
+
+Progress keeps its existing keys, version, and board fingerprints. The optional
+`attemptElapsedMs` field is absent on legacy data and before the first reset.
+Zero records an actual reset, including one at zero total time. Valid optional
+metadata survives the first solve, delayed leaderboard opt-in, and queued retry.
+Malformed optional metadata is dropped without losing valid progress or scores.
+Apply the [attempt timing migration](../docs/leaderboard-setup.md#upgrade-an-existing-project-for-reset-timers)
+before deploying this app version.
+
 ## Word Paths preview
 
 Run the app normally, then open `#/preview/word-paths` (also linked from How to

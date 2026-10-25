@@ -10,7 +10,7 @@ it('restores per-board cells, notes and time, rejecting corrupted or stale progr
   const board = parseTrioBoard(raw[0]), other = parseTrioBoard(raw[1])
   const cell = board.givens.indexOf(0)
   const game = editTrio(board, createTrioGame(board), cell, { note: 2, enabled: true })
-  expect(storeTrioProgress(board, game, 4321)).toBe(true)
+  expect(storeTrioProgress(board, game, { elapsedMs: 4321 })).toBe(true)
   expect(readTrioProgress(board)).toEqual({ game, elapsedMs: 4321 })
   expect(readTrioProgress(other)).toBeNull()
   const [key, value] = [...values][0]!
@@ -30,7 +30,7 @@ it('keeps play usable when storage is unavailable', () => {
   vi.stubGlobal('localStorage', { getItem: () => { throw Error() }, setItem: () => { throw Error() } })
   const board = parseTrioBoard(raw[0])
   expect(readTrioProgress(board)).toBeNull()
-  expect(storeTrioProgress(board, createTrioGame(board), 0)).toBe(false)
+  expect(storeTrioProgress(board, createTrioGame(board), { elapsedMs: 0 })).toBe(false)
 })
 
 it('keeps daily hints and attempts separate from all preview data', () => {
@@ -40,9 +40,9 @@ it('keeps daily hints and attempts separate from all preview data', () => {
   const preview = parseTrioBoard(raw[0])
   const daily = { ...preview, id: '2026-10-18-trio' }
   const game = createTrioGame(preview)
-  storeTrioProgress(preview, game, 123)
+  storeTrioProgress(preview, game, { elapsedMs: 123 })
   const previewBefore = values.get(`daily-puzzles.trio-preview.v1.${preview.id}`)
-  expect(storeTrioProgress(daily, game, 456, true, 3)).toBe(true)
+  expect(storeTrioProgress(daily, game, { elapsedMs: 456 }, true, 3)).toBe(true)
   expect(readTrioProgress(daily, true)).toEqual({ game, elapsedMs: 456, hints: 3 })
   expect(readTrioProgress(daily)).toBeNull()
   expect(readTrioProgress(preview, true)).toBeNull()
@@ -52,5 +52,5 @@ it('keeps daily hints and attempts separate from all preview data', () => {
   const stored = JSON.parse(values.get(dailyKey)!)
   values.set(dailyKey, JSON.stringify({ ...stored, hints: -1 }))
   expect(readTrioProgress(daily, true)).toBeNull()
-  expect(storeTrioProgress(daily, game, 0, true, -1)).toBe(false)
+  expect(storeTrioProgress(daily, game, { elapsedMs: 0 }, true, -1)).toBe(false)
 })

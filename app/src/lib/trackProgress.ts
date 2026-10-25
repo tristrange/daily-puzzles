@@ -1,9 +1,10 @@
+import { attemptTime, validPlayTime, type PlayTime } from './playTime'
 /** Unfinished Train Tracks boards, isolated by full puzzle ID. */
 import { puzzleTypeOf } from '../domain/dates'
 import type { TrackGrid } from '../domain/tracks'
 import { isTracksSolved, MAYBE, type TracksGame } from '../domain/tracksGame'
 
-export type TrackProgress = { readonly game: TracksGame; readonly elapsedMs: number; readonly hints: number }
+export type TrackProgress = { readonly game: TracksGame; readonly elapsedMs: number; readonly attemptElapsedMs?: number; readonly hints: number }
 
 function key(id: string): string {
   return `daily-puzzles.track-progress.${id}`
@@ -34,14 +35,14 @@ export function readTrackProgress(id: string, grid: TrackGrid): TrackProgress | 
       clearTrackProgress(id)
       return null
     }
-    return { game, elapsedMs, hints }
+    return { game, elapsedMs, ...attemptTime(snapshot['attemptElapsedMs'], elapsedMs), hints }
   } catch {
     return null
   }
 }
 
-export function storeTrackProgress(id: string, game: TracksGame, elapsedMs: number, hints = 0): boolean {
-  if (puzzleTypeOf(id) !== 'train-tracks' || !Number.isSafeInteger(elapsedMs) || elapsedMs < 0
+export function storeTrackProgress(id: string, game: TracksGame, time: PlayTime, hints = 0): boolean {
+  if (puzzleTypeOf(id) !== 'train-tracks' || !validPlayTime(time)
     || !Number.isSafeInteger(hints) || hints < 0) return false
   if (isTracksSolved(game)) {
     clearTrackProgress(id)
@@ -49,7 +50,7 @@ export function storeTrackProgress(id: string, game: TracksGame, elapsedMs: numb
   }
   try {
     localStorage.setItem(key(id), JSON.stringify({
-      version: 1, board: fingerprint(game.grid), pieces: game.pieces, elapsedMs, hints,
+      version: 1, board: fingerprint(game.grid), pieces: game.pieces, ...time, hints,
     }))
     return true
   } catch {
