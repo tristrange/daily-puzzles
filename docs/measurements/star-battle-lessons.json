@@ -1,0 +1,431 @@
+{
+  "purpose": "Fixed-corpus exact uniqueness, first-move and independent capacity witnesses. Solutions are review-only.",
+  "lessons": [
+    {
+      "id": "star-battle-last-space",
+      "source": "2026-10-04-star",
+      "source_sha256": "9bf07c1d01c867257df84c1796c1fef7664eecabeb273bacde91c0843a2e94a6",
+      "baseline_index": 9,
+      "unique_solution": [1, 3, 13, 15, 17, 19, 29, 31, 32, 34, 44, 46, 48, 50, 60, 62],
+      "queens": [1],
+      "marks": [0, 2, 8, 9, 10],
+      "move": {
+        "cell": 3,
+        "action": "queen",
+        "rule": "single-region"
+      },
+      "available": [3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63],
+      "basic_blocked": [0, 2, 8, 9, 10],
+      "witness": {
+        "sources": [
+          {
+            "kind": "region",
+            "index": 0,
+            "need": 1,
+            "candidates": [3]
+          }
+        ],
+        "homes": []
+      },
+      "support": [0, 1, 2]
+    },
+    {
+      "id": "star-battle-last-space-2",
+      "source": "2026-10-08-star",
+      "source_sha256": "fa39e6754f28c8b1dd9e7b13edeecb793d564514fe613a9e0614332a87e7e059",
+      "baseline_index": 23,
+      "unique_solution": [6, 8, 10, 12, 23, 26, 28, 30, 41, 43, 45, 47, 58, 61, 63, 65, 76, 78],
+      "queens": [6],
+      "marks": [5, 7, 14, 15, 16],
+      "move": {
+        "cell": 8,
+        "action": "queen",
+        "rule": "single-region"
+      },
+      "available": [0, 1, 2, 3, 4, 8, 9, 10, 11, 12, 13, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80],
+      "basic_blocked": [5, 7, 14, 15, 16],
+      "witness": {
+        "sources": [
+          {
+            "kind": "region",
+            "index": 0,
+            "need": 1,
+            "candidates": [8]
+          }
+        ],
+        "homes": []
+      },
+      "support": [6, 7]
+    },
+    {
+      "id": "star-battle-last-space-3",
+      "source": "2026-10-09-star",
+      "source_sha256": "0519cd89c3eb99ac10c78b31fcfc3545f5e2a576af3113809ea706e6a2ffa1e0",
+      "baseline_index": 28,
+      "unique_solution": [1, 4, 15, 17, 20, 22, 33, 35, 37, 39, 50, 52, 54, 57, 68, 70, 72, 74],
+      "queens": [1, 4, 15],
+      "marks": [0, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 23, 24, 25],
+      "move": {
+        "cell": 17,
+        "action": "queen",
+        "rule": "single-row"
+      },
+      "available": [17, 18, 19, 20, 21, 22, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80],
+      "basic_blocked": [0, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 23, 24, 25],
+      "witness": {
+        "sources": [
+          {
+            "kind": "row",
+            "index": 1,
+            "need": 1,
+            "candidates": [17]
+          }
+        ],
+        "homes": []
+      },
+      "support": [1, 4, 9, 10, 11, 12, 13, 14, 15, 16]
+    },
+    {
+      "id": "star-battle-fill",
+      "source": "2026-09-29-star",
+      "source_sha256": "e45e9787f70a800a6362e72f833b17d2023bc874d7cc8156089f2c10e779b63f",
+      "baseline_index": 13,
+      "unique_solution": [1, 3, 13, 15, 17, 19, 29, 31, 32, 34, 44, 46, 48, 50, 60, 62],
+      "queens": [1, 3, 13, 15, 17],
+      "marks": [0, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 21, 22, 23, 24, 25, 26, 33, 41, 49, 57],
+      "move": {
+        "cell": 32,
+        "action": "queen",
+        "rule": "fill"
+      },
+      "available": [19, 27, 28, 29, 30, 31, 32, 34, 35, 36, 37, 38, 39, 40, 42, 43, 44, 45, 46, 47, 48, 50, 51, 52, 53, 54, 55, 56, 58, 59, 60, 61, 62, 63],
+      "basic_blocked": [0, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 21, 22, 23, 24, 25, 26, 33, 41, 49, 57],
+      "witness": {
+        "sources": [
+          {
+            "kind": "region",
+            "index": 4,
+            "need": 2,
+            "candidates": [32, 34]
+          }
+        ],
+        "homes": []
+      },
+      "support": [0, 1, 3, 8, 13, 15, 16, 17, 24, 33, 34, 41]
+    },
+    {
+      "id": "star-battle-fill-2",
+      "source": "2026-09-28-star",
+      "source_sha256": "fa535e3f031a43510e38b819dd4ebd4570ea192d39861592a8aa95bd6fc8b6ac",
+      "baseline_index": 27,
+      "unique_solution": [4, 6, 8, 10, 20, 22, 24, 26, 37, 39, 41, 43, 53, 55, 57, 59],
+      "queens": [4, 6, 8, 10, 20, 22],
+      "marks": [0, 1, 2, 3, 5, 7, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 23, 27, 28, 29, 30, 31, 36, 38, 44, 46, 52, 54, 60, 62],
+      "move": {
+        "cell": 37,
+        "action": "queen",
+        "rule": "fill"
+      },
+      "available": [24, 25, 26, 32, 33, 34, 35, 37, 39, 40, 41, 42, 43, 45, 47, 48, 49, 50, 51, 53, 55, 56, 57, 58, 59, 61, 63],
+      "basic_blocked": [0, 1, 2, 3, 5, 7, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 23, 27, 28, 29, 30, 31, 36, 38, 44, 46, 52, 54, 60, 62],
+      "witness": {
+        "sources": [
+          {
+            "kind": "region",
+            "index": 4,
+            "need": 2,
+            "candidates": [37, 39]
+          }
+        ],
+        "homes": []
+      },
+      "support": [6, 22, 30, 31, 38, 39]
+    },
+    {
+      "id": "star-battle-fill-3",
+      "source": "2026-09-27-star",
+      "source_sha256": "c9586db13e87c3a17fdf82d556021725c52e0ec283f8c299e9640fc5cea14cba",
+      "baseline_index": 39,
+      "unique_solution": [4, 6, 8, 10, 20, 22, 24, 26, 37, 39, 41, 43, 53, 55, 57, 59],
+      "queens": [4, 6, 8, 10, 20, 22],
+      "marks": [0, 1, 2, 3, 5, 7, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 23, 27, 28, 29, 30, 31, 35, 36, 38, 44, 46, 52, 54, 60, 62, 63],
+      "move": {
+        "cell": 53,
+        "action": "queen",
+        "rule": "fill"
+      },
+      "available": [24, 25, 26, 32, 33, 34, 37, 39, 40, 41, 42, 43, 45, 47, 48, 49, 50, 51, 53, 55, 56, 57, 58, 59, 61],
+      "basic_blocked": [0, 1, 2, 3, 5, 7, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 23, 27, 28, 29, 30, 31, 35, 36, 38, 44, 46, 52, 54, 60, 62],
+      "witness": {
+        "sources": [
+          {
+            "kind": "region",
+            "index": 6,
+            "need": 2,
+            "candidates": [53, 55]
+          }
+        ],
+        "homes": []
+      },
+      "support": [6, 22, 54, 55, 63]
+    },
+    {
+      "id": "star-battle-intersection",
+      "source": "2026-09-30-star",
+      "source_sha256": "ff3d50334c7c1f129281db377189176de01ab23ae0cd6f8e63970871053aa032",
+      "baseline_index": 0,
+      "unique_solution": [1, 3, 13, 15, 17, 19, 29, 31, 32, 34, 44, 46, 48, 50, 60, 62],
+      "queens": [],
+      "marks": [],
+      "move": {
+        "cell": 56,
+        "action": "x",
+        "rule": "intersection"
+      },
+      "available": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63],
+      "basic_blocked": [],
+      "witness": {
+        "sources": [
+          {
+            "kind": "region",
+            "index": 7,
+            "need": 2,
+            "candidates": [58, 59, 60, 61, 62]
+          }
+        ],
+        "homes": [
+          {
+            "kind": "row",
+            "index": 7,
+            "need": 2,
+            "candidates": [56, 57, 58, 59, 60, 61, 62, 63]
+          }
+        ]
+      },
+      "support": [57, 58, 59, 60, 61, 62, 63]
+    },
+    {
+      "id": "star-battle-intersection-2",
+      "source": "2026-10-01-star",
+      "source_sha256": "b2b69d8fe391e35d0d7135270137e70469a7cd690dca1fb3a68aef06cd786667",
+      "baseline_index": 0,
+      "unique_solution": [4, 6, 8, 10, 20, 22, 24, 26, 37, 39, 41, 43, 53, 55, 57, 59],
+      "queens": [],
+      "marks": [],
+      "move": {
+        "cell": 61,
+        "action": "x",
+        "rule": "intersection"
+      },
+      "available": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63],
+      "basic_blocked": [],
+      "witness": {
+        "sources": [
+          {
+            "kind": "region",
+            "index": 7,
+            "need": 2,
+            "candidates": [56, 57, 58, 59, 60]
+          }
+        ],
+        "homes": [
+          {
+            "kind": "row",
+            "index": 7,
+            "need": 2,
+            "candidates": [56, 57, 58, 59, 60, 61, 62, 63]
+          }
+        ]
+      },
+      "support": [56, 57, 58, 59, 60, 62, 63]
+    },
+    {
+      "id": "star-battle-intersection-3",
+      "source": "2026-10-02-star",
+      "source_sha256": "0041ec23c9fef8a4a8ca1661b1e373fcdd5b46a904e63118f067bf91aa9522e2",
+      "baseline_index": 0,
+      "unique_solution": [4, 6, 8, 10, 20, 22, 24, 26, 37, 39, 41, 43, 53, 55, 57, 59],
+      "queens": [],
+      "marks": [],
+      "move": {
+        "cell": 44,
+        "action": "x",
+        "rule": "intersection"
+      },
+      "available": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63],
+      "basic_blocked": [],
+      "witness": {
+        "sources": [
+          {
+            "kind": "region",
+            "index": 5,
+            "need": 2,
+            "candidates": [40, 41, 42, 43]
+          }
+        ],
+        "homes": [
+          {
+            "kind": "row",
+            "index": 5,
+            "need": 2,
+            "candidates": [40, 41, 42, 43, 44, 45, 46, 47]
+          }
+        ]
+      },
+      "support": [40, 41, 42, 43, 45, 46, 47]
+    },
+    {
+      "id": "star-battle-subset",
+      "source": "2026-09-26-star",
+      "source_sha256": "a7a2bad72bcd535b8c58a2a128242bb8fc84061f6b425f9e3a177e5a5735fdd5",
+      "baseline_index": 0,
+      "unique_solution": [1, 3, 13, 15, 17, 19, 29, 31, 32, 34, 44, 46, 48, 50, 60, 62],
+      "queens": [],
+      "marks": [],
+      "move": {
+        "cell": 51,
+        "action": "x",
+        "rule": "subset"
+      },
+      "available": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63],
+      "basic_blocked": [],
+      "witness": {
+        "sources": [
+          {
+            "kind": "region",
+            "index": 6,
+            "need": 2,
+            "candidates": [48, 49, 50, 56, 57, 58]
+          },
+          {
+            "kind": "region",
+            "index": 7,
+            "need": 2,
+            "candidates": [52, 53, 54, 55, 59, 60, 61, 62, 63]
+          }
+        ],
+        "homes": [
+          {
+            "kind": "row",
+            "index": 6,
+            "need": 2,
+            "candidates": [48, 49, 50, 51, 52, 53, 54, 55]
+          },
+          {
+            "kind": "row",
+            "index": 7,
+            "need": 2,
+            "candidates": [56, 57, 58, 59, 60, 61, 62, 63]
+          }
+        ]
+      },
+      "support": [48, 49, 50, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]
+    },
+    {
+      "id": "star-battle-subset-2",
+      "source": "2026-10-03-star",
+      "source_sha256": "afdfa089fa883609da504695fecfe949e20579682fd6a2f966066aa982770061",
+      "baseline_index": 0,
+      "unique_solution": [4, 6, 8, 10, 20, 22, 24, 26, 37, 39, 41, 43, 53, 55, 57, 59],
+      "queens": [],
+      "marks": [],
+      "move": {
+        "cell": 46,
+        "action": "x",
+        "rule": "subset"
+      },
+      "available": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63],
+      "basic_blocked": [],
+      "witness": {
+        "sources": [
+          {
+            "kind": "region",
+            "index": 5,
+            "need": 2,
+            "candidates": [40, 41, 42, 43, 48, 49, 51]
+          },
+          {
+            "kind": "region",
+            "index": 6,
+            "need": 2,
+            "candidates": [45, 53, 54, 55, 61, 62, 63]
+          },
+          {
+            "kind": "region",
+            "index": 7,
+            "need": 2,
+            "candidates": [44, 50, 52, 56, 57, 58, 59, 60]
+          }
+        ],
+        "homes": [
+          {
+            "kind": "row",
+            "index": 5,
+            "need": 2,
+            "candidates": [40, 41, 42, 43, 44, 45, 46, 47]
+          },
+          {
+            "kind": "row",
+            "index": 6,
+            "need": 2,
+            "candidates": [48, 49, 50, 51, 52, 53, 54, 55]
+          },
+          {
+            "kind": "row",
+            "index": 7,
+            "need": 2,
+            "candidates": [56, 57, 58, 59, 60, 61, 62, 63]
+          }
+        ]
+      },
+      "support": [40, 41, 42, 43, 44, 45, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]
+    },
+    {
+      "id": "star-battle-subset-3",
+      "source": "2026-10-06-star",
+      "source_sha256": "cd579813c52a644851c7bc83ced091102b33e56eec855b959412698d107bec64",
+      "baseline_index": 0,
+      "unique_solution": [1, 3, 13, 15, 17, 19, 29, 31, 32, 34, 44, 46, 48, 50, 60, 62],
+      "queens": [],
+      "marks": [],
+      "move": {
+        "cell": 0,
+        "action": "x",
+        "rule": "subset"
+      },
+      "available": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63],
+      "basic_blocked": [],
+      "witness": {
+        "sources": [
+          {
+            "kind": "region",
+            "index": 0,
+            "need": 2,
+            "candidates": [1, 2, 3, 4, 5, 9, 10, 11]
+          },
+          {
+            "kind": "region",
+            "index": 1,
+            "need": 2,
+            "candidates": [6, 7, 12, 13, 14, 15]
+          }
+        ],
+        "homes": [
+          {
+            "kind": "row",
+            "index": 0,
+            "need": 2,
+            "candidates": [0, 1, 2, 3, 4, 5, 6, 7]
+          },
+          {
+            "kind": "row",
+            "index": 1,
+            "need": 2,
+            "candidates": [8, 9, 10, 11, 12, 13, 14, 15]
+          }
+        ]
+      },
+      "support": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    }
+  ]
+}

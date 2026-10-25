@@ -2349,3 +2349,36 @@ overflow at 393px. Desktop Auto/Dark and phone Light layouts were inspected.
 See the [technique cards](images/learn-practice-desktop.png) and
 [phone practice](images/learn-practice-phone.png). Physical iPhone and VoiceOver
 checks remain manual.
+
+
+## Learn courses and Star Battle exercises
+
+Learn now starts with game cards and keeps course navigation within Sudoku or Star
+Battle. Sudoku retains its fifteen source boards, prepared notes, completion IDs
+and certificates. Star Battle adds twelve frozen positions across last space, fill,
+locked spaces and group reservation. Each technique starts with a guided example,
+then offers two practice positions with optional clues. Teaching order does not
+claim a universal difficulty rating.
+
+The last-space practice includes both region and row reasoning. Every basic-rule
+unavailable cell is shown as a prepared cross before the teaching move. Exact
+certification rechecks that displayed state and the first advertised move. Capacity
+witnesses record named source and home groups, remaining needs and every available
+candidate. The independent verifier rejects incomplete crosses, changed targets,
+duplicate groups, mixed partitions and unbalanced capacities. Runtime data contains
+one target move per exercise. Full solutions remain in the offline proof report.
+
+The locked board now allows arrow, Home and End inspection before its edit guard.
+A DOM test drives keyboard and pointer commands to prove that edit, history and hint
+callbacks remain unused. Lesson flow tests cover null initial answers, wrong and
+correct Check, reveal without completion, retry, sibling reset, isolated storage,
+known-ID counts and storage failure. The full app suite passed 1,012 tests. The
+focused lesson and deduction engine run passed 41 tests. App typecheck and production
+build passed. App lint completed with the existing TracksStage effect warning.
+Engine Pyright, Ruff lint and format checks passed. Browser checks covered the
+game hub, all four Star Battle techniques, wrong/correct answers, reveal/retry,
+practice clues, keyboard inspection, existing Sudoku links and retained progress.
+Desktop Auto/Dark and phone layouts at 393px passed, with Light also inspected.
+See the [game hub](images/learn-games-desktop.png) and
+[phone lesson](images/learn-star-battle-phone.png). Physical iPhone and VoiceOver
+were not tested.

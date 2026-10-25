@@ -558,11 +558,17 @@ and their rows/columns below the selected cell's visual emphasis. Save keys and
 fingerprints are unchanged, so existing preview attempts resume normally.
 
 
-## Sudoku technique lessons
+## Technique lessons by game
 
-`/learn` groups 15 exercises into five techniques: locked candidates, naked pairs,
-hidden pairs, naked triples and X-wing. Each technique has three exercise links
-and its own completion count. `/learn/sudoku/:lessonId` opens an exercise directly.
+`/learn` lists Sudoku and Star Battle with separate completed exercise counts.
+`/learn/sudoku` groups the existing 15 exercises into five techniques, ordered from
+medium to hard teaching patterns. `/learn/star-battle` groups 12 exercises into
+last space, fill remaining spaces, locked spaces and group reservation. The order
+moves from introductory to more involved ideas, without rating individual puzzles.
+Each technique has three exercise links and its own completion count.
+`/learn/sudoku/:lessonId` and `/learn/star-battle/:lessonId` open exercises directly.
+Exercises link to their own course, and courses link to All games. Existing Sudoku
+exercise URLs, prepared notes, IDs and certificates are unchanged.
 Learn is also linked from Today and the Sudoku rules. These are prepared positions
 for practising one deduction, rather than full timed puzzles.
 
@@ -594,6 +600,41 @@ and each added exercise has its own ID. Blocked storage leaves the exercise
 usable and reports that completion was not saved. Daily progress, Stats, clocks
 and leaderboard submission are outside the lesson flow. The lazy lesson chunk and
 its embedded boards join the existing offline shell cache during production builds.
+
+### Star Battle positions and proof
+
+`app/src/data/star-battle-lessons.json` owns the ordered techniques and their frozen
+exercise positions. Each descriptor includes source puzzle ID, fixed hint-baseline
+index, geometry, placed stars, crosses, exact target action and rule, clue, and a
+capacity witness. Basic unavailable spaces already have crosses, including spaces
+that touch a prepared star or belong to a full group. The app reruns `firstHint`
+and rejects a changed target instead of silently selecting a different move.
+
+The locked `InteractiveBoard` permits keyboard inspection while refusing edits,
+hints, history and pointer painting. A learner chooses Place a star or Mark X for
+the outlined target. Check answer starts disabled. Only a correct Check saves
+completion. Reveal shows the deduced move without completion. Try again clears the
+answer and optional clue, and sibling navigation resets temporary state.
+
+Guided examples show source groups and their remaining demand. Reservation clues
+also name the home groups and their summed remaining capacity. A disclosure lists
+candidate coordinates and individual group counts. These values come from the
+frozen witness, independently checked against the displayed state. The explanation
+counts remaining stars rather than equating stars with the number of groups.
+
+From `engine/`, run `.venv/bin/python -m tools.star_battle_lessons` to compare the
+fixed catalog with `docs/measurements/star-battle-lessons.json`. The certifier checks
+exact uniqueness, source provenance, every star and cross, the exact first forced
+move, and an independently reconstructed capacity witness. It counts at most two
+solutions before reading the single solution. Full answers remain in the offline
+review report, outside runtime imports. Neither verification nor tests search for
+seeds, scan the archive for examples or regenerate hint baselines. `--write-report`
+refreshes the report only after all twelve exercises pass.
+
+Star Battle completion uses `daily-puzzles:star-battle-lessons:v1`. Sudoku keeps
+`daily-puzzles:sudoku-lessons:v1` and its original flow. Both course summaries count
+only known, distinct IDs. Storage failures leave the exercise usable. No lesson
+changes daily puzzle progress, stats, clocks or leaderboard state.
 
 ## Shared focused-play clock
 
