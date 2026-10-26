@@ -38,6 +38,23 @@ not search for examples or regenerate the hint baseline. `--write-report` writes
 runtime catalog contains only one target move per exercise. Full solutions belong
 to the review report and are never imported by the app.
 
+## Checking advanced Trio lessons
+
+The frozen course contains twelve positions from distinct published Trio boards,
+four per technique. Recheck their unique solutions, prepared candidate notes,
+complete accepted-answer sets and short rule witnesses:
+
+```sh
+uv run python -m tools.trio_lessons
+uv run pytest -q tests/test_trio_lessons.py
+```
+
+The checker rejects single-rule shortcuts and unnecessary reasoning steps. The
+final technique must leave two candidates after the full final rule applies.
+Verification checks only the fixed course. It does not search for new examples.
+`--write-report` refreshes the review certificate only after every exercise passes.
+Complete solutions stay in the report and outside runtime imports.
+
 ## Generating a puzzle
 
 `tools/generate.py` produces a unique-solution puzzle and prints its ASCII render (the

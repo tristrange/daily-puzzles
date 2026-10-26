@@ -1,0 +1,1451 @@
+[
+  {
+    "id": "quota-no-three",
+    "title": "Quotas meet no-three",
+    "stage": "Combine two rules",
+    "introduction": "A quota can restrict one cell and create a no-three deduction elsewhere. Follow the shared cell between a line count and a run.",
+    "exercises": [
+      {
+        "id": "trio-quota-no-three",
+        "source": "2026-10-07-trio",
+        "board": {
+          "givens": [3, 2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1, 2, 0, 2, 3, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 3, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1, 0, 0, 2, 0, 3, 3, 2, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 3, 3, 1, 0, 0, 0],
+          "relations": [
+            {
+              "first": 0,
+              "second": 9,
+              "kind": "different"
+            },
+            {
+              "first": 12,
+              "second": 21,
+              "kind": "same"
+            },
+            {
+              "first": 15,
+              "second": 16,
+              "kind": "different"
+            },
+            {
+              "first": 18,
+              "second": 19,
+              "kind": "different"
+            },
+            {
+              "first": 25,
+              "second": 34,
+              "kind": "same"
+            },
+            {
+              "first": 29,
+              "second": 30,
+              "kind": "same"
+            },
+            {
+              "first": 30,
+              "second": 39,
+              "kind": "different"
+            },
+            {
+              "first": 33,
+              "second": 34,
+              "kind": "different"
+            },
+            {
+              "first": 42,
+              "second": 51,
+              "kind": "different"
+            },
+            {
+              "first": 43,
+              "second": 44,
+              "kind": "same"
+            },
+            {
+              "first": 51,
+              "second": 52,
+              "kind": "different"
+            },
+            {
+              "first": 55,
+              "second": 64,
+              "kind": "same"
+            },
+            {
+              "first": 79,
+              "second": 80,
+              "kind": "different"
+            }
+          ]
+        },
+        "prefix": 40,
+        "goal": {
+          "line": 6,
+          "remove": 1
+        },
+        "examples": [
+          {
+            "cell": 62,
+            "witness": [
+              {
+                "cell": 57,
+                "remove": 2,
+                "rule": "no-three",
+                "group": [56, 57, 58]
+              },
+              {
+                "cell": 62,
+                "remove": 1,
+                "rule": "row-count",
+                "group": [54, 55, 56, 57, 58, 59, 60, 61, 62]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "trio-quota-no-three-2",
+        "source": "2026-10-06-trio",
+        "board": {
+          "givens": [0, 0, 1, 0, 3, 2, 3, 0, 0, 1, 0, 0, 2, 1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 2, 2, 0, 2, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 3, 2, 0, 0, 3, 0, 2, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0, 0, 2, 2, 0, 0, 0, 0, 3],
+          "relations": [
+            {
+              "first": 6,
+              "second": 15,
+              "kind": "different"
+            },
+            {
+              "first": 7,
+              "second": 8,
+              "kind": "different"
+            },
+            {
+              "first": 26,
+              "second": 35,
+              "kind": "different"
+            },
+            {
+              "first": 27,
+              "second": 36,
+              "kind": "same"
+            },
+            {
+              "first": 30,
+              "second": 39,
+              "kind": "different"
+            },
+            {
+              "first": 38,
+              "second": 47,
+              "kind": "different"
+            },
+            {
+              "first": 55,
+              "second": 64,
+              "kind": "different"
+            },
+            {
+              "first": 59,
+              "second": 60,
+              "kind": "different"
+            },
+            {
+              "first": 63,
+              "second": 72,
+              "kind": "same"
+            },
+            {
+              "first": 64,
+              "second": 73,
+              "kind": "different"
+            },
+            {
+              "first": 68,
+              "second": 77,
+              "kind": "same"
+            },
+            {
+              "first": 78,
+              "second": 79,
+              "kind": "same"
+            },
+            {
+              "first": 79,
+              "second": 80,
+              "kind": "different"
+            }
+          ]
+        },
+        "prefix": 39,
+        "goal": {
+          "line": 15,
+          "remove": 2
+        },
+        "examples": [
+          {
+            "cell": 33,
+            "witness": [
+              {
+                "cell": 14,
+                "remove": 2,
+                "rule": "column-count",
+                "group": [5, 14, 23, 32, 41, 50, 59, 68, 77]
+              },
+              {
+                "cell": 15,
+                "remove": 1,
+                "rule": "no-three",
+                "group": [13, 14, 15]
+              },
+              {
+                "cell": 33,
+                "remove": 2,
+                "rule": "no-three",
+                "group": [15, 24, 33]
+              }
+            ]
+          },
+          {
+            "cell": 42,
+            "witness": [
+              {
+                "cell": 14,
+                "remove": 2,
+                "rule": "column-count",
+                "group": [5, 14, 23, 32, 41, 50, 59, 68, 77]
+              },
+              {
+                "cell": 15,
+                "remove": 1,
+                "rule": "no-three",
+                "group": [13, 14, 15]
+              },
+              {
+                "cell": 42,
+                "remove": 2,
+                "rule": "column-count",
+                "group": [6, 15, 24, 33, 42, 51, 60, 69, 78]
+              }
+            ]
+          },
+          {
+            "cell": 51,
+            "witness": [
+              {
+                "cell": 14,
+                "remove": 2,
+                "rule": "column-count",
+                "group": [5, 14, 23, 32, 41, 50, 59, 68, 77]
+              },
+              {
+                "cell": 15,
+                "remove": 1,
+                "rule": "no-three",
+                "group": [13, 14, 15]
+              },
+              {
+                "cell": 51,
+                "remove": 2,
+                "rule": "column-count",
+                "group": [6, 15, 24, 33, 42, 51, 60, 69, 78]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "trio-quota-no-three-3",
+        "source": "2026-09-30-trio",
+        "board": {
+          "givens": [0, 0, 2, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 2, 0, 0, 0, 0, 1, 0, 2, 0, 0, 1, 0, 3, 2, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1, 0, 0, 3, 0, 3, 0, 0, 1, 0, 0, 0, 0, 0, 0, 3, 2, 0, 0, 2, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 1, 0, 0, 2, 0, 1, 0, 1, 3],
+          "relations": [
+            {
+              "first": 3,
+              "second": 4,
+              "kind": "different"
+            },
+            {
+              "first": 4,
+              "second": 5,
+              "kind": "different"
+            },
+            {
+              "first": 12,
+              "second": 13,
+              "kind": "same"
+            },
+            {
+              "first": 21,
+              "second": 22,
+              "kind": "same"
+            },
+            {
+              "first": 24,
+              "second": 25,
+              "kind": "same"
+            },
+            {
+              "first": 24,
+              "second": 33,
+              "kind": "different"
+            },
+            {
+              "first": 52,
+              "second": 53,
+              "kind": "same"
+            },
+            {
+              "first": 53,
+              "second": 62,
+              "kind": "different"
+            }
+          ]
+        },
+        "prefix": 43,
+        "goal": {
+          "line": 5,
+          "remove": 3
+        },
+        "examples": [
+          {
+            "cell": 50,
+            "witness": [
+              {
+                "cell": 10,
+                "remove": 4,
+                "rule": "no-three",
+                "group": [1, 10, 19]
+              },
+              {
+                "cell": 14,
+                "remove": 2,
+                "rule": "row-count",
+                "group": [9, 10, 11, 12, 13, 14, 15, 16, 17]
+              },
+              {
+                "cell": 50,
+                "remove": 4,
+                "rule": "column-count",
+                "group": [5, 14, 23, 32, 41, 50, 59, 68, 77]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "trio-quota-no-three-4",
+        "source": "2026-10-04-trio",
+        "board": {
+          "givens": [0, 1, 0, 0, 1, 0, 1, 3, 0, 2, 2, 0, 0, 0, 0, 0, 0, 2, 0, 3, 0, 0, 0, 1, 0, 0, 0, 3, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 2, 0, 1, 0, 1, 2, 0, 1, 3, 0, 0, 0, 0, 2, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 3, 3, 0, 0, 0, 2, 0, 0, 3, 0, 2, 0],
+          "relations": [
+            {
+              "first": 8,
+              "second": 17,
+              "kind": "different"
+            },
+            {
+              "first": 39,
+              "second": 40,
+              "kind": "same"
+            },
+            {
+              "first": 41,
+              "second": 42,
+              "kind": "different"
+            },
+            {
+              "first": 43,
+              "second": 52,
+              "kind": "different"
+            },
+            {
+              "first": 49,
+              "second": 58,
+              "kind": "same"
+            },
+            {
+              "first": 76,
+              "second": 77,
+              "kind": "different"
+            },
+            {
+              "first": 77,
+              "second": 78,
+              "kind": "different"
+            }
+          ]
+        },
+        "prefix": 35,
+        "goal": {
+          "line": 15,
+          "remove": 1
+        },
+        "examples": [
+          {
+            "cell": 24,
+            "witness": [
+              {
+                "cell": 14,
+                "remove": 1,
+                "rule": "column-count",
+                "group": [5, 14, 23, 32, 41, 50, 59, 68, 77]
+              },
+              {
+                "cell": 15,
+                "remove": 4,
+                "rule": "no-three",
+                "group": [13, 14, 15]
+              },
+              {
+                "cell": 24,
+                "remove": 1,
+                "rule": "no-three",
+                "group": [6, 15, 24]
+              }
+            ]
+          },
+          {
+            "cell": 33,
+            "witness": [
+              {
+                "cell": 78,
+                "remove": 2,
+                "rule": "row-count",
+                "group": [72, 73, 74, 75, 76, 77, 78, 79, 80]
+              },
+              {
+                "cell": 14,
+                "remove": 1,
+                "rule": "column-count",
+                "group": [5, 14, 23, 32, 41, 50, 59, 68, 77]
+              },
+              {
+                "cell": 15,
+                "remove": 4,
+                "rule": "no-three",
+                "group": [13, 14, 15]
+              },
+              {
+                "cell": 33,
+                "remove": 1,
+                "rule": "column-count",
+                "group": [6, 15, 24, 33, 42, 51, 60, 69, 78]
+              }
+            ]
+          },
+          {
+            "cell": 51,
+            "witness": [
+              {
+                "cell": 78,
+                "remove": 2,
+                "rule": "row-count",
+                "group": [72, 73, 74, 75, 76, 77, 78, 79, 80]
+              },
+              {
+                "cell": 14,
+                "remove": 1,
+                "rule": "column-count",
+                "group": [5, 14, 23, 32, 41, 50, 59, 68, 77]
+              },
+              {
+                "cell": 15,
+                "remove": 4,
+                "rule": "no-three",
+                "group": [13, 14, 15]
+              },
+              {
+                "cell": 51,
+                "remove": 1,
+                "rule": "column-count",
+                "group": [6, 15, 24, 33, 42, 51, 60, 69, 78]
+              }
+            ]
+          },
+          {
+            "cell": 60,
+            "witness": [
+              {
+                "cell": 78,
+                "remove": 2,
+                "rule": "row-count",
+                "group": [72, 73, 74, 75, 76, 77, 78, 79, 80]
+              },
+              {
+                "cell": 14,
+                "remove": 1,
+                "rule": "column-count",
+                "group": [5, 14, 23, 32, 41, 50, 59, 68, 77]
+              },
+              {
+                "cell": 15,
+                "remove": 4,
+                "rule": "no-three",
+                "group": [13, 14, 15]
+              },
+              {
+                "cell": 60,
+                "remove": 1,
+                "rule": "column-count",
+                "group": [6, 15, 24, 33, 42, 51, 60, 69, 78]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "relation-propagation",
+    "title": "Carry restrictions through links",
+    "stage": "Pass information on",
+    "introduction": "An = link carries candidate exclusions in either direction. A \u00d7 link excludes a newly forced symbol from its neighbour. First derive the restriction, then use the link.",
+    "exercises": [
+      {
+        "id": "trio-relation-propagation",
+        "source": "2026-10-08-trio",
+        "board": {
+          "givens": [0, 1, 0, 3, 0, 0, 2, 2, 0, 2, 0, 0, 0, 0, 1, 1, 0, 3, 0, 0, 0, 3, 0, 2, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 3, 1, 3, 3, 0, 0, 1, 0, 0, 0, 0, 2, 0, 2, 0, 0, 0, 0, 0, 1, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+          "relations": [
+            {
+              "first": 2,
+              "second": 3,
+              "kind": "different"
+            },
+            {
+              "first": 3,
+              "second": 4,
+              "kind": "different"
+            },
+            {
+              "first": 13,
+              "second": 22,
+              "kind": "same"
+            },
+            {
+              "first": 21,
+              "second": 22,
+              "kind": "different"
+            },
+            {
+              "first": 42,
+              "second": 51,
+              "kind": "same"
+            },
+            {
+              "first": 47,
+              "second": 48,
+              "kind": "same"
+            },
+            {
+              "first": 49,
+              "second": 58,
+              "kind": "same"
+            },
+            {
+              "first": 52,
+              "second": 53,
+              "kind": "different"
+            },
+            {
+              "first": 64,
+              "second": 65,
+              "kind": "same"
+            },
+            {
+              "first": 70,
+              "second": 71,
+              "kind": "same"
+            },
+            {
+              "first": 73,
+              "second": 74,
+              "kind": "different"
+            },
+            {
+              "first": 79,
+              "second": 80,
+              "kind": "same"
+            }
+          ]
+        },
+        "prefix": 47,
+        "goal": {
+          "line": 5,
+          "remove": 1
+        },
+        "examples": [
+          {
+            "cell": 51,
+            "witness": [
+              {
+                "cell": 42,
+                "remove": 1,
+                "rule": "row-count",
+                "group": [36, 37, 38, 39, 40, 41, 42, 43, 44]
+              },
+              {
+                "cell": 51,
+                "remove": 1,
+                "rule": "same",
+                "group": [42, 51]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "trio-relation-propagation-2",
+        "source": "2026-09-26-trio",
+        "board": {
+          "givens": [0, 0, 2, 0, 0, 1, 0, 2, 0, 0, 1, 0, 3, 0, 0, 0, 0, 1, 0, 0, 2, 0, 0, 0, 0, 1, 1, 0, 3, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 2, 0, 2, 0, 3, 0, 0, 0, 0, 0, 0, 2, 3, 0, 0, 0, 3, 0, 0, 3, 0, 0, 3, 0, 0, 0, 0, 0, 3],
+          "relations": [
+            {
+              "first": 7,
+              "second": 16,
+              "kind": "different"
+            },
+            {
+              "first": 15,
+              "second": 16,
+              "kind": "same"
+            },
+            {
+              "first": 15,
+              "second": 24,
+              "kind": "different"
+            },
+            {
+              "first": 22,
+              "second": 23,
+              "kind": "different"
+            },
+            {
+              "first": 36,
+              "second": 37,
+              "kind": "different"
+            },
+            {
+              "first": 50,
+              "second": 51,
+              "kind": "different"
+            },
+            {
+              "first": 51,
+              "second": 60,
+              "kind": "different"
+            },
+            {
+              "first": 55,
+              "second": 56,
+              "kind": "different"
+            },
+            {
+              "first": 59,
+              "second": 68,
+              "kind": "different"
+            },
+            {
+              "first": 61,
+              "second": 62,
+              "kind": "same"
+            }
+          ]
+        },
+        "prefix": 74,
+        "goal": {
+          "line": 17,
+          "remove": 2
+        },
+        "examples": [
+          {
+            "cell": 62,
+            "witness": [
+              {
+                "cell": 79,
+                "remove": 1,
+                "rule": "row-count",
+                "group": [72, 73, 74, 75, 76, 77, 78, 79, 80]
+              },
+              {
+                "cell": 61,
+                "remove": 2,
+                "rule": "column-count",
+                "group": [7, 16, 25, 34, 43, 52, 61, 70, 79]
+              },
+              {
+                "cell": 62,
+                "remove": 2,
+                "rule": "same",
+                "group": [61, 62]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "trio-relation-propagation-3",
+        "source": "2026-10-21-trio",
+        "board": {
+          "givens": [0, 1, 0, 0, 0, 3, 2, 0, 0, 0, 1, 3, 0, 3, 3, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 2, 3, 0, 0, 2, 0, 0, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0, 0, 2, 0, 0, 3, 0, 1, 0, 0, 2, 0, 3, 2, 2, 0, 3, 2, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0],
+          "relations": [
+            {
+              "first": 3,
+              "second": 12,
+              "kind": "same"
+            },
+            {
+              "first": 9,
+              "second": 18,
+              "kind": "same"
+            },
+            {
+              "first": 15,
+              "second": 24,
+              "kind": "same"
+            },
+            {
+              "first": 19,
+              "second": 20,
+              "kind": "different"
+            },
+            {
+              "first": 23,
+              "second": 24,
+              "kind": "different"
+            },
+            {
+              "first": 41,
+              "second": 42,
+              "kind": "different"
+            },
+            {
+              "first": 42,
+              "second": 43,
+              "kind": "different"
+            },
+            {
+              "first": 43,
+              "second": 52,
+              "kind": "different"
+            },
+            {
+              "first": 57,
+              "second": 58,
+              "kind": "different"
+            },
+            {
+              "first": 66,
+              "second": 75,
+              "kind": "different"
+            },
+            {
+              "first": 68,
+              "second": 77,
+              "kind": "different"
+            },
+            {
+              "first": 69,
+              "second": 70,
+              "kind": "same"
+            },
+            {
+              "first": 75,
+              "second": 76,
+              "kind": "different"
+            }
+          ]
+        },
+        "prefix": 34,
+        "goal": {
+          "line": 2,
+          "remove": 3
+        },
+        "examples": [
+          {
+            "cell": 20,
+            "witness": [
+              {
+                "cell": 18,
+                "remove": 1,
+                "rule": "same",
+                "group": [9, 18]
+              },
+              {
+                "cell": 19,
+                "remove": 2,
+                "rule": "row-count",
+                "group": [18, 19, 20, 21, 22, 23, 24, 25, 26]
+              },
+              {
+                "cell": 20,
+                "remove": 4,
+                "rule": "different",
+                "group": [19, 20]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "trio-relation-propagation-4",
+        "source": "2026-10-13-trio",
+        "board": {
+          "givens": [0, 0, 1, 0, 0, 3, 1, 0, 1, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 0, 0, 2, 1, 0, 2, 0, 0, 0, 0, 3, 0, 0, 0, 2, 0, 0, 0, 0, 1, 0, 0, 0, 3, 3, 0, 0, 0, 1, 0, 0, 0],
+          "relations": [
+            {
+              "first": 10,
+              "second": 11,
+              "kind": "different"
+            },
+            {
+              "first": 12,
+              "second": 21,
+              "kind": "same"
+            },
+            {
+              "first": 19,
+              "second": 28,
+              "kind": "same"
+            },
+            {
+              "first": 32,
+              "second": 33,
+              "kind": "same"
+            },
+            {
+              "first": 35,
+              "second": 44,
+              "kind": "same"
+            },
+            {
+              "first": 36,
+              "second": 45,
+              "kind": "different"
+            },
+            {
+              "first": 39,
+              "second": 40,
+              "kind": "same"
+            },
+            {
+              "first": 40,
+              "second": 41,
+              "kind": "different"
+            },
+            {
+              "first": 45,
+              "second": 46,
+              "kind": "different"
+            },
+            {
+              "first": 48,
+              "second": 57,
+              "kind": "same"
+            },
+            {
+              "first": 59,
+              "second": 60,
+              "kind": "different"
+            },
+            {
+              "first": 60,
+              "second": 61,
+              "kind": "different"
+            },
+            {
+              "first": 67,
+              "second": 68,
+              "kind": "different"
+            },
+            {
+              "first": 77,
+              "second": 78,
+              "kind": "same"
+            },
+            {
+              "first": 79,
+              "second": 80,
+              "kind": "different"
+            }
+          ]
+        },
+        "prefix": 48,
+        "goal": {
+          "line": 9,
+          "remove": 1
+        },
+        "examples": [
+          {
+            "cell": 45,
+            "witness": [
+              {
+                "cell": 40,
+                "remove": 1,
+                "rule": "same",
+                "group": [39, 40]
+              },
+              {
+                "cell": 36,
+                "remove": 6,
+                "rule": "row-count",
+                "group": [36, 37, 38, 39, 40, 41, 42, 43, 44]
+              },
+              {
+                "cell": 45,
+                "remove": 1,
+                "rule": "different",
+                "group": [36, 45]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "candidate-chains",
+    "title": "Chain candidate eliminations",
+    "stage": "Follow a longer chain",
+    "introduction": "An elimination can unlock another deduction several cells away. Follow the chain without guessing. Ruling out one symbol is useful progress even when two possibilities remain.",
+    "exercises": [
+      {
+        "id": "trio-candidate-chains",
+        "source": "2026-10-09-trio",
+        "board": {
+          "givens": [2, 0, 0, 0, 0, 2, 3, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 2, 0, 0, 1, 0, 2, 0, 0, 1, 1, 0, 3, 0, 0, 2, 2, 0, 1, 0, 0, 0, 0, 0, 0, 2, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 3, 1, 0, 0, 3, 3],
+          "relations": [
+            {
+              "first": 5,
+              "second": 14,
+              "kind": "same"
+            },
+            {
+              "first": 20,
+              "second": 21,
+              "kind": "different"
+            },
+            {
+              "first": 23,
+              "second": 32,
+              "kind": "same"
+            },
+            {
+              "first": 25,
+              "second": 26,
+              "kind": "same"
+            },
+            {
+              "first": 29,
+              "second": 38,
+              "kind": "same"
+            },
+            {
+              "first": 30,
+              "second": 31,
+              "kind": "different"
+            },
+            {
+              "first": 39,
+              "second": 40,
+              "kind": "different"
+            },
+            {
+              "first": 44,
+              "second": 53,
+              "kind": "different"
+            },
+            {
+              "first": 63,
+              "second": 64,
+              "kind": "same"
+            },
+            {
+              "first": 70,
+              "second": 79,
+              "kind": "different"
+            }
+          ]
+        },
+        "prefix": 50,
+        "goal": {
+          "line": 5,
+          "remove": 1
+        },
+        "examples": [
+          {
+            "cell": 49,
+            "witness": [
+              {
+                "cell": 2,
+                "remove": 1,
+                "rule": "column-count",
+                "group": [2, 11, 20, 29, 38, 47, 56, 65, 74]
+              },
+              {
+                "cell": 4,
+                "remove": 6,
+                "rule": "row-count",
+                "group": [0, 1, 2, 3, 4, 5, 6, 7, 8]
+              },
+              {
+                "cell": 49,
+                "remove": 1,
+                "rule": "column-count",
+                "group": [4, 13, 22, 31, 40, 49, 58, 67, 76]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "trio-candidate-chains-2",
+        "source": "2026-09-27-trio",
+        "board": {
+          "givens": [0, 0, 1, 0, 0, 0, 0, 0, 3, 0, 2, 0, 0, 0, 2, 3, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 3, 2, 0, 1, 0, 0, 3, 0, 3, 2, 1, 0, 2, 1, 3, 0, 2, 0, 0, 0, 3, 1, 0, 2, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 2, 3, 0, 2, 0, 0, 0, 0, 0],
+          "relations": [
+            {
+              "first": 5,
+              "second": 6,
+              "kind": "same"
+            },
+            {
+              "first": 15,
+              "second": 16,
+              "kind": "different"
+            },
+            {
+              "first": 18,
+              "second": 27,
+              "kind": "same"
+            },
+            {
+              "first": 20,
+              "second": 21,
+              "kind": "different"
+            },
+            {
+              "first": 21,
+              "second": 22,
+              "kind": "different"
+            },
+            {
+              "first": 40,
+              "second": 49,
+              "kind": "different"
+            },
+            {
+              "first": 41,
+              "second": 42,
+              "kind": "different"
+            },
+            {
+              "first": 49,
+              "second": 50,
+              "kind": "different"
+            },
+            {
+              "first": 57,
+              "second": 58,
+              "kind": "same"
+            },
+            {
+              "first": 59,
+              "second": 60,
+              "kind": "different"
+            },
+            {
+              "first": 61,
+              "second": 70,
+              "kind": "same"
+            },
+            {
+              "first": 64,
+              "second": 73,
+              "kind": "different"
+            }
+          ]
+        },
+        "prefix": 39,
+        "goal": {
+          "line": 15,
+          "remove": 2
+        },
+        "examples": [
+          {
+            "cell": 6,
+            "witness": [
+              {
+                "cell": 59,
+                "remove": 4,
+                "rule": "no-three",
+                "group": [57, 58, 59]
+              },
+              {
+                "cell": 5,
+                "remove": 2,
+                "rule": "column-count",
+                "group": [5, 14, 23, 32, 41, 50, 59, 68, 77]
+              },
+              {
+                "cell": 6,
+                "remove": 2,
+                "rule": "same",
+                "group": [5, 6]
+              }
+            ]
+          },
+          {
+            "cell": 78,
+            "witness": [
+              {
+                "cell": 11,
+                "remove": 3,
+                "rule": "row-count",
+                "group": [9, 10, 11, 12, 13, 14, 15, 16, 17]
+              },
+              {
+                "cell": 74,
+                "remove": 5,
+                "rule": "column-count",
+                "group": [2, 11, 20, 29, 38, 47, 56, 65, 74]
+              },
+              {
+                "cell": 78,
+                "remove": 2,
+                "rule": "row-count",
+                "group": [72, 73, 74, 75, 76, 77, 78, 79, 80]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "trio-candidate-chains-3",
+        "source": "2026-10-16-trio",
+        "board": {
+          "givens": [0, 2, 2, 0, 1, 0, 0, 0, 0, 1, 0, 0, 2, 0, 1, 3, 1, 0, 0, 0, 2, 0, 0, 0, 0, 3, 3, 0, 1, 0, 0, 0, 3, 3, 0, 2, 1, 2, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 1, 0, 1, 0, 1, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1, 0, 3, 0, 3, 0, 0, 0, 1, 0, 3],
+          "relations": [
+            {
+              "first": 4,
+              "second": 5,
+              "kind": "different"
+            },
+            {
+              "first": 12,
+              "second": 13,
+              "kind": "different"
+            },
+            {
+              "first": 20,
+              "second": 29,
+              "kind": "different"
+            },
+            {
+              "first": 40,
+              "second": 41,
+              "kind": "different"
+            },
+            {
+              "first": 43,
+              "second": 52,
+              "kind": "different"
+            },
+            {
+              "first": 45,
+              "second": 46,
+              "kind": "different"
+            },
+            {
+              "first": 56,
+              "second": 57,
+              "kind": "same"
+            },
+            {
+              "first": 59,
+              "second": 68,
+              "kind": "different"
+            },
+            {
+              "first": 61,
+              "second": 62,
+              "kind": "same"
+            }
+          ]
+        },
+        "prefix": 34,
+        "goal": {
+          "line": 6,
+          "remove": 3
+        },
+        "examples": [
+          {
+            "cell": 54,
+            "witness": [
+              {
+                "cell": 21,
+                "remove": 4,
+                "rule": "row-count",
+                "group": [18, 19, 20, 21, 22, 23, 24, 25, 26]
+              },
+              {
+                "cell": 57,
+                "remove": 1,
+                "rule": "column-count",
+                "group": [3, 12, 21, 30, 39, 48, 57, 66, 75]
+              },
+              {
+                "cell": 56,
+                "remove": 1,
+                "rule": "same",
+                "group": [56, 57]
+              },
+              {
+                "cell": 54,
+                "remove": 4,
+                "rule": "row-count",
+                "group": [54, 55, 56, 57, 58, 59, 60, 61, 62]
+              }
+            ]
+          },
+          {
+            "cell": 58,
+            "witness": [
+              {
+                "cell": 21,
+                "remove": 4,
+                "rule": "row-count",
+                "group": [18, 19, 20, 21, 22, 23, 24, 25, 26]
+              },
+              {
+                "cell": 57,
+                "remove": 1,
+                "rule": "column-count",
+                "group": [3, 12, 21, 30, 39, 48, 57, 66, 75]
+              },
+              {
+                "cell": 58,
+                "remove": 4,
+                "rule": "no-three",
+                "group": [57, 58, 59]
+              }
+            ]
+          },
+          {
+            "cell": 60,
+            "witness": [
+              {
+                "cell": 21,
+                "remove": 4,
+                "rule": "row-count",
+                "group": [18, 19, 20, 21, 22, 23, 24, 25, 26]
+              },
+              {
+                "cell": 57,
+                "remove": 1,
+                "rule": "column-count",
+                "group": [3, 12, 21, 30, 39, 48, 57, 66, 75]
+              },
+              {
+                "cell": 56,
+                "remove": 1,
+                "rule": "same",
+                "group": [56, 57]
+              },
+              {
+                "cell": 60,
+                "remove": 4,
+                "rule": "row-count",
+                "group": [54, 55, 56, 57, 58, 59, 60, 61, 62]
+              }
+            ]
+          },
+          {
+            "cell": 61,
+            "witness": [
+              {
+                "cell": 21,
+                "remove": 4,
+                "rule": "row-count",
+                "group": [18, 19, 20, 21, 22, 23, 24, 25, 26]
+              },
+              {
+                "cell": 57,
+                "remove": 1,
+                "rule": "column-count",
+                "group": [3, 12, 21, 30, 39, 48, 57, 66, 75]
+              },
+              {
+                "cell": 56,
+                "remove": 1,
+                "rule": "same",
+                "group": [56, 57]
+              },
+              {
+                "cell": 61,
+                "remove": 4,
+                "rule": "row-count",
+                "group": [54, 55, 56, 57, 58, 59, 60, 61, 62]
+              }
+            ]
+          },
+          {
+            "cell": 62,
+            "witness": [
+              {
+                "cell": 21,
+                "remove": 4,
+                "rule": "row-count",
+                "group": [18, 19, 20, 21, 22, 23, 24, 25, 26]
+              },
+              {
+                "cell": 57,
+                "remove": 1,
+                "rule": "column-count",
+                "group": [3, 12, 21, 30, 39, 48, 57, 66, 75]
+              },
+              {
+                "cell": 56,
+                "remove": 1,
+                "rule": "same",
+                "group": [56, 57]
+              },
+              {
+                "cell": 62,
+                "remove": 4,
+                "rule": "row-count",
+                "group": [54, 55, 56, 57, 58, 59, 60, 61, 62]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "trio-candidate-chains-4",
+        "source": "2026-10-22-trio",
+        "board": {
+          "givens": [3, 0, 0, 0, 2, 1, 0, 0, 0, 0, 0, 0, 2, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 1, 2, 0, 1, 0, 3, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 2, 1, 0, 0, 0, 3, 2, 3, 0, 0, 0, 3, 0, 2, 0, 0, 3, 0, 0, 2, 0, 1, 2, 0, 0, 2, 3, 0, 1, 0, 0, 0, 0],
+          "relations": [
+            {
+              "first": 7,
+              "second": 8,
+              "kind": "different"
+            },
+            {
+              "first": 12,
+              "second": 13,
+              "kind": "same"
+            },
+            {
+              "first": 16,
+              "second": 17,
+              "kind": "different"
+            },
+            {
+              "first": 45,
+              "second": 54,
+              "kind": "different"
+            },
+            {
+              "first": 69,
+              "second": 78,
+              "kind": "same"
+            },
+            {
+              "first": 74,
+              "second": 75,
+              "kind": "different"
+            },
+            {
+              "first": 78,
+              "second": 79,
+              "kind": "different"
+            },
+            {
+              "first": 79,
+              "second": 80,
+              "kind": "different"
+            }
+          ]
+        },
+        "prefix": 42,
+        "goal": {
+          "line": 14,
+          "remove": 1
+        },
+        "examples": [
+          {
+            "cell": 50,
+            "witness": [
+              {
+                "cell": 51,
+                "remove": 2,
+                "rule": "no-three",
+                "group": [42, 51, 60]
+              },
+              {
+                "cell": 52,
+                "remove": 4,
+                "rule": "no-three",
+                "group": [51, 52, 53]
+              },
+              {
+                "cell": 43,
+                "remove": 1,
+                "rule": "no-three",
+                "group": [34, 43, 52]
+              },
+              {
+                "cell": 41,
+                "remove": 2,
+                "rule": "no-three",
+                "group": [41, 42, 43]
+              },
+              {
+                "cell": 50,
+                "remove": 1,
+                "rule": "column-count",
+                "group": [5, 14, 23, 32, 41, 50, 59, 68, 77]
+              }
+            ]
+          },
+          {
+            "cell": 68,
+            "witness": [
+              {
+                "cell": 51,
+                "remove": 2,
+                "rule": "no-three",
+                "group": [42, 51, 60]
+              },
+              {
+                "cell": 52,
+                "remove": 4,
+                "rule": "no-three",
+                "group": [51, 52, 53]
+              },
+              {
+                "cell": 43,
+                "remove": 1,
+                "rule": "no-three",
+                "group": [34, 43, 52]
+              },
+              {
+                "cell": 41,
+                "remove": 2,
+                "rule": "no-three",
+                "group": [41, 42, 43]
+              },
+              {
+                "cell": 68,
+                "remove": 1,
+                "rule": "column-count",
+                "group": [5, 14, 23, 32, 41, 50, 59, 68, 77]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
