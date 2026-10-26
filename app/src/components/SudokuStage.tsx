@@ -142,7 +142,7 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
           <button type="button" className="tool-button" disabled={solved || !history.canRedo} onClick={redo}>Redo</button>
           <ResetButton disabled={solved || game.cells.every((v, i) => v === board.givens[i] && !game.notes[i])}
             onReset={() => { if (completed.current) return; restartAttempt(); commit(createSudokuGame(board), 'Board cleared. Undo restores the board. Total time and hints are kept.') }} />
-          <button type="button" className="tool-button" disabled={solved} aria-pressed={pencil} onClick={() => setPencil(!pencil)}>Notes</button>
+          <button type="button" className="tool-button notes-toggle" disabled={solved} aria-pressed={pencil} onClick={() => setPencil(!pencil)}>Notes</button>
           <button type="button" className="tool-button" disabled={solved || !game.notes.some(Boolean)} onClick={() => commit({ cells: game.cells, notes: Array<number>(81).fill(0) }, 'All notes cleared. Undo brings them back.')}>Clear notes</button>
           <button type="button" className="tool-button" ref={hintButton} disabled={solved} aria-label="Get an explained hint" aria-expanded={hint !== null || mistake !== null}
             aria-controls={hint || mistake !== null ? hintId : undefined} onClick={requestHint}>Hint</button>
