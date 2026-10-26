@@ -90,7 +90,7 @@ export const PUZZLE_TYPE_HAS_HINTS: Record<PuzzleType, boolean> = {
   trio: true,
   tents: true,
   sudoku: true,
-  nurikabe: false,
+  nurikabe: true,
 }
 
 export const PUZZLE_TYPE_LABEL: Record<PuzzleType, string> = {
