@@ -64,7 +64,7 @@ export function editNurikabeCell(board: NurikabeBoard, game: NurikabeGame, cell:
   return game.map((mark, index) => index === cell ? value : mark)
 }
 
-function neighbours(size: number, cell: number): number[] {
+export function nurikabeNeighbours(size: number, cell: number): number[] {
   const row = Math.floor(cell / size), col = cell % size
   return [row > 0 ? cell - size : -1, row + 1 < size ? cell + size : -1, col > 0 ? cell - 1 : -1, col + 1 < size ? cell + 1 : -1].filter(next => next >= 0)
 }
@@ -74,7 +74,7 @@ function components(board: NurikabeBoard, includes: (cell: number) => boolean): 
   for (let cell = 0; cell < board.size ** 2; cell++) {
     if (seen.has(cell) || !includes(cell)) continue
     const group = [cell]; seen.add(cell)
-    for (const current of group) for (const next of neighbours(board.size, current)) {
+    for (const current of group) for (const next of nurikabeNeighbours(board.size, current)) {
       if (!seen.has(next) && includes(next)) { seen.add(next); group.push(next) }
     }
     groups.push(group)
