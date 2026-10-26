@@ -17,6 +17,7 @@ import { TrioGrid, TrioGridError } from './trio'
 import { TentsGrid, TentsGridError } from './tents'
 import { SudokuGrid, SudokuGridError } from './sudoku'
 import { sudokuVariantOf } from './sudokuLevels'
+import { NurikabeGrid, NurikabeGridError } from './nurikabe'
 
 export class PuzzleParseError extends Error {
   constructor(message: string) {
@@ -41,7 +42,7 @@ export interface Puzzle {
   readonly seed: number
   readonly generatorVersion: number
   /** Family-specific grid. Shared readers use width, height and cellCount. */
-  readonly board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid
+  readonly board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid
   readonly difficulty: DifficultyBand | null
 }
 
@@ -67,6 +68,10 @@ export function isTentsPuzzle(puzzle: Puzzle): puzzle is Puzzle & { board: Tents
 
 export function isSudokuPuzzle(puzzle: Puzzle): puzzle is Puzzle & { board: SudokuGrid } {
   return puzzle.board instanceof SudokuGrid
+}
+
+export function isNurikabePuzzle(puzzle: Puzzle): puzzle is Puzzle & { board: NurikabeGrid } {
+  return puzzle.board instanceof NurikabeGrid
 }
 
 let compiled: ValidateFunction | undefined
@@ -139,15 +144,16 @@ export function parsePuzzle(data: unknown): Puzzle {
   // The one place the file format branches. Everything downstream asks the board
   // what it is rather than the type, because a board knows its own geometry and a
   // puzzle type does not.
-  let board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid
+  let board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid
   try {
-    board = typeRaw === 'sudoku' ? new SudokuGrid(String(record['id']), boardRecord['level'], boardRecord['givens'])
+    board = typeRaw === 'nurikabe' ? new NurikabeGrid(String(record['id']), boardRecord['size'], boardRecord['clues'])
+      : typeRaw === 'sudoku' ? new SudokuGrid(String(record['id']), boardRecord['level'], boardRecord['givens'])
       : typeRaw === 'tents' ? new TentsGrid(String(record['id']), boardRecord['size'], boardRecord['trees'], boardRecord['rowClues'], boardRecord['colClues'])
       : typeRaw === 'trio' ? new TrioGrid(String(record['id']), boardRecord['givens'], boardRecord['relations'])
       : typeRaw === 'word-paths' ? parseWordGrid(boardRecord, Number(record['generatorVersion']))
       : typeRaw === 'train-tracks' ? parseTrackGrid(boardRecord) : parseMarksBoard(boardRecord, typeRaw)
   } catch (error) {
-    if (error instanceof BoardError || error instanceof TrackGridError || error instanceof WordGridError || error instanceof TrioGridError || error instanceof TentsGridError || error instanceof SudokuGridError) {
+    if (error instanceof BoardError || error instanceof TrackGridError || error instanceof WordGridError || error instanceof TrioGridError || error instanceof TentsGridError || error instanceof SudokuGridError || error instanceof NurikabeGridError) {
       throw new PuzzleParseError(error.message)
     }
     throw error
@@ -158,6 +164,9 @@ export function parsePuzzle(data: unknown): Puzzle {
   if ((typeRaw === 'sudoku' || sudokuVariant !== null) &&
     (typeRaw !== 'sudoku' || !isPuzzleId(id) || sudokuVariant?.name !== boardRecord['level'])) {
     throw new PuzzleParseError('Sudoku requires a canonical date-sudoku-level id matching its board level')
+  }
+  if (typeRaw === 'nurikabe' && puzzleTypeOf(id) !== typeRaw) {
+    throw new PuzzleParseError('nurikabe requires a canonical date-nurikabe id')
   }
   if (typeRaw === 'tents' && puzzleTypeOf(id) !== typeRaw) {
     throw new PuzzleParseError('tents requires a canonical date-tents id')

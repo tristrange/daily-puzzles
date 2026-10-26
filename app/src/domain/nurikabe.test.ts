@@ -52,3 +52,15 @@ it('protects clues and validates the preview and save boundaries, including spar
   }
   expect(() => parseNurikabeBoards([raw[0], raw[0]])).toThrow()
 })
+
+it('accepts every certified daily answer with optional land notes using the browser encoding', async () => {
+  const { default: proof } = await import('@shared/docs/measurements/daily-nurikabe-launch.json')
+  const { NurikabeGrid } = await import('./nurikabe')
+  for (const sample of proof.samples) {
+    const board = new NurikabeGrid(sample.id, sample.size, sample.clues)
+    const seaOnly = sample.solution.map((value, cell) => value === 0 ? 1 : board.clues[cell] ? 2 : 0) satisfies NurikabeGame
+    expect(isNurikabeSolved(board, seaOnly)).toBe(true)
+    const explicit = sample.solution.map(value => value === 0 ? 1 : 2) satisfies NurikabeGame
+    expect(isNurikabeSolved(board, explicit)).toBe(true)
+  }
+})

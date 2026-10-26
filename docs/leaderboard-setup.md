@@ -26,9 +26,12 @@ once. It creates the tables, private rate counter and restricted RPC functions
 in one transaction. Reapplying it fails without dropping the existing data.
 Then apply [`002_tents.sql`](../backend/leaderboard/migrations/002_tents.sql)
 and [`003_sudoku.sql`](../backend/leaderboard/migrations/003_sudoku.sql)
-to support all seven puzzle families before synchronizing the catalog. Then apply
+to support the original seven puzzle families. Then apply
 [`20261025113819_reset_attempt_time.sql`](../backend/leaderboard/migrations/20261025113819_reset_attempt_time.sql)
-for optional since-reset durations.
+for optional since-reset durations, followed by
+[`20261025225242_daily_nurikabe.sql`](../backend/leaderboard/migrations/20261025225242_daily_nurikabe.sql)
+to accept the eighth family before synchronizing the catalog. The Nurikabe migration
+widens only the catalog checks, preserving results, RPCs and permissions.
 Never run `tests/auth-fixture.sql` on Supabase: that file belongs only in the
 disposable local test database. Configure CAPTCHA before enabling anonymous
 sign-ins; the provider toggles alone do not activate publishing in the app.
@@ -182,7 +185,7 @@ database. A test-only Auth fixture supplies the roles and `auth.uid()` context;
 the checks exercise real PostgreSQL permissions, rankings, duplicates, owner
 deletion, write limits and concurrent first submissions.
 The harness tests a clean `001` + `002` + `003` install and seeded upgrades from
-`001` through `002` and `003`, followed by the attempt timing migration. It checks
+`001` through `002` and `003`, followed by the attempt timing and Nurikabe migrations. It checks
 repeated migrations, preserved rows and permissions, retained Tents and Sudoku
 scores, separate Sudoku levels, and rejection of mismatched family metadata.
 Attempt checks cover old and new callers, first-result retention, total-time

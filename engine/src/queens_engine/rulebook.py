@@ -49,6 +49,12 @@ from .generator import (
     GenerationError,
     generate_puzzle,
 )
+from .nurikabe import NurikabeGrid
+from .nurikabe import solve as solve_nurikabe
+from .nurikabe_gen import GENERATOR_VERSION as NURIKABE_GENERATOR_VERSION
+from .nurikabe_gen import SIDE as NURIKABE_SIZE
+from .nurikabe_gen import NurikabeGenerationError
+from .nurikabe_gen import generate as generate_nurikabe_grid
 from .render import render_board, render_grid
 from .solver import DEFAULT_LIMIT, iter_solutions
 from .solver import count_solutions as count_board_solutions
@@ -202,7 +208,7 @@ class Rulebook(ABC):
     @abstractmethod
     def count_solutions(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
         *,
         limit: int = DEFAULT_LIMIT,
     ) -> int:
@@ -211,7 +217,7 @@ class Rulebook(ABC):
     @abstractmethod
     def deduce(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
         *,
         allow_guesses: bool = True,
     ) -> DeductionTrace | LogicResult | DeductionResult | None:
@@ -267,7 +273,7 @@ class Rulebook(ABC):
     @abstractmethod
     def parse_board(
         self, record: dict[str, Any], *, generator_version: int = 1
-    ) -> Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid:
+    ) -> Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid:
         """The board a file's `board` object describes.
 
         The schema has already refused the shapes it can express, so this reads the
@@ -280,7 +286,7 @@ class Rulebook(ABC):
 
     @abstractmethod
     def board_to_dict(
-        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid
+        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid
     ) -> dict[str, JsonValue]:
         """The schema-shaped `board` object for `board`.
 
@@ -291,7 +297,7 @@ class Rulebook(ABC):
 
 
 def as_marks_board(
-    board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
+    board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
 ) -> Board:
     """`board`, if it is a marks board.
 
@@ -359,7 +365,7 @@ class MarkRulebook(Rulebook):
 
     def count_solutions(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
         *,
         limit: int = DEFAULT_LIMIT,
     ) -> int:
@@ -367,7 +373,7 @@ class MarkRulebook(Rulebook):
 
     def deduce(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
         *,
         allow_guesses: bool = True,
     ) -> DeductionTrace | None:
@@ -436,7 +442,7 @@ class MarkRulebook(Rulebook):
         )
 
     def board_to_dict(
-        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid
+        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid
     ) -> dict[str, JsonValue]:
         marks = as_marks_board(board)
         data: dict[str, JsonValue] = {
@@ -519,7 +525,7 @@ class TrackRulebook(Rulebook):
 
     def count_solutions(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
         *,
         limit: int = DEFAULT_LIMIT,
     ) -> int:
@@ -529,7 +535,7 @@ class TrackRulebook(Rulebook):
 
     def deduce(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
         *,
         allow_guesses: bool = True,
     ) -> DeductionTrace | None:
@@ -608,7 +614,7 @@ class TrackRulebook(Rulebook):
         return TrackGrid(width, height, row_clues, col_clues, givens)
 
     def board_to_dict(
-        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid
+        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid
     ) -> dict[str, JsonValue]:
         if not isinstance(board, TrackGrid):
             raise GenerationError("train-tracks writes a track grid, not a marks board")
@@ -677,7 +683,7 @@ class WordPathRulebook(Rulebook):
 
     def count_solutions(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
         *,
         limit: int = DEFAULT_LIMIT,
     ) -> int:
@@ -688,7 +694,7 @@ class WordPathRulebook(Rulebook):
 
     def deduce(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
         *,
         allow_guesses: bool = True,
     ) -> None:
@@ -715,7 +721,9 @@ class WordPathRulebook(Rulebook):
         return "\n".join([f"{puzzle.id} seed={puzzle.seed} size={grid.width}x{grid.height}", *rows])
 
     @staticmethod
-    def _grid(board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid) -> WordGrid:
+    def _grid(
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
+    ) -> WordGrid:
         if not isinstance(board, WordGrid):
             raise GenerationError("word-paths needs a word grid")
         return board
@@ -738,7 +746,7 @@ class WordPathRulebook(Rulebook):
         )
 
     def board_to_dict(
-        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid
+        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid
     ) -> dict[str, JsonValue]:
         grid = self._grid(board)
         return {
@@ -795,7 +803,7 @@ class TrioRulebook(Rulebook):
 
     def count_solutions(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
         *,
         limit: int = DEFAULT_LIMIT,
     ) -> int:
@@ -803,7 +811,7 @@ class TrioRulebook(Rulebook):
 
     def deduce(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
         *,
         allow_guesses: bool = True,
     ) -> LogicResult:
@@ -829,7 +837,9 @@ class TrioRulebook(Rulebook):
         return "\n".join([f"{puzzle.id} seed={puzzle.seed} size={TRIO_SIZE}x{TRIO_SIZE}", *rows])
 
     @staticmethod
-    def _grid(board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid) -> TrioGrid:
+    def _grid(
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
+    ) -> TrioGrid:
         if not isinstance(board, TrioGrid):
             raise GenerationError("trio needs a trio grid")
         return board
@@ -863,7 +873,7 @@ class TrioRulebook(Rulebook):
         )
 
     def board_to_dict(
-        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid
+        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid
     ) -> dict[str, JsonValue]:
         grid = self._grid(board)
         return {
@@ -920,7 +930,7 @@ class TentsRulebook(Rulebook):
 
     def count_solutions(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
         *,
         limit: int = DEFAULT_LIMIT,
     ) -> int:
@@ -928,7 +938,7 @@ class TentsRulebook(Rulebook):
 
     def deduce(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
         *,
         allow_guesses: bool = True,
     ) -> None:
@@ -955,7 +965,9 @@ class TentsRulebook(Rulebook):
         return "\n".join([f"{puzzle.id} seed={puzzle.seed} size={grid.size}x{grid.size}", *rows])
 
     @staticmethod
-    def _grid(board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid) -> TentsGrid:
+    def _grid(
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
+    ) -> TentsGrid:
         if not isinstance(board, TentsGrid):
             raise GenerationError("tents needs a tents grid")
         return board
@@ -981,7 +993,7 @@ class TentsRulebook(Rulebook):
         return TentsGrid(size, trees, rows, cols)
 
     def board_to_dict(
-        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid
+        self, board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid
     ) -> dict[str, JsonValue]:
         grid = self._grid(board)
         return {
@@ -990,6 +1002,113 @@ class TentsRulebook(Rulebook):
             "rowClues": list(grid.rows),
             "colClues": list(grid.cols),
         }
+
+
+NURIKABE_START: Final = date.fromisoformat(
+    json.loads(
+        (Path(__file__).resolve().parents[3] / "conformance/id-cases/manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )["nurikabe"]["activationDay"]
+)
+
+
+class NurikabeRulebook(Rulebook):
+    puzzle_type = PuzzleType.NURIKABE
+    id_suffix = "-nurikabe"
+    on_ramp = False
+    rated = False
+    logic_only = False
+    default_size = NURIKABE_SIZE
+
+    def daily_ids(self, day: date) -> tuple[str, ...]:
+        return super().daily_ids(day) if day >= NURIKABE_START else ()
+
+    def generate(
+        self,
+        *,
+        seed: int,
+        puzzle_id: str,
+        size: int | None = None,
+        stars_per_row: int | None = None,
+        max_attempts: int | None = None,
+    ) -> Puzzle:
+        if any(value is not None for value in (size, stars_per_row, max_attempts)):
+            raise GenerationError("nurikabe uses a fixed versioned recipe, without overrides")
+        parsed = split_puzzle_id(puzzle_id)
+        if parsed is None or parsed[1] is not self.puzzle_type:
+            raise GenerationError("nurikabe requires a canonical date-nurikabe id")
+        try:
+            grid = generate_nurikabe_grid(seed)
+        except (ValueError, NurikabeGenerationError) as error:
+            raise GenerationError(str(error)) from error
+        return Puzzle(puzzle_id, self.puzzle_type, seed, NURIKABE_GENERATOR_VERSION, grid)
+
+    def count_solutions(
+        self,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
+        *,
+        limit: int = DEFAULT_LIMIT,
+    ) -> int:
+        if type(limit) is not int or limit not in (1, 2):
+            raise ValueError("nurikabe supports solution limits of 1 or 2")
+        return min(limit, len(solve_nurikabe(self._grid(board)).solutions))
+
+    def deduce(
+        self,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
+        *,
+        allow_guesses: bool = True,
+    ) -> None:
+        del allow_guesses
+        self._grid(board)
+
+    def replay(self, puzzle: Puzzle) -> Puzzle:
+        if puzzle.generator_version != NURIKABE_GENERATOR_VERSION:
+            raise GenerationError(
+                f"unsupported nurikabe generator version {puzzle.generator_version}"
+            )
+        self._grid(puzzle.board)
+        return self.generate(seed=puzzle.seed, puzzle_id=puzzle.id)
+
+    def dimensions(self, puzzle: Puzzle) -> tuple[int, int]:
+        grid = self._grid(puzzle.board)
+        return grid.width, grid.height
+
+    def render(self, puzzle: Puzzle) -> str:
+        grid = self._grid(puzzle.board)
+        rows = [
+            "".join(f"{clue:2}" if clue else " ." for clue in grid.clues[start : start + grid.size])
+            for start in range(0, grid.cell_count, grid.size)
+        ]
+        return "\n".join([f"{puzzle.id} seed={puzzle.seed} size={grid.size}x{grid.size}", *rows])
+
+    @staticmethod
+    def _grid(
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
+    ) -> NurikabeGrid:
+        if not isinstance(board, NurikabeGrid):
+            raise GenerationError("nurikabe needs a nurikabe grid")
+        return board
+
+    def parse_board(self, record: dict[str, Any], *, generator_version: int = 1) -> NurikabeGrid:
+        if generator_version != NURIKABE_GENERATOR_VERSION:
+            raise BoardError(f"unsupported nurikabe generator version {generator_version}")
+        size = require_int(record.get("size"), "board.size")
+        clues = tuple(
+            require_int(value, "board.clues[]")
+            for value in require_list(record.get("clues"), "board.clues")
+        )
+        if size != NURIKABE_SIZE:
+            raise BoardError("daily nurikabe requires a 7x7 grid")
+        return NurikabeGrid(size, clues)
+
+    def board_to_dict(
+        self,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
+    ) -> dict[str, JsonValue]:
+        grid = self._grid(board)
+        return {"size": grid.size, "clues": list(grid.clues)}
 
 
 class SudokuRulebook(Rulebook):
@@ -1033,7 +1152,7 @@ class SudokuRulebook(Rulebook):
 
     def count_solutions(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
         *,
         limit: int = DEFAULT_LIMIT,
     ) -> int:
@@ -1043,7 +1162,7 @@ class SudokuRulebook(Rulebook):
 
     def deduce(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
         *,
         allow_guesses: bool = True,
     ) -> DeductionResult:
@@ -1084,7 +1203,7 @@ class SudokuRulebook(Rulebook):
 
     @staticmethod
     def _grid(
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
     ) -> SudokuGrid:
         if not isinstance(board, SudokuGrid):
             raise GenerationError("sudoku needs a sudoku grid")
@@ -1108,7 +1227,7 @@ class SudokuRulebook(Rulebook):
 
     def board_to_dict(
         self,
-        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid,
+        board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid,
     ) -> dict[str, JsonValue]:
         grid = self._grid(board)
         return {"size": 9, "level": grid.level, "givens": list(grid.givens)}
@@ -1130,6 +1249,7 @@ _RULEBOOKS: Final[dict[PuzzleType, Rulebook]] = {
     PuzzleType.TRIO: TrioRulebook(),
     PuzzleType.TENTS: TentsRulebook(),
     PuzzleType.SUDOKU: SudokuRulebook(),
+    PuzzleType.NURIKABE: NurikabeRulebook(),
 }
 
 

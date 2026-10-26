@@ -46,6 +46,9 @@ from queens_engine import (
     target_for,
     verify_replay,
 )
+from queens_engine.nurikabe import NurikabeGrid
+from queens_engine.nurikabe import solve as solve_nurikabe
+from queens_engine.nurikabe_gen import LAYOUT_WINDOW_DAYS, canonical_layout
 
 
 class RampCheck(NamedTuple):
@@ -95,6 +98,26 @@ def _star_repeat_problem(
                 f"repeats the solution layout published on {other_day.isoformat()} "
                 f"(within {STAR_LAYOUT_WINDOW_DAYS} days)"
             )
+    seen.append((day, layout))
+    return None
+
+
+def _nurikabe_repeat_problem(
+    day: date,
+    puzzle: Puzzle,
+    seen: list[tuple[date, tuple[int, ...]]],
+) -> str | None:
+    if not isinstance(puzzle.board, NurikabeGrid):
+        return None
+    result = solve_nurikabe(puzzle.board)
+    if len(result.solutions) != 1:
+        return "Nurikabe uniqueness is not certified"
+    layout = canonical_layout(puzzle.board.size, result.solutions[0])
+    for other_day, other_layout in reversed(seen):
+        if day - other_day > timedelta(days=LAYOUT_WINDOW_DAYS):
+            break
+        if layout == other_layout:
+            return f"repeats the Nurikabe solution layout published on {other_day}"
     seen.append((day, layout))
     return None
 
@@ -182,6 +205,7 @@ def main(argv: list[str] | None = None) -> int:
     total = 0
     failed: list[str] = []
     star_layouts_seen: list[tuple[date, tuple[tuple[int, ...], ...]]] = []
+    nurikabe_layouts_seen: list[tuple[date, tuple[int, ...]]] = []
     paths = sorted(args.dir.glob("*.json"))
     with (
         ProcessPoolExecutor(max_workers=args.jobs, mp_context=multiprocessing.get_context("spawn"))
@@ -210,7 +234,10 @@ def main(argv: list[str] | None = None) -> int:
             # A board added with a replay-valid seed bypasses publish and its
             # repeat rule; failing here keeps the archive invariant whatever the
             # file's origin.
-            if problem := _star_repeat_problem(day, puzzle, star_layouts_seen):
+            if problem := (
+                _star_repeat_problem(day, puzzle, star_layouts_seen)
+                or _nurikabe_repeat_problem(day, puzzle, nurikabe_layouts_seen)
+            ):
                 failed.append(f"{path}: {problem}")
                 print(f"{path.name}: FAILED ({problem})")
                 continue

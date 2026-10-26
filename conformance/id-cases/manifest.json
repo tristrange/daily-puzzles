@@ -28,6 +28,10 @@
     {
       "type": "sudoku",
       "suffix": "-sudoku"
+    },
+    {
+      "type": "nurikabe",
+      "suffix": "-nurikabe"
     }
   ],
   "cases": [
@@ -115,6 +119,16 @@
       "id": "2026-10-21-sudoku-hard",
       "day": "2026-10-21",
       "type": "sudoku"
+    },
+    {
+      "id": "2026-10-12-nurikabe",
+      "day": "2026-10-12",
+      "type": "nurikabe"
+    },
+    {
+      "id": "2026-10-25-nurikabe",
+      "day": "2026-10-25",
+      "type": "nurikabe"
     }
   ],
   "unparsed": [
@@ -146,7 +160,10 @@
     "20261021-sudoku-easy",
     "2026-10-21-sudoku-expert",
     "2026-10-21-sudoku-Easy",
-    "2026-10-21-sudoku-easy-hard"
+    "2026-10-21-sudoku-easy-hard",
+    "2026-02-30-nurikabe",
+    "2026-10-25-nurikabe-nurikabe",
+    "2026-10-25-nuri"
   ],
   "trainTracks": {
     "activationDay": "2026-10-14",
@@ -891,6 +908,24 @@
       "overrides": {
         "id": "2026-10-21-sudoku-easy"
       }
+    },
+    {
+      "file": "../schema-cases/nurikabe.accept.json",
+      "valid": true
+    },
+    {
+      "file": "../schema-cases/nurikabe.accept.json",
+      "valid": false,
+      "overrides": {
+        "id": "2026-02-30-nurikabe"
+      }
+    },
+    {
+      "file": "../schema-cases/nurikabe.accept.json",
+      "valid": false,
+      "overrides": {
+        "id": "2026-10-25-tents"
+      }
     }
   ],
   "wordPaths": {
@@ -924,7 +959,8 @@
         "2026-10-14-tracks-medium",
         "2026-10-14-tracks-large",
         "2026-10-14-trio",
-        "2026-10-14-tents"
+        "2026-10-14-tents",
+        "2026-10-14-nurikabe"
       ]
     },
     {
@@ -937,7 +973,8 @@
         "2026-10-15-tracks-large",
         "2026-10-15-words",
         "2026-10-15-trio",
-        "2026-10-15-tents"
+        "2026-10-15-tents",
+        "2026-10-15-nurikabe"
       ]
     },
     {
@@ -950,7 +987,8 @@
         "2026-10-16-tracks-large",
         "2026-10-16-words",
         "2026-10-16-trio",
-        "2026-10-16-tents"
+        "2026-10-16-tents",
+        "2026-10-16-nurikabe"
       ]
     },
     {
@@ -963,7 +1001,8 @@
         "2026-10-20-tracks-large",
         "2026-10-20-words",
         "2026-10-20-trio",
-        "2026-10-20-tents"
+        "2026-10-20-tents",
+        "2026-10-20-nurikabe"
       ]
     },
     {
@@ -979,7 +1018,8 @@
         "2026-10-21-tents",
         "2026-10-21-sudoku-easy",
         "2026-10-21-sudoku-medium",
-        "2026-10-21-sudoku-hard"
+        "2026-10-21-sudoku-hard",
+        "2026-10-21-nurikabe"
       ]
     }
   ],
@@ -1008,5 +1048,8 @@
         "label": "Hard"
       }
     ]
+  },
+  "nurikabe": {
+    "activationDay": "2026-10-12"
   }
 }

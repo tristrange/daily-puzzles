@@ -23,6 +23,7 @@ interface Expect {
   rowClues?: number[];
   colClues?: number[];
   givens?: number[];
+  clues?: number[];
   level?: string;
   relations?: unknown[];
   difficulty: number | null;
@@ -86,7 +87,10 @@ describe("conformance: schema-cases", () => {
       expect(puzzle.board.width).toBe(expected.size);
       expect(puzzle.seed).toBe(expected.seed);
       expect(puzzle.generatorVersion).toBe(expected.generatorVersion);
-      if (expected.type === 'sudoku') {
+      if (expected.type === 'nurikabe') {
+        expect(puzzle.board.height).toBe(expected.size);
+        expect(puzzle.board).toMatchObject({ clues: expected.clues });
+      } else if (expected.type === 'sudoku') {
         expect(puzzle.board.height).toBe(expected.size);
         expect(puzzle.board).toMatchObject({ givens: expected.givens, level: expected.level });
       } else if (expected.type === 'tents') {

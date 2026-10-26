@@ -16,6 +16,8 @@ sql -c 'create database leaderboard_upgrade template postgres'
 sql < migrations/002_tents.sql
 sql < migrations/003_sudoku.sql
 sql < migrations/20261025113819_reset_attempt_time.sql
+sql < migrations/20261025225242_daily_nurikabe.sql
+sql < tests/nurikabe-contract.sql
 sql < tests/contract.sql
 sql < tests/attempt-contract.sql
 
@@ -88,6 +90,23 @@ end $$;
 SQL
 sql -d leaderboard_upgrade < tests/contract.sql
 sql -d leaderboard_upgrade < tests/attempt-contract.sql
+
+sql -d leaderboard_upgrade < tests/upgrade-snapshot.sql
+sql -d leaderboard_upgrade < migrations/20261025225242_daily_nurikabe.sql
+sql -d leaderboard_upgrade < tests/upgrade-after.sql
+sql -d leaderboard_upgrade < tests/nurikabe-contract.sql
+sql -d leaderboard_upgrade <<'SQL'
+select public.register_leaderboard_puzzles('[{"puzzle_id":"2020-01-01-nurikabe","puzzle_type":"nurikabe","puzzle_day":"2020-01-01","width":7,"height":7}]');
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', jsonb_build_object('sub', md5('39')::uuid)::text, true);
+select public.submit_result('2020-01-01-nurikabe', 'Existing Nurikabe', 65432, 0, 12345);
+commit;
+SQL
+sql -d leaderboard_upgrade < tests/upgrade-snapshot.sql
+sql -d leaderboard_upgrade < migrations/20261025225242_daily_nurikabe.sql
+sql -d leaderboard_upgrade < tests/upgrade-after.sql
+sql -d leaderboard_upgrade < tests/nurikabe-contract.sql
 
 # Separate connections race for one first result; either may win, never both.
 sql <<'SQL'

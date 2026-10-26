@@ -82,7 +82,10 @@ class TestPublishWindow:
             day_id: str,
             seed: int,
             avoid_layouts: set[tuple[tuple[int, ...], ...]] | None = None,
+            *,
+            avoid_nurikabe_layouts: set[tuple[int, ...]] | None = None,
         ) -> tuple[Puzzle, float | None]:
+            del avoid_nurikabe_layouts
             if rulebook_for(puzzle_type).on_ramp:
                 return generate(puzzle_type, day_id, seed, avoid_layouts)
             puzzle = load_puzzle(archive / f"{day_id}.json")
@@ -234,9 +237,11 @@ class TestPublishWindow:
         # Nothing is republished, and the window picks up at the day after,
         # offering each day's puzzles together — one per published family.
         assert queued == [
-            f"publish {(today + timedelta(days=offset)).isoformat()}{suffix} (dry run)"
+            f"publish {identifier} (dry run)"
             for offset in (1, 2, 3)
-            for suffix in PUBLISHED
+            for book in rulebooks()
+            if book.published
+            for identifier in book.daily_ids(today + timedelta(days=offset))
         ]
 
 
@@ -654,7 +659,10 @@ class TestDailyTrackSlots:
             day_id: str,
             seed: int,
             avoid_layouts: set[tuple[tuple[int, ...], ...]] | None = None,
+            *,
+            avoid_nurikabe_layouts: set[tuple[int, ...]] | None = None,
         ) -> tuple[Puzzle, float | None]:
+            del avoid_nurikabe_layouts
             if day_id.endswith("-medium"):
                 raise RuntimeError("interrupted")
             return original(puzzle_type, day_id, seed, avoid_layouts)

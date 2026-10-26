@@ -278,9 +278,9 @@ Hard adds triples and X-wing. A band requires logical completion and, above Easy
 a stall under the preceding band. These describe supported techniques, not human
 solve times. The [measurement report](../docs/measurements/sudoku-preview.json)
 contains offline answers and traces; app definitions contain only givens and IDs.
-Sudoku is not registered with the daily publisher yet.
+Sudoku publishes three daily levels through its registered rulebook.
 
-## Nurikabe engine foundation
+## Nurikabe rules and daily generation
 
 `nurikabe.py` provides immutable `NurikabeGrid(size, clues)`, complete-board
 validation, and bounded exact counting. Sizes 2 through 10 are accepted. Clues
@@ -315,4 +315,22 @@ oracle and rule checks. The playable preview has three original boards, one 5×5
 and two 7×7. `uv run python -m tools.nurikabe_preview` verifies the actual app
 catalog and its offline certificate; `--write-report` refreshes the certificate
 only after all boards prove unique. Browser data contains clues only. There is
-no generator, logical-difficulty rating, hint system, or daily publishing yet.
+no logical-difficulty rating or hint system.
+
+`nurikabe_gen.py` freezes the daily version-1 recipe. It constructs original 7×7
+land and sea geometry, puts one numbered clue in each island, then requires
+exhaustive uniqueness within the exact budget. Construction and aggregate exact
+work are bounded. Exhausted or ambiguous candidates are rejected. Island-size
+filters limit singleton-heavy boards; they do not establish human difficulty.
+
+The registered `NurikabeRulebook` publishes one `YYYY-MM-DD-nurikabe` file per day
+from October 12, 2026. Files contain clues, seed and generator version, without
+answers or a difficulty field. The publisher rejects a repeated solution layout
+within 14 days, including rotations and reflections. Generation itself depends
+only on its recorded seed, so archive replay stays independent of file history.
+
+Run `uv run python -m tools.nurikabe_launch` to recheck all 18 initial files for
+October 12–29. The offline certificate records exact uniqueness, complete-board
+validation, replay and distinct clue and solution layouts under all eight square
+symmetries. None repeats an original preview. Required tests use a frozen
+generation seed and bounded-failure cases, without a large seed sweep.

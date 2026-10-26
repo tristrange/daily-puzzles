@@ -95,11 +95,11 @@ describe('companionPuzzleId', () => {
 describe('puzzleIdsForDay', () => {
   it('switches to three independently named tracks boards on activation', () => {
     expect(puzzleIdsForDay('2026-10-13')).toEqual([
-      '2026-10-13', '2026-10-13-star', '2026-10-13-tracks', '2026-10-13-trio', '2026-10-13-tents',
+      '2026-10-13', '2026-10-13-star', '2026-10-13-tracks', '2026-10-13-trio', '2026-10-13-tents', '2026-10-13-nurikabe',
     ])
     expect(puzzleIdsForDay('2026-10-14')).toEqual([
       '2026-10-14', '2026-10-14-star', '2026-10-14-tracks-small',
-      '2026-10-14-tracks-medium', '2026-10-14-tracks-large', '2026-10-14-trio', '2026-10-14-tents',
+      '2026-10-14-tracks-medium', '2026-10-14-tracks-large', '2026-10-14-trio', '2026-10-14-tents', '2026-10-14-nurikabe',
     ])
   })
 

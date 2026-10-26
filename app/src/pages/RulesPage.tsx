@@ -17,7 +17,7 @@ export function RulesPage() {
     <section className="rules">
       <h1 className="page-title">How to play</h1>
       <p className="status">
-        Fresh Queens, Star Battle, Train Tracks, Word Paths, Trio, Tents and Sudoku puzzles arrive every day.
+        Fresh Queens, Star Battle, Train Tracks, Word Paths, Trio, Tents, Sudoku and Nurikabe puzzles arrive every day.
         Past puzzles stay in the <Link to="/archive">archive</Link>.
       </p>
       <nav className="game-picker" aria-label="Game rules">
@@ -26,7 +26,6 @@ export function RulesPage() {
             {PUZZLE_TYPE_LABEL[type]}
           </Link>
         ))}
-        <Link to={{ pathname: '/how-to-play', hash: '#nurikabe' }}>Nurikabe preview</Link>
       </nav>
 
       <h2 id="controls" tabIndex={-1}>Shared controls</h2>
@@ -259,6 +258,7 @@ export function RulesPage() {
         One drag is one Undo. Right-click erases. Arrows and Home/End move between cells.
         Keys 1 or S shade sea; 2 or L marks land; 0, Delete or Backspace erases.
         Enter or Space uses the picker. The shared Undo, Redo and confirmed Reset controls apply.</p>
+      <p>One original 7×7 Nurikabe is available daily. Hints and difficulty ratings are not available yet.</p>
       <p><Link to="/preview/nurikabe">Try the three-board Nurikabe preview</Link>.
         Attempts save separately in this browser. Preview solves do not affect daily stats,
         streaks or leaderboards. Hints are not available yet.</p>

@@ -1582,3 +1582,8 @@
 .lesson-responses .tool-button:disabled { opacity: 1; }
 .lesson-evidence details { font-size: .8125rem; overflow-wrap: anywhere; }
 .lesson-evidence summary { cursor: pointer; padding-block: .5rem; }
+
+.game-nurikabe {
+  --motif-color: light-dark(#286b80, #8dc8db);
+  --motif-wash: light-dark(#e6f1f5, #253842);
+}

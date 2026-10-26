@@ -13,6 +13,7 @@ from typing import Any
 import pytest
 
 from queens_engine import Board, PuzzleParseError, parse_puzzle, rulebook_for
+from queens_engine.nurikabe import NurikabeGrid
 from queens_engine.puzzle import CONFORMANCE_DIR
 from queens_engine.sudoku import SudokuGrid
 from queens_engine.tents import TentsGrid
@@ -73,6 +74,8 @@ def test_schema_case(case: dict[str, Any]) -> None:
         assert puzzle.generator_version == expected["generatorVersion"]
         if isinstance(puzzle.board, Board):
             assert list(puzzle.board.region_capacity) == expected["regionCapacity"]
+        elif isinstance(puzzle.board, NurikabeGrid):
+            assert list(puzzle.board.clues) == expected["clues"]
         elif isinstance(puzzle.board, SudokuGrid):
             assert list(puzzle.board.givens) == expected["givens"]
             assert puzzle.board.level == expected["level"]
