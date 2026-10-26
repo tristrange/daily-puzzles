@@ -327,9 +327,7 @@
   color: var(--primary-ink);
   border-color: var(--primary-bg);
   font-weight: 700;
-  gap: 0.35rem;
 }
-.tool-button.notes-toggle[aria-pressed='true']::before { content: '✓'; }
 
 .tool-button.primary {
   background: var(--primary-bg);
