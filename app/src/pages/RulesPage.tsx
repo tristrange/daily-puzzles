@@ -257,11 +257,18 @@ export function RulesPage() {
       <p>Pick Sea, Land or Erase, then tap or drag. Tap again to clear the same mark.
         One drag is one Undo. Right-click erases. Arrows and Home/End move between cells.
         Keys 1 or S shade sea; 2 or L marks land; 0, Delete or Backspace erases.
-        Enter or Space uses the picker. The shared Undo, Redo and confirmed Reset controls apply.</p>
-      <p>One original 7×7 Nurikabe is available daily. Hints and difficulty ratings are not available yet.</p>
+        Enter or Space uses the picker. H asks for a hint. The shared Undo, Redo and confirmed Reset controls apply.</p>
+      <h3>Explained hints</h3>
+      <p>Hint checks your sea and land marks against the independently verified unique solution.
+        A general mistake warning is free. Show the mistake reveals one incorrect mark and counts as a hint.
+        Apply move clears only that mark. Otherwise, hints explain one island or sea deduction with highlighted evidence.
+        Apply move is optional and undoable. Unmarked cells stay undecided during reasoning, and land dots remain optional.</p>
+      <p>Shown hints stay counted through Undo, Reset and reload. The supported rules may stall before completion.
+        A stall does not prove that guessing is necessary. If the bounded solution check cannot verify the board, it reveals nothing.</p>
+      <p>One original 7×7 Nurikabe is available daily. Difficulty ratings are not available yet.</p>
       <p><Link to="/preview/nurikabe">Try the three-board Nurikabe preview</Link>.
         Attempts save separately in this browser. Preview solves do not affect daily stats,
-        streaks or leaderboards. Hints are not available yet.</p>
+        streaks or leaderboards. The same explained hints are available.</p>
 
       <h2>Finishing, sharing and stats</h2>
       <p>A solved board locks and offers a result to share, optionally including the finished

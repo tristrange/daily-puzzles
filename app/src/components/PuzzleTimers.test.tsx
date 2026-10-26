@@ -78,7 +78,7 @@ function tracks() {
 const cases = [
   { name: 'Nurikabe preview', setup: () => {
     const board = parseNurikabeBoards(nurikabeRaw)[0]!
-    storeNurikabeProgress(board, createNurikabeGame(board).map((v, i) => i === board.clues.indexOf(0) ? 1 : v), { elapsedMs: 1200 })
+    storeNurikabeProgress(board, createNurikabeGame(board).map((v, i) => i === board.clues.indexOf(0) ? 1 : v), { elapsedMs: 1200 }, 0)
     return { element: <NurikabeStage board={board} />, read: () => readNurikabeProgress(board)?.elapsedMs, snapshot: () => readNurikabeProgress(board) }
   } },
   { name: 'Queens', setup: () => marks(queen) },
@@ -231,7 +231,7 @@ const completionCases = [
   { name: 'Nurikabe', setup: () => {
     const board = parseNurikabeBoards(nurikabeRaw)[0]!, solution = nurikabeProof.samples[0]!.solution
     const last = solution.lastIndexOf(0)
-    storeNurikabeProgress(board, solution.map((v, i) => i === last ? 0 : v === 0 ? 1 : board.clues[i] ? 2 : 0), { elapsedMs: 1200 })
+    storeNurikabeProgress(board, solution.map((v, i) => i === last ? 0 : v === 0 ? 1 : board.clues[i] ? 2 : 0), { elapsedMs: 1200 }, 0)
     return { element: <NurikabeStage board={board} />, finish: () => key(last, 's'), read: () => readNurikabeProgress(board), daily: false }
   } },
 ]

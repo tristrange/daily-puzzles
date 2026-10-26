@@ -13,5 +13,5 @@ it.each([['2', 2, 7], ['3', 3, 7], ['-1', 1, 5], ['1.5', 1, 5], ['no', 1, 5]])('
   expect(html).toContain('href="/how-to-play#nurikabe"')
   expect(html).toContain('Land dots are optional')
   expect(html).toContain('Preview solves do not count toward daily stats, streaks or leaderboards')
-  expect(html).not.toContain('Get an explained hint')
+  expect(html).toContain('Get an explained hint')
 })

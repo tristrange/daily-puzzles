@@ -1,14 +1,15 @@
 import { useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { NURIKABE_NAMES, type NurikabeBoard as Board, type NurikabeGame, type NurikabeMark } from '../domain/nurikabe'
 import { historyCommand } from '../lib/useMoveHistory'
+import type { NurikabeHint } from '../domain/nurikabeHints'
 
 interface Props {
   board: Board; game: NurikabeGame; brush: NurikabeMark; locked: boolean; conflicts: ReadonlySet<number>; instructionsId: string
   onBegin: () => void; onApply: (cell: number, value: NurikabeMark) => void; onEnd: (cancel: boolean) => void
-  onUndo: () => void; onRedo: () => void
+  onUndo: () => void; onRedo: () => void; onHint: () => void; hint: NurikabeHint | null
 }
 
-export function NurikabeBoard({ board, game, brush, locked, conflicts, instructionsId, onBegin, onApply, onEnd, onUndo, onRedo }: Props) {
+export function NurikabeBoard({ board, game, brush, locked, conflicts, instructionsId, onBegin, onApply, onEnd, onUndo, onRedo, onHint, hint }: Props) {
   const grid = useRef<HTMLDivElement>(null)
   const [focus, setFocus] = useState(0)
   const stroke = useRef<{ id: number; value: NurikabeMark; visited: Set<number> } | null>(null)
@@ -63,6 +64,7 @@ export function NurikabeBoard({ board, game, brush, locked, conflicts, instructi
     if (command) { event.preventDefault(); finish(true); if (command === 'undo') onUndo(); else onRedo(); return }
     if (event.ctrlKey || event.metaKey || event.altKey) return
     const pressed = event.key.toLowerCase()
+    if (pressed === 'h') { event.preventDefault(); if (!stroke.current) onHint(); return }
     if (['1', '2', '0', 's', 'l', 'delete', 'backspace', 'enter', ' '].includes(pressed)) {
       event.preventDefault(); finish(true)
       one(focus, ['1', 's'].includes(pressed) ? 1 : ['2', 'l'].includes(pressed) ? 2 : ['enter', ' '].includes(pressed) ? brush : 0)
@@ -77,9 +79,11 @@ export function NurikabeBoard({ board, game, brush, locked, conflicts, instructi
     {Array.from({ length: board.size }, (_, row) => <div role="row" className="nurikabe-row" key={row}>
       {Array.from({ length: board.size }, (_, col) => {
         const cell = row * board.size + col, clue = board.clues[cell] ?? 0, mark = game[cell] ?? 0
+        const support = hint?.support.includes(cell)
         return <button className="nurikabe-cell" type="button" role="gridcell" key={cell} data-cell={cell} data-mark={mark}
           data-clue={clue > 0} data-conflict={conflicts.has(cell)} tabIndex={cell === focus ? 0 : -1}
-          aria-readonly={clue > 0 || locked} aria-label={`Row ${row + 1}, column ${col + 1}, ${clue > 0 ? `Island ${clue}, fixed land` : NURIKABE_NAMES[mark]}${conflicts.has(cell) ? ', conflict' : ''}`}
+          data-hint={hint?.cell === cell ? 'target' : support ? 'support' : undefined}
+          aria-readonly={clue > 0 || locked} aria-label={`Row ${row + 1}, column ${col + 1}, ${clue > 0 ? `Island ${clue}, fixed land` : NURIKABE_NAMES[mark]}${conflicts.has(cell) ? ', conflict' : ''}${hint?.cell === cell ? ', hint target' : support ? ', supports hint' : ''}`}
           onFocus={() => setFocus(cell)} onClick={event => { if (event.detail === 0) one(cell, brush) }}
           onContextMenu={event => { event.preventDefault(); finish(true); one(cell, 0) }}>
           {clue > 0 ? clue : mark === 2 ? <span className="nurikabe-land-dot" aria-hidden="true" /> : null}

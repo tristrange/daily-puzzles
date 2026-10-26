@@ -60,8 +60,10 @@ previews also remain available with separate progress.
 One original 7×7 Nurikabe publishes each day, with archive boards from October 12,
 2026. Shade a connected sea around numbered islands, with no solid 2×2 sea square.
 Land dots are optional working notes. Daily solves support personal stats, sharing,
-offline saves and optional leaderboards. Hints and difficulty ratings are not
-available yet; uniqueness does not establish a no-guess solve.
+offline saves and optional leaderboards. Explained hints cover island boundaries,
+separation, forced growth, reachability, sea connections and avoiding 2×2 sea squares.
+They check mistakes first, then explain one deduction with an optional, undoable move.
+Difficulty ratings are not available. Uniqueness does not establish a no-guess solve.
 
 [The three original practice boards](https://tristrange.github.io/daily-puzzles/#/preview/nurikabe?board=1)
 remain available, with one 5×5 introduction and two 7×7 boards. Their progress stays
@@ -85,7 +87,7 @@ separate from daily games, stats and leaderboards.
 - Optional per-puzzle leaderboards showing nickname, time and hints, accessible after solving and from navigation. Browsing requires no signup; joining uses an anonymous browser identity, without email or password.
 
 Hints may stall when their supported techniques find nothing further; that does
-not establish that guessing is necessary. Queens, Star Battle and Sudoku warn
+not establish that guessing is necessary. Queens, Star Battle, Sudoku and Nurikabe warn
 before optionally revealing a mistaken entry. Other games report contradictions
 found by their own checks. Notes are not proof for Trio/Sudoku hints; crosses,
 grass and placed tracks can be assumptions in the games that use them.

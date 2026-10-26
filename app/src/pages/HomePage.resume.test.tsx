@@ -72,7 +72,7 @@ function saveAttempts() {
   for (const puzzle of puzzles.filter(isSudokuPuzzle)) storeSudokuProgress(puzzle.board, createSudokuGame(puzzle.board), { elapsedMs: 245000 }, 2, true)
   const nurikabePuzzle = puzzles.find(isNurikabePuzzle)
   if (!nurikabePuzzle) throw Error('Nurikabe fixture required')
-  storeNurikabeProgress(nurikabePuzzle.board, createNurikabeGame(nurikabePuzzle.board), { elapsedMs: 60000 }, true)
+  storeNurikabeProgress(nurikabePuzzle.board, createNurikabeGame(nurikabePuzzle.board), { elapsedMs: 60000 }, 0, true)
 }
 
 async function render() {
