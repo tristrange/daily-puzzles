@@ -17,6 +17,7 @@ import { sudokuVariantOf } from '../domain/sudokuLevels'
 import { trackVariantOf } from '../domain/trackSizes'
 import { formatTime } from '../domain/game'
 import { PIECE_GLYPHS, TrackGrid } from '../domain/tracks'
+import type { NurikabeBoard, NurikabeGame } from '../domain/nurikabe'
 import type { TentsBoard, TentsGame } from '../domain/tents'
 import type { WordGame } from '../domain/wordGame'
 import { spellPath } from '../domain/wordPaths'
@@ -256,5 +257,11 @@ export function buildTentsSolutionShareText(result: ShareResult, board: TentsBoa
 /** Explicit spoiler share: all nine completed digit rows. */
 export function buildSudokuSolutionShareText(result: ShareResult, cells: readonly number[]): string {
   const rows = Array.from({ length: 9 }, (_, row) => cells.slice(row * 9, row * 9 + 9).join(' '))
+  return [...headerLines(result), '', ...rows, '', ...(result.streak > 1 ? [`${result.streak}-day streak`] : []), result.link].join('\n')
+}
+
+export function buildNurikabeSolutionShareText(result: ShareResult, board: NurikabeBoard, game: NurikabeGame): string {
+  const rows = Array.from({ length: board.size }, (_, row) => Array.from({ length: board.size }, (_, col) =>
+    game[row * board.size + col] === 1 ? '🟦' : '⬜').join(''))
   return [...headerLines(result), '', ...rows, '', ...(result.streak > 1 ? [`${result.streak}-day streak`] : []), result.link].join('\n')
 }

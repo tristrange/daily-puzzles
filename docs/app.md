@@ -558,6 +558,27 @@ and their rows/columns below the selected cell's visual emphasis. Save keys and
 fingerprints are unchanged, so existing preview attempts resume normally.
 
 
+## Daily Nurikabe and practice boards
+
+`/archive/YYYY-MM-DD-nurikabe` loads one original 7×7 board per date from October 12,
+2026. The family registry supplies Today, Archive, Stats and leaderboard choices.
+The stage reuses the preview's sea shading, optional land dots, direct rule-based
+completion, focus timer, latest-attempt timer, history and confirmed Reset.
+No browser solver or hidden answer is used. Nurikabe currently has no hints or
+human difficulty label.
+
+Daily attempts use `daily-puzzles.nurikabe.v1.<id>`. The original preview prefix
+`daily-puzzles.nurikabe-preview.v1.<id>` and `[size,clues]` fingerprint remain
+unchanged. A first daily solve clears its unfinished save, records Stats and
+optionally offers that result to its leaderboard. Replays retain the first result.
+Result sharing omits the board; the explicit solution share includes the sea/land
+grid. Preview solves never enter those daily paths.
+
+The first 18 daily files cover October 12–29. The offline Python launch certificate
+checks their exact unique solutions, replay and symmetry diversity. Domain tests
+map Python `sea=0, land=1` answers to browser `sea=1, land=2` marks.
+Unmarked land cells can remain without explicit dots.
+
 ## Technique lessons by game
 
 `/learn` lists Sudoku and Star Battle with separate completed exercise counts.
@@ -638,7 +659,7 @@ changes daily puzzle progress, stats, clocks or leaderboard state.
 
 ## Shared focused-play clock
 
-All daily games and their previews use `usePlayClock`, including the Nurikabe preview. It
+All daily games and their previews use `usePlayClock`, including daily Nurikabe and its previews. It
 accumulates monotonic time only while the document is visible and has focus.
 Blur, focus, visibility and page lifecycle events settle the interval immediately;
 a periodic tick updates the display and existing saves. Losing focus pauses time

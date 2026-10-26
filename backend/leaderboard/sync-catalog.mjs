@@ -11,17 +11,18 @@ export async function readCatalog(directory) {
     for (const name of files) {
       const raw = JSON.parse(await readFile(join(directory, name), 'utf8'))
       if (typeof raw?.id !== 'string' || name !== `${raw.id}.json`
-        || !/^\d{4}-\d{2}-\d{2}(?:-star|-tracks(?:-small|-medium|-large)?|-words|-trio|-tents|-sudoku-(?:easy|medium|hard))?$/.test(raw.id)) throw Error()
+        || !/^\d{4}-\d{2}-\d{2}(?:-star|-tracks(?:-small|-medium|-large)?|-words|-trio|-tents|-nurikabe|-sudoku-(?:easy|medium|hard))?$/.test(raw.id)) throw Error()
       const day = raw.id.slice(0,10)
       if (new Date(`${day}T00:00:00Z`).toISOString().slice(0,10) !== day) throw Error()
       const suffix = raw.id.slice(10)
-      const expected = {queens:'', 'star-battle':'-star', 'word-paths':'-words', trio:'-trio', tents:'-tents'}
+      const expected = {queens:'', 'star-battle':'-star', 'word-paths':'-words', trio:'-trio', tents:'-tents', nurikabe:'-nurikabe'}
       if (raw.type === 'sudoku') {
         if (!['easy','medium','hard'].includes(raw.board?.level)
           || suffix !== `-sudoku-${raw.board.level}` || raw.board.size !== 9) throw Error()
       } else if (raw.type === 'train-tracks' ? !/^\-tracks(?:-small|-medium|-large)?$/.test(suffix)
         : !Object.hasOwn(expected, raw.type) || suffix !== expected[raw.type]) throw Error()
-      const square = ['queens','star-battle','trio','tents','sudoku'].includes(raw.type)
+      if (raw.type === 'nurikabe' && raw.board?.size !== 7) throw Error()
+      const square = ['queens','star-battle','trio','tents','sudoku','nurikabe'].includes(raw.type)
       const width = square ? raw.board?.size : raw.board?.width
       const height = square ? raw.board?.size : raw.board?.height
       if ([width,height].some(n => !Number.isInteger(n) || n < 1 || n > 16)) throw Error()

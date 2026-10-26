@@ -143,3 +143,16 @@ test('CLI configuration failures never print a supplied secret', () => {
   assert.notEqual(result.status, 0)
   assert.equal((result.stdout + result.stderr).includes(secretKey), false)
 })
+
+test('imports Nurikabe as separate 7x7 metadata and rejects a mismatched size or suffix', async () => {
+  const dir = await directory()
+  const id = '2026-10-25-nurikabe'
+  const file = join(dir, `${id}.json`)
+  const raw = { id, type: 'nurikabe', seed: 0, generatorVersion: 1, board: {size: 7, clues: Array(49).fill(0)} }
+  await writeFile(file, JSON.stringify(raw))
+  assert.deepEqual(await readCatalog(dir), [{ puzzle_id:id, puzzle_type:'nurikabe', puzzle_day:'2026-10-25', width:7, height:7, size_label:null }])
+  await writeFile(file, JSON.stringify({ ...raw, board: { ...raw.board, size: 8 } }))
+  await assert.rejects(readCatalog(dir))
+  await writeFile(file, JSON.stringify({ ...raw, type: 'tents' }))
+  await assert.rejects(readCatalog(dir))
+})

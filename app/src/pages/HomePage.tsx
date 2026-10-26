@@ -7,7 +7,7 @@ import { probePuzzles, type ProbedPuzzle } from '../lib/puzzles'
 import { sudokuVariantOf } from '../domain/sudokuLevels'
 import { trackVariantOf } from '../domain/trackSizes'
 import { formatTime } from '../domain/game'
-import { isMarksPuzzle, isTracksPuzzle, isTrioPuzzle, isTentsPuzzle, isSudokuPuzzle, type Puzzle } from '../domain/puzzle'
+import { isMarksPuzzle, isTracksPuzzle, isTrioPuzzle, isTentsPuzzle, isSudokuPuzzle, isNurikabePuzzle, type Puzzle } from '../domain/puzzle'
 import { WordGrid } from '../domain/wordPaths'
 import { readStoredStats } from '../lib/stats'
 import { useToday } from '../lib/useToday'
@@ -26,6 +26,7 @@ const DESCRIPTION: Record<PuzzleType, string> = {
   trio: 'Balance sun, moon and star. Three of each in every row and column.',
   tents: 'Pair every tree with a tent. Match the counts and keep tents apart.',
   sudoku: 'Digits 1–9 once in every row, column and box.',
+  nurikabe: 'Shade a connected sea around islands. Match each island’s number.',
 }
 
 // Keep full save validation, including the Word Paths vocabulary, out of the initial bundle.
@@ -34,6 +35,7 @@ async function savedTime(puzzle: Puzzle): Promise<number | null> {
   if (isTracksPuzzle(puzzle)) return (await import('../lib/trackProgress')).readTrackProgress(puzzle.id, puzzle.board)?.elapsedMs ?? null
   if (isTrioPuzzle(puzzle)) return (await import('../lib/trioProgress')).readTrioProgress(puzzle.board, true)?.elapsedMs ?? null
   if (isSudokuPuzzle(puzzle)) return (await import('../lib/sudokuProgress')).readSudokuProgress(puzzle.board, true)?.elapsedMs ?? null
+  if (isNurikabePuzzle(puzzle)) return (await import('../lib/nurikabeProgress')).readNurikabeProgress(puzzle.board, true)?.elapsedMs ?? null
   if (isTentsPuzzle(puzzle)) return (await import('../lib/tentsProgress')).readTentsProgress(puzzle.board, true)?.elapsedMs ?? null
   return puzzle.board instanceof WordGrid ? (await import('../lib/wordProgress')).readWordProgress(puzzle.id, puzzle.board)?.elapsedMs ?? null : null
 }
@@ -93,7 +95,7 @@ export function HomePage() {
         <TodayCards probes={ready.probes} solved={solved} />
       )}
       <div className="today-more">
-        <Link to="/preview/nurikabe">Try Nurikabe <span aria-hidden="true">→</span></Link>
+        <Link to="/preview/nurikabe">Nurikabe practice boards <span aria-hidden="true">→</span></Link>
         <Link to="/learn">Learn to solve <span aria-hidden="true">→</span></Link>
         <Link to="/preview/sudoku">Sudoku practice boards <span aria-hidden="true">→</span></Link>
         <p>Another round?</p>

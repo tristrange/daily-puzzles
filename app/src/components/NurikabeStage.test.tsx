@@ -1,8 +1,13 @@
 // @vitest-environment jsdom
 import { act } from 'react'
+import { MemoryRouter } from 'react-router-dom'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import raw from '../data/nurikabe-previews.json'
+import dailyRaw from '../../../conformance/schema-cases/nurikabe.accept.json'
+import dailyProof from '@shared/docs/measurements/daily-nurikabe-launch.json'
+import { parsePuzzle, isNurikabePuzzle } from '../domain/puzzle'
+import { readStoredStats } from '../lib/stats'
 import proof from '@shared/docs/measurements/nurikabe-preview.json'
 import { createNurikabeGame, parseNurikabeBoards, type NurikabeGame } from '../domain/nurikabe'
 import { readNurikabeProgress, storeNurikabeProgress } from '../lib/nurikabeProgress'
@@ -102,4 +107,41 @@ it('warns when saving is blocked but keeps editing usable', async () => {
   expect(cell(1).dataset['mark']).toBe('1')
   await click('Undo')
   expect(cell(1).dataset['mark']).toBe('0')
+})
+
+it('records only the first daily solve, shares the result and keeps preview saves separate', async () => {
+  vi.spyOn(performance, 'now').mockReturnValue(1000)
+  const puzzle = parsePuzzle(dailyRaw)
+  if (!isNurikabePuzzle(puzzle)) throw Error('Nurikabe fixture required')
+  const answer = dailyProof.samples.find(sample => sample.id === '2026-10-25-nurikabe')
+  if (!answer) throw Error('Nurikabe proof required')
+  const launchPuzzle = parsePuzzle({ ...dailyRaw, seed: answer.seed, board: { size: 7, clues: answer.clues } })
+  if (!isNurikabePuzzle(launchPuzzle)) throw Error('Nurikabe fixture required')
+  const dailyBoard = launchPuzzle.board
+  const solvedGame: NurikabeGame = answer.solution.map((mark, index) => mark === 0 ? 1 : dailyBoard.clues[index] ? 2 : 0)
+  const last = solvedGame.lastIndexOf(1)
+  const unfinished = solvedGame.map((mark, index) => index === last ? 0 : mark)
+  storeNurikabeProgress(dailyBoard, unfinished, { elapsedMs: 65000, attemptElapsedMs: 12000 }, true)
+  storeNurikabeProgress(board, createNurikabeGame(board), { elapsedMs: 3333 })
+  const originalPreview = localStorage.getItem(`daily-puzzles.nurikabe-preview.v1.${board.id}`)
+  await act(async () => root.render(<MemoryRouter><NurikabeStage board={dailyBoard} puzzle={launchPuzzle} /></MemoryRouter>))
+  expect(container.textContent).toContain('Hints are not available for Nurikabe yet')
+  expect(button('Hint')).toBeUndefined()
+  await key(last, 's')
+  expect(readStoredStats()).toHaveLength(1)
+  expect(readStoredStats()[0]).toMatchObject({ id: launchPuzzle.id, puzzleType: 'nurikabe', elapsedMs: 65000, attemptElapsedMs: 12000, hints: 0 })
+  expect(localStorage.getItem(`daily-puzzles.nurikabe.v1.${dailyBoard.id}`)).toBeNull()
+  expect(localStorage.getItem(`daily-puzzles.nurikabe-preview.v1.${board.id}`)).toBe(originalPreview)
+  await click('Copy result')
+  expect(container.querySelector('textarea')?.value).toContain('Nurikabe 7×7')
+  expect(container.querySelector('textarea')?.value).not.toContain('🟦')
+  await click('Copy with solution')
+  expect(container.querySelector('textarea')?.value).toContain('🟦')
+  await act(async () => root.unmount()); root = createRoot(container)
+  storeNurikabeProgress(dailyBoard, unfinished, { elapsedMs: 1000 }, true)
+  await act(async () => root.render(<MemoryRouter><NurikabeStage board={dailyBoard} puzzle={launchPuzzle} /></MemoryRouter>))
+  await key(last, 's')
+  expect(readStoredStats()).toHaveLength(1)
+  expect(readStoredStats()[0]?.elapsedMs).toBe(65000)
+  expect(container.textContent).toContain('your first solve, 1:05, still counts')
 })

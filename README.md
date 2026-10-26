@@ -1,6 +1,6 @@
 # Daily Puzzles
 
-Seven daily puzzle games, built as a portfolio and learning
+Eight daily puzzle games, built as a portfolio and learning
 project. A Python engine generates and verifies original boards; a React and
 TypeScript app plays them in the browser. The site is hosted on GitHub Pages.
 
@@ -22,6 +22,7 @@ Supabase backend.
 | **Word Paths** | 5×5, English | Trace four orthogonal words of lengths 3, 4, 5 and 6, using every letter once without overlap. |
 | **Trio** | 9×9 | Place three suns, moons and stars in every row and column. No three identical symbols consecutively; respect adjacent same/different clues. |
 | **Tents** | 10×10, 18 tents | Pair trees with orthogonally adjacent tents, match row/column counts and keep tents apart, including diagonally. Each tree and tent must have a one-to-one pairing. |
+| **Nurikabe** | 7×7 | Shade one connected sea around numbered islands. Each island has its clue's area; no 2×2 sea squares. |
 | **Sudoku** | Easy, Medium and Hard, all 9×9 | Fill each row, column and 3×3 box with 1–9 exactly once. All three levels publish every day. |
 
 Train Tracks sizes describe dimensions, not difficulty. New boards use every row
@@ -54,16 +55,17 @@ Earlier [Word Paths](https://tristrange.github.io/daily-puzzles/#/preview/word-p
 [Tents](https://tristrange.github.io/daily-puzzles/#/preview/tents?board=7)
 previews also remain available with separate progress.
 
-### Nurikabe preview
+### Daily Nurikabe
 
-[Try three original Nurikabe boards](https://tristrange.github.io/daily-puzzles/#/preview/nurikabe?board=1):
-one 5×5 introduction and two 7×7 boards. Shade a connected sea around numbered
-islands, with no solid 2×2 sea square. Land dots are optional working notes.
-Tap, drag, or use the keyboard; Undo, Redo, confirmed Reset, focused timers,
-and separate preview saves follow the other games.
+One original 7×7 Nurikabe publishes each day, with archive boards from October 12,
+2026. Shade a connected sea around numbered islands, with no solid 2×2 sea square.
+Land dots are optional working notes. Daily solves support personal stats, sharing,
+offline saves and optional leaderboards. Hints and difficulty ratings are not
+available yet; uniqueness does not establish a no-guess solve.
 
-Every preview has a verified unique solution. There are no hints or difficulty
-ratings yet. These attempts do not count toward daily stats or leaderboards.
+[The three original practice boards](https://tristrange.github.io/daily-puzzles/#/preview/nurikabe?board=1)
+remain available, with one 5×5 introduction and two 7×7 boards. Their progress stays
+separate from daily games, stats and leaderboards.
 
 ## Playing features
 
@@ -191,7 +193,8 @@ uv run ruff format --check .
 uv run python -m tools.verify --dir ../app/public/puzzles --jobs 2
 uv run python -m tools.schema_ids --check
 uv run python -m tools.sudoku_preview  # verify the three fixed preview certificates
-uv run python -m tools.nurikabe_preview  # verify Nurikabe boards and offline certificates
+uv run python -m tools.nurikabe_preview  # verify the unchanged practice boards
+uv run python -m tools.nurikabe_launch  # verify the frozen daily launch batch
 ```
 
 `pytest -q` includes the full Word Paths seed sweep. For the same selection as

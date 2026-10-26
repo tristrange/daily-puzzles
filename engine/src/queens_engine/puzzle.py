@@ -129,7 +129,12 @@ def parse_puzzle(data: object) -> Puzzle:
         raise PuzzleParseError(str(error)) from error
 
     identifier = _require_str(record.get("id"), "id")
-    if puzzle_type in (PuzzleType.WORD_PATHS, PuzzleType.TRIO, PuzzleType.TENTS):
+    if puzzle_type in (
+        PuzzleType.WORD_PATHS,
+        PuzzleType.TRIO,
+        PuzzleType.TENTS,
+        PuzzleType.NURIKABE,
+    ):
         parsed = split_puzzle_id(identifier)
         if parsed is None or parsed[1] is not puzzle_type:
             raise PuzzleParseError(

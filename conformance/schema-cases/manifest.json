@@ -859,6 +859,68 @@
       "errorPaths": [
         "maximum:board/givens/0"
       ]
+    },
+    {
+      "file": "nurikabe.accept.json",
+      "valid": true,
+      "expect": {
+        "type": "nurikabe",
+        "size": 7,
+        "seed": 0,
+        "generatorVersion": 1,
+        "clues": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          3,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          3,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          0
+        ],
+        "difficulty": null
+      }
     }
   ]
 }

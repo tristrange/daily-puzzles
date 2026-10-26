@@ -11,10 +11,14 @@ import large from '../../../conformance/id-cases/tracks-large.accept.json'
 import words from '../../../conformance/word-paths/2026-10-14-words.json'
 import trio from '../../../conformance/schema-cases/trio.accept.json'
 import sudoku from '../data/sudoku-previews.json'
-import { createSudokuGame, type SudokuGrid } from '../domain/sudoku'
+import { createSudokuGame } from '../domain/sudoku'
 import { storeSudokuProgress } from '../lib/sudokuProgress'
 import tents from '../../../conformance/schema-cases/tents.accept.json'
-import { parsePuzzle } from '../domain/puzzle'
+import nurikabe from '../../../conformance/schema-cases/nurikabe.accept.json'
+import { PUZZLE_TYPES } from '../domain/board'
+import { parsePuzzle, isSudokuPuzzle, isNurikabePuzzle } from '../domain/puzzle'
+import { createNurikabeGame } from '../domain/nurikabe'
+import { storeNurikabeProgress } from '../lib/nurikabeProgress'
 import { marksBoard } from '../domain/helpers'
 import { createGame } from '../domain/game'
 import { createTracksGame } from '../domain/tracksGame'
@@ -31,7 +35,7 @@ import { storeTentsProgress } from '../lib/tentsProgress'
 import { STATS_STORAGE_KEY } from '../lib/stats'
 import { HomePage } from './HomePage'
 
-const data = [queen, star, small, medium, large, words, trio, tents, ...sudoku.map(board => ({ id: `2026-10-21-sudoku-${board.level}`, type: 'sudoku', seed: 1, generatorVersion: 1, board: { size: 9, level: board.level, givens: board.givens } }))]
+const data = [queen, star, small, medium, large, words, trio, tents, nurikabe, ...sudoku.map(board => ({ id: `2026-10-21-sudoku-${board.level}`, type: 'sudoku', seed: 1, generatorVersion: 1, board: { size: 9, level: board.level, givens: board.givens } }))]
   .map(raw => ({ ...raw, id: raw.id.replace(/^\d{4}-\d{2}-\d{2}/, '2026-10-21') }))
 const puzzles = data.map(parsePuzzle)
 let container: HTMLDivElement, root: Root
@@ -65,7 +69,10 @@ function saveAttempts() {
   storeWordProgress(puzzles[5]!.id, createWordGame(puzzles[5]!.board as WordGrid), { elapsedMs: 90000 })
   storeTrioProgress(puzzles[6]!.board as TrioGrid, createTrioGame(puzzles[6]!.board as TrioGrid), { elapsedMs: 125000 }, true)
   storeTentsProgress(puzzles[7]!.board as TentsGrid, createTentsGame(puzzles[7]!.board as TentsGrid), { elapsedMs: 180000 }, 0, true)
-  for (const puzzle of puzzles.slice(8)) storeSudokuProgress(puzzle.board as SudokuGrid, createSudokuGame(puzzle.board as SudokuGrid), { elapsedMs: 245000 }, 2, true)
+  for (const puzzle of puzzles.filter(isSudokuPuzzle)) storeSudokuProgress(puzzle.board, createSudokuGame(puzzle.board), { elapsedMs: 245000 }, 2, true)
+  const nurikabePuzzle = puzzles.find(isNurikabePuzzle)
+  if (!nurikabePuzzle) throw Error('Nurikabe fixture required')
+  storeNurikabeProgress(nurikabePuzzle.board, createNurikabeGame(nurikabePuzzle.board), { elapsedMs: 60000 }, true)
 }
 
 async function render() {
@@ -83,7 +90,7 @@ it('offers each saved daily game with its validated time and original destinatio
   for (const [name, time, id] of [['Queens', '4:32', '2026-10-21'], ['Star Battle', '1:05', '2026-10-21-star'],
     ['Train Tracks Small', '1:00', '2026-10-21-tracks-small'], ['Train Tracks Medium', '2:00', '2026-10-21-tracks-medium'],
     ['Train Tracks Large', '3:00', '2026-10-21-tracks-large'], ['Word Paths', '1:30', '2026-10-21-words'],
-    ['Trio', '2:05', '2026-10-21-trio'], ['Tents', '3:00', '2026-10-21-tents'], ...['Easy', 'Medium', 'Hard'].map(level => [`Sudoku ${level}`, '4:05', `2026-10-21-sudoku-${level.toLowerCase()}`])]) {
+    ['Trio', '2:05', '2026-10-21-trio'], ['Tents', '3:00', '2026-10-21-tents'], ['Nurikabe', '1:00', '2026-10-21-nurikabe'], ...['Easy', 'Medium', 'Hard'].map(level => [`Sudoku ${level}`, '4:05', `2026-10-21-sudoku-${level.toLowerCase()}`])]) {
     expect(link(`Resume ${name} at ${time}`)?.getAttribute('href')).toBe(`/archive/${id}`)
     expect(link(`Resume ${name} at ${time}`)?.textContent).toContain(`Resume · ${time}`)
   }
@@ -109,13 +116,13 @@ it('ignores stale saves and blocked storage instead of advertising a broken resu
     localStorage.setItem(key, JSON.stringify({ ...JSON.parse(localStorage.getItem(key)!), board: 'old board' }))
   }
   await render()
-  expect(container.querySelectorAll('.game-card')).toHaveLength(7)
+  expect(container.querySelectorAll('.game-card')).toHaveLength(PUZZLE_TYPES.length)
   expect(container.textContent).not.toContain('Resume')
   vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw Error('Storage disabled') })
   await act(async () => root.unmount())
   root = createRoot(container)
   await render()
-  expect(container.querySelectorAll('.game-card')).toHaveLength(7)
+  expect(container.querySelectorAll('.game-card')).toHaveLength(PUZZLE_TYPES.length)
   expect(container.textContent).not.toContain('Resume')
 })
 

@@ -2382,3 +2382,53 @@ Desktop Auto/Dark and phone layouts at 393px passed, with Light also inspected.
 See the [game hub](images/learn-games-desktop.png) and
 [phone lesson](images/learn-star-battle-phone.png). Physical iPhone and VoiceOver
 were not tested.
+
+
+## 2026-10-26 — Daily Nurikabe
+
+Nurikabe now joins the existing daily family registry with one original 7×7 board
+per date and a backlog beginning October 12. The initial 18 files cover October
+12–29. Existing published files and the three original preview definitions and
+certificates remain unchanged. Daily and preview attempts use separate save keys,
+while preserving the original preview fingerprints and progress.
+
+Version 1 constructs connected sea and small separated islands, places one clue per
+island, and accepts only a complete exhaustive uniqueness proof. The frozen
+recipe bounds construction draws and reserves aggregate exact work, including
+calls that exhaust their budget. Four declared input seeds reproduced their
+boards and unique answers. The [launch certificate](measurements/daily-nurikabe-launch.json)
+checks every dated file against exact rules, replay and canonical clue/solution
+layouts under all eight square symmetries. None repeats another initial board or
+an original preview. The publisher and verifier enforce a 14-day solution-layout
+repeat window. These checks do not establish human difficulty or no-guess play.
+
+Today, Archive, Resume, Stats, result/solution sharing, offline saves and optional
+first-result leaderboards use the normal daily paths. The stage retains focused
+and since-reset timing, one-step gesture history, confirmed Reset, optional land
+dots and direct rule-based completion. Nurikabe has no hints or difficulty label
+at launch. Replays retain the first daily result; previews remain separate.
+
+The timestamped database migration widens three catalog constraints to accept
+canonical 7×7 Nurikabe metadata. It changes no score rows, RPCs, permissions or
+rate limits. Fresh, seeded-upgrade and repeated-migration checks were added to
+the existing disposable PostgreSQL harness. After independent SQL review, the
+compatibility migration was applied through Supabase. Before/after fingerprints
+confirmed all 83 existing scores, 247 catalog rows, rate-limit records, RPC
+definitions and table security settings were unchanged. The normal deployment
+catalog sync will enroll the new daily IDs.
+
+Local verification passed all 1,023 app tests, Pages-base build and typecheck.
+Engine/conformance/rulebook/publisher checks passed 269 tests. Pyright, Ruff and
+format checks passed. App lint retains the existing TracksStage effect warning.
+Browser checks passed a full daily solve, sharing, per-game Stats, archive
+discovery, Resume, vertical painting and one-step Undo/Redo. Original preview
+progress survived integration and reload. Auto/Dark and Light were inspected,
+and the 393px phone layout has no horizontal overflow. With the production
+preview server stopped, the cached app reloaded the daily board, retained its
+marks and accepted further play. See the [desktop board](images/daily-nurikabe-desktop.png)
+and [phone board](images/daily-nurikabe-phone.png). Physical iPhone and VoiceOver
+were not tested. Native Reset confirmation was covered by component tests but
+not reopened during browser automation. Independent source review found no
+actionable correctness issues and separately passed 65 focused app tests and
+nine engine tests, inspected the 18 payloads and complete answers, and confirmed
+the hosted before/after evidence.

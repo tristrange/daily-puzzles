@@ -39,6 +39,7 @@ from __future__ import annotations
 import argparse
 import sys
 from datetime import date, timedelta
+from functools import cache
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -64,6 +65,9 @@ from queens_engine import (
     star_layout,
     target_for,
 )
+from queens_engine.nurikabe import NurikabeGrid
+from queens_engine.nurikabe import solve as solve_nurikabe
+from queens_engine.nurikabe_gen import LAYOUT_WINDOW_DAYS, canonical_layout
 
 #: How many days ahead of "today" the archive should stay published.
 DEFAULT_LEAD_DAYS = 3
@@ -101,6 +105,26 @@ def _nearby_star_layouts(
         if puzzle_type is PuzzleType.STAR_BATTLE:
             recent.add(star_layout(as_marks_board(load_puzzle(day_id).board)))
     return recent
+
+
+@cache
+def _nurikabe_layout(grid: NurikabeGrid) -> tuple[int, ...]:
+    result = solve_nurikabe(grid)
+    if len(result.solutions) != 1:
+        raise RuntimeError("Nurikabe layout requires an exhaustively unique board")
+    return canonical_layout(grid.size, result.solutions[0])
+
+
+def _nearby_nurikabe_layouts(out_dir: Path, day: date) -> set[tuple[int, ...]]:
+    layouts: set[tuple[int, ...]] = set()
+    for path in out_dir.glob("*-nurikabe.json"):
+        split = split_puzzle_id(path.stem)
+        if split is None or split[0] == day or abs(split[0] - day).days > LAYOUT_WINDOW_DAYS:
+            continue
+        grid = load_puzzle(path).board
+        if isinstance(grid, NurikabeGrid):
+            layouts.add(_nurikabe_layout(grid))
+    return layouts
 
 
 def _existing(out_dir: Path) -> tuple[set[str], set[date]]:
@@ -172,6 +196,8 @@ def _generate(
     day_id: str,
     seed: int,
     avoid_layouts: set[tuple[tuple[int, ...], ...]] | None = None,
+    *,
+    avoid_nurikabe_layouts: set[tuple[int, ...]] | None = None,
 ) -> tuple[Puzzle, float | None]:
     """Generate one day of one type, and its difficulty score if it has one.
 
@@ -216,6 +242,13 @@ def _generate(
             avoid_layouts is not None
             and book.puzzle_type is PuzzleType.STAR_BATTLE
             and star_layout(as_marks_board(puzzle.board)) in avoid_layouts
+        ):
+            seed = (seed + 1) % (2**32)
+            continue
+        if (
+            avoid_nurikabe_layouts is not None
+            and isinstance(puzzle.board, NurikabeGrid)
+            and _nurikabe_layout(puzzle.board) in avoid_nurikabe_layouts
         ):
             seed = (seed + 1) % (2**32)
             continue
@@ -277,6 +310,11 @@ def main(argv: list[str] | None = None) -> int:
                         day_id,
                         seed,
                         _nearby_star_layouts(args.out, window),
+                        avoid_nurikabe_layouts=(
+                            _nearby_nurikabe_layouts(args.out, window)
+                            if book.puzzle_type is PuzzleType.NURIKABE
+                            else None
+                        ),
                     )
                 except RuntimeError as error:
                     print(f"error: {error}", file=sys.stderr)

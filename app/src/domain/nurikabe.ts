@@ -8,16 +8,39 @@ export type NurikabeGame = readonly NurikabeMark[]
 export const NURIKABE_NAMES = ['Unmarked', 'Sea', 'Land'] as const
 export const isNurikabeMark = (value: unknown): value is NurikabeMark => value === 0 || value === 1 || value === 2
 
+export class NurikabeGridError extends Error {
+  constructor(message: string) { super(message); this.name = 'NurikabeGridError' }
+}
+
+function contents(size: unknown, clues: unknown): Omit<NurikabeBoard, 'id'> {
+  if (typeof size !== 'number' || !Number.isInteger(size) || size < 2 || size > 10
+    || !Array.isArray(clues) || clues.length !== size ** 2
+    || !Array.from(clues).every((clue: unknown): clue is number => typeof clue === 'number' && Number.isInteger(clue) && clue >= 0 && clue <= size ** 2)
+    || !clues.some(clue => clue > 0)) throw new NurikabeGridError('Invalid Nurikabe board data')
+  return { size, clues: [...clues] }
+}
+
 export function parseNurikabeBoard(raw: unknown): NurikabeBoard {
   if (!raw || typeof raw !== 'object' || !('id' in raw) || !('size' in raw) || !('clues' in raw)
     || Object.keys(raw).some(key => !['id', 'size', 'clues'].includes(key))) throw Error('Invalid Nurikabe preview data')
-  const { id, size, clues } = raw
-  if (typeof id !== 'string' || !/^nurikabe-preview-[1-9]\d*$/.test(id)
-    || typeof size !== 'number' || !Number.isInteger(size) || size < 2 || size > 10
-    || !Array.isArray(clues) || clues.length !== size ** 2
-    || !Array.from(clues).every((clue: unknown): clue is number => typeof clue === 'number' && Number.isInteger(clue) && clue >= 0 && clue <= size ** 2)
-    || !clues.some(clue => clue > 0)) throw Error('Invalid Nurikabe preview data')
-  return { id, size, clues: [...clues] }
+  if (typeof raw.id !== 'string' || !/^nurikabe-preview-[1-9]\d*$/.test(raw.id)) throw Error('Invalid Nurikabe preview data')
+  return { id: raw.id, ...contents(raw.size, raw.clues) }
+}
+
+export class NurikabeGrid implements NurikabeBoard {
+  readonly size = 7
+  readonly width = 7
+  readonly height = 7
+  readonly cellCount = 49
+  readonly id: string
+  readonly clues: readonly number[]
+
+  constructor(id: string, size: unknown, clues: unknown) {
+    const checked = contents(size, clues)
+    if (checked.size !== 7) throw new NurikabeGridError('Daily Nurikabe requires a 7x7 grid')
+    this.id = id
+    this.clues = checked.clues
+  }
 }
 
 export function parseNurikabeBoards(raw: unknown): readonly NurikabeBoard[] {

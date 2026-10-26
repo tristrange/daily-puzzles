@@ -26,6 +26,18 @@ class NurikabeGrid:
         ):
             raise ValueError("clues must contain size squared integers and at least one number")
 
+    @property
+    def width(self) -> int:
+        return self.size
+
+    @property
+    def height(self) -> int:
+        return self.size
+
+    @property
+    def cell_count(self) -> int:
+        return self.size**2
+
 
 def _neighbours(size: int, cell: int) -> tuple[int, ...]:
     row, col = divmod(cell, size)

@@ -12,7 +12,7 @@
  * the archive and the share text, with nothing to say so.
  */
 
-import { trio, wordPaths, tents } from '../../../conformance/id-cases/manifest.json'
+import { trio, wordPaths, tents, nurikabe } from '../../../conformance/id-cases/manifest.json'
 import type { PuzzleType } from './board'
 import type { DifficultyBand } from './puzzle'
 
@@ -36,6 +36,7 @@ export const PUZZLE_TYPE_SUFFIX: Record<PuzzleType, string> = {
   trio: '-trio',
   tents: '-tents',
   sudoku: '-sudoku',
+  nurikabe: '-nurikabe',
 }
 
 /**
@@ -55,11 +56,13 @@ export const PUZZLE_TYPE_PUBLISHED: Record<PuzzleType, boolean> = {
   trio: true,
   tents: true,
   sudoku: true,
+  nurikabe: true,
 }
 
 export const WORD_PATHS_START = wordPaths.activationDay
 export const TRIO_START = trio.activationDay
 export const TENTS_START = tents.activationDay
+export const NURIKABE_START = nurikabe.activationDay
 
 /** The family whose id carries no suffix: the day's default puzzle. */
 export const DEFAULT_PUZZLE_TYPE: PuzzleType = 'queens'
@@ -87,6 +90,7 @@ export const PUZZLE_TYPE_HAS_HINTS: Record<PuzzleType, boolean> = {
   trio: true,
   tents: true,
   sudoku: true,
+  nurikabe: false,
 }
 
 export const PUZZLE_TYPE_LABEL: Record<PuzzleType, string> = {
@@ -97,6 +101,7 @@ export const PUZZLE_TYPE_LABEL: Record<PuzzleType, string> = {
   trio: 'Trio',
   tents: 'Tents',
   sudoku: 'Sudoku',
+  nurikabe: 'Nurikabe',
 }
 
 /**
@@ -130,4 +135,5 @@ export const PUZZLE_PIECE: Record<PuzzleType, { noun: string; plural: string; gl
   trio: { noun: 'symbol', plural: 'symbols', glyph: '☀' },
   tents: { noun: 'tent', plural: 'tents', glyph: '⛺' },
   sudoku: { noun: 'digit', plural: 'digits', glyph: '9' },
+  nurikabe: { noun: 'sea cell', plural: 'sea cells', glyph: '◈' },
 }
