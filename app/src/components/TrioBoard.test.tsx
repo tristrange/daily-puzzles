@@ -49,3 +49,18 @@ it('keeps a held stroke isolated from keyboard edits and cancels it before Undo'
   pointerUp()
   expect(events).toEqual(['begin', 'apply', 'cancel', 'redo'])
 })
+
+it('preserves the daily solved lock when the lesson inspection prop is absent', () => {
+  const board: Board = { id: 'trio-preview-1', givens: Array.from({ length: 81 }, () => 0), relations: [] }
+  const edit = vi.fn()
+  const element = TrioBoard({ board, game: createTrioGame(board), brush: 1, pencil: false, locked: true,
+    conflicts: new Set(), instructionsId: 'rules', onBegin: edit, onApply: edit, onEnd: edit,
+    onUndo: edit, onRedo: edit, onPencil: edit,
+  }) as ReactElement<ComponentProps<'div'>>
+  const props = element.props
+  props.onPointerDown!({ pointerId: 1, button: 0, clientX: 0, clientY: 0 } as unknown as Parameters<NonNullable<typeof props.onPointerDown>>[0])
+  for (const key of ['1', '2', '3', 'n', 'Delete', 'Backspace', 'Enter', ' ', 'z']) {
+    props.onKeyDown!({ key, ctrlKey: key === 'z', preventDefault: vi.fn() } as unknown as Parameters<NonNullable<typeof props.onKeyDown>>[0])
+  }
+  expect(edit).not.toHaveBeenCalled()
+})

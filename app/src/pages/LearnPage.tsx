@@ -2,10 +2,13 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { SUDOKU_LESSONS, SUDOKU_TECHNIQUES } from '../domain/sudokuLessons'
 import { STAR_BATTLE_LESSONS, STAR_BATTLE_TECHNIQUES } from '../domain/starBattleLessons'
+import { TRIO_LESSONS, TRIO_TECHNIQUES } from '../domain/trioLessons'
+import { readCompletedTrioLessons } from '../lib/trioLessonProgress'
 import { readCompletedLessons } from '../lib/lessonProgress'
 import { readCompletedStarBattleLessons } from '../lib/starBattleLessonProgress'
 
 export function LearnPage() {
+  const [trioCompleted] = useState(readCompletedTrioLessons)
   const [sudokuCompleted] = useState(readCompletedLessons)
   const [starCompleted] = useState(readCompletedStarBattleLessons)
   return <section className="learn-page">
@@ -20,6 +23,10 @@ export function LearnPage() {
         <p>{STAR_BATTLE_TECHNIQUES.length} techniques · {STAR_BATTLE_LESSONS.length} exercises. Begin with the last space, then reserve spaces across groups.</p>
         <p className="lesson-progress">{starCompleted.length} of {STAR_BATTLE_LESSONS.length} completed</p>
         <Link className="tool-button primary" to="/learn/star-battle">Learn Star Battle →</Link></li>
+      <li><h2>Trio</h2>
+        <p>{TRIO_TECHNIQUES.length} techniques · {TRIO_LESSONS.length} exercises. Combine quotas and no-three, propagate linked restrictions, then follow candidate chains.</p>
+        <p className="lesson-progress">{trioCompleted.length} of {TRIO_LESSONS.length} completed</p>
+        <Link className="tool-button primary" to="/learn/trio">Learn Trio →</Link></li>
     </ul>
     <p className="status">Completion saves in this browser, separately from daily stats, streaks and leaderboards.</p>
   </section>

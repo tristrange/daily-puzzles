@@ -1587,3 +1587,15 @@
   --motif-color: light-dark(#286b80, #8dc8db);
   --motif-wash: light-dark(#e6f1f5, #253842);
 }
+
+.lesson-board .trio-board { width: 100%; }
+.trio-cell[data-selected='true'] { border-color: #3b82f6; box-shadow: inset 0 0 0 2px #3b82f6; }
+.trio-lesson-candidates .tool-button { display: inline-flex; align-items: center; gap: .4rem; }
+.trio-lesson-candidates .trio-symbol { width: 1.3rem; height: 1.3rem; }
+.trio-lesson-candidates .tool-button[aria-pressed='false'] .trio-symbol { opacity: .35; }
+.trio-lesson-reasons { padding-left: 1.25rem; font-size: .875rem; line-height: 1.6; }
+.trio-lesson-reasons li + li { margin-top: .75rem; }
+@media (max-width: 47.999rem) {
+  .trio-lesson .lesson-siblings { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .trio-lesson .lesson-siblings .tool-button { font-size: .8125rem; padding-inline: .25rem; }
+}

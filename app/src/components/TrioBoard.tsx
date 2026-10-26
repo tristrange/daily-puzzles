@@ -8,11 +8,12 @@ interface Props {
   board: Board; game: TrioGame; brush: TrioValue; pencil: boolean; locked: boolean
   conflicts: ReadonlySet<number>; instructionsId: string
   hint?: TrioHint | null
+  inspection?: { selected: number | null; onSelect: (cell: number) => void }
   onApply: (cell: number, action: TrioAction) => void
   onBegin: () => void; onEnd: (cancel: boolean) => void; onUndo: () => void; onRedo: () => void; onPencil: () => void
 }
 
-export function TrioBoard({ board, game, brush, pencil, locked, conflicts, instructionsId, hint, onApply, onBegin, onEnd, onUndo, onRedo, onPencil }: Props) {
+export function TrioBoard({ board, game, brush, pencil, locked, conflicts, instructionsId, hint, inspection, onApply, onBegin, onEnd, onUndo, onRedo, onPencil }: Props) {
   const grid = useRef<HTMLDivElement>(null)
   const [focus, setFocus] = useState(() => Math.max(0, board.givens.indexOf(0)))
   const stroke = useRef<{ id: number; action: TrioAction; visited: Set<number> } | null>(null)
@@ -34,7 +35,13 @@ export function TrioBoard({ board, game, brush, pencil, locked, conflicts, instr
   }
   const start = (event: PointerEvent<HTMLDivElement>) => {
     if (stroke.current && event.pointerId !== stroke.current.id) { finish(true); return }
-    if (locked || event.button !== 0 || event.ctrlKey) return
+    if (event.button !== 0 || event.ctrlKey) return
+    if (locked) {
+      if (!inspection) return
+      const cell = cellAt(event.clientX, event.clientY)
+      if (cell !== null) { setFocus(cell); inspection.onSelect(cell); grid.current?.querySelector<HTMLElement>(`[data-cell="${cell}"]`)?.focus({ preventScroll: true }) }
+      return
+    }
     const cell = cellAt(event.clientX, event.clientY)
     if (cell === null || board.givens[cell] !== 0) return
     setFocus(cell)
@@ -57,8 +64,8 @@ export function TrioBoard({ board, game, brush, pencil, locked, conflicts, instr
     const row = Math.floor(focus / 9), col = focus % 9
     const navigation: Record<string, number> = { ArrowUp: Math.max(0, row - 1) * 9 + col, ArrowDown: Math.min(8, row + 1) * 9 + col,
       ArrowLeft: row * 9 + Math.max(0, col - 1), ArrowRight: row * 9 + Math.min(8, col + 1), Home: row * 9, End: row * 9 + 8 }
-    if (navigation[event.key] !== undefined) { event.preventDefault(); setFocus(navigation[event.key]!); return }
-    if (locked) return
+    if (navigation[event.key] !== undefined) { event.preventDefault(); setFocus(navigation[event.key]!); inspection?.onSelect(navigation[event.key]!); return }
+    if (locked) { if (inspection && ['Enter', ' '].includes(event.key)) { event.preventDefault(); inspection.onSelect(focus) } return }
     const command = historyCommand(event)
     if (command) { event.preventDefault(); finish(true); if (command === 'undo') onUndo(); else onRedo(); return }
     if (event.ctrlKey || event.metaKey || event.altKey) return
@@ -86,9 +93,10 @@ export function TrioBoard({ board, game, brush, pencil, locked, conflicts, instr
         return <div role="presentation" className="trio-cell-wrap" key={cell}>
           <button role="gridcell" type="button" className="trio-cell" data-cell={cell} data-given={given} data-conflict={conflicts.has(cell)}
             data-hint={hint?.cell === cell ? 'target' : support.has(cell) ? 'support' : undefined}
+            data-selected={inspection?.selected === cell ? true : undefined} aria-selected={inspection ? inspection.selected === cell : undefined}
             tabIndex={focus === cell ? 0 : -1} aria-readonly={given || locked}
             aria-label={`Row ${row + 1}, column ${col + 1}, ${TRIO_NAMES[value]}${given ? ', given' : ''}${noteLabel ? `, notes ${noteLabel}` : ''}${conflicts.has(cell) ? ', conflict' : ''}${hint?.cell === cell ? ', hint target' : support.has(cell) ? ', supports hint' : ''}${neighbours.length ? `; ${neighbours.join('; ')}` : ''}`}
-            onFocus={() => setFocus(cell)} onClick={(event) => { if (event.detail === 0) one(cell, brush) }}
+            onFocus={() => setFocus(cell)} onClick={(event) => { if (event.detail === 0) { if (inspection) { setFocus(cell); inspection.onSelect(cell) } else one(cell, brush) } }}
             onContextMenu={(event) => { event.preventDefault(); one(cell, 0) }}>
             {value !== 0 ? <TrioSymbol value={value} /> : <span className="trio-notes" aria-hidden="true">{([1, 2, 3] as const).map((v) => <span key={v}>{notes & (1 << (v - 1)) ? <TrioSymbol value={v} /> : null}</span>)}</span>}
           </button>
