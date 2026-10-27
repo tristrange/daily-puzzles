@@ -1,4 +1,5 @@
 import positions from '../data/sudoku-lessons.json'
+import { SUDOKU_ADVANCED_TECHNIQUES } from './sudokuAdvancedLessons'
 import { sudokuSingle, type SudokuBoard, type SudokuGame } from './sudoku'
 import { nextSudokuStep, type SudokuStep } from './sudokuHints'
 
@@ -49,9 +50,11 @@ function prepareExercise(definition: typeof definitions[number], exercise: typeo
   throw Error(`Missing teaching deduction: ${exercise.id}`)
 }
 
-export const SUDOKU_TECHNIQUES = definitions.map(definition => ({
+const originalTechniques = definitions.map(definition => ({
   ...definition,
   exercises: positions[definition.id].map((exercise, index) => prepareExercise(definition, exercise, index)),
 }))
+
+export const SUDOKU_TECHNIQUES = [...originalTechniques, ...SUDOKU_ADVANCED_TECHNIQUES]
 
 export const SUDOKU_LESSONS: readonly SudokuLesson[] = SUDOKU_TECHNIQUES.flatMap(technique => technique.exercises)

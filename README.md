@@ -77,7 +77,7 @@ separate from daily games, stats and leaderboards.
 - Notes and Clear notes in Trio and Sudoku. Shown hint counts survive Undo, Reset and reload.
 - [Learn to solve](https://tristrange.github.io/daily-puzzles/#/learn) groups lessons by
   game. Queens has nine exercises combining region reservations, lines and no-touch.
-  Sudoku has 15 exercises through X-wing. Star Battle has 15 exercises through
+  Sudoku has 21 exercises through XY-Wing and Swordfish. Star Battle has 15 exercises through
   linked reservations and forced stars. Trio has 12 exercises combining quotas,
   no-three restrictions, links and candidate chains. Tents has 15 exercises on
   tree options, line arrangements and competing tree pairings. Nurikabe has nine on sea

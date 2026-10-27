@@ -4,6 +4,8 @@ import { createRoot, type Root } from 'react-dom/client'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { STATS_STORAGE_KEY } from '../lib/stats'
+import { SUDOKU_LESSONS } from '../domain/sudokuLessons'
+import { sudokuDigits } from '../domain/sudoku'
 import { LearnPage } from './LearnPage'
 import { SudokuLessonPage } from './SudokuLessonPage'
 import { SudokuCoursePage } from './SudokuCoursePage'
@@ -53,7 +55,7 @@ it('teaches one deduction, rejects an unchanged answer and saves only lesson com
   expect(document.activeElement).toBe(container.querySelector('h1'))
   expect(container.querySelector('[role="status"]')?.textContent).toBe('')
   await click('All techniques')
-  expect(container.textContent).toContain('1 of 15 completed')
+  expect(container.textContent).toContain('1 of 21 completed')
 })
 
 it('lets a learner reveal an explanation and retry without marking an unanswered lesson complete', async () => {
@@ -82,7 +84,7 @@ it('offers a way back for an unknown lesson link', async () => {
 it('counts only known, distinct completed lessons from browser storage', async () => {
   localStorage.setItem('daily-puzzles:sudoku-lessons:v1', JSON.stringify(['pairs', 'pairs', 'unknown', null]))
   await mount('/learn/sudoku')
-  expect(container.textContent).toContain('1 of 15 completed')
+  expect(container.textContent).toContain('1 of 21 completed')
   expect(container.querySelectorAll('.lesson-completed')).toHaveLength(1)
 })
 
@@ -108,14 +110,14 @@ it.each([
   expect(JSON.parse(localStorage.getItem('daily-puzzles:sudoku-lessons:v1') ?? 'null')).toEqual([lesson.id])
 })
 
-it('preserves old completion IDs and groups fifteen exercises into five technique cards', async () => {
+it('preserves old completion IDs and groups 21 exercises into seven technique cards', async () => {
   localStorage.setItem('daily-puzzles:sudoku-lessons:v1', JSON.stringify(['locked-candidates', 'pairs', 'x-wing']))
   await mount('/learn/sudoku')
-  expect(container.textContent).toContain('3 of 15 completed')
+  expect(container.textContent).toContain('3 of 21 completed')
   expect(container.querySelectorAll('.lesson-completed')).toHaveLength(3)
-  expect(container.querySelectorAll('.lesson-exercise-links a')).toHaveLength(15)
-  expect([...container.querySelectorAll('.lesson-progress')].map(progress => progress.textContent)).toEqual(['1 of 3 completed', '1 of 3 completed', '0 of 3 completed', '0 of 3 completed', '1 of 3 completed'])
-  expect(container.querySelectorAll('.lesson-cards li')).toHaveLength(5)
+  expect(container.querySelectorAll('.lesson-exercise-links a')).toHaveLength(21)
+  expect([...container.querySelectorAll('.lesson-progress')].map(progress => progress.textContent)).toEqual(['1 of 3 completed', '1 of 3 completed', '0 of 3 completed', '0 of 3 completed', '1 of 3 completed', '0 of 3 completed', '0 of 3 completed'])
+  expect(container.querySelectorAll('.lesson-cards li')).toHaveLength(7)
 })
 
 
@@ -152,4 +154,23 @@ it('keeps practice clues optional across checking, retrying and sibling navigati
   expect(container.textContent).toContain('Exercise 1 of 3')
   expect(container.querySelectorAll('[data-hint="support"]')).toHaveLength(2)
   expect(container.querySelector('[role="status"]')?.textContent).toBe('')
+})
+
+
+it.each(['xy-wing-2', 'swordfish-2'])('lets learners practice %s without spoiling the pattern', async id => {
+  const lesson = SUDOKU_LESSONS.find(item => item.id === id)!
+  await mount(`/learn/sudoku/${id}`)
+  expect(container.querySelectorAll('[data-hint="support"]')).toHaveLength(0)
+  await click('Show a clue')
+  expect(container.querySelectorAll('[data-hint="support"]')).toHaveLength(lesson.support.length)
+  await click('Show explanation')
+  expect(localStorage.length).toBe(0)
+  await click('Try again')
+  expect(container.querySelectorAll('[data-hint="support"]')).toHaveLength(0)
+  await click('Check answer')
+  expect(container.querySelector('[role="status"]')?.textContent).toContain('Not quite')
+  for (const digit of sudokuDigits(lesson.step.before & ~lesson.step.after)) await click(`Keep ${digit}`)
+  await click('Check answer')
+  expect(container.querySelector('[role="status"]')?.textContent).toContain('Lesson complete')
+  expect(JSON.parse(localStorage.getItem('daily-puzzles:sudoku-lessons:v1') ?? 'null')).toEqual([id])
 })

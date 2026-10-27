@@ -28,7 +28,7 @@ export function LearnPage() {
         <p className="lesson-progress">{queensCompleted.length} of {QUEENS_LESSONS.length} completed</p>
         <Link className="tool-button primary" to="/learn/queens">Learn Queens →</Link></li>
       <li><h2>Sudoku</h2>
-        <p>{SUDOKU_TECHNIQUES.length} techniques · {SUDOKU_LESSONS.length} exercises. Start with locked candidates, then work through pairs, triples and X-wing.</p>
+        <p>{SUDOKU_TECHNIQUES.length} techniques · {SUDOKU_LESSONS.length} exercises. Start with locked candidates, then work through pairs, triples, X-Wing and beyond.</p>
         <p className="lesson-progress">{sudokuCompleted.length} of {SUDOKU_LESSONS.length} completed</p>
         <Link className="tool-button primary" to="/learn/sudoku">Learn Sudoku →</Link></li>
       <li><h2>Star Battle</h2>
