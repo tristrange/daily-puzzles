@@ -3,6 +3,8 @@ import nuriPreviews from '../../../docs/measurements/nurikabe-preview.json'
 import nuriDaily from '../../../docs/measurements/daily-nurikabe-launch.json'
 import tentsReport from '../../../docs/measurements/tents-preview.json'
 import advanced from '../data/tents-advanced-lessons.json'
+import matching from '../data/tents-matching-lessons.json'
+import tentsPreviews from '../data/tents-previews.json'
 import advancedNurikabe from '../data/nurikabe-advanced-lessons.json'
 import { GRID_LESSONS } from './gridLessons'
 import { nurikabeNeighbours } from './nurikabe'
@@ -146,6 +148,71 @@ it('verifies the tree and line premises of every advanced Tents exercise', () =>
         expect(adjacent(cell)).not.toContain(source.trees[0])
         expect(source.options[0]!.every(option => adjacent(cell, true).includes(option))).toBe(true)
       } else expect(source.options.flat()).not.toContain(cell)
+    }
+  }
+})
+
+it('verifies competing-tree pairings, line limits and every accepted answer', () => {
+  expect(matching).toHaveLength(6)
+  for (const exercise of matching) {
+    const lesson = GRID_LESSONS.find(item => item.id === exercise.id)!
+    if (lesson.kind !== 'tents') throw Error('Expected Tents')
+    const { board, state } = lesson
+    expect(board).toEqual(tentsPreviews.find(item => item.id === board.id))
+    const solution = tentsReport.samples.find(sample => sample.id === board.id)!.solution
+    expect(state.every((mark, cell) => mark === 0 || (mark === 1) === solution.includes(cell))).toBe(true)
+    const adjacent = (cell: number, diagonal = false) => tentsNeighbours(board, cell, diagonal)
+    const options = exercise.trees.map(tree => {
+      expect(board.trees).toContain(tree)
+      expect(adjacent(tree).some(cell => state[cell] === 1)).toBe(false)
+      return adjacent(tree).filter(cell => !board.trees.includes(cell) && state[cell] === 0 && !adjacent(cell, true).some(other => state[other] === 1))
+    })
+    expect(options).toEqual(exercise.options)
+    expect(options.every(cells => cells.length >= 2)).toBe(true)
+    const arrangements = (choices: number[][], limit: boolean) => {
+      const result = new Set<string>()
+      const visit = (index: number, tents: number[]) => {
+        if (index === choices.length) {
+          if (limit && exercise.countLine) {
+            const [axis, line, clue, already] = exercise.countLine
+            const count = tents.filter(cell => axis === 'row' ? Math.floor(cell / board.size) === line : cell % board.size === line).length
+            if (count + Number(already) > Number(clue)) return
+          }
+          result.add([...tents].sort((a, b) => a - b).join(',')); return
+        }
+        for (const cell of choices[index]!) if (tents.every(other => other !== cell && !adjacent(other, true).includes(cell))) visit(index + 1, [...tents, cell])
+      }
+      visit(0, [])
+      return [...result].sort().map(value => value.split(',').map(Number))
+    }
+    const baseline = arrangements(options, false), remaining = arrangements(options, true)
+    const normalized = (patterns: number[][]) => patterns.map(pattern => pattern.join(',')).sort()
+    expect(normalized(baseline)).toEqual(normalized(exercise.patterns))
+    expect(normalized(remaining)).toEqual(normalized(exercise.kept))
+    expect(remaining.length).toBeGreaterThan(1)
+    if (exercise.countLine) {
+      const [axis, index, clue, already] = exercise.countLine
+      const marked = state.filter((mark, cell) => mark === 1 && (axis === 'row' ? Math.floor(cell / board.size) === index : cell % board.size === index)).length
+      expect(marked).toBe(already)
+      expect(axis === 'row' ? board.rowClues[Number(index)] : board.colClues[Number(index)]).toBe(clue)
+      expect(remaining.length).toBeLessThan(baseline.length)
+    }
+    const decided = (cell: number, patterns: number[][]) => lesson.value === 1 ? patterns.every(pattern => pattern.includes(cell)) : patterns.every(pattern => !pattern.includes(cell))
+    const pool = [...new Set(options.flat())].sort((a, b) => a - b)
+    const answers = pool.filter(cell => Math.floor(cell / board.size) === lesson.line && decided(cell, remaining)
+      && (exercise.technique === 'matching' || !decided(cell, baseline)))
+    expect(lesson.answers.map(answer => answer.cell)).toEqual(answers)
+    for (const answer of answers) {
+      expect(solution.includes(answer)).toBe(lesson.value === 1)
+      // No two of the three trees should prove the advertised target by themselves.
+      for (let omitted = 0; omitted < 3; omitted++) {
+        const pair = options.filter((_, index) => index !== omitted)
+        if (!pair.flat().includes(answer)) continue
+        const pairPatterns = arrangements(pair, true)
+        expect(pairPatterns.length).toBeGreaterThan(0)
+        // Alternative accepted cells can be independently decidable; the primary example cannot.
+        if (answer === lesson.answers[0]!.cell) expect(decided(answer, pairPatterns)).toBe(false)
+      }
     }
   }
 })

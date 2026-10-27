@@ -36,7 +36,7 @@ export function LearnPage() {
       <li><h2>Nurikabe</h2><p>Connect the sea, compare island shapes and find routes to isolated land.</p>
         <p className="lesson-progress">{nurikabeCompleted.length} of {GRID_LESSONS.filter(lesson => lesson.kind === 'nurikabe').length} completed</p>
         <Link className="tool-button primary" to="/learn/nurikabe">Learn Nurikabe →</Link></li>
-      <li><h2>Tents</h2><p>Protect tree options, reserve line space and compare possible arrangements.</p>
+      <li><h2>Tents</h2><p>Compare tree pairings, line counts and possible arrangements.</p>
         <p className="lesson-progress">{tentsCompleted.length} of {GRID_LESSONS.filter(lesson => lesson.kind === 'tents').length} completed</p>
         <Link className="tool-button primary" to="/learn/tents">Learn Tents →</Link></li>
       <li><h2>Train Tracks</h2><p>Connect separated track, combine line counts and avoid closing loops.</p>

@@ -19,6 +19,8 @@ const techniques = {
     { id: 'protect', title: 'Protect a tree’s options', intro: 'A tent cannot touch another tent. Look for a placement that would block every remaining tent position for a tree.' },
     { id: 'line', title: 'Reserve space for trees', intro: 'Trees whose remaining tent positions all lie in one line reserve space in that line.' },
     { id: 'arrangements', title: 'Compare line arrangements', intro: 'List the possible tent arrangements in a row or column. A cell used in every arrangement must contain a tent.' },
+    { id: 'matching', title: 'Pair competing trees', intro: 'Several trees can share tent positions. Compare ways to give each tree its own tent without any tents touching.' },
+    { id: 'matching-count', title: 'Combine tree pairings and counts', intro: 'Use a row or column limit to rule out tree pairings, then look for a cell decided by the remaining possibilities.' },
   ],
   'train-tracks': [
     { id: 'corridor', title: 'Find a necessary route', intro: 'Two known tracks must belong to one route. Look for cells that every possible connection between them has to use.' },
@@ -74,7 +76,7 @@ function GridExercise({ lesson }: { lesson: GridLesson }) {
     : lesson.prompt ?? `Find a tent in ${scope} by comparing its possible arrangements.`
   const explanation = lesson.kind === 'train-tracks' ? lesson.reason : lesson.kind === 'nurikabe'
     ? lesson.reason ?? 'The highlighted sea cells must connect. If this cell were land, every possible route between them would be cut off, so it must be sea.'
-    : lesson.value === 2 ? lesson.reason : `${lesson.reason}\n${lesson.axis === 'row' ? 'Column' : 'Row'} ${(lesson.axis === 'row' ? answer.cell % lesson.board.size : Math.floor(answer.cell / lesson.board.size)) + 1} is used in every arrangement, so place a tent.`
+    : lesson.technique !== 'arrangements' ? lesson.reason : `${lesson.reason}\n${lesson.axis === 'row' ? 'Column' : 'Row'} ${(lesson.axis === 'row' ? answer.cell % lesson.board.size : Math.floor(answer.cell / lesson.board.size)) + 1} is used in every arrangement, so place a tent.`
   const check = () => {
     if (selected === null) return
     if (!lesson.answers.some(item => item.cell === selected)) { setResult('incorrect'); return }

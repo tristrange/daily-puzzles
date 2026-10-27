@@ -1,5 +1,6 @@
 import catalog from '../data/tents-nurikabe-lessons.json'
 import advancedTents from '../data/tents-advanced-lessons.json'
+import tentsMatching from '../data/tents-matching-lessons.json'
 import advancedNurikabe from '../data/nurikabe-advanced-lessons.json'
 import tracksLessons from '../data/tracks-lessons.json'
 import { isNurikabeGame, type NurikabeBoard, type NurikabeGame } from './nurikabe'
@@ -37,6 +38,14 @@ export const GRID_LESSONS: GridLesson[] = catalog.map((exercise, index): GridLes
     || board.trees.some(cell => exercise.state[cell] !== 0)) throw Error(`Invalid lesson state: ${exercise.id}`)
   return { kind: 'tents', id: exercise.id, source: exercise.source, board, state: exercise.state,
     technique: exercise.technique, value: 2, axis: exercise.axis, line: exercise.line,
+    answers: exercise.answers, prompt: exercise.prompt, reason: exercise.reason,
+    exerciseNumber: index % 3 + 1, guidance: index % 3 === 0 ? 'guided' : 'practice' }
+})).concat(tentsMatching.map((exercise, index): GridLesson => {
+  const board = parseTentsBoard(exercise.board)
+  if ((exercise.value !== 1 && exercise.value !== 2) || exercise.state.length !== board.size ** 2 || !exercise.state.every(isTentsMark)
+    || board.trees.some(cell => exercise.state[cell] !== 0)) throw Error(`Invalid lesson state: ${exercise.id}`)
+  return { kind: 'tents', id: exercise.id, source: board.id, board, state: exercise.state,
+    technique: exercise.technique, value: exercise.value, axis: exercise.axis, line: exercise.line,
     answers: exercise.answers, prompt: exercise.prompt, reason: exercise.reason,
     exerciseNumber: index % 3 + 1, guidance: index % 3 === 0 ? 'guided' : 'practice' }
 })).concat(advancedNurikabe.map((exercise, index): GridLesson => {
