@@ -1,7 +1,7 @@
 import type { PuzzleType } from '../domain/board'
 
 /**
- * One archive page is a 30-day window. The cap keeps a hand-edited page query
+ * One archive page is a seven-day window. The cap keeps a hand-edited page query
  * from walking the calendar into absurd ranges before the loader can reject it.
  */
 export const MAX_ARCHIVE_PAGE = 1000
