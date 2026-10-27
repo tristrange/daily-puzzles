@@ -185,7 +185,7 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
     {!saving && !solved && <p className="status error" role="status">Progress can&rsquo;t be saved. Keep this page open to retain your attempt.</p>}
     <p className="word-note" id={instructionsId}>Three of each symbol in every row and column. No three identical symbols consecutively.
       = means same; × means different. Cells with a corner dot are fixed.</p>
-    <p className="word-note">Pick a symbol, then tap or drag. Notes marks possible symbols in empty cells. Clear notes removes all pencil marks; Undo restores them.
+    <p className="word-note">Pick a symbol, then tap or drag. Notes marks possible symbols in empty cells. Placing a symbol removes notes ruled out by counts, consecutive symbols and linked clues. Undo restores them. Clear notes removes all pencil marks.
       Arrows move; 1–3 place symbols; N toggles notes; Delete erases; Ctrl/Cmd+Z undoes; Ctrl/Cmd+Shift+Z redoes.</p>
   </div>
 }

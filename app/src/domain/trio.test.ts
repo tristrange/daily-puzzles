@@ -49,3 +49,31 @@ it('checks row/column counts, triples and same/different clues without checking 
   const different = parseTrioBoard({ ...board, relations: [{ first: 0, second: 1, kind: 'different' }] })
   expect(isTrioSolved(different, diagonal)).toBe(true)
 })
+
+it('clears only the affected symbol notes when placement fills a row and column quota', () => {
+  const board = parseTrioBoard({ id: 'trio-preview-99', givens: Array(81).fill(0), relations: [] })
+  const cells = [...board.givens], notes = Array<number>(81).fill(0)
+  cells[3] = cells[6] = cells[27] = cells[54] = 1
+  for (const cell of [0, 1, 2, 9, 18, 20]) notes[cell] = 7
+  const game = { cells, notes }, next = editTrio(board, game, 0, { value: 1 })
+  expect(next.notes[0]).toBe(0)
+  for (const cell of [1, 2, 9, 18]) expect(next.notes[cell]).toBe(6)
+  expect(next.notes[20]).toBe(7)
+  expect(game.notes[1]).toBe(7)
+  expect(editTrio(board, next, 0, { value: 1 })).toBe(next)
+  expect(editTrio(board, next, 0, { value: 0 }).notes[1]).toBe(6)
+})
+
+it('removes notes excluded by a new consecutive pair and direct relations', () => {
+  const board = parseTrioBoard({ id: 'trio-preview-99', givens: Array(81).fill(0), relations: [
+    { first: 2, second: 3, kind: 'same' }, { first: 2, second: 11, kind: 'different' },
+  ] })
+  const cells = [...board.givens], notes = Array<number>(81).fill(0)
+  cells[0] = 2
+  notes[1] = notes[3] = notes[11] = notes[20] = 7
+  const next = editTrio(board, { cells, notes }, 2, { value: 2 })
+  expect(next.notes[1]).toBe(5) // 2 would create three consecutive moons.
+  expect(next.notes[3]).toBe(2) // The linked cell must match.
+  expect(next.notes[11]).toBe(5) // The linked cell must differ.
+  expect(next.notes[20]).toBe(7)
+})

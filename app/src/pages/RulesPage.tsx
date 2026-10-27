@@ -204,7 +204,7 @@ export function RulesPage() {
       <p>Pick Sun, Moon, Star or Erase, then tap or drag across cells. Tapping a cell
         containing the selected symbol clears it. One drag is one Undo. Right-click erases.</p>
       <p>Turn on Notes to mark possible symbols in empty cells. Notes are your working
-        and are not checked. Placing a symbol clears that cell&rsquo;s notes.</p>
+        and do not affect hints. Placing a symbol clears that cell&rsquo;s notes and removes notes made impossible by row or column counts, consecutive symbols, and direct = or × clues. Erasing a symbol does not restore notes; Undo does.</p>
       <p>Keys 1, 2 and 3 place sun, moon and star; Enter or Space uses the picker.
         N toggles Notes. Delete, Backspace or 0 erases. Arrow keys and Home/End move
         around the board; Ctrl/Cmd+Z undoes and Ctrl/Cmd+Shift+Z redoes. Reset asks for confirmation and restarts Since reset. Total time and hints are kept. Undo restores only the board.</p>
