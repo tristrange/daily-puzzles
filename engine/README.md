@@ -23,20 +23,22 @@ Answers remain in the review report and outside the app imports.
 
 ## Checking Star Battle lessons
 
-The frozen catalog contains twelve prepared positions, three per technique. From
-this directory, verify exact unique solutions, the displayed stars and crosses,
-first forced moves, source hashes and independent remaining-capacity witnesses:
+The original catalog contains twelve prepared positions, three per technique.
+Three more exercises connect a reservation to a forced star. From this directory,
+verify their unique solutions, prepared positions and capacity witnesses:
 
 ```sh
 .venv/bin/python -m tools.star_battle_lessons
 .venv/bin/pytest -q tests/test_star_battle_lessons.py tests/test_sudoku_lessons.py
+.venv/bin/python -m tools.star_battle_chains
+.venv/bin/pytest -q tests/test_star_battle_chains.py
 ```
 
-The command reads only the fixed corpus and referenced baseline positions. It does
-not search for examples or regenerate the hint baseline. `--write-report` writes
-`docs/measurements/star-battle-lessons.json` after the whole catalog passes. The
-runtime catalog contains only one target move per exercise. Full solutions belong
-to the review report and are never imported by the app.
+The checkers read only the fixed corpus and referenced baseline positions. They do
+not search for examples or regenerate the hint baseline. `--write-report` refreshes
+the respective report after the catalog passes. The chain checker also rejects
+direct fills and simple no-touch shortcuts. Full solutions belong to the review
+reports and are never imported by the app.
 
 ## Checking advanced Trio lessons
 

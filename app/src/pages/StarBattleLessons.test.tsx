@@ -4,6 +4,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { STAR_BATTLE_LESSONS } from '../domain/starBattleLessons'
+import { STAR_BATTLE_CHAINS } from '../domain/starBattleChains'
 import { LearnPage } from './LearnPage'
 import { SudokuCoursePage } from './SudokuCoursePage'
 import { StarBattleCoursePage } from './StarBattleCoursePage'
@@ -41,15 +42,16 @@ it('shows only available games and preserves context through both course links',
   await mount()
   expect(container.querySelectorAll('.lesson-cards li')).toHaveLength(3)
   expect([...container.querySelectorAll('.lesson-cards h2')].map(el => el.textContent)).toEqual(['Sudoku', 'Star Battle', 'Trio'])
-  expect(container.textContent).toContain('1 of 15 completed')
-  expect(container.textContent).toContain('1 of 12 completed')
+  const cards = [...container.querySelectorAll('.lesson-cards > li')]
+  expect(cards.find(card => card.querySelector('h2')?.textContent === 'Sudoku')?.textContent).toContain('1 of 15 completed')
+  expect(cards.find(card => card.querySelector('h2')?.textContent === 'Star Battle')?.textContent).toContain('1 of 15 completed')
   await click('Learn Sudoku →')
   expect(container.querySelectorAll('.lesson-cards li')).toHaveLength(5)
   expect(container.textContent).toContain('from locked candidates to X-wing')
   await click('← All games'); await click('Learn Star Battle →')
-  expect(container.querySelectorAll('.lesson-cards li')).toHaveLength(4)
-  expect(container.querySelectorAll('.lesson-exercise-links a')).toHaveLength(12)
-  expect([...container.querySelectorAll('.lesson-cards h2')].map(el => el.textContent)).toEqual(['Last space', 'Fill remaining spaces', 'Locked spaces', 'Group reservation'])
+  expect(container.querySelectorAll('.lesson-cards li')).toHaveLength(5)
+  expect(container.querySelectorAll('.lesson-exercise-links a')).toHaveLength(15)
+  expect([...container.querySelectorAll('.lesson-cards h2')].map(el => el.textContent)).toEqual(['Last space', 'Fill remaining spaces', 'Locked spaces', 'Group reservation', 'From reservation to stars'])
   expect(container.querySelectorAll('.lesson-completed')).toHaveLength(1)
   expect(container.textContent).toContain('two stars')
   expect(container.textContent).toContain('More involved')
@@ -108,7 +110,7 @@ it('resets answer, reveal and optional clues on retry and sibling navigation', a
   await click('Exercise 1')
   expect(container.querySelector('.lesson-cue')).not.toBeNull()
   await click('All Star Battle techniques')
-  expect(container.textContent).toContain('1 of 12 completed')
+  expect(container.textContent).toContain('1 of 15 completed')
 })
 
 it('unions completions saved since mount and shows storage failure without losing current feedback', async () => {
@@ -129,5 +131,38 @@ it('handles invalid lesson links and malformed saved progress', async () => {
   expect(container.textContent).toContain('Lesson not found')
   expect(container.querySelector('a')?.getAttribute('href')).toBe('/learn/star-battle')
   await click('All Star Battle techniques')
-  expect(container.textContent).toContain('0 of 12 completed')
+  expect(container.textContent).toContain('0 of 15 completed')
+})
+
+it('lets practice find either forced star, keeps clues optional, and saves only a checked answer', async () => {
+  const lesson = STAR_BATTLE_CHAINS[1]!
+  localStorage.setItem(KEY, '["star-battle-fill"]')
+  localStorage.setItem('daily-progress-sentinel', 'unchanged')
+  await mount(`/learn/star-battle/${lesson.id}`)
+  expect(container.querySelectorAll('[data-hint], [data-selected]')).toHaveLength(0)
+  expect(container.querySelector('.lesson-cue')).toBeNull()
+  expect(control('Check answer').hasAttribute('disabled')).toBe(true)
+  const choose = async (cell: number) => act(async () => {
+    container.querySelector<HTMLElement>(`[data-cell="${cell}"]`)!.dispatchEvent(new MouseEvent('pointerdown', { button: 0, bubbles: true }))
+  })
+  await choose(lesson.first.cell); await click('Check answer')
+  expect(container.querySelector('[role="status"]')?.textContent).toContain('Not quite')
+  expect(localStorage.getItem(KEY)).toBe('["star-battle-fill"]')
+  await act(async () => container.querySelector<HTMLElement>(`[data-cell="${lesson.first.cell}"]`)!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })))
+  expect(container.querySelector('[data-selected]')?.getAttribute('data-cell')).toBe(String(lesson.first.cell + 1))
+  await click('Show explanation')
+  expect(container.querySelector('.lesson-explanation')?.textContent).toContain(lesson.reasons[0])
+  expect(localStorage.getItem(KEY)).toBe('["star-battle-fill"]')
+  await click('Try again')
+  expect(container.querySelectorAll('[data-hint], [data-selected]')).toHaveLength(0)
+  for (const answer of lesson.answers) {
+    await choose(answer); await click('Check answer')
+    expect(container.querySelector('[role="status"]')?.textContent).toContain('Lesson complete')
+    expect(container.querySelector(`[data-cell="${answer}"]`)?.getAttribute('aria-label')).toContain('star')
+    await click('Try again')
+  }
+  expect(JSON.parse(localStorage.getItem(KEY) ?? 'null')).toEqual(['star-battle-fill', lesson.id])
+  expect(localStorage.getItem('daily-progress-sentinel')).toBe('unchanged')
+  await click('Show a clue')
+  expect(container.querySelector('[data-hint="target"]')).not.toBeNull()
 })

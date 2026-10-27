@@ -4,12 +4,16 @@ import { InteractiveBoard } from '../components/InteractiveBoard'
 import { hintCellName, type Hint } from '../domain/hints'
 import { STAR_BATTLE_LESSONS, STAR_BATTLE_TECHNIQUES, starLessonGroupName, type StarBattleLesson } from '../domain/starBattleLessons'
 import { readCompletedStarBattleLessons, storeCompletedStarBattleLessons } from '../lib/starBattleLessonProgress'
+import { STAR_BATTLE_CHAINS } from '../domain/starBattleChains'
+import { StarBattleChainExercise } from './StarBattleChainExercise'
 
 const noop = () => {}
 const noConflicts = new Set<number>()
 
 export function StarBattleLessonPage() {
   const { lessonId } = useParams()
+  const chain = STAR_BATTLE_CHAINS.find(exercise => exercise.id === lessonId)
+  if (chain) return <StarBattleChainExercise key={chain.id} lesson={chain} />
   const lesson = STAR_BATTLE_LESSONS.find(exercise => exercise.id === lessonId)
   const technique = STAR_BATTLE_TECHNIQUES.find(item => item.exercises.some(exercise => exercise.id === lessonId))
   if (!lesson || !technique) return <section><h1 className="page-title">Lesson not found</h1><Link to="/learn/star-battle">All Star Battle techniques</Link></section>

@@ -53,6 +53,7 @@ export interface CellActionProps {
   hintId?: string | undefined
   conflictCells: ReadonlySet<number>
   locked?: boolean
+  inspection?: { selected: number | null; onSelect: (cell: number) => void }
   onToggleQueen: (cell: number) => void
   onToggleMark: (cell: number) => void
   onClear: (cell: number) => void
@@ -82,6 +83,7 @@ export function InteractiveBoard({
   hintId,
   conflictCells,
   locked = false,
+  inspection,
   onToggleQueen,
   onToggleMark,
   onClear,
@@ -158,7 +160,15 @@ export function InteractiveBoard({
   }, [painting])
 
   const beginStroke = (event: PointerEvent<HTMLDivElement>, cell: number) => {
-    if (locked || event.button !== 0) return
+    if (event.button !== 0) return
+    if (locked) {
+      if (inspection) {
+        setFocusIndex(cell)
+        inspection.onSelect(cell)
+        event.currentTarget.focus({ preventScroll: true })
+      }
+      return
+    }
     stroke.current = {
       pointerId: event.pointerId,
       firstCell: cell,
@@ -187,7 +197,9 @@ export function InteractiveBoard({
   }
 
   const moveFocus = (cell: number) => {
-    setFocusIndex(Math.max(0, Math.min(board.cellCount - 1, cell)))
+    const next = Math.max(0, Math.min(board.cellCount - 1, cell))
+    setFocusIndex(next)
+    inspection?.onSelect(next)
   }
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -220,7 +232,13 @@ export function InteractiveBoard({
       default:
         break
     }
-    if (locked) return
+    if (locked) {
+      if (inspection && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault()
+        inspection.onSelect(focusIndex)
+      }
+      return
+    }
     const command = historyCommand(event)
     if (command) {
       event.preventDefault()
@@ -307,11 +325,14 @@ export function InteractiveBoard({
       role="gridcell"
       data-cell={cell}
       data-hint={hint?.cell === cell ? 'target' : support.has(cell) ? 'support' : undefined}
+      data-selected={inspection?.selected === cell ? true : undefined}
+      aria-selected={inspection ? inspection.selected === cell : undefined}
       aria-label={labelFor(cell)}
       className={classNameFor(cell)}
       style={styles[region]}
       tabIndex={cell === focusIndex ? 0 : -1}
       onPointerDown={(event) => beginStroke(event, cell)}
+      onClick={(event) => { if (event.detail === 0 && inspection) inspection.onSelect(cell) }}
       onContextMenu={(event) => {
         event.preventDefault()
         if (!locked) onToggleMark(cell)
