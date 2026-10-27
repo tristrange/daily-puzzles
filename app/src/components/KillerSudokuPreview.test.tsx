@@ -120,3 +120,51 @@ it('warns before revealing a wrong entry, and can undo the correction', async ()
     await act(async () => root.unmount()); container.remove(); localStorage.clear(); vi.unstubAllGlobals()
   }
 })
+
+it('saves crossed-out combinations per cage and restores them with Undo and Redo', async () => {
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  localStorage.clear()
+  const board = parseKillerPreviews(raw)[0]!
+  const { readSudokuProgress } = await import('../lib/sudokuProgress')
+  const container = document.createElement('div'); document.body.append(container)
+  const root = createRoot(container)
+  const click = async (name: string) => {
+    const button = [...container.querySelectorAll<HTMLButtonElement>('button')].find(item => item.textContent === name || item.getAttribute('aria-label') === name)!
+    expect(button, name).toBeDefined()
+    await act(async () => button.click())
+  }
+  try {
+    await act(async () => root.render(<MemoryRouter><KillerSudokuPreviewPage /></MemoryRouter>))
+    await click('Combinations')
+    expect(container.querySelector('.killer-combinations')?.textContent).toContain('13 cage')
+    await click('Cross out 4 + 9')
+    expect(container.querySelector('[aria-label="Cross out 4 + 9"]')?.getAttribute('aria-pressed')).toBe('true')
+    expect(readSudokuProgress(board)?.game.excludedCageCombinations?.[0]).toEqual([264])
+    expect([...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Reset')?.disabled).toBe(false)
+    await click('Undo')
+    expect(container.querySelector('[aria-label="Cross out 4 + 9"]')?.getAttribute('aria-pressed')).toBe('false')
+    await click('Redo')
+    expect(container.querySelector('[aria-label="Cross out 4 + 9"]')?.getAttribute('aria-pressed')).toBe('true')
+    await click('Enter 6')
+    expect(readSudokuProgress(board)?.game.excludedCageCombinations?.[0]).toEqual([264])
+    await act(async () => container.querySelector<HTMLButtonElement>('[data-cell="1"]')!.click())
+    expect(container.querySelector('.killer-combinations')?.textContent).toContain('8 cage')
+    await act(async () => container.querySelector<HTMLButtonElement>('[data-cell="0"]')!.click())
+    expect(container.querySelector('[aria-label="Cross out 4 + 9"]')?.getAttribute('aria-pressed')).toBe('true')
+    expect(readSudokuProgress(board)?.hints).toBe(0)
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    await click('Reset')
+    expect(readSudokuProgress(board)?.game.excludedCageCombinations).toBeUndefined()
+    await click('Undo')
+    expect(readSudokuProgress(board)?.game.excludedCageCombinations?.[0]).toEqual([264])
+    confirm.mockRestore()
+    await act(async () => root.unmount())
+    const restored = createRoot(container)
+    await act(async () => restored.render(<MemoryRouter><KillerSudokuPreviewPage /></MemoryRouter>))
+    await click('Combinations')
+    expect(container.querySelector('[aria-label="Cross out 4 + 9"]')?.getAttribute('aria-pressed')).toBe('true')
+    await act(async () => restored.unmount())
+  } finally {
+    container.remove(); localStorage.clear(); vi.unstubAllGlobals()
+  }
+})

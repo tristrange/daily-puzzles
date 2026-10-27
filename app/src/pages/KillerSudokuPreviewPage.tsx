@@ -24,6 +24,7 @@ export function KillerSudokuPreviewPage() {
           {boards.map((entry, i) => <option key={entry.id} value={i + 1}>Board {i + 1}</option>)}
         </select>
       </div>
+      <p className="word-note"><Link to="/learn/killer-sudoku">Learn how to use cage combinations →</Link></p>
       <p className="word-note preview-note">Preview progress saves separately in this browser and does not affect daily stats or leaderboards. Hints explain cage deductions and can be applied or undone.</p>
     </article>
   </section>

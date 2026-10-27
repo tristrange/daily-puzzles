@@ -1,7 +1,19 @@
-import { editSudoku, isSudokuSolved, sudokuConflicts, sudokuDigit, type SudokuBoard, type SudokuGame } from './sudoku'
+import { editSudoku, isSudokuSolved, sudokuConflicts, sudokuDigit, sudokuDigits, type SudokuBoard, type SudokuGame } from './sudoku'
 
 export interface KillerCage { readonly sum: number; readonly cells: readonly number[] }
 export interface KillerSudokuBoard extends SudokuBoard { readonly cages: readonly KillerCage[] }
+
+/** Distinct digit sets, independent of the player's entries and notes. */
+export function killerCombinations(cage: KillerCage): number[] {
+  return Array.from({ length: 511 }, (_, i) => i + 1).filter(mask => {
+    const digits = sudokuDigits(mask)
+    return digits.length === cage.cells.length && digits.reduce((sum, digit) => sum + digit, 0) === cage.sum
+  }).sort((a, b) => {
+    const first = sudokuDigits(a), second = sudokuDigits(b)
+    for (let i = 0; i < first.length; i++) if (first[i] !== second[i]) return first[i]! - second[i]!
+    return 0
+  })
+}
 
 export function isKillerSudokuBoard(board: SudokuBoard): board is KillerSudokuBoard {
   return 'cages' in board
@@ -64,5 +76,5 @@ export function editKillerSudoku(board: KillerSudokuBoard, game: SudokuGame, cel
   if (!cage) return next
   const notes = [...next.notes]
   for (const peer of cage.cells) if (peer !== cell && !next.cells[peer]) notes[peer]! &= ~(1 << (value - 1))
-  return { cells: next.cells, notes }
+  return { ...next, notes }
 }

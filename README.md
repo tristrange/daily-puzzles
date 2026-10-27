@@ -33,7 +33,7 @@ marker means definite track with an undecided shape and counts toward clues.
 
 Easy, Medium and Hard publish separately each day from October 21, 2026.
 The [three fixed preview boards](https://tristrange.github.io/daily-puzzles/#/preview/sudoku?board=1)
-remain available for practice. [Killer Sudoku](https://tristrange.github.io/daily-puzzles/#/preview/killer-sudoku) is available as a separate three-board preview: cage digits must add to the displayed total without repeating. It saves separately and offers explained cage hints.
+remain available for practice. [Killer Sudoku](https://tristrange.github.io/daily-puzzles/#/preview/killer-sudoku) is available as a separate three-board preview: cage digits must add to the displayed total without repeating. It saves separately and offers explained cage hints and a tool for marking impossible cage combinations. The intended daily launch is one Easy, Medium and Hard puzzle each day; preview boards have no difficulty rating.
 
 Select a cell, then use the keypad or keyboard. Notes mark candidates; entering
 a number removes it from peer notes in its row, column and box. Clear notes,
@@ -77,7 +77,8 @@ separate from daily games, stats and leaderboards.
 - Notes and Clear notes in Trio and Sudoku. Trio removes notes directly ruled out by a placement; Undo restores them. Shown hint counts survive Undo, Reset and reload.
 - [Learn to solve](https://tristrange.github.io/daily-puzzles/#/learn) groups lessons by
   game. Queens has nine exercises combining region reservations, lines and no-touch.
-  Sudoku has 21 exercises through XY-Wing and Swordfish. Star Battle has 15 exercises through
+  Sudoku has 21 exercises through XY-Wing and Swordfish. Killer Sudoku has three exercises
+  on cage combinations. Star Battle has 15 exercises through
   linked reservations and forced stars. Trio has 12 exercises combining quotas,
   no-three restrictions, links and candidate chains. Tents has 15 exercises on
   tree options, line arrangements and competing tree pairings. Nurikabe has nine on sea

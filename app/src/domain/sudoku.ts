@@ -2,7 +2,7 @@
 export const SUDOKU_LEVELS = ['easy', 'medium', 'hard'] as const
 export type SudokuLevel = typeof SUDOKU_LEVELS[number]
 export interface SudokuBoard { readonly id: string; readonly level: SudokuLevel; readonly givens: readonly number[] }
-export interface SudokuGame { readonly cells: readonly number[]; readonly notes: readonly number[] }
+export interface SudokuGame { readonly cells: readonly number[]; readonly notes: readonly number[]; readonly excludedCageCombinations?: readonly (readonly number[])[] }
 export const SUDOKU_ROWS = Array.from({ length: 9 }, (_, r) => Array.from({ length: 9 }, (_, c) => r * 9 + c))
 export const SUDOKU_COLUMNS = Array.from({ length: 9 }, (_, c) => Array.from({ length: 9 }, (_, r) => r * 9 + c))
 export const SUDOKU_BOXES = Array.from({ length: 9 }, (_, b) => Array.from({ length: 9 }, (_, i) => (Math.floor(b / 3) * 3 + Math.floor(i / 3)) * 9 + (b % 3 * 3 + i % 3)))
@@ -44,7 +44,7 @@ export function editSudoku(board: SudokuBoard, game: SudokuGame, cell: number, v
     cells[cell] = value; notes[cell] = 0
     if (value) for (const peer of SUDOKU_PEERS[cell]!) if (!cells[peer]) notes[peer]! &= ~(1 << (value - 1))
   }
-  return cells[cell] === game.cells[cell] && notes.every((mask, i) => mask === game.notes[i]) ? game : { cells, notes }
+  return cells[cell] === game.cells[cell] && notes.every((mask, i) => mask === game.notes[i]) ? game : { ...game, cells, notes }
 }
 export function isSudokuSolved(board: SudokuBoard, cells: readonly number[]): boolean {
   return cells.length === 81 && cells.every((value, cell) => sudokuDigit(value) && value !== 0 && (!board.givens[cell] || value === board.givens[cell])) && sudokuConflicts(cells).size === 0

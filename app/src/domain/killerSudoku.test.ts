@@ -46,3 +46,12 @@ it('flags an overfilled or completed incorrect cage', () => {
   expect(killerConflicts(board, cells).has(0)).toBe(true)
   expect(killerConflicts(board, cells).has(9)).toBe(true)
 })
+
+it('lists all distinct digit combinations without depending on the solution', async () => {
+  const { killerCombinations } = await import('./killerSudoku')
+  const { sudokuDigits } = await import('./sudoku')
+  const combinations = (sum: number, size: number) => killerCombinations({ sum, cells: Array.from({ length: size }, (_, i) => i) }).map(sudokuDigits)
+  expect(combinations(17, 2)).toEqual([[8, 9]])
+  expect(combinations(15, 2)).toEqual([[6, 9], [7, 8]])
+  expect(combinations(10, 4)).toEqual([[1, 2, 3, 4]])
+})
