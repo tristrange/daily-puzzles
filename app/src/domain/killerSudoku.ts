@@ -1,4 +1,4 @@
-import { editSudoku, isSudokuSolved, sudokuConflicts, sudokuDigit, sudokuDigits, type SudokuBoard, type SudokuGame } from './sudoku'
+import { SudokuGrid, SudokuGridError, editSudoku, isSudokuSolved, sudokuConflicts, sudokuDigit, sudokuDigits, type SudokuBoard, type SudokuGame } from './sudoku'
 
 export interface KillerCage { readonly sum: number; readonly cells: readonly number[] }
 export interface KillerSudokuBoard extends SudokuBoard { readonly cages: readonly KillerCage[] }
@@ -20,12 +20,12 @@ export function isKillerSudokuBoard(board: SudokuBoard): board is KillerSudokuBo
 }
 
 /** Preview data is checked once, before it is used by the board or saved progress. */
-export function parseKillerPreviews(raw: unknown): readonly KillerSudokuBoard[] {
+export function parseKillerPreviews(raw: unknown, daily = false): readonly KillerSudokuBoard[] {
   if (!Array.isArray(raw) || raw.length === 0) throw Error('Expected Killer Sudoku previews')
   return raw.map((item: unknown, index) => {
     if (!item || typeof item !== 'object') throw Error('Invalid Killer Sudoku preview')
     const data = item as Record<string, unknown>
-    if (data['id'] !== `killer-preview-${index + 1}` || data['level'] !== 'hard'
+    if ((!daily && (data['id'] !== `killer-preview-${index + 1}` || data['level'] !== 'hard')) || (typeof data['id'] !== 'string') || (data['level'] !== 'easy' && data['level'] !== 'medium' && data['level'] !== 'hard')
       || !Array.isArray(data['givens']) || data['givens'].length !== 81 || !data['givens'].every(sudokuDigit)
       || sudokuConflicts(data['givens']).size || !Array.isArray(data['cages'])) throw Error('Invalid Killer Sudoku board')
     const seen = new Set<number>()
@@ -46,7 +46,7 @@ export function parseKillerPreviews(raw: unknown): readonly KillerSudokuBoard[] 
       return { sum, cells: [...cells] }
     })
     if (seen.size !== 81) throw Error('Killer Sudoku cages must cover the board')
-    const board: KillerSudokuBoard = { id: `killer-preview-${index + 1}`, level: 'hard', givens: [...data['givens']], cages }
+    const board: KillerSudokuBoard = { id: data['id'], level: data['level'], givens: [...data['givens']], cages }
     if (killerConflicts(board, board.givens).size) throw Error('Invalid Killer Sudoku givens')
     return board
   })
@@ -77,4 +77,14 @@ export function editKillerSudoku(board: KillerSudokuBoard, game: SudokuGame, cel
   const notes = [...next.notes]
   for (const peer of cage.cells) if (peer !== cell && !next.cells[peer]) notes[peer]! &= ~(1 << (value - 1))
   return { ...next, notes }
+}
+
+/** Validated daily cage board with the shared Sudoku dimensions. */
+export class KillerSudokuGrid extends SudokuGrid implements KillerSudokuBoard {
+  readonly cages: readonly KillerCage[]
+  constructor(id: string, level: unknown, givens: unknown, cages: unknown) {
+    super(id, level, givens)
+    try { this.cages = parseKillerPreviews([{ id, level, givens, cages }], true)[0]!.cages }
+    catch { throw new SudokuGridError('Invalid Killer Sudoku cages') }
+  }
 }

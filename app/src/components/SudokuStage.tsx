@@ -53,7 +53,7 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
       if (puzzle) {
         // oxlint-disable-next-line react/purity -- Called by player events, never during render.
         const when = Date.now(), earlier = readStoredStats().find(record => record.id === puzzle.id)
-        const record: SolveRecord = { id: puzzle.id, puzzleType: 'sudoku', size: 9, ...stoppedTime, hints: hints.current, solvedAt: when }
+        const record: SolveRecord = { id: puzzle.id, puzzleType: puzzle.puzzleType, size: 9, ...stoppedTime, hints: hints.current, solvedAt: when }
         setFirstSolve(earlier ?? null)
         setStats(summarise(storeSolve(record), puzzleOfToday(new Date(when), Intl.DateTimeFormat().resolvedOptions().timeZone)))
         if (!earlier) { setCandidate(record); offerSolve(record) }
@@ -129,7 +129,7 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
   const share = async (variant: 'result' | 'solution') => {
     if (!puzzle) return
     const counted = firstSolve ?? { elapsedMs: elapsed, hints: hints.current }
-    const result = { puzzleId: puzzle.id, puzzleType: 'sudoku' as const, width: 9, height: 9,
+    const result = { puzzleId: puzzle.id, puzzleType: puzzle.puzzleType, width: 9, height: 9,
       elapsedMs: counted.elapsedMs, hints: counted.hints, streak: stats?.currentStreak ?? 0, link: puzzleShareLink(puzzle.id) }
     const text = variant === 'solution' ? buildSudokuSolutionShareText(result, game.cells) : buildShareText(result)
     const ok = await copyText(text)

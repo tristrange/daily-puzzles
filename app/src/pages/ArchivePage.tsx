@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { PUZZLE_TYPES, type PuzzleType } from '../domain/board'
 import { formatPuzzleLabel, puzzleDay } from '../domain/dates'
 import { DEFAULT_PUZZLE_TYPE, DIFFICULTY_LABEL, PUZZLE_TYPE_LABEL, PUZZLE_TYPE_PUBLISHED } from '../domain/games'
-import { sudokuVariantOf } from '../domain/sudokuLevels'
+import { sudokuVariantOf, killerVariantOf } from '../domain/sudokuLevels'
 import { trackVariantOf } from '../domain/trackSizes'
 import { archiveHref, MAX_ARCHIVE_PAGE, parseArchivePage, puzzleHref } from '../lib/archive'
 import {
@@ -132,11 +132,11 @@ export function ArchiveGroups({
             <ul className="archive">
               {[...days].map(([day, puzzles]) => (
                 <li key={day}>
-                  {group.type === 'train-tracks' || group.type === 'sudoku' ? <>
+                  {group.type === 'train-tracks' || group.type === 'sudoku' || group.type === 'killer-sudoku' ? <>
                     <time dateTime={day}>{formatPuzzleLabel(day, timeZone)}</time>
                     <div className="archive-variants">
                       {puzzles.map(puzzle => {
-                        const variant = group.type === 'sudoku' ? sudokuVariantOf(puzzle.id) : trackVariantOf(puzzle.id)
+                        const variant = (group.type === 'sudoku' || group.type === 'killer-sudoku') ? (killerVariantOf(puzzle.id) ?? sudokuVariantOf(puzzle.id)) : trackVariantOf(puzzle.id)
                         const dimensions = puzzle.width != null && puzzle.height != null ? `${puzzle.width}×${puzzle.height}` : ''
                         const label = variant ? `${variant.label}${dimensions ? ` · ${dimensions}` : ''}` : dimensions || 'Original'
                         return <Link key={puzzle.id} to={puzzleHref(puzzle.id, page)} aria-label={`${formatPuzzleLabel(day, timeZone)}, ${PUZZLE_TYPE_LABEL[group.type]} ${label}`}>

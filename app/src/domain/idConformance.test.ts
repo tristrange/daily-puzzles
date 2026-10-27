@@ -45,7 +45,7 @@ describe('conformance: id-cases', () => {
     for (const entry of manifest.types) {
       // The whole id, not just its tail: `endsWith` would pass for a suffix that is
       // merely a suffix of the real one, which is the drift this suite exists to catch.
-      expect(puzzleIdFor('2026-10-04', entry.type)).toBe(`2026-10-04${entry.type === 'sudoku' ? '-sudoku-easy' : entry.suffix}`)
+      expect(puzzleIdFor('2026-10-04', entry.type)).toBe(`2026-10-04${entry.type === 'sudoku' ? '-sudoku-easy' : entry.type === 'killer-sudoku' ? '-killer-sudoku-easy' : entry.suffix}`)
       expect(PUZZLE_TYPE_SUFFIX[entry.type]).toBe(entry.suffix)
     }
   })

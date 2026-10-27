@@ -32,6 +32,10 @@
     {
       "type": "nurikabe",
       "suffix": "-nurikabe"
+    },
+    {
+      "type": "killer-sudoku",
+      "suffix": "-killer"
     }
   ],
   "cases": [
@@ -129,6 +133,21 @@
       "id": "2026-10-25-nurikabe",
       "day": "2026-10-25",
       "type": "nurikabe"
+    },
+    {
+      "id": "2026-10-28-killer-sudoku-easy",
+      "day": "2026-10-28",
+      "type": "killer-sudoku"
+    },
+    {
+      "id": "2026-10-28-killer-sudoku-medium",
+      "day": "2026-10-28",
+      "type": "killer-sudoku"
+    },
+    {
+      "id": "2026-10-28-killer-sudoku-hard",
+      "day": "2026-10-28",
+      "type": "killer-sudoku"
     }
   ],
   "unparsed": [
@@ -163,7 +182,10 @@
     "2026-10-21-sudoku-easy-hard",
     "2026-02-30-nurikabe",
     "2026-10-25-nurikabe-nurikabe",
-    "2026-10-25-nuri"
+    "2026-10-25-nuri",
+    "2026-10-28-killer-sudoku",
+    "2026-10-28-killer-sudoku-expert",
+    "2026-02-30-killer-sudoku-easy"
   ],
   "trainTracks": {
     "activationDay": "2026-10-14",
@@ -1021,6 +1043,26 @@
         "2026-10-21-sudoku-hard",
         "2026-10-21-nurikabe"
       ]
+    },
+    {
+      "day": "2026-10-28",
+      "ids": [
+        "2026-10-28",
+        "2026-10-28-star",
+        "2026-10-28-tracks-small",
+        "2026-10-28-tracks-medium",
+        "2026-10-28-tracks-large",
+        "2026-10-28-words",
+        "2026-10-28-trio",
+        "2026-10-28-tents",
+        "2026-10-28-sudoku-easy",
+        "2026-10-28-sudoku-medium",
+        "2026-10-28-sudoku-hard",
+        "2026-10-28-nurikabe",
+        "2026-10-28-killer-sudoku-easy",
+        "2026-10-28-killer-sudoku-medium",
+        "2026-10-28-killer-sudoku-hard"
+      ]
     }
   ],
   "trio": {
@@ -1051,5 +1093,25 @@
   },
   "nurikabe": {
     "activationDay": "2026-10-12"
+  },
+  "killerSudoku": {
+    "activationDay": "2026-10-27",
+    "variants": [
+      {
+        "name": "easy",
+        "suffix": "-killer-sudoku-easy",
+        "label": "Easy"
+      },
+      {
+        "name": "medium",
+        "suffix": "-killer-sudoku-medium",
+        "label": "Medium"
+      },
+      {
+        "name": "hard",
+        "suffix": "-killer-sudoku-hard",
+        "label": "Hard"
+      }
+    ]
   }
 }

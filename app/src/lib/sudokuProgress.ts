@@ -1,7 +1,7 @@
 import { attemptTime, validPlayTime, type PlayTime } from './playTime'
 /** Preview and daily attempts have separate storage namespaces. */
 import { puzzleTypeOf } from '../domain/dates'
-import { sudokuVariantOf } from '../domain/sudokuLevels'
+import { sudokuVariantOf, killerVariantOf } from '../domain/sudokuLevels'
 import { isSudokuSolved, sudokuDigit, type SudokuBoard, type SudokuGame } from '../domain/sudoku'
 import { isKillerSolved, isKillerSudokuBoard, killerCombinations } from '../domain/killerSudoku'
 const key = (board: SudokuBoard, daily: boolean) => `daily-puzzles.${daily ? 'sudoku' : 'sudoku-preview'}.v1.${board.id}`
@@ -10,7 +10,7 @@ const solved = (board: SudokuBoard, cells: readonly number[]) => isKillerSudokuB
 const count = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
 
 export function readSudokuProgress(board: SudokuBoard, daily = false): { game: SudokuGame; elapsedMs: number; attemptElapsedMs?: number; hints: number } | null {
-  if (daily && (puzzleTypeOf(board.id) !== 'sudoku' || sudokuVariantOf(board.id)?.name !== board.level)) return null
+  if (daily && ((puzzleTypeOf(board.id) !== 'sudoku' && puzzleTypeOf(board.id) !== 'killer-sudoku') || (killerVariantOf(board.id) ?? sudokuVariantOf(board.id))?.name !== board.level)) return null
   try {
     const raw: unknown = JSON.parse(localStorage.getItem(key(board, daily)) ?? 'null')
     if (!raw || typeof raw !== 'object') return null
@@ -30,7 +30,7 @@ export function readSudokuProgress(board: SudokuBoard, daily = false): { game: S
 }
 
 export function storeSudokuProgress(board: SudokuBoard, game: SudokuGame, time: PlayTime, hints: number, daily = false): boolean {
-  if (daily && (puzzleTypeOf(board.id) !== 'sudoku' || sudokuVariantOf(board.id)?.name !== board.level)) return false
+  if (daily && ((puzzleTypeOf(board.id) !== 'sudoku' && puzzleTypeOf(board.id) !== 'killer-sudoku') || (killerVariantOf(board.id) ?? sudokuVariantOf(board.id))?.name !== board.level)) return false
   if (!validPlayTime(time) || !count(hints)) return false
   try {
     if (solved(board, game.cells)) localStorage.removeItem(key(board, daily))

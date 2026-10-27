@@ -37,6 +37,7 @@ export const PUZZLE_TYPE_SUFFIX: Record<PuzzleType, string> = {
   tents: '-tents',
   sudoku: '-sudoku',
   nurikabe: '-nurikabe',
+  'killer-sudoku': '-killer',
 }
 
 /**
@@ -57,6 +58,7 @@ export const PUZZLE_TYPE_PUBLISHED: Record<PuzzleType, boolean> = {
   tents: true,
   sudoku: true,
   nurikabe: true,
+  'killer-sudoku': true,
 }
 
 export const WORD_PATHS_START = wordPaths.activationDay
@@ -91,6 +93,7 @@ export const PUZZLE_TYPE_HAS_HINTS: Record<PuzzleType, boolean> = {
   tents: true,
   sudoku: true,
   nurikabe: true,
+  'killer-sudoku': true,
 }
 
 export const PUZZLE_TYPE_LABEL: Record<PuzzleType, string> = {
@@ -102,6 +105,7 @@ export const PUZZLE_TYPE_LABEL: Record<PuzzleType, string> = {
   tents: 'Tents',
   sudoku: 'Sudoku',
   nurikabe: 'Nurikabe',
+  'killer-sudoku': 'Killer Sudoku',
 }
 
 /**
@@ -135,5 +139,6 @@ export const PUZZLE_PIECE: Record<PuzzleType, { noun: string; plural: string; gl
   trio: { noun: 'symbol', plural: 'symbols', glyph: '☀' },
   tents: { noun: 'tent', plural: 'tents', glyph: '⛺' },
   sudoku: { noun: 'digit', plural: 'digits', glyph: '9' },
+  'killer-sudoku': { noun: 'digit', plural: 'digits', glyph: '9' },
   nurikabe: { noun: 'sea cell', plural: 'sea cells', glyph: '◈' },
 }

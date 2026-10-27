@@ -17,7 +17,9 @@ sql < migrations/002_tents.sql
 sql < migrations/003_sudoku.sql
 sql < migrations/20261025113819_reset_attempt_time.sql
 sql < migrations/20261025225242_daily_nurikabe.sql
+sql < migrations/20261027120000_daily_killer_sudoku.sql
 sql < tests/nurikabe-contract.sql
+sql < tests/killer-contract.sql
 sql < tests/contract.sql
 sql < tests/attempt-contract.sql
 
@@ -107,6 +109,15 @@ sql -d leaderboard_upgrade < tests/upgrade-snapshot.sql
 sql -d leaderboard_upgrade < migrations/20261025225242_daily_nurikabe.sql
 sql -d leaderboard_upgrade < tests/upgrade-after.sql
 sql -d leaderboard_upgrade < tests/nurikabe-contract.sql
+
+# Killer Sudoku migration is additive and safe to retry with existing scores.
+sql -d leaderboard_upgrade < tests/upgrade-snapshot.sql
+sql -d leaderboard_upgrade < migrations/20261027120000_daily_killer_sudoku.sql
+sql -d leaderboard_upgrade < tests/upgrade-after.sql
+sql -d leaderboard_upgrade < tests/killer-contract.sql
+sql -d leaderboard_upgrade < tests/upgrade-snapshot.sql
+sql -d leaderboard_upgrade < migrations/20261027120000_daily_killer_sudoku.sql
+sql -d leaderboard_upgrade < tests/upgrade-after.sql
 
 # Separate connections race for one first result; either may win, never both.
 sql <<'SQL'

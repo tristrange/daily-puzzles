@@ -4,7 +4,7 @@ import type { PuzzleType } from '../domain/board'
 import { formatPuzzleLabel, puzzleIdsForDay, puzzleTypeOf } from '../domain/dates'
 import { DEFAULT_PUZZLE_TYPE, DIFFICULTY_LABEL, PUZZLE_TYPE_LABEL, PUZZLE_PIECE } from '../domain/games'
 import { probePuzzles, type ProbedPuzzle } from '../lib/puzzles'
-import { sudokuVariantOf } from '../domain/sudokuLevels'
+import { sudokuVariantOf, killerVariantOf } from '../domain/sudokuLevels'
 import { trackVariantOf } from '../domain/trackSizes'
 import { formatTime } from '../domain/game'
 import { isMarksPuzzle, isTracksPuzzle, isTrioPuzzle, isTentsPuzzle, isSudokuPuzzle, isNurikabePuzzle, type Puzzle } from '../domain/puzzle'
@@ -26,6 +26,7 @@ const DESCRIPTION: Record<PuzzleType, string> = {
   trio: 'Balance sun, moon and star. Three of each in every row and column.',
   tents: 'Pair every tree with a tent. Match the counts and keep tents apart.',
   sudoku: 'Digits 1–9 once in every row, column and box.',
+  'killer-sudoku': 'Complete the Sudoku and match each cage total.',
   nurikabe: 'Shade a connected sea around islands. Match each island’s number.',
 }
 
@@ -98,7 +99,7 @@ export function HomePage() {
         <Link to="/preview/nurikabe">Nurikabe practice boards <span aria-hidden="true">→</span></Link>
         <Link to="/learn">Learn to solve <span aria-hidden="true">→</span></Link>
         <Link to="/preview/sudoku">Sudoku practice boards <span aria-hidden="true">→</span></Link>
-        <Link to="/preview/killer-sudoku">Try Killer Sudoku <span aria-hidden="true">→</span></Link>
+        <Link to="/preview/killer-sudoku">Killer Sudoku practice boards <span aria-hidden="true">→</span></Link>
         <p>Another round?</p>
         <Link to="/archive">Explore the archive <span aria-hidden="true">→</span></Link>
         <Link to="/stats">Your progress <span aria-hidden="true">→</span></Link>
@@ -123,7 +124,7 @@ export function TodayCards({ probes, solved }: {
     <ul className="game-cards">
       {[...groups].map(([family, entries]) => {
         const probe = entries[0]!
-        const sized = family === 'sudoku' || family === 'train-tracks' && trackVariantOf(probe.id) !== null
+        const sized = family === 'sudoku' || family === 'killer-sudoku' || family === 'train-tracks' && trackVariantOf(probe.id) !== null
         const again = solved.has(probe.id)
         const elapsed = !again ? probe.elapsedMs ?? null : null
         return (
@@ -142,7 +143,7 @@ export function TodayCards({ probes, solved }: {
             {sized ? (
               <ul className="track-variants">
                 {entries.map((entry) => {
-                  const variant = family === 'sudoku' ? sudokuVariantOf(entry.id)! : trackVariantOf(entry.id)!
+                  const variant = family === 'sudoku' ? sudokuVariantOf(entry.id)! : family === 'killer-sudoku' ? killerVariantOf(entry.id)! : trackVariantOf(entry.id)!
                   const label = 'side' in variant ? `${variant.label} · ${variant.side}×${variant.side}` : variant.label
                   const again = solved.has(entry.id)
                   const elapsed = !again ? entry.elapsedMs ?? null : null
