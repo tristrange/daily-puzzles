@@ -1320,6 +1320,17 @@
 .sudoku-cell:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; z-index: 1; }
 .sudoku-notes { position: absolute; inset: 2px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); font-size: clamp(.5rem, 1.6vw, .75rem); font-weight: 550; color: var(--text); }
 .sudoku-notes span { display: grid; place-items: center; }
+.killer-cage { position: absolute; inset: 3px; z-index: 1; pointer-events: none; border: 0 dashed var(--text); }
+.killer-cage[data-top='false'] { top: -1px; }
+.killer-cage[data-right='false'] { right: -1px; }
+.killer-cage[data-bottom='false'] { bottom: -1px; }
+.killer-cage[data-left='false'] { left: -1px; }
+.killer-cage[data-top='true'] { border-top-width: 1px; }
+.killer-cage[data-right='true'] { border-right-width: 1px; }
+.killer-cage[data-bottom='true'] { border-bottom-width: 1px; }
+.killer-cage[data-left='true'] { border-left-width: 1px; }
+.killer-sum { position: absolute; top: 4px; left: 5px; z-index: 2; color: var(--text-h); font: 700 clamp(.625rem, 1.7vw, .75rem)/1 var(--sans); pointer-events: none; }
+.sudoku-cell[data-cage-clue='true'] .sudoku-notes { padding-top: .8rem; }
 .sudoku-feedback { min-height: 1.5em; text-align: center; font-size: .875rem; }
 @media (min-width: 48rem) {
   .sudoku-workspace { grid-template-areas: 'controls board'; grid-template-columns: 12rem minmax(0, 36rem); align-items: start; justify-content: center; gap: 2rem; }

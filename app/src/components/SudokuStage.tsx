@@ -15,9 +15,12 @@ import { readSudokuProgress, storeSudokuProgress } from '../lib/sudokuProgress'
 import { HintPanel, MistakeWarning } from './HintPanel'
 import { ResetButton } from './ResetButton'
 import { SudokuBoard } from './SudokuBoard'
+import { editKillerSudoku, isKillerSolved, isKillerSudokuBoard, killerConflicts } from '../domain/killerSudoku'
 
 export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) {
   const daily = puzzle !== undefined
+  const killer = isKillerSudokuBoard(board) ? board : null
+  const edit = (game: SudokuGame, cell: number, value: number, pencil = false) => killer ? editKillerSudoku(killer, game, cell, value, pencil) : editSudoku(board, game, cell, value, pencil)
   const [stats, setStats] = useState<Stats | null>(null)
   const [firstSolve, setFirstSolve] = useState<SolveRecord | null>(null)
   const [candidate, setCandidate] = useState<SolveRecord | null>(null)
@@ -33,7 +36,7 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
   const [pencil, setPencil] = useState(false), [solved, setSolved] = useState(false), [saving, setSaving] = useState(true)
   const [message, setMessage] = useState(''), [hint, setHint] = useState<SudokuHint | null>(null), [mistake, setMistake] = useState<number | null>(null)
   const stage = useRef<HTMLDivElement>(null), hintButton = useRef<HTMLButtonElement>(null)
-  const instructionsId = useId(), hintId = useId(), conflicts = sudokuConflicts(game.cells)
+  const instructionsId = useId(), hintId = useId(), conflicts = killer ? killerConflicts(killer, game.cells) : sudokuConflicts(game.cells)
   const { time, settle, stop, restartAttempt } = usePlayClock(initial ?? { elapsedMs: 0 }, time => {
     setSaving(storeSudokuProgress(board, current.current, time, hints.current, daily))
   })
@@ -42,7 +45,7 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
   const clearHint = () => { setHint(null); setMistake(null) }
   const change = (next: SudokuGame) => {
     current.current = next; setGame(next); clearHint()
-    if (isSudokuSolved(board, next.cells)) {
+    if (killer ? isKillerSolved(killer, next.cells) : isSudokuSolved(board, next.cells)) {
       const stoppedTime = stop()
       if (puzzle) {
         // oxlint-disable-next-line react/purity -- Called by player events, never during render.
@@ -65,11 +68,11 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
     setSelection(previous => extend ? previous.includes(cell) ? previous : [...previous, cell] : [cell])
   }
   const enter = (value: number, cell = selected) => {
-    if (selection.length === 1) { commit(editSudoku(board, current.current, cell, value, pencil)); return }
+    if (selection.length === 1) { commit(edit(current.current, cell, value, pencil)); return }
     const empty = selection.filter(i => current.current.cells[i] === 0), bit = 1 << (value - 1)
     const remove = empty.every(i => current.current.notes[i]! & bit)
     let next = current.current
-    for (const i of empty) if (!value || Boolean(next.notes[i]! & bit) === remove) next = editSudoku(board, next, i, value, true)
+    for (const i of empty) if (!value || Boolean(next.notes[i]! & bit) === remove) next = edit(next, i, value, true)
     commit(next)
   }
   const undo = () => {
@@ -84,7 +87,7 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
   }
   const dismiss = () => { clearHint(); hintButton.current?.focus({ preventScroll: true }) }
   const requestHint = () => {
-    if (completed.current) return
+    if (completed.current || killer) return
     clearHint()
     const result = findSudokuHint(board, current.current)
     if (result.kind === 'hint') { setHint(result.hint); hints.current++; setShownHints(hints.current); save(); setMessage('') }
@@ -144,8 +147,8 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
             onReset={() => { if (completed.current) return; restartAttempt(); commit(createSudokuGame(board), 'Board cleared. Undo restores the board. Total time and hints are kept.') }} />
           <button type="button" className="tool-button notes-toggle" disabled={solved} aria-pressed={pencil} onClick={() => setPencil(!pencil)}>Notes</button>
           <button type="button" className="tool-button" disabled={solved || !game.notes.some(Boolean)} onClick={() => commit({ cells: game.cells, notes: Array<number>(81).fill(0) }, 'All notes cleared. Undo brings them back.')}>Clear notes</button>
-          <button type="button" className="tool-button" ref={hintButton} disabled={solved} aria-label="Get an explained hint" aria-expanded={hint !== null || mistake !== null}
-            aria-controls={hint || mistake !== null ? hintId : undefined} onClick={requestHint}>Hint</button>
+          {!killer && <button type="button" className="tool-button" ref={hintButton} disabled={solved} aria-label="Get an explained hint" aria-expanded={hint !== null || mistake !== null}
+            aria-controls={hint || mistake !== null ? hintId : undefined} onClick={requestHint}>Hint</button>}
         </div>
         <div className="sudoku-keypad" role="group" aria-label={pencil || selection.length > 1 ? 'Note digits' : 'Enter a number'}>
           {Array.from({ length: 9 }, (_, i) => i + 1).map(value => <button type="button" className="tool-button" key={value} disabled={!editable}
@@ -157,8 +160,8 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
       </div>
       <SudokuBoard board={board} game={game} selected={selected} selection={selection} locked={solved} conflicts={conflicts} hint={hint} instructionsId={instructionsId} onSelect={select} />
     </div>
-    <p className={`sudoku-feedback${conflicts.size ? ' error' : ''}`} role="status">{solved ? message || `Solved in ${formatTime(elapsed)} with ${shownHints} hint${shownHints === 1 ? '' : 's'}!${daily ? '' : ' Choose another level to keep playing.'}`
-      : message || (conflicts.size ? `${conflicts.size} cells repeat a number in a row, column or box. You can keep editing or Undo.` : '\u00a0')}</p>
+    <p className={`sudoku-feedback${conflicts.size ? ' error' : ''}`} role="status">{solved ? message || `Solved in ${formatTime(elapsed)} with ${shownHints} hint${shownHints === 1 ? '' : 's'}!${daily ? '' : killer ? ' Choose another board to keep playing.' : ' Choose another level to keep playing.'}`
+      : message || (conflicts.size ? killer ? 'Check the highlighted cells: a number is repeated or a cage sum is incorrect.' : `${conflicts.size} cells repeat a number in a row, column or box. You can keep editing or Undo.` : '\u00a0')}</p>
     {daily && <SolvedPanel puzzleId={puzzle?.id} candidate={candidate} solved={solved} firstSolve={firstSolve} streak={stats?.currentStreak ?? 0} copied={copied} shareText={shareText} onShare={share} />}
     {mistake !== null && <MistakeWarning id={hintId} message="Your numbers lead to a contradiction. Check your entries, or try Undo." onReveal={revealMistake} onDismiss={dismiss} />}
     {hint && <HintPanel id={hintId} location={sudokuCellName(hint.cell)} title={hint.correction ? 'Clear this entry' : sudokuSingle(hint.candidates) ? `Place ${sudokuDigits(hint.candidates)[0]}` : 'Narrow the possibilities'}
@@ -167,6 +170,6 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
     {!saving && !solved && <p className="status error" role="status">Progress can&rsquo;t be saved. Keep this page open to retain your attempt.</p>}
     <p className="word-note" id={instructionsId}>Digits 1–9 once in every row, column and 3×3 box. Given numbers are fixed.
       Select a cell, then tap a number. Drag, Shift-click or Shift-arrow to select multiple cells; digits then update notes in empty cells, and Erase clears their notes.
-      Arrows move; 1–9 enter; N toggles notes; Delete erases; H explains a hint; Ctrl/Cmd+Z undoes; Ctrl/Cmd+Shift+Z redoes.</p>
+      Arrows move; 1–9 enter; N toggles notes; Delete erases; {!killer && 'H explains a hint; '}Ctrl/Cmd+Z undoes; Ctrl/Cmd+Shift+Z redoes.</p>
   </div>
 }
