@@ -16,6 +16,7 @@ import { HintPanel, MistakeWarning } from './HintPanel'
 import { ResetButton } from './ResetButton'
 import { SudokuBoard } from './SudokuBoard'
 import { editKillerSudoku, isKillerSolved, isKillerSudokuBoard, killerConflicts } from '../domain/killerSudoku'
+import { applyKillerSudokuHint, findKillerSudokuHint } from '../domain/killerSudokuHints'
 
 export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) {
   const daily = puzzle !== undefined
@@ -87,9 +88,9 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
   }
   const dismiss = () => { clearHint(); hintButton.current?.focus({ preventScroll: true }) }
   const requestHint = () => {
-    if (completed.current || killer) return
+    if (completed.current) return
     clearHint()
-    const result = findSudokuHint(board, current.current)
+    const result = killer ? findKillerSudokuHint(killer, current.current) : findSudokuHint(board, current.current)
     if (result.kind === 'hint') { setHint(result.hint); hints.current++; setShownHints(hints.current); save(); setMessage('') }
     else if (result.kind === 'mistake') { setMistake(result.cell); setMessage('') }
     else setMessage(result.kind === 'unverified' ? 'The solution check could not verify this board. No mistake or hint has been revealed.'
@@ -104,7 +105,7 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
   }
   const acceptHint = () => {
     if (!hint || completed.current) return
-    commit(applySudokuHint(board, current.current, hint), 'Hint applied. Undo restores your previous entry and notes.')
+    commit(killer ? applyKillerSudokuHint(killer, current.current, hint) : applySudokuHint(board, current.current, hint), 'Hint applied. Undo restores your previous entry and notes.')
     hintButton.current?.focus({ preventScroll: true })
   }
   const showCell = () => {
@@ -147,8 +148,8 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
             onReset={() => { if (completed.current) return; restartAttempt(); commit(createSudokuGame(board), 'Board cleared. Undo restores the board. Total time and hints are kept.') }} />
           <button type="button" className="tool-button notes-toggle" disabled={solved} aria-pressed={pencil} onClick={() => setPencil(!pencil)}>Notes</button>
           <button type="button" className="tool-button" disabled={solved || !game.notes.some(Boolean)} onClick={() => commit({ cells: game.cells, notes: Array<number>(81).fill(0) }, 'All notes cleared. Undo brings them back.')}>Clear notes</button>
-          {!killer && <button type="button" className="tool-button" ref={hintButton} disabled={solved} aria-label="Get an explained hint" aria-expanded={hint !== null || mistake !== null}
-            aria-controls={hint || mistake !== null ? hintId : undefined} onClick={requestHint}>Hint</button>}
+          <button type="button" className="tool-button" ref={hintButton} disabled={solved} aria-label="Get an explained hint" aria-expanded={hint !== null || mistake !== null}
+            aria-controls={hint || mistake !== null ? hintId : undefined} onClick={requestHint}>Hint</button>
         </div>
         <div className="sudoku-keypad" role="group" aria-label={pencil || selection.length > 1 ? 'Note digits' : 'Enter a number'}>
           {Array.from({ length: 9 }, (_, i) => i + 1).map(value => <button type="button" className="tool-button" key={value} disabled={!editable}
@@ -170,6 +171,6 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
     {!saving && !solved && <p className="status error" role="status">Progress can&rsquo;t be saved. Keep this page open to retain your attempt.</p>}
     <p className="word-note" id={instructionsId}>Digits 1–9 once in every row, column and 3×3 box. Given numbers are fixed.
       Select a cell, then tap a number. Drag, Shift-click or Shift-arrow to select multiple cells; digits then update notes in empty cells, and Erase clears their notes.
-      Arrows move; 1–9 enter; N toggles notes; Delete erases; {!killer && 'H explains a hint; '}Ctrl/Cmd+Z undoes; Ctrl/Cmd+Shift+Z redoes.</p>
+      Arrows move; 1–9 enter; N toggles notes; Delete erases; H explains a hint; Ctrl/Cmd+Z undoes; Ctrl/Cmd+Shift+Z redoes.</p>
   </div>
 }

@@ -246,7 +246,7 @@ export function RulesPage() {
 
       <h2 id="killer-sudoku" tabIndex={-1}>Killer Sudoku</h2>
       <p>Follow the usual Sudoku rules. Digits in each dashed cage add to its small total, and a digit cannot repeat inside a cage, even across different rows, columns or boxes.</p>
-      <p><Link to="/preview/killer-sudoku">Try the Killer Sudoku preview</Link>. The three boards have unique solutions. Preview progress is saved separately; hints are not available yet.</p>
+      <p><Link to="/preview/killer-sudoku">Try the Killer Sudoku preview</Link>. The three boards have unique solutions. Hints check for mistakes first, then explain a cage deduction; applying a hint is optional and undoable. Preview progress is saved separately.</p>
 
       <h2 id="nurikabe" tabIndex={-1}>Nurikabe</h2>
       <h3>Rules</h3>
