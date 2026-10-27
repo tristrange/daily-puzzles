@@ -244,6 +244,10 @@ export function RulesPage() {
         Medium techniques. These are provisional project ratings. <Link to="/preview/sudoku">Practice boards</Link> remain available;
         their attempts save separately and do not affect daily stats, streaks or leaderboards.</p>
 
+      <h2 id="killer-sudoku" tabIndex={-1}>Killer Sudoku</h2>
+      <p>Follow the usual Sudoku rules. Digits in each dashed cage add to its small total, and a digit cannot repeat inside a cage, even across different rows, columns or boxes.</p>
+      <p><Link to="/preview/killer-sudoku">Try the Killer Sudoku preview</Link>. The three boards have unique solutions. Preview progress is saved separately; hints are not available yet.</p>
+
       <h2 id="nurikabe" tabIndex={-1}>Nurikabe</h2>
       <h3>Rules</h3>
       <ul>

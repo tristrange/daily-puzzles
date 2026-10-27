@@ -98,6 +98,7 @@ export function HomePage() {
         <Link to="/preview/nurikabe">Nurikabe practice boards <span aria-hidden="true">→</span></Link>
         <Link to="/learn">Learn to solve <span aria-hidden="true">→</span></Link>
         <Link to="/preview/sudoku">Sudoku practice boards <span aria-hidden="true">→</span></Link>
+        <Link to="/preview/killer-sudoku">Try Killer Sudoku <span aria-hidden="true">→</span></Link>
         <p>Another round?</p>
         <Link to="/archive">Explore the archive <span aria-hidden="true">→</span></Link>
         <Link to="/stats">Your progress <span aria-hidden="true">→</span></Link>

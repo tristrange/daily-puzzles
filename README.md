@@ -33,7 +33,7 @@ marker means definite track with an undecided shape and counts toward clues.
 
 Easy, Medium and Hard publish separately each day from October 21, 2026.
 The [three fixed preview boards](https://tristrange.github.io/daily-puzzles/#/preview/sudoku?board=1)
-remain available for practice.
+remain available for practice. [Killer Sudoku](https://tristrange.github.io/daily-puzzles/#/preview/killer-sudoku) is available as a separate three-board preview: cage digits must add to the displayed total without repeating. It saves separately and does not yet offer hints.
 
 Select a cell, then use the keypad or keyboard. Notes mark candidates; entering
 a number removes it from peer notes in its row, column and box. Clear notes,
@@ -180,7 +180,8 @@ npm run dev
 ```
 
 Open the URL Vite prints and choose a daily game. For Sudoku practice, append
-`#/preview/sudoku?board=1`.
+`#/preview/sudoku?board=1`. For the Killer Sudoku preview, use
+`#/preview/killer-sudoku`.
 
 App checks and production preview, from `app/`:
 
@@ -203,6 +204,7 @@ uv run ruff format --check .
 uv run python -m tools.verify --dir ../app/public/puzzles --jobs 2
 uv run python -m tools.schema_ids --check
 uv run python -m tools.sudoku_preview  # verify the three fixed preview certificates
+uv run python ../app/scripts/verify_killer_previews.py  # verify Killer Sudoku uniqueness and deductions
 uv run python -m tools.nurikabe_preview  # verify the unchanged practice boards
 uv run python -m tools.nurikabe_launch  # verify the frozen daily launch batch
 ```
