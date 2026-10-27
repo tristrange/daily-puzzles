@@ -3,14 +3,16 @@ import nuriPreviews from '../../../docs/measurements/nurikabe-preview.json'
 import nuriDaily from '../../../docs/measurements/daily-nurikabe-launch.json'
 import tentsReport from '../../../docs/measurements/tents-preview.json'
 import advanced from '../data/tents-advanced-lessons.json'
+import advancedNurikabe from '../data/nurikabe-advanced-lessons.json'
 import { GRID_LESSONS } from './gridLessons'
+import { nurikabeNeighbours } from './nurikabe'
 import { solveNurikabe } from './nurikabeSolve'
 import { nextNurikabeDeduction } from './nurikabeHints'
 import { editTent, tentsNeighbours, tentsLines } from './tents'
 import { findTentsHint } from './tentsHints'
 
 it('uses verified boards and teaches every sea-connection answer in the named row', () => {
-  const lessons = GRID_LESSONS.filter(lesson => lesson.kind === 'nurikabe')
+  const lessons = GRID_LESSONS.filter(lesson => lesson.kind === 'nurikabe' && lesson.technique === 'sea')
   expect(lessons).toHaveLength(3)
   for (const lesson of lessons) {
     if (lesson.kind !== 'nurikabe') throw Error('Expected Nurikabe')
@@ -39,6 +41,53 @@ it('uses verified boards and teaches every sea-connection answer in the named ro
     const answers = lesson.state.flatMap((mark, cell) => mark === 0 && Math.floor(cell / size) === lesson.line && disconnects(cell) ? [cell] : [])
     expect(lesson.answers.map(answer => answer.cell)).toEqual(answers)
     expect(answers.every(cell => solution.cells[cell] === 1)).toBe(true)
+  }
+})
+
+it('verifies all possible island shapes and isolated-land deductions', () => {
+  expect(advancedNurikabe).toHaveLength(6)
+  for (const exercise of advancedNurikabe) {
+    const lesson = GRID_LESSONS.find(item => item.id === exercise.id)!
+    if (lesson.kind !== 'nurikabe') throw Error('Expected Nurikabe')
+    const { board, state } = lesson, clue = exercise.clue, size = board.clues[clue]!
+    const source = [...nuriPreviews.samples, ...nuriDaily.samples].find(sample => sample.id === lesson.source)!
+    expect(board.clues).toEqual(source.clues)
+    const solved = solveNurikabe(board)
+    expect(solved.kind).toBe('unique')
+    if (solved.kind !== 'unique') throw Error('Expected a unique board')
+    expect(state.every((mark, cell) => mark === 0 || mark === solved.cells[cell])).toBe(true)
+    const neighbours = (cell: number) => nurikabeNeighbours(board.size, cell)
+    const otherClues = board.clues.flatMap((value, cell) => value && cell !== clue ? [cell] : [])
+    const allowed = state.flatMap((mark, cell) => mark !== 1 && !otherClues.some(other => other === cell || neighbours(other).includes(cell)) ? [cell] : [])
+    const options = allowed.filter(cell => cell !== clue && Math.abs(Math.floor(cell / board.size) - Math.floor(clue / board.size)) + Math.abs(cell % board.size - clue % board.size) < size)
+    const shapes: number[][] = []
+    const choose = (start: number, chosen: number[]) => {
+      if (chosen.length === size - 1) {
+        const shape = [clue, ...chosen], cells = new Set(shape), reached = new Set([clue]), queue = [clue]
+        for (const cell of queue) for (const next of neighbours(cell)) if (cells.has(next) && !reached.has(next)) { reached.add(next); queue.push(next) }
+        if (reached.size !== size || shape.some(cell => neighbours(cell).some(next => state[next] === 2 && !cells.has(next)))) return
+        if (exercise.technique === 'connect-land' && !exercise.group.every(cell => cells.has(cell))) return
+        shapes.push(shape.sort((a, b) => a - b))
+        return
+      }
+      for (let i = start; i <= options.length - (size - 1 - chosen.length); i++) choose(i + 1, [...chosen, options[i]!])
+    }
+    choose(0, [])
+    const normalize = (values: number[][]) => values.map(shape => shape.join(',')).sort()
+    expect(normalize(shapes)).toEqual(normalize(exercise.shapes))
+    expect(shapes.length).toBeGreaterThan(1)
+    if (exercise.technique === 'connect-land') {
+      expect(exercise.group).toHaveLength(1)
+      const land = exercise.group[0]!
+      expect(state[land]).toBe(2)
+      for (const other of otherClues) {
+        const distance = Math.abs(Math.floor(other / board.size) - Math.floor(land / board.size)) + Math.abs(other % board.size - land % board.size)
+        expect(distance).toBeGreaterThanOrEqual(board.clues[other]!)
+      }
+    }
+    const answers = state.flatMap((mark, cell) => mark === 0 && Math.floor(cell / board.size) === lesson.line && shapes.every(shape => shape.includes(cell)) ? [cell] : [])
+    expect(lesson.answers.map(answer => answer.cell)).toEqual(answers)
+    expect(answers.every(cell => solved.cells[cell] === 2)).toBe(true)
   }
 })
 

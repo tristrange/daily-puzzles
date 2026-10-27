@@ -9,7 +9,11 @@ import { readGridLessons, completeGridLesson } from '../lib/gridLessonProgress'
 type Kind = GridLesson['kind']
 const names = { nurikabe: 'Nurikabe', tents: 'Tents' } as const
 const techniques = {
-  nurikabe: [{ id: 'sea', title: 'Keep the sea connected', intro: 'The sea must form one connected area. Look for a cell that every possible route between two sea areas must cross.' }],
+  nurikabe: [
+    { id: 'sea', title: 'Keep the sea connected', intro: 'The sea must form one connected area. Look for a cell that every possible route between two sea areas must cross.' },
+    { id: 'island-shapes', title: 'Overlap island shapes', intro: 'Compare all shapes that fit an island’s size and its surroundings. A cell in every shape must be land.' },
+    { id: 'connect-land', title: 'Connect isolated land', intro: 'Find which island can reach isolated land, then compare its possible routes to that land.' },
+  ],
   tents: [
     { id: 'protect', title: 'Protect a tree’s options', intro: 'A tent cannot touch another tent. Look for a placement that would block every remaining tent position for a tree.' },
     { id: 'line', title: 'Reserve space for trees', intro: 'Trees whose remaining tent positions all lie in one line reserve space in that line.' },
@@ -59,10 +63,10 @@ function GridExercise({ lesson }: { lesson: GridLesson }) {
   const location = (cell: number) => `row ${Math.floor(cell / lesson.board.size) + 1}, column ${cell % lesson.board.size + 1}`
   const scope = `${lesson.axis} ${lesson.line + 1}`
   const prompt = lesson.kind === 'nurikabe'
-    ? `Find a cell in ${scope} that must be sea to keep the sea connected.`
+    ? lesson.prompt ?? `Find a cell in ${scope} that must be sea to keep the sea connected.`
     : lesson.prompt ?? `Find a tent in ${scope} by comparing its possible arrangements.`
   const explanation = lesson.kind === 'nurikabe'
-    ? 'The highlighted sea cells must connect. If this cell were land, every possible route between them would be cut off, so it must be sea.'
+    ? lesson.reason ?? 'The highlighted sea cells must connect. If this cell were land, every possible route between them would be cut off, so it must be sea.'
     : lesson.value === 2 ? lesson.reason : `${lesson.reason}\n${lesson.axis === 'row' ? 'Column' : 'Row'} ${(lesson.axis === 'row' ? answer.cell % lesson.board.size : Math.floor(answer.cell / lesson.board.size)) + 1} is used in every arrangement, so place a tent.`
   const check = () => {
     if (selected === null) return
@@ -79,8 +83,8 @@ function GridExercise({ lesson }: { lesson: GridLesson }) {
     <p className="grid-lesson-mobile-prompt" aria-hidden="true">{prompt}</p>
     <div className="lesson-workspace"><div className="lesson-board">
       {lesson.kind === 'nurikabe'
-        ? <NurikabeBoard board={lesson.board} game={explained ? lesson.state.map((mark, cell) => cell === answer.cell ? 1 : mark) : lesson.state} brush={1} locked conflicts={noConflicts} instructionsId="grid-lesson-guide" inspection={inspection}
-            hint={showPattern ? { kind: 'deduction', value: 1, rule: 'sea-connection', source: lesson.state, cell: answer.cell, support: answer.support, reason: explanation } : null}
+        ? <NurikabeBoard board={lesson.board} game={explained ? lesson.state.map((mark, cell) => cell === answer.cell ? lesson.value : mark) : lesson.state} brush={lesson.value} locked conflicts={noConflicts} instructionsId="grid-lesson-guide" inspection={inspection}
+            hint={showPattern ? { kind: 'deduction', value: lesson.value, rule: lesson.value === 1 ? 'sea-connection' : 'island-expansion', source: lesson.state, cell: answer.cell, support: answer.support, reason: explanation } : null}
             onBegin={noop} onApply={noop} onEnd={noop} onUndo={noop} onRedo={noop} onHint={noop} />
         : <TentsBoard board={lesson.board} game={explained ? lesson.state.map((mark, cell) => cell === answer.cell ? lesson.value : mark) : lesson.state} brush={lesson.value} locked conflicts={noConflicts} instructionsId="grid-lesson-guide" inspection={inspection}
             hint={showPattern ? { value: lesson.value, cell: answer.cell, support: answer.support, reason: explanation } : null}
