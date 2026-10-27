@@ -32,7 +32,7 @@ export function LearnPage() {
         <p>{TRIO_TECHNIQUES.length} techniques · {TRIO_LESSONS.length} exercises. Combine quotas and no-three, propagate linked restrictions, then follow candidate chains.</p>
         <p className="lesson-progress">{trioCompleted.length} of {TRIO_LESSONS.length} completed</p>
         <Link className="tool-button primary" to="/learn/trio">Learn Trio →</Link></li>
-      <li><h2>Nurikabe</h2><p>Practice finding the sea cells that keep separate areas connected.</p>
+      <li><h2>Nurikabe</h2><p>Connect the sea, compare island shapes and find routes to isolated land.</p>
         <p className="lesson-progress">{nurikabeCompleted.length} of {GRID_LESSONS.filter(lesson => lesson.kind === 'nurikabe').length} completed</p>
         <Link className="tool-button primary" to="/learn/nurikabe">Learn Nurikabe →</Link></li>
       <li><h2>Tents</h2><p>Protect tree options, reserve line space and compare possible arrangements.</p>
