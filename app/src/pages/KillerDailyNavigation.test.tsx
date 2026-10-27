@@ -29,3 +29,13 @@ it('keeps the selected Killer Sudoku level on the leaderboard', () => {
     expect(html).toContain('href="/archive/2026-10-27-killer-sudoku-hard"')
   } finally { vi.useRealTimers() }
 })
+
+it('allows leaderboard links to backfilled puzzles from the first archive day', () => {
+  vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-27T12:00:00Z'))
+  try {
+    const first = renderToStaticMarkup(<MemoryRouter initialEntries={['/leaderboards?id=2026-09-26-killer-sudoku-hard']}><LeaderboardsPage /></MemoryRouter>)
+    expect(first).toContain('href="/archive/2026-09-26-killer-sudoku-hard"')
+    const earlier = renderToStaticMarkup(<MemoryRouter initialEntries={['/leaderboards?id=2026-09-25-killer-sudoku-hard']}><LeaderboardsPage /></MemoryRouter>)
+    expect(earlier).toContain('Choose a published puzzle')
+  } finally { vi.useRealTimers() }
+})

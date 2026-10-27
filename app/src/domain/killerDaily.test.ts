@@ -10,7 +10,10 @@ import { puzzleIdsForDay, puzzleTypeOf } from './dates'
 
 it('publishes three separate daily levels that the app can solve with its hints', () => {
   const boards = [easy, medium, hard]
-  expect(puzzleIdsForDay('2026-10-26').some(id => id.includes('killer-sudoku'))).toBe(false)
+  expect(puzzleIdsForDay('2026-09-25').some(id => id.includes('killer-sudoku'))).toBe(false)
+  expect(puzzleIdsForDay('2026-09-26').filter(id => id.includes('killer-sudoku'))).toEqual(
+    ['easy', 'medium', 'hard'].map(level => `2026-09-26-killer-sudoku-${level}`),
+  )
   expect(puzzleIdsForDay('2026-10-27').filter(id => id.includes('killer-sudoku'))).toEqual(boards.map(board => board.id))
   for (const raw of boards) {
     const puzzle = parsePuzzle(raw)

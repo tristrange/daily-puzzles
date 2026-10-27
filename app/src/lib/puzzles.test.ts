@@ -202,9 +202,9 @@ describe('listPublishedPuzzles', () => {
       return spaShellResponse()
     }
     await listPublishedPuzzles('2026-10-03', probeFetcher)
-    // Every day in this window has three legacy families plus Trio and Tents.
+    // Each day has five original families and three Killer Sudoku levels.
     // Missing companion files still need a probe before being reported absent.
-    expect(probes).toHaveLength(ARCHIVE_WINDOW_DAYS * 5)
+    expect(probes).toHaveLength(ARCHIVE_WINDOW_DAYS * 8)
     expect(probes).toContain('2026-10-03.json')
     expect(probes).toContain('2026-10-03-star.json')
     expect(probes).toContain('2026-09-27-trio.json')
@@ -259,7 +259,7 @@ describe('listPublishedPuzzles', () => {
       return response
     }
     const found = await listPublishedPuzzles('2026-10-03', countingFetcher)
-    expect(answeredOk).toBe(ARCHIVE_WINDOW_DAYS * 5)
+    expect(answeredOk).toBe(ARCHIVE_WINDOW_DAYS * 8)
     expect(found).toEqual(queens)
   })
 

@@ -969,7 +969,10 @@
         "2026-09-26-star",
         "2026-09-26-tracks",
         "2026-09-26-trio",
-        "2026-09-26-tents"
+        "2026-09-26-tents",
+        "2026-09-26-killer-sudoku-easy",
+        "2026-09-26-killer-sudoku-medium",
+        "2026-09-26-killer-sudoku-hard"
       ]
     },
     {
@@ -982,7 +985,10 @@
         "2026-10-14-tracks-large",
         "2026-10-14-trio",
         "2026-10-14-tents",
-        "2026-10-14-nurikabe"
+        "2026-10-14-nurikabe",
+        "2026-10-14-killer-sudoku-easy",
+        "2026-10-14-killer-sudoku-medium",
+        "2026-10-14-killer-sudoku-hard"
       ]
     },
     {
@@ -996,7 +1002,10 @@
         "2026-10-15-words",
         "2026-10-15-trio",
         "2026-10-15-tents",
-        "2026-10-15-nurikabe"
+        "2026-10-15-nurikabe",
+        "2026-10-15-killer-sudoku-easy",
+        "2026-10-15-killer-sudoku-medium",
+        "2026-10-15-killer-sudoku-hard"
       ]
     },
     {
@@ -1010,7 +1019,10 @@
         "2026-10-16-words",
         "2026-10-16-trio",
         "2026-10-16-tents",
-        "2026-10-16-nurikabe"
+        "2026-10-16-nurikabe",
+        "2026-10-16-killer-sudoku-easy",
+        "2026-10-16-killer-sudoku-medium",
+        "2026-10-16-killer-sudoku-hard"
       ]
     },
     {
@@ -1024,7 +1036,10 @@
         "2026-10-20-words",
         "2026-10-20-trio",
         "2026-10-20-tents",
-        "2026-10-20-nurikabe"
+        "2026-10-20-nurikabe",
+        "2026-10-20-killer-sudoku-easy",
+        "2026-10-20-killer-sudoku-medium",
+        "2026-10-20-killer-sudoku-hard"
       ]
     },
     {
@@ -1041,7 +1056,10 @@
         "2026-10-21-sudoku-easy",
         "2026-10-21-sudoku-medium",
         "2026-10-21-sudoku-hard",
-        "2026-10-21-nurikabe"
+        "2026-10-21-nurikabe",
+        "2026-10-21-killer-sudoku-easy",
+        "2026-10-21-killer-sudoku-medium",
+        "2026-10-21-killer-sudoku-hard"
       ]
     },
     {
@@ -1095,7 +1113,7 @@
     "activationDay": "2026-10-12"
   },
   "killerSudoku": {
-    "activationDay": "2026-10-27",
+    "activationDay": "2026-09-26",
     "variants": [
       {
         "name": "easy",
