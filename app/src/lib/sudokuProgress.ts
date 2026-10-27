@@ -3,7 +3,7 @@ import { attemptTime, validPlayTime, type PlayTime } from './playTime'
 import { puzzleTypeOf } from '../domain/dates'
 import { sudokuVariantOf } from '../domain/sudokuLevels'
 import { isSudokuSolved, sudokuDigit, type SudokuBoard, type SudokuGame } from '../domain/sudoku'
-import { isKillerSolved, isKillerSudokuBoard } from '../domain/killerSudoku'
+import { isKillerSolved, isKillerSudokuBoard, killerCombinations } from '../domain/killerSudoku'
 const key = (board: SudokuBoard, daily: boolean) => `daily-puzzles.${daily ? 'sudoku' : 'sudoku-preview'}.v1.${board.id}`
 const fingerprint = (board: SudokuBoard) => JSON.stringify(isKillerSudokuBoard(board) ? [board.level, board.givens, board.cages] : [board.level, board.givens])
 const solved = (board: SudokuBoard, cells: readonly number[]) => isKillerSudokuBoard(board) ? isKillerSolved(board, cells) : isSudokuSolved(board, cells)
@@ -20,7 +20,12 @@ export function readSudokuProgress(board: SudokuBoard, daily = false): { game: S
       || cells.some((value, cell) => board.givens[cell] !== 0 && board.givens[cell] !== value)
       || !Array.isArray(notes) || notes.length !== 81 || !notes.every((value: unknown, cell) => count(value) && value <= 511 && (cells[cell] === 0 || value === 0))
       || solved(board, cells)) return null
-    return { game: { cells: [...cells], notes: [...notes] as number[] }, elapsedMs: data['elapsedMs'], ...attemptTime(data['attemptElapsedMs'], data['elapsedMs']), hints: data['hints'] }
+    const rawExcluded = data['excludedCageCombinations']
+    const excluded = isKillerSudokuBoard(board) && Array.isArray(rawExcluded) && rawExcluded.length === board.cages.length
+      && rawExcluded.every((entries: unknown, index) => Array.isArray(entries) && new Set(entries).size === entries.length
+        && entries.every(entry => Number.isInteger(entry) && killerCombinations(board.cages[index]!).includes(entry)))
+      ? rawExcluded.map((entries: number[]) => [...entries]) : undefined
+    return { game: { cells: [...cells], notes: [...notes] as number[], ...(excluded ? { excludedCageCombinations: excluded } : {}) }, elapsedMs: data['elapsedMs'], ...attemptTime(data['attemptElapsedMs'], data['elapsedMs']), hints: data['hints'] }
   } catch { return null }
 }
 

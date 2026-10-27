@@ -13,6 +13,8 @@ const RulesPage = lazy(() => import('./pages/RulesPage').then((module) => ({ def
 const StarBattlePage = lazy(() => import('./pages/StarBattlePage').then((module) => ({ default: module.StarBattlePage })))
 const StatsPage = lazy(() => import('./pages/StatsPage').then((module) => ({ default: module.StatsPage })))
 const LearnPage = lazy(() => import('./pages/LearnPage').then((module) => ({ default: module.LearnPage })))
+const KillerCoursePage = lazy(() => import('./pages/KillerLessonPages').then(module => ({ default: module.KillerCoursePage })))
+const KillerLessonPage = lazy(() => import('./pages/KillerLessonPages').then(module => ({ default: module.KillerLessonPage })))
 const SudokuLessonPage = lazy(() => import('./pages/SudokuLessonPage').then((module) => ({ default: module.SudokuLessonPage })))
 const SudokuCoursePage = lazy(() => import('./pages/SudokuCoursePage').then(module => ({ default: module.SudokuCoursePage })))
 const StarBattleCoursePage = lazy(() => import('./pages/StarBattleCoursePage').then(module => ({ default: module.StarBattleCoursePage })))
@@ -63,6 +65,8 @@ function App() {
             <Route path="learn/tents/:lessonId" element={<GridLessonPage kind="tents" />} />
             <Route path="learn/train-tracks" element={<GridCoursePage kind="train-tracks" />} />
             <Route path="learn/train-tracks/:lessonId" element={<GridLessonPage kind="train-tracks" />} />
+            <Route path="learn/killer-sudoku" element={<KillerCoursePage />} />
+            <Route path="learn/killer-sudoku/:lessonId" element={<KillerLessonPage />} />
             <Route path="learn/sudoku" element={<SudokuCoursePage />} />
             <Route path="learn/star-battle" element={<StarBattleCoursePage />} />
             <Route path="learn/star-battle/:lessonId" element={<StarBattleLessonPage />} />

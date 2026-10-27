@@ -3,9 +3,9 @@ import { SUDOKU_PEERS, sudokuCellName, sudokuDigits, type SudokuBoard as Board, 
 import type { SudokuHint } from '../domain/sudokuHints'
 import { isKillerSudokuBoard } from '../domain/killerSudoku'
 
-export function SudokuBoard({ board, game, selected, selection, locked, conflicts, hint, instructionsId, onSelect }: {
+export function SudokuBoard({ board, game, selected, selection, locked, conflicts, hint, instructionsId, onSelect, cageActive = false }: {
   board: Board; game: SudokuGame; selected: number; selection: readonly number[]; locked: boolean; conflicts: ReadonlySet<number>
-  hint: SudokuHint | null; instructionsId: string; onSelect: (cell: number, extend?: boolean) => void
+  hint: SudokuHint | null; instructionsId: string; cageActive?: boolean; onSelect: (cell: number, extend?: boolean) => void
 }) {
   const grid = useRef<HTMLDivElement>(null), support = new Set(hint?.support)
   const cages = isKillerSudokuBoard(board) ? board.cages : null
@@ -59,7 +59,7 @@ export function SudokuBoard({ board, game, selected, selection, locked, conflict
         const cell = r * 9 + c, value = game.cells[cell]!, given = board.givens[cell] !== 0, notes = sudokuDigits(game.notes[cell]!)
         const cage = cages?.find(entry => entry.cells.includes(cell)), clue = cage && cell === Math.min(...cage.cells)
         return <button key={cell} type="button" role="gridcell" className="sudoku-cell" tabIndex={selected === cell ? 0 : -1}
-          data-cell={cell} data-given={given} data-cage-clue={!!clue} data-selected={selection.includes(cell)} data-context={selection.length === 1 && SUDOKU_PEERS[selected]!.includes(cell)}
+          data-cell={cell} data-given={given} data-cage-clue={!!clue} data-cage-selected={cageActive && !!cage?.cells.includes(selected)} data-selected={selection.includes(cell)} data-context={selection.length === 1 && SUDOKU_PEERS[selected]!.includes(cell)}
           data-match={!!digit && value === digit} data-digit-line={matchingRows.has(r) || matchingColumns.has(c)}
           data-conflict={conflicts.has(cell)} data-box-right={c === 2 || c === 5} data-box-bottom={r === 2 || r === 5}
           data-hint={hint?.cell === cell ? 'target' : support.has(cell) ? 'support' : undefined}

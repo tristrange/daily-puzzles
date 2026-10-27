@@ -140,5 +140,5 @@ export function applySudokuHint(board: SudokuBoard, game: SudokuGame, hint: Sudo
   if (hint.correction) return editSudoku(board, game, hint.cell, 0)
   if (sudokuSingle(hint.candidates)) return editSudoku(board, game, hint.cell, Math.log2(hint.candidates) + 1)
   const notes = [...game.notes]; notes[hint.cell] = hint.candidates
-  return { cells: game.cells, notes }
+  return { ...game, notes }
 }

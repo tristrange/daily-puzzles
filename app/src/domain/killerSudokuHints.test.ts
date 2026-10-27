@@ -2,7 +2,7 @@ import { expect, it } from 'vitest'
 import raw from '../data/killer-sudoku-previews.json'
 import certificate from '../../../docs/measurements/killer-sudoku-preview.json'
 import { createSudokuGame, SUDOKU_ROWS, sudokuSingle } from './sudoku'
-import { isKillerSolved, parseKillerPreviews } from './killerSudoku'
+import { isKillerSolved, killerCombinations, parseKillerPreviews } from './killerSudoku'
 import { applyKillerSudokuHint, findKillerSudokuHint, solveKillerSudoku } from './killerSudokuHints'
 
 const boards = parseKillerPreviews(raw)
@@ -56,4 +56,18 @@ it.each(boards)('$id can progress through explained hints without guessing', boa
     game = applyKillerSudokuHint(board, game, result.hint)
   }
   expect(isKillerSolved(board, game.cells)).toBe(true)
+})
+
+
+it('does not use crossed-out combinations as hint evidence', () => {
+  const board = boards[0]!, game = createSudokuGame(board)
+  const marked = { ...game, excludedCageCombinations: board.cages.map(killerCombinations) }
+  const original = findKillerSudokuHint(board, game), withMarks = findKillerSudokuHint(board, marked)
+  expect(original.kind).toBe('hint')
+  expect(withMarks.kind).toBe('hint')
+  if (original.kind === 'hint' && withMarks.kind === 'hint') {
+    expect(withMarks.hint.cell).toBe(original.hint.cell)
+    expect(withMarks.hint.candidates).toBe(original.hint.candidates)
+    expect(applyKillerSudokuHint(board, marked, withMarks.hint).excludedCageCombinations).toEqual(marked.excludedCageCombinations)
+  }
 })

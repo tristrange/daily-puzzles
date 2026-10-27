@@ -15,6 +15,7 @@ import { readSudokuProgress, storeSudokuProgress } from '../lib/sudokuProgress'
 import { HintPanel, MistakeWarning } from './HintPanel'
 import { ResetButton } from './ResetButton'
 import { SudokuBoard } from './SudokuBoard'
+import { KillerCombinations } from './KillerCombinations'
 import { editKillerSudoku, isKillerSolved, isKillerSudokuBoard, killerConflicts } from '../domain/killerSudoku'
 import { applyKillerSudokuHint, findKillerSudokuHint } from '../domain/killerSudokuHints'
 
@@ -34,10 +35,11 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
   const [shownHints, setShownHints] = useState(initial?.hints ?? 0)
   const [selected, setSelected] = useState(() => Math.max(0, board.givens.indexOf(0)))
   const [selection, setSelection] = useState<readonly number[]>([selected])
+  const [showCombinations, setShowCombinations] = useState(false)
   const [pencil, setPencil] = useState(false), [solved, setSolved] = useState(false), [saving, setSaving] = useState(true)
   const [message, setMessage] = useState(''), [hint, setHint] = useState<SudokuHint | null>(null), [mistake, setMistake] = useState<number | null>(null)
   const stage = useRef<HTMLDivElement>(null), hintButton = useRef<HTMLButtonElement>(null)
-  const instructionsId = useId(), hintId = useId(), conflicts = killer ? killerConflicts(killer, game.cells) : sudokuConflicts(game.cells)
+  const instructionsId = useId(), hintId = useId(), combinationsId = useId(), conflicts = killer ? killerConflicts(killer, game.cells) : sudokuConflicts(game.cells)
   const { time, settle, stop, restartAttempt } = usePlayClock(initial ?? { elapsedMs: 0 }, time => {
     setSaving(storeSudokuProgress(board, current.current, time, hints.current, daily))
   })
@@ -134,23 +136,34 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
     setCopied(ok ? variant : 'failed'); setShareText(ok ? null : text)
     setMessage(ok ? 'Share text copied to the clipboard.' : 'Could not reach the clipboard — the share text is shown below, ready to copy.')
   }
+  const cageIndex = killer?.cages.findIndex(cage => cage.cells.includes(selected)) ?? -1
+  const cage = cageIndex >= 0 ? killer?.cages[cageIndex] : undefined
+  const toggleCombination = (mask: number) => {
+    if (!killer || cageIndex < 0 || solved) return
+    const excluded = killer.cages.map((_, index) => [...(current.current.excludedCageCombinations?.[index] ?? [])])
+    const list = excluded[cageIndex]!
+    excluded[cageIndex] = list.includes(mask) ? list.filter(item => item !== mask) : [...list, mask]
+    commit({ ...current.current, excludedCageCombinations: excluded })
+  }
   const editable = !solved && (selection.length > 1 ? selection.some(i => game.cells[i] === 0) : board.givens[selected] === 0)
   const placedCounts = Array<number>(10).fill(0)
   for (const value of game.cells) placedCounts[value]!++
   return <div className="sudoku-game" ref={stage} onKeyDown={keyboard}>
-    <div className="sudoku-workspace">
+    <div className="sudoku-workspace" data-killer={!!killer} data-combinations={!!killer && showCombinations}>
       <div className="sudoku-controls">
         <div className="puzzle-tools">
           <PlayTimer time={time} />
           <button type="button" className="tool-button" disabled={solved || !history.canUndo} onClick={undo}>Undo</button>
           <button type="button" className="tool-button" disabled={solved || !history.canRedo} onClick={redo}>Redo</button>
-          <ResetButton disabled={solved || game.cells.every((v, i) => v === board.givens[i] && !game.notes[i])}
+          <ResetButton disabled={solved || game.cells.every((v, i) => v === board.givens[i] && !game.notes[i]) && !game.excludedCageCombinations?.some(items => items.length)}
             onReset={() => { if (completed.current) return; restartAttempt(); commit(createSudokuGame(board), 'Board cleared. Undo restores the board. Total time and hints are kept.') }} />
           <button type="button" className="tool-button notes-toggle" disabled={solved} aria-pressed={pencil} onClick={() => setPencil(!pencil)}>Notes</button>
-          <button type="button" className="tool-button" disabled={solved || !game.notes.some(Boolean)} onClick={() => commit({ cells: game.cells, notes: Array<number>(81).fill(0) }, 'All notes cleared. Undo brings them back.')}>Clear notes</button>
+          <button type="button" className="tool-button" disabled={solved || !game.notes.some(Boolean)} onClick={() => commit({ ...game, notes: Array<number>(81).fill(0) }, 'All notes cleared. Undo brings them back.')}>Clear notes</button>
           <button type="button" className="tool-button" ref={hintButton} disabled={solved} aria-label="Get an explained hint" aria-expanded={hint !== null || mistake !== null}
             aria-controls={hint || mistake !== null ? hintId : undefined} onClick={requestHint}>Hint</button>
         </div>
+        {killer && <button type="button" className="tool-button killer-combinations-toggle" aria-expanded={showCombinations}
+          aria-controls={showCombinations ? combinationsId : undefined} onClick={() => setShowCombinations(!showCombinations)}>Combinations</button>}
         <div className="sudoku-keypad" role="group" aria-label={pencil || selection.length > 1 ? 'Note digits' : 'Enter a number'}>
           {Array.from({ length: 9 }, (_, i) => i + 1).map(value => <button type="button" className="tool-button" key={value} disabled={!editable}
             data-all-placed={placedCounts[value]! >= 9} aria-description={`${placedCounts[value]} of 9 placed`}
@@ -159,7 +172,10 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
         </div>
         <p className="sudoku-mode" role="status">{selection.length > 1 ? `${selection.length} cells selected · digits update notes in empty cells` : pencil ? 'Notes on · tap digits to mark possibilities' : 'Select a cell, then enter a number'}</p>
       </div>
-      <SudokuBoard board={board} game={game} selected={selected} selection={selection} locked={solved} conflicts={conflicts} hint={hint} instructionsId={instructionsId} onSelect={select} />
+      <SudokuBoard board={board} game={game} selected={selected} selection={selection} locked={solved} conflicts={conflicts} hint={hint} instructionsId={instructionsId} onSelect={select} cageActive={!!killer && showCombinations} />
+      {showCombinations && cage && <div id={combinationsId} className="killer-combinations-panel">
+        <KillerCombinations cage={cage} excluded={game.excludedCageCombinations?.[cageIndex] ?? []} onToggle={toggleCombination} disabled={solved} />
+      </div>}
     </div>
     <p className={`sudoku-feedback${conflicts.size ? ' error' : ''}`} role="status">{solved ? message || `Solved in ${formatTime(elapsed)} with ${shownHints} hint${shownHints === 1 ? '' : 's'}!${daily ? '' : killer ? ' Choose another board to keep playing.' : ' Choose another level to keep playing.'}`
       : message || (conflicts.size ? killer ? 'Check the highlighted cells: a number is repeated or a cage sum is incorrect.' : `${conflicts.size} cells repeat a number in a row, column or box. You can keep editing or Undo.` : '\u00a0')}</p>

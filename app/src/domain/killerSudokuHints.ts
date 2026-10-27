@@ -1,5 +1,5 @@
 /** Killer Sudoku preview hints: cage deductions and a bounded uniqueness check. */
-import { editKillerSudoku, killerConflicts, type KillerCage, type KillerSudokuBoard } from './killerSudoku'
+import { editKillerSudoku, killerCombinations, killerConflicts, type KillerCage, type KillerSudokuBoard } from './killerSudoku'
 import { SUDOKU_PEERS, SUDOKU_UNITS, sudokuCellName, sudokuDigit, sudokuDigits, sudokuSingle, type SudokuGame, type SudokuSolution } from './sudoku'
 import type { SudokuHint, SudokuHintResult } from './sudokuHints'
 
@@ -15,10 +15,7 @@ export function solveKillerSudoku(board: KillerSudokuBoard, maxNodes = 200_000):
   const owners = Array<number>(81).fill(-1), used = Array<number>(board.cages.length).fill(0)
   const choices = board.cages.map((cage, index) => {
     cage.cells.forEach(cell => { owners[cell] = index })
-    return Array.from({ length: ALL }, (_, i) => i + 1).filter(mask => {
-      const digits = sudokuDigits(mask)
-      return digits.length === cage.cells.length && digits.reduce((sum, value) => sum + value, 0) === cage.sum
-    })
+    return killerCombinations(cage)
   })
   if (owners.some(owner => owner < 0)) return { kind: 'none' }
   for (const [cell, value] of cells.entries()) if (value) {
@@ -131,5 +128,5 @@ export function applyKillerSudokuHint(board: KillerSudokuBoard, game: SudokuGame
   if (hint.correction) return editKillerSudoku(board, game, hint.cell, 0)
   if (sudokuSingle(hint.candidates)) return editKillerSudoku(board, game, hint.cell, Math.log2(hint.candidates) + 1)
   const notes = [...game.notes]; notes[hint.cell] = hint.candidates
-  return { cells: game.cells, notes }
+  return { ...game, notes }
 }

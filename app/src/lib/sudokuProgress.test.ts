@@ -38,3 +38,17 @@ it('keeps daily levels separate from previews and rejects stale daily fingerprin
   expect(readSudokuProgress({ ...board, id: '2026-10-21-sudoku-medium' }, true)).toBeNull()
   expect(readSudokuProgress(preview)?.elapsedMs).toBe(1000)
 })
+
+it('preserves old Killer preview progress and ignores corrupted combination marks without losing moves', async () => {
+  const { parseKillerPreviews } = await import('../domain/killerSudoku')
+  const rawKiller = (await import('../data/killer-sudoku-previews.json')).default
+  const board = parseKillerPreviews(rawKiller)[0]!, values = new Map<string, string>()
+  vi.stubGlobal('localStorage', { getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) })
+  const game = editSudoku(board, createSudokuGame(board), 0, 6)
+  storeSudokuProgress(board, game, { elapsedMs: 1234 }, 1)
+  expect(readSudokuProgress(board)?.game).toEqual(game)
+  const [key, json] = [...values][0]!, saved = JSON.parse(json)
+  values.set(key, JSON.stringify({ ...saved, excludedCageCombinations: [[999]] }))
+  expect(readSudokuProgress(board)?.game).toEqual(game)
+})

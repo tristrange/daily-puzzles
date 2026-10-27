@@ -1628,3 +1628,28 @@
   .trio-lesson .lesson-siblings { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .trio-lesson .lesson-siblings .tool-button { font-size: .8125rem; padding-inline: .25rem; }
 }
+
+/* Cage combinations remain optional and follow the selected cell. */
+.sudoku-workspace[data-killer='true'] { grid-template-areas: 'tools' 'board' 'cage-toggle' 'keys' 'mode'; }
+.sudoku-workspace[data-combinations='true'] { grid-template-areas: 'tools' 'board' 'cage-toggle' 'combinations' 'keys' 'mode'; }
+.killer-combinations-toggle { grid-area: cage-toggle; width: min(100%, 36rem); }
+.killer-combinations-toggle[aria-expanded='true'] { background: var(--accent-border); border-color: var(--accent); color: var(--accent); }
+.sudoku-cell[data-cage-selected='true'] { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+.sudoku-cell[data-cage-selected='true'][data-selected='true'] { background: color-mix(in srgb, var(--accent) 18%, var(--surface)); }
+.killer-combinations-panel { grid-area: combinations; width: min(100%, 36rem); min-width: 0; }
+.killer-combinations { border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); padding: .9rem; }
+.killer-combinations-heading { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; }
+.killer-combinations-heading h2 { margin: 0; font-size: 1rem; }
+.killer-combinations-heading span, .killer-combinations p { color: var(--text); font-size: .8125rem; line-height: 1.45; }
+.killer-combinations p { margin: .45rem 0; }
+.killer-combinations-list { display: flex; flex-wrap: wrap; gap: .4rem; margin-block: .75rem; }
+.killer-combination { min-height: 2.75rem; padding: .4rem .65rem; font-variant-numeric: tabular-nums; }
+.killer-combination[aria-pressed='true'] { text-decoration: line-through; color: var(--text); background: var(--bg-sunken); }
+@media (min-width: 48rem) {
+  .sudoku-workspace[data-killer='true'] { grid-template-areas: 'controls board'; }
+  .sudoku-workspace[data-combinations='true'] { grid-template-areas: 'controls board' 'combinations combinations'; }
+  .killer-combinations-toggle { width: 100%; margin-top: .75rem; }
+}
+@media (min-width: 70rem) {
+  .sudoku-workspace[data-combinations='true'] { grid-template-areas: 'controls board combinations'; grid-template-columns: 12rem minmax(0, 36rem) minmax(12rem, 16rem); gap: 1.25rem; }
+}
