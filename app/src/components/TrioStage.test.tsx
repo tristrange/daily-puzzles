@@ -228,3 +228,27 @@ it('leaves daily stats untouched when completing a preview', () => {
   expect(publication.offerSolve).not.toHaveBeenCalled()
   expect(readTrioProgress(board)).toBeNull()
 })
+
+it('saves auto-cleared notes as part of the placement and restores them with Undo and Redo', () => {
+  storage()
+  const board = parseTrioBoard({ id: 'trio-preview-99', givens: Array(81).fill(0), relations: [] })
+  const cells = [...board.givens], notes = Array<number>(81).fill(0)
+  cells[3] = cells[6] = 1
+  notes[1] = 7
+  storeTrioProgress(board, { cells, notes }, { elapsedMs: 5000 })
+  const render = () => { hooks.cursor = 0; return children(TrioStage({ board })) }
+  const button = (name: string) => render().find(element => element.type === 'button' && element.props['children'] === name)!
+  const playing = () => render().find(element => element.type === TrioBoard)!.props
+  const game = () => playing()['game'] as { cells: number[]; notes: number[] }
+  ;(playing()['onBegin'] as () => void)()
+  ;(playing()['onApply'] as (cell: number, action: { value: number }) => void)(0, { value: 1 })
+  ;(playing()['onEnd'] as (cancel: boolean) => void)(false)
+  expect(game().notes[1]).toBe(6)
+  expect(readTrioProgress(board)?.game.notes[1]).toBe(6)
+  ;(button('Undo').props['onClick'] as () => void)()
+  expect(game().cells[0]).toBe(0)
+  expect(game().notes[1]).toBe(7)
+  ;(button('Redo').props['onClick'] as () => void)()
+  expect(game().cells[0]).toBe(1)
+  expect(game().notes[1]).toBe(6)
+})

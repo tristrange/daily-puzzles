@@ -72,12 +72,32 @@ export function editTrio(board: TrioBoard, game: TrioGame, cell: number, action:
   if ('value' in action) {
     cells[cell] = action.value
     notes[cell] = 0
+    if (action.value !== 0 && action.value !== game.cells[cell]) {
+      const bit = 1 << (action.value - 1)
+      const restrict = (target: number, allowed: number) => { if (cells[target] === 0) notes[target]! &= allowed }
+      const row = TRIO_LINES[Math.floor(cell / 9)]!, column = TRIO_LINES[9 + cell % 9]!
+      for (const line of [row, column]) {
+        if (line.filter(target => cells[target] === action.value).length >= 3) {
+          for (const target of line) restrict(target, 7 ^ bit)
+        }
+        for (let start = 0; start < 7; start++) {
+          const group = line.slice(start, start + 3)
+          if (group.includes(cell) && group.filter(target => cells[target] === action.value).length === 2) {
+            for (const target of group) restrict(target, 7 ^ bit)
+          }
+        }
+      }
+      for (const relation of board.relations) {
+        const other = relation.first === cell ? relation.second : relation.second === cell ? relation.first : -1
+        if (other >= 0) restrict(other, relation.kind === 'same' ? bit : 7 ^ bit)
+      }
+    }
   } else {
     if (cells[cell] !== 0) return game
     const bit = 1 << (action.note - 1)
     notes[cell] = action.enabled ? notes[cell]! | bit : notes[cell]! & ~bit
   }
-  return cells[cell] === game.cells[cell] && notes[cell] === game.notes[cell] ? game : { cells, notes }
+  return cells[cell] === game.cells[cell] && notes.every((value, index) => value === game.notes[index]) ? game : { cells, notes }
 }
 
 export function trioAction(game: TrioGame, cell: number, value: TrioValue, pencil: boolean): TrioAction {

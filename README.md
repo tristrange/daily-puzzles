@@ -74,7 +74,7 @@ separate from daily games, stats and leaderboards.
 - Responsive boards, keyboard controls, Light/Dark themes and Auto following the system.
 - Saved unfinished attempts and timers that pause while the page is hidden or unfocused. Today offers Resume; Undo/Redo history belongs to the current visit. Reset asks for confirmation and restarts a separate Since reset timer. Total focused time and shown hints are kept, including through Undo and reload. Leaderboards rank by hints then total time; a parenthetical duration shows the latest attempt when known.
 - Explained logic hints with target/support highlights and optional, undoable moves. Word Paths reveals a starting cell, then additional letters on request.
-- Notes and Clear notes in Trio and Sudoku. Shown hint counts survive Undo, Reset and reload.
+- Notes and Clear notes in Trio and Sudoku. Trio removes notes directly ruled out by a placement; Undo restores them. Shown hint counts survive Undo, Reset and reload.
 - [Learn to solve](https://tristrange.github.io/daily-puzzles/#/learn) groups lessons by
   game. Queens has nine exercises combining region reservations, lines and no-touch.
   Sudoku has 21 exercises through XY-Wing and Swordfish. Star Battle has 15 exercises through
