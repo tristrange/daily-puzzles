@@ -2,10 +2,11 @@ import { expect, it } from 'vitest'
 import nuriPreviews from '../../../docs/measurements/nurikabe-preview.json'
 import nuriDaily from '../../../docs/measurements/daily-nurikabe-launch.json'
 import tentsReport from '../../../docs/measurements/tents-preview.json'
+import advanced from '../data/tents-advanced-lessons.json'
 import { GRID_LESSONS } from './gridLessons'
 import { solveNurikabe } from './nurikabeSolve'
 import { nextNurikabeDeduction } from './nurikabeHints'
-import { editTent } from './tents'
+import { editTent, tentsNeighbours, tentsLines } from './tents'
 import { findTentsHint } from './tentsHints'
 
 it('uses verified boards and teaches every sea-connection answer in the named row', () => {
@@ -42,7 +43,7 @@ it('uses verified boards and teaches every sea-connection answer in the named ro
 })
 
 it('teaches the full set of forced tents from each explained line arrangement', () => {
-  const lessons = GRID_LESSONS.filter(lesson => lesson.kind === 'tents')
+  const lessons = GRID_LESSONS.filter(lesson => lesson.kind === 'tents' && lesson.technique === 'arrangements')
   expect(lessons).toHaveLength(3)
   for (const lesson of lessons) {
     if (lesson.kind !== 'tents') throw Error('Expected Tents')
@@ -64,6 +65,38 @@ it('teaches the full set of forced tents from each explained line arrangement', 
     for (const answer of answers) {
       expect(solution).toContain(answer)
       expect(findTentsHint(lesson.board, editTent(lesson.board, lesson.state, answer, 2)).kind).toBe('contradiction')
+    }
+  }
+})
+
+it('verifies the tree and line premises of every advanced Tents exercise', () => {
+  expect(advanced).toHaveLength(6)
+  for (const source of advanced) {
+    const lesson = GRID_LESSONS.find(item => item.id === source.id)!
+    if (lesson.kind !== 'tents') throw Error('Expected Tents')
+    const { board, state } = lesson
+    const adjacent = (cell: number, diagonal = false) => tentsNeighbours(board, cell, diagonal)
+    const possible = (cell: number) => state[cell] === 0 && !board.trees.includes(cell)
+      && adjacent(cell).some(other => board.trees.includes(other))
+      && !adjacent(cell, true).some(other => state[other] === 1)
+    const solution = tentsReport.samples.find(sample => sample.id === lesson.source)!.solution
+    expect(state.every((mark, cell) => mark === 0 || (mark === 1) === solution.includes(cell))).toBe(true)
+    for (const [index, tree] of source.trees.entries()) {
+      expect(adjacent(tree).some(cell => state[cell] === 1)).toBe(false)
+      expect(adjacent(tree).filter(possible)).toEqual(source.options[index])
+    }
+    if (source.technique === 'line') {
+      const line = tentsLines(board).find(item => item.name.toLowerCase() === `${lesson.axis} ${lesson.line + 1}`)!
+      expect(line.count - line.cells.filter(cell => state[cell] === 1).length).toBe(source.trees.length)
+      expect(source.options.flat().every(cell => line.cells.includes(cell))).toBe(true)
+    }
+    for (const { cell } of lesson.answers) {
+      expect(possible(cell)).toBe(true)
+      expect(solution).not.toContain(cell)
+      if (source.technique === 'protect') {
+        expect(adjacent(cell)).not.toContain(source.trees[0])
+        expect(source.options[0]!.every(option => adjacent(cell, true).includes(option))).toBe(true)
+      } else expect(source.options.flat()).not.toContain(cell)
     }
   }
 })
