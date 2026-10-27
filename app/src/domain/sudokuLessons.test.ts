@@ -32,16 +32,16 @@ it.each(certificates.lessons)('teaches a sound $id restriction on an independent
 it('covers exactly the ordered runtime givens and independent certificates', () => {
   const ids = ['locked-candidates', 'pairs', 'hidden-pairs', 'naked-triples', 'x-wing']
   const exercises = Object.values(positions).flat()
-  expect(SUDOKU_TECHNIQUES.map(technique => technique.id)).toEqual(ids)
-  expect(SUDOKU_TECHNIQUES.map(technique => technique.exercises[0]?.id)).toEqual(ids)
+  expect(SUDOKU_TECHNIQUES.map(technique => technique.id)).toEqual([...ids, 'xy-wing', 'swordfish'])
+  expect(SUDOKU_TECHNIQUES.map(technique => technique.exercises[0]?.id)).toEqual([...ids, 'xy-wing', 'swordfish'])
   expect(SUDOKU_TECHNIQUES.every(technique => technique.exercises.length === 3)).toBe(true)
   expect(Object.keys(positions)).toEqual(ids)
-  expect(SUDOKU_LESSONS).toHaveLength(15)
-  expect(SUDOKU_LESSONS.map(lesson => lesson.id)).toEqual(exercises.map(exercise => exercise.id))
+  expect(SUDOKU_LESSONS).toHaveLength(21)
+  expect(SUDOKU_LESSONS.slice(0, 15).map(lesson => lesson.id)).toEqual(exercises.map(exercise => exercise.id))
   expect(certificates.lessons.map(lesson => lesson.id)).toEqual(exercises.map(exercise => exercise.id))
   expect(new Set(exercises.map(exercise => exercise.id)).size).toBe(15)
   expect(new Set(exercises.map(exercise => JSON.stringify(exercise.givens))).size).toBe(15)
-  expect(new Set(SUDOKU_LESSONS.map(lesson => JSON.stringify(lesson.game))).size).toBe(15)
+  expect(new Set(SUDOKU_LESSONS.map(lesson => JSON.stringify(lesson.game))).size).toBe(21)
   for (const technique of SUDOKU_TECHNIQUES) {
     expect(technique.exercises.map(exercise => exercise.guidance)).toEqual(['guided', 'practice', 'practice'])
   }

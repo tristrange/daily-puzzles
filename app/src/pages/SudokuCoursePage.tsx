@@ -9,7 +9,7 @@ export function SudokuCoursePage() {
     <Link to="/learn" className="lesson-back">← All games</Link>
     <h1 className="page-title">Sudoku techniques</h1>
     <p className="page-intro">Practice Sudoku deductions with {SUDOKU_LESSONS.length} short exercises across {SUDOKU_TECHNIQUES.length} techniques.</p>
-    <p className="status">Work through the techniques in order, from locked candidates to X-wing.</p>
+    <p className="status">Work through the techniques in order, from locked candidates through XY-Wing and Swordfish.</p>
     <p className="status">{completed.length} of {SUDOKU_LESSONS.length} completed · Saved in this browser.</p>
     <ol className="lesson-cards">
       {SUDOKU_TECHNIQUES.map((technique, index) => <li key={technique.id}>
