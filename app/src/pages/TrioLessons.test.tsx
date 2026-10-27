@@ -47,7 +47,7 @@ it('adds Trio with three techniques and twelve exercises while retaining separat
   localStorage.setItem(KEY, JSON.stringify([TRIO_LESSONS[0]!.id, TRIO_LESSONS[0]!.id, null, 'unknown']))
   localStorage.setItem('daily-puzzles:star-battle-lessons:v1', '["star-battle-fill"]')
   await mount('/learn')
-  expect([...container.querySelectorAll('.lesson-cards h2')].map(el => el.textContent)).toEqual(['Sudoku', 'Star Battle', 'Trio'])
+  expect([...container.querySelectorAll('.lesson-cards h2')].map(el => el.textContent)).toEqual(['Sudoku', 'Star Battle', 'Trio', 'Nurikabe', 'Tents'])
   await click('Learn Trio →')
   expect(container.textContent).toContain('1 of 12 completed')
   expect(container.querySelectorAll('.lesson-cards li')).toHaveLength(3)

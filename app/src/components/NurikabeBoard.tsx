@@ -7,9 +7,10 @@ interface Props {
   board: Board; game: NurikabeGame; brush: NurikabeMark; locked: boolean; conflicts: ReadonlySet<number>; instructionsId: string
   onBegin: () => void; onApply: (cell: number, value: NurikabeMark) => void; onEnd: (cancel: boolean) => void
   onUndo: () => void; onRedo: () => void; onHint: () => void; hint: NurikabeHint | null
+  inspection?: { selected: number | null; onSelect: (cell: number) => void }
 }
 
-export function NurikabeBoard({ board, game, brush, locked, conflicts, instructionsId, onBegin, onApply, onEnd, onUndo, onRedo, onHint, hint }: Props) {
+export function NurikabeBoard({ board, game, brush, locked, conflicts, instructionsId, onBegin, onApply, onEnd, onUndo, onRedo, onHint, hint, inspection }: Props) {
   const grid = useRef<HTMLDivElement>(null)
   const [focus, setFocus] = useState(0)
   const stroke = useRef<{ id: number; value: NurikabeMark; visited: Set<number> } | null>(null)
@@ -26,9 +27,13 @@ export function NurikabeBoard({ board, game, brush, locked, conflicts, instructi
   }
   const start = (event: PointerEvent<HTMLDivElement>) => {
     if ((stroke.current && event.pointerId !== stroke.current.id) || (event.pointerType === 'touch' && !event.isPrimary)) { finish(true); return }
-    if (locked || event.button !== 0 || event.ctrlKey) return
+    if (event.button !== 0 || event.ctrlKey) return
     const cell = cellAt(event.clientX, event.clientY)
     if (cell === null) return
+    if (locked) {
+      if (inspection) { setFocus(cell); inspection.onSelect(cell); grid.current?.querySelector<HTMLElement>(`[data-cell="${cell}"]`)?.focus({ preventScroll: true }) }
+      return
+    }
     event.preventDefault()
     setFocus(cell)
     grid.current?.querySelector<HTMLElement>(`[data-cell="${cell}"]`)?.focus({ preventScroll: true })
@@ -55,11 +60,11 @@ export function NurikabeBoard({ board, game, brush, locked, conflicts, instructi
       ArrowRight: row * size + Math.min(size - 1, col + 1), Home: row * size, End: row * size + size - 1 }
     const destination = navigation[event.key]
     if (destination !== undefined) {
-      event.preventDefault(); finish(true); setFocus(destination)
+      event.preventDefault(); finish(true); setFocus(destination); inspection?.onSelect(destination)
       grid.current?.querySelector<HTMLElement>(`[data-cell="${destination}"]`)?.focus()
       return
     }
-    if (locked) return
+    if (locked) { if (inspection && ['Enter', ' '].includes(event.key)) { event.preventDefault(); inspection.onSelect(focus) } return }
     const command = historyCommand(event)
     if (command) { event.preventDefault(); finish(true); if (command === 'undo') onUndo(); else onRedo(); return }
     if (event.ctrlKey || event.metaKey || event.altKey) return
@@ -83,8 +88,9 @@ export function NurikabeBoard({ board, game, brush, locked, conflicts, instructi
         return <button className="nurikabe-cell" type="button" role="gridcell" key={cell} data-cell={cell} data-mark={mark}
           data-clue={clue > 0} data-conflict={conflicts.has(cell)} tabIndex={cell === focus ? 0 : -1}
           data-hint={hint?.cell === cell ? 'target' : support ? 'support' : undefined}
+          data-selected={inspection?.selected === cell ? true : undefined} aria-selected={inspection ? inspection.selected === cell : undefined}
           aria-readonly={clue > 0 || locked} aria-label={`Row ${row + 1}, column ${col + 1}, ${clue > 0 ? `Island ${clue}, fixed land` : NURIKABE_NAMES[mark]}${conflicts.has(cell) ? ', conflict' : ''}${hint?.cell === cell ? ', hint target' : support ? ', supports hint' : ''}`}
-          onFocus={() => setFocus(cell)} onClick={event => { if (event.detail === 0) one(cell, brush) }}
+          onFocus={() => setFocus(cell)} onClick={event => { if (event.detail === 0) { if (inspection) inspection.onSelect(cell); else one(cell, brush) } }}
           onContextMenu={event => { event.preventDefault(); finish(true); one(cell, 0) }}>
           {clue > 0 ? clue : mark === 2 ? <span className="nurikabe-land-dot" aria-hidden="true" /> : null}
         </button>

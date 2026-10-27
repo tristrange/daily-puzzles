@@ -7,11 +7,15 @@ import { TRIO_LESSONS, TRIO_TECHNIQUES } from '../domain/trioLessons'
 import { readCompletedTrioLessons } from '../lib/trioLessonProgress'
 import { readCompletedLessons } from '../lib/lessonProgress'
 import { readCompletedStarBattleLessons } from '../lib/starBattleLessonProgress'
+import { readGridLessons } from '../lib/gridLessonProgress'
+import { GRID_LESSONS } from '../domain/gridLessons'
 
 export function LearnPage() {
   const [trioCompleted] = useState(readCompletedTrioLessons)
   const [sudokuCompleted] = useState(readCompletedLessons)
   const [starCompleted] = useState(readCompletedStarBattleLessons)
+  const [nurikabeCompleted] = useState(() => readGridLessons('nurikabe'))
+  const [tentsCompleted] = useState(() => readGridLessons('tents'))
   return <section className="learn-page">
     <h1 className="page-title">Learn to solve</h1>
     <p className="page-intro">Choose a game, then practice one deduction at a time.</p>
@@ -28,6 +32,12 @@ export function LearnPage() {
         <p>{TRIO_TECHNIQUES.length} techniques · {TRIO_LESSONS.length} exercises. Combine quotas and no-three, propagate linked restrictions, then follow candidate chains.</p>
         <p className="lesson-progress">{trioCompleted.length} of {TRIO_LESSONS.length} completed</p>
         <Link className="tool-button primary" to="/learn/trio">Learn Trio →</Link></li>
+      <li><h2>Nurikabe</h2><p>Practice finding the sea cells that keep separate areas connected.</p>
+        <p className="lesson-progress">{nurikabeCompleted.length} of {GRID_LESSONS.filter(lesson => lesson.kind === 'nurikabe').length} completed</p>
+        <Link className="tool-button primary" to="/learn/nurikabe">Learn Nurikabe →</Link></li>
+      <li><h2>Tents</h2><p>Compare possible line arrangements to find a forced tent.</p>
+        <p className="lesson-progress">{tentsCompleted.length} of {GRID_LESSONS.filter(lesson => lesson.kind === 'tents').length} completed</p>
+        <Link className="tool-button primary" to="/learn/tents">Learn Tents →</Link></li>
     </ul>
     <p className="status">Completion saves in this browser, separately from daily stats, streaks and leaderboards.</p>
   </section>

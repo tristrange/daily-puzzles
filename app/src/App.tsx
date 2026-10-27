@@ -19,6 +19,8 @@ const StarBattleCoursePage = lazy(() => import('./pages/StarBattleCoursePage').t
 const StarBattleLessonPage = lazy(() => import('./pages/StarBattleLessonPage').then(module => ({ default: module.StarBattleLessonPage })))
 const TrioCoursePage = lazy(() => import('./pages/TrioCoursePage').then(module => ({ default: module.TrioCoursePage })))
 const TrioLessonPage = lazy(() => import('./pages/TrioLessonPage').then(module => ({ default: module.TrioLessonPage })))
+const GridCoursePage = lazy(() => import('./pages/GridLessonPages').then(module => ({ default: module.GridCoursePage })))
+const GridLessonPage = lazy(() => import('./pages/GridLessonPages').then(module => ({ default: module.GridLessonPage })))
 const TrioPreviewPage = lazy(() => import('./pages/TrioPreviewPage').then((module) => ({ default: module.TrioPreviewPage })))
 const NurikabePreviewPage = lazy(() => import('./pages/NurikabePreviewPage').then((module) => ({ default: module.NurikabePreviewPage })))
 const TentsPreviewPage = lazy(() => import('./pages/TentsPreviewPage').then((module) => ({ default: module.TentsPreviewPage })))
@@ -49,6 +51,10 @@ function App() {
             <Route path="learn" element={<LearnPage />} />
             <Route path="learn/trio" element={<TrioCoursePage />} />
             <Route path="learn/trio/:lessonId" element={<TrioLessonPage />} />
+            <Route path="learn/nurikabe" element={<GridCoursePage kind="nurikabe" />} />
+            <Route path="learn/nurikabe/:lessonId" element={<GridLessonPage kind="nurikabe" />} />
+            <Route path="learn/tents" element={<GridCoursePage kind="tents" />} />
+            <Route path="learn/tents/:lessonId" element={<GridLessonPage kind="tents" />} />
             <Route path="learn/sudoku" element={<SudokuCoursePage />} />
             <Route path="learn/star-battle" element={<StarBattleCoursePage />} />
             <Route path="learn/star-battle/:lessonId" element={<StarBattleLessonPage />} />

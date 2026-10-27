@@ -40,8 +40,8 @@ it('shows only available games and preserves context through both course links',
   localStorage.setItem('daily-puzzles:sudoku-lessons:v1', JSON.stringify(['pairs', 'pairs', null, 'unknown']))
   localStorage.setItem(KEY, JSON.stringify(['star-battle-fill', 'star-battle-fill', 'unknown', null]))
   await mount()
-  expect(container.querySelectorAll('.lesson-cards li')).toHaveLength(3)
-  expect([...container.querySelectorAll('.lesson-cards h2')].map(el => el.textContent)).toEqual(['Sudoku', 'Star Battle', 'Trio'])
+  expect(container.querySelectorAll('.lesson-cards li')).toHaveLength(5)
+  expect([...container.querySelectorAll('.lesson-cards h2')].map(el => el.textContent)).toEqual(['Sudoku', 'Star Battle', 'Trio', 'Nurikabe', 'Tents'])
   const cards = [...container.querySelectorAll('.lesson-cards > li')]
   expect(cards.find(card => card.querySelector('h2')?.textContent === 'Sudoku')?.textContent).toContain('1 of 15 completed')
   expect(cards.find(card => card.querySelector('h2')?.textContent === 'Star Battle')?.textContent).toContain('1 of 15 completed')
