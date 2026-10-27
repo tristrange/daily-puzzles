@@ -18,9 +18,9 @@ it('parses daily Sudoku geometry and rejects identity, givens and version mismat
 
 it('publishes three separately identified levels starting on activation day, never an unsized slot', () => {
   expect(isPuzzleId('2026-10-21-sudoku')).toBe(false)
-  expect(puzzleIdsForDay('2026-10-20').filter(id => id.includes('sudoku'))).toEqual([])
+  expect(puzzleIdsForDay('2026-10-20').filter(id => puzzleTypeOf(id) === 'sudoku')).toEqual([])
   const ids = ['easy', 'medium', 'hard'].map(level => `2026-10-21-sudoku-${level}`)
-  expect(puzzleIdsForDay('2026-10-21').filter(id => id.includes('sudoku'))).toEqual(ids)
+  expect(puzzleIdsForDay('2026-10-21').filter(id => puzzleTypeOf(id) === 'sudoku')).toEqual(ids)
   for (const id of ids) expect(puzzleTypeOf(id)).toBe('sudoku')
   expect(puzzleIdFor('2026-10-21', 'sudoku')).toBe(ids[0])
   expect(puzzleIdFor('2026-10-21', 'sudoku', undefined, 'hard')).toBe(ids[2])

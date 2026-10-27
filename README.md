@@ -34,7 +34,7 @@ marker means definite track with an undecided shape and counts toward clues.
 
 Easy, Medium and Hard publish separately each day from October 21, 2026.
 The [three fixed preview boards](https://tristrange.github.io/daily-puzzles/#/preview/sudoku?board=1)
-remain available for practice. Killer Sudoku also publishes three levels daily from October 27, 2026. Cage digits must add to the displayed total without repeating. Its explained hints and combination tool help with cage deductions; [practice boards](https://tristrange.github.io/daily-puzzles/#/preview/killer-sudoku) save separately. Killer levels use the number of hidden-single deductions in a deterministic solve as an initial difficulty guide; players may find different routes or experience difficulty differently.
+remain available for practice. Killer Sudoku also publishes three levels daily, with archive puzzles from September 26, 2026. Cage digits must add to the displayed total without repeating. Its explained hints and combination tool help with cage deductions; [practice boards](https://tristrange.github.io/daily-puzzles/#/preview/killer-sudoku) save separately. Killer levels use the number of hidden-single deductions in a deterministic solve as an initial difficulty guide; players may find different routes or experience difficulty differently.
 
 Select a cell, then use the keypad or keyboard. Notes mark candidates; entering
 a number removes it from peer notes in its row, column and box. Clear notes,

@@ -576,9 +576,12 @@ class TestGenerateId:
         assert verify.main(["--dir", str(tmp_path)]) == 0
 
 
-#: The suffix of every family the nightly is allowed to write, in registry order.
+#: Every daily slot, including games that publish several variants.
 PUBLISHED: tuple[str, ...] = tuple(
-    book.id_suffix for book in rulebooks() if book.published and book.daily_ids(TEST_TODAY)
+    identifier
+    for book in rulebooks()
+    if book.published
+    for identifier in book.daily_ids(TEST_TODAY)
 )
 
 

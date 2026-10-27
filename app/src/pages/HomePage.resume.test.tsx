@@ -116,13 +116,14 @@ it('ignores stale saves and blocked storage instead of advertising a broken resu
     localStorage.setItem(key, JSON.stringify({ ...JSON.parse(localStorage.getItem(key)!), board: 'old board' }))
   }
   await render()
-  expect(container.querySelectorAll('.game-card')).toHaveLength(PUZZLE_TYPES.length - 1)
+  expect(container.querySelectorAll('.game-card')).toHaveLength(PUZZLE_TYPES.length)
   expect(container.textContent).not.toContain('Resume')
+  expect(container.querySelector('a[href*="/preview/"]')).toBeNull()
   vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw Error('Storage disabled') })
   await act(async () => root.unmount())
   root = createRoot(container)
   await render()
-  expect(container.querySelectorAll('.game-card')).toHaveLength(PUZZLE_TYPES.length - 1)
+  expect(container.querySelectorAll('.game-card')).toHaveLength(PUZZLE_TYPES.length)
   expect(container.textContent).not.toContain('Resume')
 })
 
