@@ -8,10 +8,13 @@ import { readGridLessons, completeGridLesson } from '../lib/gridLessonProgress'
 
 type Kind = GridLesson['kind']
 const names = { nurikabe: 'Nurikabe', tents: 'Tents' } as const
-const titles = { nurikabe: 'Keep the sea connected', tents: 'Compare line arrangements' } as const
-const introductions = {
-  nurikabe: 'The sea must form one connected area. Look for a cell that every possible route between two sea areas must cross.',
-  tents: 'List the possible tent arrangements in a row or column. A cell used in every arrangement must contain a tent.',
+const techniques = {
+  nurikabe: [{ id: 'sea', title: 'Keep the sea connected', intro: 'The sea must form one connected area. Look for a cell that every possible route between two sea areas must cross.' }],
+  tents: [
+    { id: 'protect', title: 'Protect a tree’s options', intro: 'A tent cannot touch another tent. Look for a placement that would block every remaining tent position for a tree.' },
+    { id: 'line', title: 'Reserve space for trees', intro: 'Trees whose remaining tent positions all lie in one line reserve space in that line.' },
+    { id: 'arrangements', title: 'Compare line arrangements', intro: 'List the possible tent arrangements in a row or column. A cell used in every arrangement must contain a tent.' },
+  ],
 } as const
 const noop = () => {}
 const noConflicts = new Set<number>()
@@ -23,13 +26,13 @@ export function GridCoursePage({ kind }: { kind: Kind }) {
     <Link to="/learn" className="lesson-back">← All games</Link>
     <h1 className="page-title">{names[kind]} techniques</h1>
     <p className="status">{completed.length} of {lessons.length} completed · Saved in this browser.</p>
-    <ol className="lesson-cards"><li><p className="eyebrow">Technique 1 · Look ahead</p>
-      <h2>{titles[kind]}</h2><p>{introductions[kind]}</p>
-      <div className="lesson-exercise-links">{lessons.map(lesson => <Link key={lesson.id} className="tool-button" to={`/learn/${kind}/${lesson.id}`}>
+    <ol className="lesson-cards">{techniques[kind].map((technique, index) => <li key={technique.id}><p className="eyebrow">Technique {index + 1} · Look ahead</p>
+      <h2>{technique.title}</h2><p>{technique.intro}</p>
+      <div className="lesson-exercise-links">{lessons.filter(lesson => lesson.technique === technique.id).map(lesson => <Link key={lesson.id} className="tool-button" to={`/learn/${kind}/${lesson.id}`}>
         <span>Exercise {lesson.exerciseNumber} · {lesson.guidance === 'guided' ? 'Guided' : 'Practice'}</span>
         <span className={completed.includes(lesson.id) ? 'lesson-completed' : undefined}>{completed.includes(lesson.id) ? 'Completed' : '→'}</span>
       </Link>)}</div>
-    </li></ol>
+    </li>)}</ol>
     <p className="status">The board is prepared for one deduction. Lesson progress is separate from daily games.</p>
   </section>
 }
@@ -48,7 +51,8 @@ function GridExercise({ lesson }: { lesson: GridLesson }) {
   const [completed, setCompleted] = useState(() => readGridLessons(lesson.kind))
   const heading = useRef<HTMLHeadingElement>(null)
   useEffect(() => { window.scrollTo({ top: 0 }); heading.current?.focus({ preventScroll: true }) }, [])
-  const siblings = GRID_LESSONS.filter(item => item.kind === lesson.kind), next = siblings[lesson.exerciseNumber]
+  const technique = techniques[lesson.kind].find(item => item.id === lesson.technique)!
+  const siblings = GRID_LESSONS.filter(item => item.kind === lesson.kind && item.technique === lesson.technique), next = siblings[lesson.exerciseNumber]
   const explained = result === 'correct' || result === 'revealed'
   const answer = lesson.answers.find(item => item.cell === selected) ?? lesson.answers[0]!
   const showPattern = lesson.guidance === 'guided' || clue || explained
@@ -56,10 +60,10 @@ function GridExercise({ lesson }: { lesson: GridLesson }) {
   const scope = `${lesson.axis} ${lesson.line + 1}`
   const prompt = lesson.kind === 'nurikabe'
     ? `Find a cell in ${scope} that must be sea to keep the sea connected.`
-    : `Find a tent in ${scope} by comparing its possible arrangements.`
+    : lesson.prompt ?? `Find a tent in ${scope} by comparing its possible arrangements.`
   const explanation = lesson.kind === 'nurikabe'
     ? 'The highlighted sea cells must connect. If this cell were land, every possible route between them would be cut off, so it must be sea.'
-    : `${lesson.reason}\n${lesson.axis === 'row' ? 'Column' : 'Row'} ${(lesson.axis === 'row' ? answer.cell % lesson.board.size : Math.floor(answer.cell / lesson.board.size)) + 1} is used in every arrangement, so place a tent.`
+    : lesson.value === 2 ? lesson.reason : `${lesson.reason}\n${lesson.axis === 'row' ? 'Column' : 'Row'} ${(lesson.axis === 'row' ? answer.cell % lesson.board.size : Math.floor(answer.cell / lesson.board.size)) + 1} is used in every arrangement, so place a tent.`
   const check = () => {
     if (selected === null) return
     if (!lesson.answers.some(item => item.cell === selected)) { setResult('incorrect'); return }
@@ -70,20 +74,20 @@ function GridExercise({ lesson }: { lesson: GridLesson }) {
   const inspection = { selected, onSelect: (cell: number) => { if (!explained) { setSelected(cell); setResult('idle') } } }
   return <section className="lesson-page grid-lesson">
     <header className="lesson-heading"><p className="eyebrow">{names[lesson.kind]} · Exercise {lesson.exerciseNumber} of {siblings.length} · {lesson.guidance === 'guided' ? 'Guided' : 'Practice'}{completed.includes(lesson.id) && ' · Completed'}</p>
-      <Link className="lesson-back" to={`/learn/${lesson.kind}`}>← All techniques</Link><h1 className="page-title" ref={heading} tabIndex={-1}>{titles[lesson.kind]}</h1></header>
-    <nav className="lesson-siblings" aria-label={`${titles[lesson.kind]} exercises`}>{siblings.map(item => <Link key={item.id} className="tool-button" to={`/learn/${lesson.kind}/${item.id}`} aria-current={item.id === lesson.id ? 'page' : undefined}>Exercise {item.exerciseNumber}</Link>)}</nav>
+      <Link className="lesson-back" to={`/learn/${lesson.kind}`}>← All techniques</Link><h1 className="page-title" ref={heading} tabIndex={-1}>{technique.title}</h1></header>
+    <nav className="lesson-siblings" aria-label={`${technique.title} exercises`}>{siblings.map(item => <Link key={item.id} className="tool-button" to={`/learn/${lesson.kind}/${item.id}`} aria-current={item.id === lesson.id ? 'page' : undefined}>Exercise {item.exerciseNumber}</Link>)}</nav>
     <p className="grid-lesson-mobile-prompt" aria-hidden="true">{prompt}</p>
     <div className="lesson-workspace"><div className="lesson-board">
       {lesson.kind === 'nurikabe'
         ? <NurikabeBoard board={lesson.board} game={explained ? lesson.state.map((mark, cell) => cell === answer.cell ? 1 : mark) : lesson.state} brush={1} locked conflicts={noConflicts} instructionsId="grid-lesson-guide" inspection={inspection}
             hint={showPattern ? { kind: 'deduction', value: 1, rule: 'sea-connection', source: lesson.state, cell: answer.cell, support: answer.support, reason: explanation } : null}
             onBegin={noop} onApply={noop} onEnd={noop} onUndo={noop} onRedo={noop} onHint={noop} />
-        : <TentsBoard board={lesson.board} game={explained ? lesson.state.map((mark, cell) => cell === answer.cell ? 1 : mark) : lesson.state} brush={1} locked conflicts={noConflicts} instructionsId="grid-lesson-guide" inspection={inspection}
-            hint={showPattern ? { value: 1, cell: answer.cell, support: answer.support, reason: explanation } : null}
+        : <TentsBoard board={lesson.board} game={explained ? lesson.state.map((mark, cell) => cell === answer.cell ? lesson.value : mark) : lesson.state} brush={lesson.value} locked conflicts={noConflicts} instructionsId="grid-lesson-guide" inspection={inspection}
+            hint={showPattern ? { value: lesson.value, cell: answer.cell, support: answer.support, reason: explanation } : null}
             onBegin={noop} onApply={noop} onEnd={noop} onUndo={noop} onRedo={noop} onHint={noop} />}
       <p id="grid-lesson-guide" className="lesson-board-guide">Marks are prepared. Select a cell by touch, click or arrow keys. Blue outline: your selection.{showPattern && ' Green outline: example. Dashed outlines: supporting cells.'}</p>
     </div><section className="lesson-task" aria-labelledby="grid-lesson-idea">
-      <h2 id="grid-lesson-idea">The idea</h2><p>{introductions[lesson.kind]}</p>
+      <h2 id="grid-lesson-idea">The idea</h2><p>{technique.intro}</p>
       {showPattern ? <p className="lesson-cue">Follow the highlighted cells to the example at {location(answer.cell)}.</p>
         : <button type="button" className="tool-button" onClick={() => setClue(true)}>Show a clue</button>}
       <fieldset disabled={explained}><legend>{prompt}</legend><p>Select a cell on the board, then check your answer.</p>

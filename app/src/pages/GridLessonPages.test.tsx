@@ -39,3 +39,21 @@ it.each(['nurikabe', 'tents'] as const)('checks an unassisted %s lesson and keep
   expect(JSON.parse(localStorage.getItem(`daily-puzzles:${kind}-lessons:v1`) ?? 'null')).toEqual([lesson.id])
   expect(localStorage.getItem('daily-progress-sentinel')).toBe('unchanged')
 })
+
+it.each(['protect', 'line'])('checks a %s exercise and preserves earlier Tents completion', async technique => {
+  const lesson = GRID_LESSONS.find(item => item.kind === 'tents' && item.technique === technique && item.guidance === 'practice')!
+  localStorage.setItem('daily-puzzles:tents-lessons:v1', JSON.stringify(['tents-line-arrangements-1']))
+  await act(async () => root.render(<MemoryRouter initialEntries={[`/learn/tents/${lesson.id}`]}><Routes>
+    <Route path="/learn/tents/:lessonId" element={<GridLessonPage kind="tents" />} />
+    <Route path="/learn/tents" element={<GridCoursePage kind="tents" />} />
+  </Routes></MemoryRouter>))
+  expect(container.querySelectorAll('[data-hint], [data-selected]')).toHaveLength(0)
+  expect(container.querySelectorAll('.lesson-siblings a')).toHaveLength(3)
+  const answer = lesson.answers[0]!.cell
+  await act(async () => container.querySelector<HTMLButtonElement>(`[data-cell="${answer}"]`)!.click())
+  const check = [...container.querySelectorAll('button')].find(button => button.textContent === 'Check answer')!
+  await act(async () => check.click())
+  expect(container.querySelector(`[data-cell="${answer}"]`)?.getAttribute('data-mark')).toBe('2')
+  expect(container.querySelector('[role="status"]')?.textContent).toContain('Lesson complete')
+  expect(JSON.parse(localStorage.getItem('daily-puzzles:tents-lessons:v1')!)).toEqual(['tents-line-arrangements-1', lesson.id])
+})
