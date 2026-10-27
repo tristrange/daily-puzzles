@@ -76,9 +76,9 @@ separate from daily games, stats and leaderboards.
 - Explained logic hints with target/support highlights and optional, undoable moves. Word Paths reveals a starting cell, then additional letters on request.
 - Notes and Clear notes in Trio and Sudoku. Shown hint counts survive Undo, Reset and reload.
 - [Learn to solve](https://tristrange.github.io/daily-puzzles/#/learn) groups lessons by
-  game. Sudoku has 15 exercises through X-wing. Star Battle has 12 exercises through
-  group reservations. Trio has 12 exercises combining quotas, no-three restrictions,
-  links and candidate chains. Each technique starts with a guided example, followed
+  game. Sudoku has 15 exercises through X-wing. Star Battle has 15 exercises through
+  linked reservations and forced stars. Trio has 12 exercises combining quotas,
+  no-three restrictions, links and candidate chains. Each technique starts with a guided example, followed
   by two or three practice positions. Trio practice asks you to find a cell in a
   named row or column and remove a candidate. Valid alternative cells count;
   highlighting is an optional clue. Explanations are available without a timer.

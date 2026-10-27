@@ -445,6 +445,7 @@
   }
 
   &[data-hint='support'] { outline: 1px dashed var(--mark-ink, var(--accent)); outline-offset: -3px; }
+  &[data-selected='true'] { box-shadow: inset 0 0 0 3px var(--accent); }
   &[data-hint='target'] {
     outline-color: var(--hint);
     outline-width: 3px;
@@ -1110,6 +1111,7 @@
 .lesson-task .lesson-feedback { min-height: 1.5em; color: var(--hint); }
 .lesson-explanation { border-top: 1px solid var(--border); padding-top: 1rem; }
 .lesson-heading h1:focus { outline: none; }
+.star-chain-mobile-prompt { display: none; }
 .lesson-page .tool-button:focus-visible, .lesson-cards .tool-button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 @media (min-width: 56rem) {
   .lesson-workspace { grid-template-columns: minmax(0, 1.3fr) minmax(19rem, 1fr); gap: 2rem; }
@@ -1117,6 +1119,9 @@
 }
 @media (max-width: 360px) {
   .site-header nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 55.999rem) {
+  .star-chain-mobile-prompt { display: block; color: var(--text-h); font-weight: 650; margin: 0 0 .75rem; }
 }
 
 .stats-filter { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }

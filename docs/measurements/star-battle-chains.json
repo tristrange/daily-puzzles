@@ -1,0 +1,85 @@
+{
+  "lessons": [
+    {
+      "id": "star-battle-chains",
+      "source_sha256": "d324623aa8cd69014a0ed820c39c13568c7bb3e124c6d202de1e6cd225867725",
+      "unique_solution": [
+        4,
+        6,
+        9,
+        11,
+        22,
+        26,
+        27,
+        29,
+        41,
+        43,
+        46,
+        48,
+        60,
+        62,
+        64,
+        66,
+        77,
+        79
+      ],
+      "answers": [
+        46,
+        48
+      ]
+    },
+    {
+      "id": "star-battle-chains-2",
+      "source_sha256": "c9586db13e87c3a17fdf82d556021725c52e0ec283f8c299e9640fc5cea14cba",
+      "unique_solution": [
+        4,
+        6,
+        8,
+        10,
+        20,
+        22,
+        24,
+        26,
+        37,
+        39,
+        41,
+        43,
+        53,
+        55,
+        57,
+        59
+      ],
+      "answers": [
+        43,
+        59
+      ]
+    },
+    {
+      "id": "star-battle-chains-3",
+      "source_sha256": "3212291f2f3fc00cfc13c7d2b26cd0c3a6a43f6de5d59c6c79980836c416fe70",
+      "unique_solution": [
+        5,
+        7,
+        10,
+        12,
+        24,
+        26,
+        28,
+        30,
+        41,
+        43,
+        45,
+        47,
+        58,
+        62,
+        63,
+        65,
+        76,
+        78
+      ],
+      "answers": [
+        62
+      ]
+    }
+  ]
+}
