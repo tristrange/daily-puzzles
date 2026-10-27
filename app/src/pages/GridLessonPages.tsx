@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { NurikabeBoard } from '../components/NurikabeBoard'
 import { TentsBoard } from '../components/TentsBoard'
+import { TracksBoard } from '../components/TracksBoard'
 import '../components/Nurikabe.css'
 import { GRID_LESSONS, type GridLesson } from '../domain/gridLessons'
 import { readGridLessons, completeGridLesson } from '../lib/gridLessonProgress'
 
 type Kind = GridLesson['kind']
-const names = { nurikabe: 'Nurikabe', tents: 'Tents' } as const
+const names = { nurikabe: 'Nurikabe', tents: 'Tents', 'train-tracks': 'Train Tracks' } as const
 const techniques = {
   nurikabe: [
     { id: 'sea', title: 'Keep the sea connected', intro: 'The sea must form one connected area. Look for a cell that every possible route between two sea areas must cross.' },
@@ -18,6 +19,11 @@ const techniques = {
     { id: 'protect', title: 'Protect a tree’s options', intro: 'A tent cannot touch another tent. Look for a placement that would block every remaining tent position for a tree.' },
     { id: 'line', title: 'Reserve space for trees', intro: 'Trees whose remaining tent positions all lie in one line reserve space in that line.' },
     { id: 'arrangements', title: 'Compare line arrangements', intro: 'List the possible tent arrangements in a row or column. A cell used in every arrangement must contain a tent.' },
+  ],
+  'train-tracks': [
+    { id: 'corridor', title: 'Find a necessary route', intro: 'Two known tracks must belong to one route. Look for cells that every possible connection between them has to use.' },
+    { id: 'counts', title: 'Combine counts and connections', intro: 'A full row or column closes its remaining cells. Use that restriction to find where the route must pass.' },
+    { id: 'loop', title: 'Avoid closing a loop', intro: 'Two open ends of the same track segment cannot join each other before the route reaches both edge ends.' },
   ],
 } as const
 const noop = () => {}
@@ -60,12 +66,13 @@ function GridExercise({ lesson }: { lesson: GridLesson }) {
   const explained = result === 'correct' || result === 'revealed'
   const answer = lesson.answers.find(item => item.cell === selected) ?? lesson.answers[0]!
   const showPattern = lesson.guidance === 'guided' || clue || explained
-  const location = (cell: number) => `row ${Math.floor(cell / lesson.board.size) + 1}, column ${cell % lesson.board.size + 1}`
+  const width = lesson.kind === 'train-tracks' ? lesson.board.width : lesson.board.size
+  const location = (cell: number) => `row ${Math.floor(cell / width) + 1}, column ${cell % width + 1}`
   const scope = `${lesson.axis} ${lesson.line + 1}`
-  const prompt = lesson.kind === 'nurikabe'
+  const prompt = lesson.kind === 'train-tracks' ? lesson.prompt : lesson.kind === 'nurikabe'
     ? lesson.prompt ?? `Find a cell in ${scope} that must be sea to keep the sea connected.`
     : lesson.prompt ?? `Find a tent in ${scope} by comparing its possible arrangements.`
-  const explanation = lesson.kind === 'nurikabe'
+  const explanation = lesson.kind === 'train-tracks' ? lesson.reason : lesson.kind === 'nurikabe'
     ? lesson.reason ?? 'The highlighted sea cells must connect. If this cell were land, every possible route between them would be cut off, so it must be sea.'
     : lesson.value === 2 ? lesson.reason : `${lesson.reason}\n${lesson.axis === 'row' ? 'Column' : 'Row'} ${(lesson.axis === 'row' ? answer.cell % lesson.board.size : Math.floor(answer.cell / lesson.board.size)) + 1} is used in every arrangement, so place a tent.`
   const check = () => {
@@ -82,7 +89,13 @@ function GridExercise({ lesson }: { lesson: GridLesson }) {
     <nav className="lesson-siblings" aria-label={`${technique.title} exercises`}>{siblings.map(item => <Link key={item.id} className="tool-button" to={`/learn/${lesson.kind}/${item.id}`} aria-current={item.id === lesson.id ? 'page' : undefined}>Exercise {item.exerciseNumber}</Link>)}</nav>
     <p className="grid-lesson-mobile-prompt" aria-hidden="true">{prompt}</p>
     <div className="lesson-workspace"><div className="lesson-board">
-      {lesson.kind === 'nurikabe'
+      {lesson.kind === 'train-tracks'
+        ? <TracksBoard grid={lesson.board} game={explained ? { ...lesson.state, pieces: lesson.state.pieces.map((piece, cell) => cell === answer.cell ? (lesson.answers.find(item => item.cell === answer.cell)?.brush ?? 0) : piece) } : lesson.state}
+            brush={0} locked conflicts={[]} hintId="grid-lesson-guide" inspection={inspection}
+            hint={showPattern ? { cell: answer.cell, brush: lesson.answers.find(item => item.cell === answer.cell)?.brush ?? 0, source: lesson.state,
+              steps: [{ cell: answer.cell, before: 0, after: 0, rule: 'connection', group: answer.support, reason: explanation, dependencies: [] }] } : null}
+            onRequestHint={noop} onBrush={noop} onClear={noop} onUndo={noop} onRedo={noop} onGestureStart={noop} onPaint={noop} onGestureEnd={noop} />
+        : lesson.kind === 'nurikabe'
         ? <NurikabeBoard board={lesson.board} game={explained ? lesson.state.map((mark, cell) => cell === answer.cell ? lesson.value : mark) : lesson.state} brush={lesson.value} locked conflicts={noConflicts} instructionsId="grid-lesson-guide" inspection={inspection}
             hint={showPattern ? { kind: 'deduction', value: lesson.value, rule: lesson.value === 1 ? 'sea-connection' : 'island-expansion', source: lesson.state, cell: answer.cell, support: answer.support, reason: explanation } : null}
             onBegin={noop} onApply={noop} onEnd={noop} onUndo={noop} onRedo={noop} onHint={noop} />

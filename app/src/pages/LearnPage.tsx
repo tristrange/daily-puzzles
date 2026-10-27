@@ -16,6 +16,7 @@ export function LearnPage() {
   const [starCompleted] = useState(readCompletedStarBattleLessons)
   const [nurikabeCompleted] = useState(() => readGridLessons('nurikabe'))
   const [tentsCompleted] = useState(() => readGridLessons('tents'))
+  const [tracksCompleted] = useState(() => readGridLessons('train-tracks'))
   return <section className="learn-page">
     <h1 className="page-title">Learn to solve</h1>
     <p className="page-intro">Choose a game, then practice one deduction at a time.</p>
@@ -38,6 +39,9 @@ export function LearnPage() {
       <li><h2>Tents</h2><p>Protect tree options, reserve line space and compare possible arrangements.</p>
         <p className="lesson-progress">{tentsCompleted.length} of {GRID_LESSONS.filter(lesson => lesson.kind === 'tents').length} completed</p>
         <Link className="tool-button primary" to="/learn/tents">Learn Tents →</Link></li>
+      <li><h2>Train Tracks</h2><p>Connect separated track, combine line counts and avoid closing loops.</p>
+        <p className="lesson-progress">{tracksCompleted.length} of {GRID_LESSONS.filter(lesson => lesson.kind === 'train-tracks').length} completed</p>
+        <Link className="tool-button primary" to="/learn/train-tracks">Learn Train Tracks →</Link></li>
     </ul>
     <p className="status">Completion saves in this browser, separately from daily stats, streaks and leaderboards.</p>
   </section>

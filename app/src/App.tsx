@@ -55,6 +55,8 @@ function App() {
             <Route path="learn/nurikabe/:lessonId" element={<GridLessonPage kind="nurikabe" />} />
             <Route path="learn/tents" element={<GridCoursePage kind="tents" />} />
             <Route path="learn/tents/:lessonId" element={<GridLessonPage kind="tents" />} />
+            <Route path="learn/train-tracks" element={<GridCoursePage kind="train-tracks" />} />
+            <Route path="learn/train-tracks/:lessonId" element={<GridLessonPage kind="train-tracks" />} />
             <Route path="learn/sudoku" element={<SudokuCoursePage />} />
             <Route path="learn/star-battle" element={<StarBattleCoursePage />} />
             <Route path="learn/star-battle/:lessonId" element={<StarBattleLessonPage />} />

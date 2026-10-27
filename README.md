@@ -80,7 +80,8 @@ separate from daily games, stats and leaderboards.
   linked reservations and forced stars. Trio has 12 exercises combining quotas,
   no-three restrictions, links and candidate chains. Tents has nine exercises on
   tree options, reserved line space and line arrangements. Nurikabe has nine on sea
-  connectivity, island shapes and connecting isolated land. Each technique starts with a guided example, followed
+  connectivity, island shapes and connecting isolated land. Train Tracks has nine exercises on
+  route connections, line counts and avoiding loops. Each technique starts with a guided example, followed
   by two or three practice positions. Trio practice asks you to find a cell in a
   named row or column and remove a candidate. Valid alternative cells count;
   highlighting is an optional clue. Explanations are available without a timer.
