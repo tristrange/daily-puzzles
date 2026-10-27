@@ -9,7 +9,7 @@ import certificate from '../../../docs/measurements/killer-sudoku-preview.json'
 import { parseKillerPreviews } from '../domain/killerSudoku'
 import { storeSudokuProgress } from '../lib/sudokuProgress'
 
-it('plays and saves a Killer Sudoku preview without exposing standard Sudoku hints', async () => {
+it('plays and saves a Killer Sudoku preview with explained cage hints', async () => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   localStorage.clear()
   const container = document.createElement('div'); document.body.append(container)
@@ -18,8 +18,8 @@ it('plays and saves a Killer Sudoku preview without exposing standard Sudoku hin
     await act(async () => root.render(<MemoryRouter><KillerSudokuPreviewPage /></MemoryRouter>))
     expect(container.querySelector('[aria-label="9 by 9 Killer Sudoku puzzle"]')).not.toBeNull()
     expect(container.querySelectorAll('.killer-sum').length).toBeGreaterThan(0)
-    expect(container.querySelector('[aria-label="Get an explained hint"]')).toBeNull()
-    expect(container.textContent).toContain('Hints are not available yet')
+    expect(container.querySelector('[aria-label="Get an explained hint"]')).not.toBeNull()
+    expect(container.textContent).toContain('Hints explain cage deductions')
     const enter = container.querySelector<HTMLButtonElement>('[aria-label="Enter 6"]')!
     await act(async () => enter.click())
     expect(container.querySelector('[data-cell="0"]')?.getAttribute('aria-label')).toContain('6')
@@ -46,7 +46,7 @@ it('completes a board only after the cages and Sudoku rules are satisfied', asyn
     await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="Enter 6"]')!.click())
     expect(container.textContent).toContain('Solved in')
     expect(localStorage.getItem('daily-puzzles.sudoku-preview.v1.killer-preview-1')).toBeNull()
-    expect(container.querySelector('[aria-label="Get an explained hint"]')).toBeNull()
+    expect(container.querySelector<HTMLButtonElement>('[aria-label="Get an explained hint"]')?.disabled).toBe(true)
   } finally {
     await act(async () => root.unmount()); container.remove(); localStorage.clear(); vi.unstubAllGlobals()
   }
@@ -61,4 +61,62 @@ it('keeps a filled Sudoku that violates cage totals as an unfinished attempt', a
     expect(storeSudokuProgress(board, { cells, notes: Array<number>(81).fill(0) }, { elapsedMs: 2000 }, 0)).toBe(true)
     expect(readSudokuProgress(board)?.game.cells).toEqual(cells)
   } finally { localStorage.clear() }
+})
+
+it('explains a cage hint, applies it only when asked, and restores the move with Undo', async () => {
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  HTMLElement.prototype.scrollIntoView = vi.fn()
+  localStorage.clear()
+  const board = parseKillerPreviews(raw)[0]!
+  const { readSudokuProgress } = await import('../lib/sudokuProgress')
+  const container = document.createElement('div'); document.body.append(container)
+  const root = createRoot(container)
+  const click = async (name: string) => {
+    const button = [...container.querySelectorAll<HTMLButtonElement>('button')].find(item => item.textContent === name || item.getAttribute('aria-label') === name)!
+    await act(async () => button.click())
+  }
+  try {
+    await act(async () => root.render(<MemoryRouter><KillerSudokuPreviewPage /></MemoryRouter>))
+    await click('Get an explained hint')
+    expect(container.querySelector('.hint-panel')?.textContent).toContain('cage')
+    expect(container.querySelector('[data-hint="target"]')).not.toBeNull()
+    expect(readSudokuProgress(board)?.hints).toBe(1)
+    const before = readSudokuProgress(board)!.game
+    await click('Apply move')
+    expect(readSudokuProgress(board)!.game).not.toEqual(before)
+    await click('Undo')
+    expect(readSudokuProgress(board)!.game).toEqual(before)
+    expect(readSudokuProgress(board)!.hints).toBe(1)
+  } finally {
+    await act(async () => root.unmount()); container.remove(); localStorage.clear(); vi.unstubAllGlobals()
+  }
+})
+
+it('warns before revealing a wrong entry, and can undo the correction', async () => {
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  HTMLElement.prototype.scrollIntoView = vi.fn()
+  localStorage.clear()
+  const board = parseKillerPreviews(raw)[0]!
+  const { readSudokuProgress } = await import('../lib/sudokuProgress')
+  const container = document.createElement('div'); document.body.append(container)
+  const root = createRoot(container)
+  const click = async (name: string) => {
+    const button = [...container.querySelectorAll<HTMLButtonElement>('button')].find(item => item.textContent === name || item.getAttribute('aria-label') === name)!
+    await act(async () => button.click())
+  }
+  try {
+    await act(async () => root.render(<MemoryRouter><KillerSudokuPreviewPage /></MemoryRouter>))
+    await click('Enter 7'); await click('Get an explained hint')
+    expect(container.querySelector('.hint-panel')?.textContent).toContain('Check your entries')
+    expect(readSudokuProgress(board)?.hints).toBe(0)
+    await click('Show the mistake')
+    expect(readSudokuProgress(board)?.hints).toBe(1)
+    expect(container.querySelector('.hint-panel')?.textContent).toContain('Clear this entry')
+    await click('Apply move')
+    expect(readSudokuProgress(board)?.game.cells[0]).toBe(0)
+    await click('Undo')
+    expect(readSudokuProgress(board)?.game.cells[0]).toBe(7)
+  } finally {
+    await act(async () => root.unmount()); container.remove(); localStorage.clear(); vi.unstubAllGlobals()
+  }
 })

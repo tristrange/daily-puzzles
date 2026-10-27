@@ -33,7 +33,7 @@ marker means definite track with an undecided shape and counts toward clues.
 
 Easy, Medium and Hard publish separately each day from October 21, 2026.
 The [three fixed preview boards](https://tristrange.github.io/daily-puzzles/#/preview/sudoku?board=1)
-remain available for practice. [Killer Sudoku](https://tristrange.github.io/daily-puzzles/#/preview/killer-sudoku) is available as a separate three-board preview: cage digits must add to the displayed total without repeating. It saves separately and does not yet offer hints.
+remain available for practice. [Killer Sudoku](https://tristrange.github.io/daily-puzzles/#/preview/killer-sudoku) is available as a separate three-board preview: cage digits must add to the displayed total without repeating. It saves separately and offers explained cage hints.
 
 Select a cell, then use the keypad or keyboard. Notes mark candidates; entering
 a number removes it from peer notes in its row, column and box. Clear notes,
