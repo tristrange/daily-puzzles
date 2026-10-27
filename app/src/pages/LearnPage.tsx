@@ -9,6 +9,8 @@ import { readCompletedLessons } from '../lib/lessonProgress'
 import { readCompletedStarBattleLessons } from '../lib/starBattleLessonProgress'
 import { readGridLessons } from '../lib/gridLessonProgress'
 import { GRID_LESSONS } from '../domain/gridLessons'
+import { QUEENS_LESSONS } from '../domain/queensLessons'
+import { readQueensLessons } from '../lib/queensLessonProgress'
 
 export function LearnPage() {
   const [trioCompleted] = useState(readCompletedTrioLessons)
@@ -17,10 +19,14 @@ export function LearnPage() {
   const [nurikabeCompleted] = useState(() => readGridLessons('nurikabe'))
   const [tentsCompleted] = useState(() => readGridLessons('tents'))
   const [tracksCompleted] = useState(() => readGridLessons('train-tracks'))
+  const [queensCompleted] = useState(readQueensLessons)
   return <section className="learn-page">
     <h1 className="page-title">Learn to solve</h1>
     <p className="page-intro">Choose a game, then practice one deduction at a time.</p>
     <ul className="lesson-cards">
+      <li><h2>Queens</h2><p>Combine region reservations, lines and the no-touch rule.</p>
+        <p className="lesson-progress">{queensCompleted.length} of {QUEENS_LESSONS.length} completed</p>
+        <Link className="tool-button primary" to="/learn/queens">Learn Queens →</Link></li>
       <li><h2>Sudoku</h2>
         <p>{SUDOKU_TECHNIQUES.length} techniques · {SUDOKU_LESSONS.length} exercises. Start with locked candidates, then work through pairs, triples and X-wing.</p>
         <p className="lesson-progress">{sudokuCompleted.length} of {SUDOKU_LESSONS.length} completed</p>
