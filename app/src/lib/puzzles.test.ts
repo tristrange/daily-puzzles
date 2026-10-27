@@ -202,13 +202,13 @@ describe('listPublishedPuzzles', () => {
       return spaShellResponse()
     }
     await listPublishedPuzzles('2026-10-03', probeFetcher)
-    // This window has three legacy families plus eight Trio and eight Tents days since September 26.
+    // Every day in this window has three legacy families plus Trio and Tents.
     // Missing companion files still need a probe before being reported absent.
-    expect(probes).toHaveLength(ARCHIVE_WINDOW_DAYS * 3 + 16)
+    expect(probes).toHaveLength(ARCHIVE_WINDOW_DAYS * 5)
     expect(probes).toContain('2026-10-03.json')
     expect(probes).toContain('2026-10-03-star.json')
-    expect(probes).toContain('2026-09-26-trio.json')
-    expect(probes).not.toContain('2026-09-25-trio.json')
+    expect(probes).toContain('2026-09-27-trio.json')
+    expect(probes).not.toContain('2026-09-26-trio.json')
   })
 
   it('probes an older window on demand without re-probing the first', async () => {
@@ -216,15 +216,17 @@ describe('listPublishedPuzzles', () => {
     const olderFetcher = async (url: string) => {
       const id = url.split('/').at(-1)?.replace('.json', '') ?? ''
       probes.push(id)
-      return id === '2026-09-03' ? jsonResponse(puzzleBody(id)) : spaShellResponse()
+      return id === '2026-09-26' ? jsonResponse(puzzleBody(id)) : spaShellResponse()
     }
 
     const found = await listPublishedPuzzles('2026-10-03', olderFetcher, ARCHIVE_WINDOW_DAYS)
 
-    expect(found).toEqual([{ id: '2026-09-03', type: 'queens', difficulty: null, width: 3, height: 3 }])
-    expect(probes).toContain('2026-09-03')
+    expect(found).toEqual([{ id: '2026-09-26', type: 'queens', difficulty: null, width: 3, height: 3 }])
+    expect(probes).toContain('2026-09-26')
     expect(probes).not.toContain('2026-10-03')
-    expect(probes).not.toContain('2026-09-04')
+    expect(probes).not.toContain('2026-09-27')
+    expect(probes).toContain('2026-09-20')
+    expect(probes).not.toContain('2026-09-19')
   })
 
   it('lists both puzzles of a day, the Queens one first', async () => {
@@ -257,7 +259,7 @@ describe('listPublishedPuzzles', () => {
       return response
     }
     const found = await listPublishedPuzzles('2026-10-03', countingFetcher)
-    expect(answeredOk).toBe(ARCHIVE_WINDOW_DAYS * 3 + 16)
+    expect(answeredOk).toBe(ARCHIVE_WINDOW_DAYS * 5)
     expect(found).toEqual(queens)
   })
 

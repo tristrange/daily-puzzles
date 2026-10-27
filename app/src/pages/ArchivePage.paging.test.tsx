@@ -15,7 +15,7 @@ vi.mock('../lib/puzzles', async original => ({
 vi.mock('../lib/useToday', () => ({ useToday: () => '2026-10-20' }))
 
 const latest: PublishedPuzzle = { id: '2026-10-19', type: 'queens', difficulty: null }
-const older: PublishedPuzzle = { id: '2026-09-15', type: 'queens', difficulty: null }
+const older: PublishedPuzzle = { id: '2026-10-13', type: 'queens', difficulty: null }
 
 let container: HTMLDivElement
 let root: Root
@@ -46,7 +46,7 @@ async function click(label: string) {
   })
 }
 
-it('loads older 30-day windows on demand and can return to the latest', async () => {
+it('loads older seven-day windows on demand and can return to the latest', async () => {
   await act(async () => {
     root.render(<MemoryRouter initialEntries={['/archive']}><ArchivePage /></MemoryRouter>)
     await Promise.resolve()
@@ -56,8 +56,8 @@ it('loads older 30-day windows on demand and can return to the latest', async ()
   expect(archive.list).toHaveBeenNthCalledWith(1, '2026-10-20', expect.any(Function), 0)
 
   await click('Older')
-  expect(archive.list).toHaveBeenLastCalledWith('2026-10-20', expect.any(Function), 30)
-  expect(container.querySelector('a[href="/archive/2026-09-15?page=1"]')).not.toBeNull()
+  expect(archive.list).toHaveBeenLastCalledWith('2026-10-20', expect.any(Function), 7)
+  expect(container.querySelector('a[href="/archive/2026-10-13?page=1"]')).not.toBeNull()
   expect(container.querySelector('a[href="/archive/2026-10-19"]')).toBeNull()
   expect(container.querySelector('a[aria-label="Show newer puzzles"]')).not.toBeNull()
 

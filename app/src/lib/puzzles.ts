@@ -12,7 +12,7 @@ import { PUZZLE_DOWNLOAD_FAILED } from './offline'
 import { isPuzzleId, previousPuzzleIds, puzzleIdFor, puzzleIdsForDay } from '../domain/dates'
 import { parsePuzzle, type Puzzle } from '../domain/puzzle'
 
-export const ARCHIVE_WINDOW_DAYS = 30
+export const ARCHIVE_WINDOW_DAYS = 7
 
 export type Fetcher = (url: string) => Promise<Response>
 
@@ -148,7 +148,7 @@ export type PublishedPuzzle = {
  * selects from parsed types after discovery and reuses the results on switching.
  *
  * `olderDays` shifts the window back in whole days, so page two probes days
- * 30–59 without re-probing the first page. It has to be a non-negative safe
+ * 7–13 without re-probing the first page. It has to be a non-negative safe
  * integer; malformed values fall back to the latest window.
  */
 export async function listPublishedPuzzles(
