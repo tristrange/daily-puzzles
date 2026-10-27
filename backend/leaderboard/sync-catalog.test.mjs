@@ -156,3 +156,18 @@ test('imports Nurikabe as separate 7x7 metadata and rejects a mismatched size or
   await writeFile(file, JSON.stringify({ ...raw, type: 'tents' }))
   await assert.rejects(readCatalog(dir))
 })
+
+test('imports all Killer Sudoku levels separately and rejects incorrect metadata', async () => {
+  const dir = await directory()
+  for (const level of ['easy', 'medium', 'hard']) {
+    const id = `2026-10-27-killer-sudoku-${level}`
+    await cp(new URL(`../../app/public/puzzles/${id}.json`, import.meta.url), join(dir, `${id}.json`))
+  }
+  assert.deepEqual(await readCatalog(dir), ['easy', 'hard', 'medium'].map(level => ({
+    puzzle_id:`2026-10-27-killer-sudoku-${level}`, puzzle_type:'killer-sudoku', puzzle_day:'2026-10-27',
+    width:9, height:9, size_label:level[0].toUpperCase() + level.slice(1),
+  })))
+  const id = '2026-10-27-killer-sudoku-easy'
+  await writeFile(join(dir, `${id}.json`), JSON.stringify({id, type:'killer-sudoku', board:{size:9, level:'hard'}}))
+  await assert.rejects(readCatalog(dir))
+})

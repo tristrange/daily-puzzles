@@ -13,7 +13,7 @@
 
 import type { Board, PuzzleType } from '../domain/board'
 import { PUZZLE_TYPE_LABEL } from '../domain/games'
-import { sudokuVariantOf } from '../domain/sudokuLevels'
+import { sudokuVariantOf, killerVariantOf } from '../domain/sudokuLevels'
 import { trackVariantOf } from '../domain/trackSizes'
 import { formatTime } from '../domain/game'
 import { PIECE_GLYPHS, TrackGrid } from '../domain/tracks'
@@ -143,7 +143,7 @@ export function buildSolutionShareText(
 
 function headerLines(result: ShareResult): [string, string] {
   const hints = result.hints === 0 ? 'no hints' : `${result.hints} hint${result.hints === 1 ? '' : 's'}`
-  const variant = result.puzzleType === 'train-tracks' ? trackVariantOf(result.puzzleId) : result.puzzleType === 'sudoku' ? sudokuVariantOf(result.puzzleId) : null
+  const variant = result.puzzleType === 'train-tracks' ? trackVariantOf(result.puzzleId) : result.puzzleType === 'killer-sudoku' ? killerVariantOf(result.puzzleId) : result.puzzleType === 'sudoku' ? sudokuVariantOf(result.puzzleId) : null
   return [
     `Daily Puzzles — ${PUZZLE_TYPE_LABEL[result.puzzleType]}${result.previewBoard === undefined ? '' : ` preview · Board ${result.previewBoard}`}${variant ? ` ${variant.label}` : ''} ${result.width}×${result.height}`,
     `${formatTime(result.elapsedMs)} · ${hints}`,

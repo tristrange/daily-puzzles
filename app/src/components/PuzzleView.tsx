@@ -26,7 +26,7 @@ import { hintCellName } from '../domain/hints'
 import { checkedHint, type CheckedHint } from '../domain/checkedHints'
 import type { Board } from '../domain/board'
 import { isMarksPuzzle, isTracksPuzzle, isTrioPuzzle, isTentsPuzzle, isSudokuPuzzle, isNurikabePuzzle, type Puzzle } from '../domain/puzzle'
-import { sudokuVariantOf } from '../domain/sudokuLevels'
+import { sudokuVariantOf, killerVariantOf } from '../domain/sudokuLevels'
 import { trackVariantOf } from '../domain/trackSizes'
 import { TracksStage } from './TracksStage'
 import { TrioStage } from './TrioStage'
@@ -513,7 +513,7 @@ export function PuzzleView({
         <p className="eyebrow">{formatPuzzleLabel(id, timeZone)}</p>
         <h1>{PUZZLE_TYPE_LABEL[state.puzzle.puzzleType]}</h1>
         <p className="puzzle-detail">
-          {isSudokuPuzzle(state.puzzle) && <>{sudokuVariantOf(id)!.label} · </>}
+          {isSudokuPuzzle(state.puzzle) && <>{(killerVariantOf(id) ?? sudokuVariantOf(id))!.label} · </>}
           {isTracksPuzzle(state.puzzle) && trackVariantOf(id) && <>{trackVariantOf(id)!.label} · </>}
           {state.puzzle.board.width}&times;{state.puzzle.board.height} grid
           {state.puzzle.difficulty != null && <> · {DIFFICULTY_LABEL[state.puzzle.difficulty]}</>}

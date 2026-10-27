@@ -1,6 +1,6 @@
 # Daily Puzzles
 
-Eight daily puzzle games, built as a portfolio and learning
+Nine daily puzzle games, built as a portfolio and learning
 project. A Python engine generates and verifies original boards; a React and
 TypeScript app plays them in the browser. The site is hosted on GitHub Pages.
 
@@ -24,6 +24,7 @@ Supabase backend.
 | **Tents** | 10×10, 18 tents | Pair trees with orthogonally adjacent tents, match row/column counts and keep tents apart, including diagonally. Each tree and tent must have a one-to-one pairing. |
 | **Nurikabe** | 7×7 | Shade one connected sea around numbered islands. Each island has its clue's area; no 2×2 sea squares. |
 | **Sudoku** | Easy, Medium and Hard, all 9×9 | Fill each row, column and 3×3 box with 1–9 exactly once. All three levels publish every day. |
+| **Killer Sudoku** | Easy, Medium and Hard, all 9×9 | Follow Sudoku rules and match each cage total without repeating a digit in the cage. |
 
 Train Tracks sizes describe dimensions, not difficulty. New boards use every row
 and column; older 7×7 boards remain playable with their original rules. The `?`
@@ -33,7 +34,7 @@ marker means definite track with an undecided shape and counts toward clues.
 
 Easy, Medium and Hard publish separately each day from October 21, 2026.
 The [three fixed preview boards](https://tristrange.github.io/daily-puzzles/#/preview/sudoku?board=1)
-remain available for practice. [Killer Sudoku](https://tristrange.github.io/daily-puzzles/#/preview/killer-sudoku) is available as a separate three-board preview: cage digits must add to the displayed total without repeating. It saves separately and offers explained cage hints and a tool for marking impossible cage combinations. The intended daily launch is one Easy, Medium and Hard puzzle each day; preview boards have no difficulty rating.
+remain available for practice. Killer Sudoku also publishes three levels daily from October 27, 2026. Cage digits must add to the displayed total without repeating. Its explained hints and combination tool help with cage deductions; [practice boards](https://tristrange.github.io/daily-puzzles/#/preview/killer-sudoku) save separately. Killer levels use the number of hidden-single deductions in a deterministic solve as an initial difficulty guide; players may find different routes or experience difficulty differently.
 
 Select a cell, then use the keypad or keyboard. Notes mark candidates; entering
 a number removes it from peer notes in its row, column and box. Clear notes,

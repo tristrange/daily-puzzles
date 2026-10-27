@@ -54,10 +54,11 @@ def expected_pattern(manifest: dict[str, Any]) -> str:
     suffixes = [
         entry["suffix"]
         for entry in manifest["types"]
-        if entry["suffix"] != "" and entry["type"] != "sudoku"
+        if entry["suffix"] != "" and entry["type"] not in ("sudoku", "killer-sudoku")
     ]
     suffixes += [v["suffix"] for v in manifest["trainTracks"]["variants"]]
     suffixes += [v["suffix"] for v in manifest["sudoku"]["variants"]]
+    suffixes += [v["suffix"] for v in manifest["killerSudoku"]["variants"]]
     # Longest first so a suffix that is a prefix of another still matches, which
     # `test_conformance_ids` asserts is not a case we have but should not allow.
     # Joined with `|`: concatenating would turn `-star` and `-tracks` into a single

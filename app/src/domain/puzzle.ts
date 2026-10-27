@@ -15,8 +15,9 @@ import { TrackGrid, TrackGridError } from './tracks'
 import { WordGrid, WordGridError } from './wordPaths'
 import { TrioGrid, TrioGridError } from './trio'
 import { TentsGrid, TentsGridError } from './tents'
+import { KillerSudokuGrid } from './killerSudoku'
 import { SudokuGrid, SudokuGridError } from './sudoku'
-import { sudokuVariantOf } from './sudokuLevels'
+import { killerVariantOf, sudokuVariantOf } from './sudokuLevels'
 import { NurikabeGrid, NurikabeGridError } from './nurikabe'
 
 export class PuzzleParseError extends Error {
@@ -147,6 +148,7 @@ export function parsePuzzle(data: unknown): Puzzle {
   let board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid
   try {
     board = typeRaw === 'nurikabe' ? new NurikabeGrid(String(record['id']), boardRecord['size'], boardRecord['clues'])
+      : typeRaw === 'killer-sudoku' ? new KillerSudokuGrid(String(record['id']), boardRecord['level'], boardRecord['givens'], boardRecord['cages'])
       : typeRaw === 'sudoku' ? new SudokuGrid(String(record['id']), boardRecord['level'], boardRecord['givens'])
       : typeRaw === 'tents' ? new TentsGrid(String(record['id']), boardRecord['size'], boardRecord['trees'], boardRecord['rowClues'], boardRecord['colClues'])
       : typeRaw === 'trio' ? new TrioGrid(String(record['id']), boardRecord['givens'], boardRecord['relations'])
@@ -160,6 +162,11 @@ export function parsePuzzle(data: unknown): Puzzle {
   }
 
   const id = String(record['id'])
+  const killerVariant = killerVariantOf(id)
+  if ((typeRaw === 'killer-sudoku' || killerVariant !== null) &&
+    (typeRaw !== 'killer-sudoku' || puzzleTypeOf(id) !== typeRaw || killerVariant?.name !== boardRecord['level'])) {
+    throw new PuzzleParseError('Killer Sudoku requires a canonical level id matching its board level')
+  }
   const sudokuVariant = sudokuVariantOf(id)
   if ((typeRaw === 'sudoku' || sudokuVariant !== null) &&
     (typeRaw !== 'sudoku' || !isPuzzleId(id) || sudokuVariant?.name !== boardRecord['level'])) {

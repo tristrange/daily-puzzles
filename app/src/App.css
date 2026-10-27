@@ -921,6 +921,11 @@
   --motif-wash: light-dark(#f8edf1, #402b33);
 }
 
+.game-killer-sudoku {
+  --motif-color: light-dark(#8d5b2f, #e8bd82);
+  --motif-wash: light-dark(#f8f0e5, #423225);
+}
+
 .game-motif {
   display: grid;
   place-items: center;

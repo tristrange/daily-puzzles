@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { PUZZLE_TYPES } from '../domain/board'
 import { formatPuzzleLabel } from '../domain/dates'
 import { DEFAULT_PUZZLE_TYPE, PUZZLE_TYPE_LABEL, PUZZLE_TYPE_PUBLISHED } from '../domain/games'
-import { SUDOKU_VARIANTS, sudokuVariantOf } from '../domain/sudokuLevels'
+import { SUDOKU_VARIANTS, sudokuVariantOf, killerVariantOf } from '../domain/sudokuLevels'
 import { TRACK_VARIANTS, trackVariantOf } from '../domain/trackSizes'
 import { formatTime } from '../domain/game'
 import {
@@ -48,7 +48,7 @@ function StatsSummary({ stats, label }: { stats: Stats; label: string }) {
 export function StatsPage() {
   const [params, setParams] = useSearchParams()
   const type = PUZZLE_TYPES.find(type => type === params.get('game') && PUZZLE_TYPE_PUBLISHED[type]) ?? DEFAULT_PUZZLE_TYPE
-  const variants = type === 'sudoku' ? SUDOKU_VARIANTS : type === 'train-tracks'
+  const variants = (type === 'sudoku' || type === 'killer-sudoku') ? SUDOKU_VARIANTS : type === 'train-tracks'
     ? [...TRACK_VARIANTS, { name: 'original', label: 'Original' }] : []
   const variant = variants.find(variant => variant.name === params.get('variant')) ?? null
   const gameLabel = `${PUZZLE_TYPE_LABEL[type]}${variant ? ` ${variant.label}` : ''}`
@@ -65,7 +65,7 @@ export function StatsPage() {
   const todayId = useToday(timeZone)
   const stats = summarise(records, todayId)
   const gameRecords = records.filter(record => record.puzzleType === type && (
-    variant === null || (type === 'sudoku' ? sudokuVariantOf(record.id)?.name
+    variant === null || ((type === 'sudoku' || type === 'killer-sudoku') ? (killerVariantOf(record.id) ?? sudokuVariantOf(record.id))?.name
       : trackVariantOf(record.id)?.name ?? 'original') === variant.name
   ))
   const gameStats = summarise(gameRecords, todayId)
@@ -153,11 +153,11 @@ export function StatsPage() {
               ))}
             </nav>
             {variants.length > 0 && <label className="stats-filter">
-              {type === 'sudoku' ? 'Level' : 'Size'}
+              {(type === 'sudoku' || type === 'killer-sudoku') ? 'Level' : 'Size'}
               <select value={variant?.name ?? ''} onChange={event => setParams(
                 event.target.value ? { game: type, variant: event.target.value } : { game: type }
               )}>
-                <option value="">{type === 'sudoku' ? 'All levels' : 'All sizes'}</option>
+                <option value="">{(type === 'sudoku' || type === 'killer-sudoku') ? 'All levels' : 'All sizes'}</option>
                 {variants.map(variant => <option key={variant.name} value={variant.name}>{variant.label}</option>)}
               </select>
             </label>}
@@ -174,7 +174,7 @@ export function StatsPage() {
                     <Link to={`/archive/${record.id}`}>{formatPuzzleLabel(record.id, timeZone)}</Link>{' '}
                     <span className="stat-detail">
                       {PUZZLE_TYPE_LABEL[record.puzzleType ?? 'queens']}
-                      {record.puzzleType === 'sudoku' && sudokuVariantOf(record.id) && ` ${sudokuVariantOf(record.id)!.label}`}
+                      {(record.puzzleType === 'sudoku' || record.puzzleType === 'killer-sudoku') && (killerVariantOf(record.id) ?? sudokuVariantOf(record.id)) && ` ${(killerVariantOf(record.id) ?? sudokuVariantOf(record.id))!.label}`}
                       {record.puzzleType === 'train-tracks' && trackVariantOf(record.id) && ` ${trackVariantOf(record.id)!.label}`}
                       {' · '}{formatTime(record.elapsedMs)}
                       {record.hints > 0 && ` · ${record.hints} hint${record.hints === 1 ? '' : 's'}`}

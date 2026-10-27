@@ -18,7 +18,8 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError
 
 from .board import BoardError, JsonValue, Puzzle, PuzzleType, require_int
-from .rulebook import rulebook_for, split_puzzle_id
+from .killer_sudoku import KillerGrid
+from .rulebook import killer_variant, rulebook_for, split_puzzle_id
 from .sudoku import SudokuGrid
 from .sudoku_levels import sudoku_variant
 from .track_sizes import track_variant
@@ -141,7 +142,16 @@ def parse_puzzle(data: object) -> Puzzle:
                 f"{puzzle_type.value} requires a canonical date"
                 f"{rulebook_for(puzzle_type).id_suffix} id"
             )
-    sudoku = sudoku_variant(identifier)
+    killer = killer_variant(identifier)
+    if (puzzle_type is PuzzleType.KILLER_SUDOKU or killer is not None) and (
+        split_puzzle_id(identifier) is None
+        or puzzle_type is not PuzzleType.KILLER_SUDOKU
+        or killer is None
+        or not isinstance(board, KillerGrid)
+        or board.level != killer
+    ):
+        raise PuzzleParseError("killer sudoku id must match its level")
+    sudoku = sudoku_variant(identifier) if killer is None else None
     if (puzzle_type is PuzzleType.SUDOKU or sudoku is not None) and (
         split_puzzle_id(identifier) is None
         or puzzle_type is not PuzzleType.SUDOKU
