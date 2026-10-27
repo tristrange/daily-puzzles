@@ -66,6 +66,7 @@ export interface TracksBoardProps {
   /** What is wrong, if anything. A cell can break several rules at once. */
   conflicts: readonly TrackConflict[]
   locked?: boolean
+  inspection?: { selected: number | null; onSelect: (cell: number) => void }
   /** What a click puts in a cell. Held here so a drag can carry it. */
   brush: TrackBrush
   /** One cell changed, and counts as one move in the history. */
@@ -124,6 +125,7 @@ export function TracksBoard({
   onRequestHint,
   conflicts,
   locked = false,
+  inspection,
   brush,
   onBrush,
   onClear,
@@ -190,7 +192,11 @@ export function TracksBoard({
     // *primary* press with the modifier set, not as button 2. Without this the
     // board paints the brush and then the contextmenu handler erases it, and the
     // cell ends up as the erase left it — which looks like a broken right-click.
-    if (locked || event.button !== 0 || event.ctrlKey) return
+    if (event.button !== 0 || event.ctrlKey) return
+    if (locked) {
+      if (inspection) { setFocusIndex(cell); inspection.onSelect(cell); boardRef.current?.querySelector<HTMLElement>(`[data-cell="${cell}"]`)?.focus({ preventScroll: true }) }
+      return
+    }
     stroke.current = { pointerId: event.pointerId, firstCell: cell, lastCell: cell, dragged: false }
     onGestureStart()
     onPaint(cell, brush)
@@ -212,7 +218,18 @@ export function TracksBoard({
   }
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (locked) return
+    if (locked) {
+      if (!inspection) return
+      const { row, col } = grid.coords(focusIndex)
+      const navigation: Record<string, number> = { ArrowUp: Math.max(0, row - 1) * grid.width + col,
+        ArrowDown: Math.min(grid.height - 1, row + 1) * grid.width + col,
+        ArrowLeft: row * grid.width + Math.max(0, col - 1), ArrowRight: row * grid.width + Math.min(grid.width - 1, col + 1),
+        Home: row * grid.width, End: row * grid.width + grid.width - 1 }
+      const destination = navigation[event.key]
+      if (destination !== undefined) { event.preventDefault(); setFocusIndex(destination); inspection.onSelect(destination) }
+      else if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); inspection.onSelect(focusIndex) }
+      return
+    }
     const command = historyCommand(event)
     if (command) {
       event.preventDefault()
@@ -336,11 +353,14 @@ export function TracksBoard({
         role="gridcell"
         data-cell={cell}
         data-hint={hint?.cell === cell ? 'target' : support.has(cell) ? 'support' : undefined}
+        data-selected={inspection?.selected === cell ? true : undefined}
+        aria-selected={inspection ? inspection.selected === cell : undefined}
         aria-label={labelFor(cell)}
         className={classNameFor(cell)}
         tabIndex={cell === focusIndex ? 0 : -1}
         onPointerDown={(event) => beginStroke(event, cell)}
         onPointerMove={continueStroke}
+        onClick={(event) => { if (inspection && event.detail === 0) inspection.onSelect(cell) }}
         onContextMenu={(event) => {
           event.preventDefault()
           if (locked) return
