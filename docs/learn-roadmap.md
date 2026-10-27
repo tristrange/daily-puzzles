@@ -14,8 +14,8 @@ order after play-testing the preceding course.
 | 1 | Trio | Combine quotas and no-three restrictions, carry deductions through links, and chain candidate eliminations. |
 | 2 | Star Battle | Strengthen the current course around group reservations and interacting capacities. The simpler exercises remain introductions, not the advanced endpoint. |
 | 3 | Nurikabe | Island reachability, forced expansion and sea connectivity, with several constraints contributing to a deduction. |
-| 4 | Train Tracks | Combine line counts, track connectivity and restrictions on branches or closed loops. |
-| 5 | Tents | Overlapping tree possibilities, matching constraints and line arrangements. |
+| 4 | Tents | Overlapping tree possibilities, matching constraints and line arrangements. |
+| 5 | Train Tracks | Combine line counts, track connectivity and restrictions on branches or closed loops. |
 | 6 | Queens | Region and line reservations that require looking across several groups. |
 | 7 | Sudoku | Extend the current course beyond X-wing. Preserve existing exercise IDs and completion. |
 
