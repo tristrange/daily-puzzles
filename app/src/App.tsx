@@ -21,6 +21,8 @@ const TrioCoursePage = lazy(() => import('./pages/TrioCoursePage').then(module =
 const TrioLessonPage = lazy(() => import('./pages/TrioLessonPage').then(module => ({ default: module.TrioLessonPage })))
 const GridCoursePage = lazy(() => import('./pages/GridLessonPages').then(module => ({ default: module.GridCoursePage })))
 const GridLessonPage = lazy(() => import('./pages/GridLessonPages').then(module => ({ default: module.GridLessonPage })))
+const QueensCoursePage = lazy(() => import('./pages/QueensLessonPages').then(module => ({ default: module.QueensCoursePage })))
+const QueensLessonPage = lazy(() => import('./pages/QueensLessonPages').then(module => ({ default: module.QueensLessonPage })))
 const TrioPreviewPage = lazy(() => import('./pages/TrioPreviewPage').then((module) => ({ default: module.TrioPreviewPage })))
 const NurikabePreviewPage = lazy(() => import('./pages/NurikabePreviewPage').then((module) => ({ default: module.NurikabePreviewPage })))
 const TentsPreviewPage = lazy(() => import('./pages/TentsPreviewPage').then((module) => ({ default: module.TentsPreviewPage })))
@@ -49,6 +51,8 @@ function App() {
             <Route path="preview/sudoku" element={<SudokuPreviewPage />} />
             <Route path="stats" element={<StatsPage />} />
             <Route path="learn" element={<LearnPage />} />
+            <Route path="learn/queens" element={<QueensCoursePage />} />
+            <Route path="learn/queens/:lessonId" element={<QueensLessonPage />} />
             <Route path="learn/trio" element={<TrioCoursePage />} />
             <Route path="learn/trio/:lessonId" element={<TrioLessonPage />} />
             <Route path="learn/nurikabe" element={<GridCoursePage kind="nurikabe" />} />
