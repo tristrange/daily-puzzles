@@ -78,8 +78,8 @@ separate from daily games, stats and leaderboards.
 - [Learn to solve](https://tristrange.github.io/daily-puzzles/#/learn) groups lessons by
   game. Sudoku has 15 exercises through X-wing. Star Battle has 15 exercises through
   linked reservations and forced stars. Trio has 12 exercises combining quotas,
-  no-three restrictions, links and candidate chains. Tents has nine exercises on
-  tree options, reserved line space and line arrangements. Nurikabe has nine on sea
+  no-three restrictions, links and candidate chains. Tents has 15 exercises on
+  tree options, line arrangements and competing tree pairings. Nurikabe has nine on sea
   connectivity, island shapes and connecting isolated land. Train Tracks has nine exercises on
   route connections, line counts and avoiding loops. Each technique starts with a guided example, followed
   by two or three practice positions. Trio practice asks you to find a cell in a

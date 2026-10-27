@@ -59,6 +59,24 @@ it.each(['protect', 'line'])('checks a %s exercise and preserves earlier Tents c
   expect(JSON.parse(localStorage.getItem('daily-puzzles:tents-lessons:v1')!)).toEqual(['tents-line-arrangements-1', lesson.id])
 })
 
+it.each(['matching', 'matching-count'])('practices %s without revealing the answer or losing prior completion', async technique => {
+  const lesson = GRID_LESSONS.find(item => item.kind === 'tents' && item.technique === technique && item.guidance === 'practice')!
+  if (lesson.kind !== 'tents') throw Error('Expected Tents')
+  localStorage.setItem('daily-puzzles:tents-lessons:v1', JSON.stringify(['tents-line-arrangements-1']))
+  await act(async () => root.render(<MemoryRouter initialEntries={[`/learn/tents/${lesson.id}`]}><Routes>
+    <Route path="/learn/tents/:lessonId" element={<GridLessonPage kind="tents" />} />
+  </Routes></MemoryRouter>))
+  expect(container.querySelectorAll('[data-hint], [data-selected]')).toHaveLength(0)
+  const answer = lesson.answers.at(-1)!.cell
+  await act(async () => container.querySelector<HTMLButtonElement>(`[data-cell="${answer}"]`)!.click())
+  const check = [...container.querySelectorAll('button')].find(button => button.textContent === 'Check answer')!
+  await act(async () => check.click())
+  expect(container.querySelector(`[data-cell="${answer}"]`)?.getAttribute('data-mark')).toBe(String(lesson.value))
+  expect(container.querySelector('[role="status"]')?.textContent).toContain('Lesson complete')
+  expect(container.querySelector('.lesson-explanation')?.textContent).toContain('remaining set')
+  expect(JSON.parse(localStorage.getItem('daily-puzzles:tents-lessons:v1')!)).toEqual(['tents-line-arrangements-1', lesson.id])
+})
+
 it.each(['island-shapes', 'connect-land'])('checks a %s exercise and preserves earlier Nurikabe completion', async technique => {
   const lesson = GRID_LESSONS.find(item => item.kind === 'nurikabe' && item.technique === technique && item.guidance === 'practice')!
   localStorage.setItem('daily-puzzles:nurikabe-lessons:v1', JSON.stringify(['nurikabe-sea-connection-1']))
