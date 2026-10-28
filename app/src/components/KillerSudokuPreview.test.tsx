@@ -168,3 +168,74 @@ it('saves crossed-out combinations per cage and restores them with Undo and Redo
     container.remove(); localStorage.clear(); vi.unstubAllGlobals()
   }
 })
+
+it('shows combinations only when every selected cell belongs to the same cage', async () => {
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  localStorage.clear()
+  const container = document.createElement('div'); document.body.append(container)
+  const root = createRoot(container)
+  const select = async (index: number, shiftKey = false) => {
+    const cell = container.querySelector<HTMLButtonElement>(`[data-cell="${index}"]`)!
+    await act(async () => cell.dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey })))
+  }
+  try {
+    await act(async () => root.render(<MemoryRouter><KillerSudokuPreviewPage /></MemoryRouter>))
+    const toggle = [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Combinations')!
+    await act(async () => toggle.click())
+    await select(9, true) // Same 13 cage as cell 0.
+    expect(container.querySelector('.killer-combinations')?.textContent).toContain('13 cage')
+    expect(container.querySelector('[aria-label="Cross out 4 + 9"]')).not.toBeNull()
+    await select(1, true) // A cell in the 8 cage.
+    expect(container.querySelector('.killer-combinations')?.textContent).toContain('Multiple cages selected')
+    expect(container.querySelector('.killer-combinations')?.textContent).toContain('Select cells from one cage')
+    expect(container.querySelector('[aria-label="Cross out 4 + 9"]')).toBeNull()
+    expect(container.querySelectorAll('[data-cage-selected="true"]')).toHaveLength(0)
+    expect(container.querySelector(`#${toggle.getAttribute('aria-controls')}`)).not.toBeNull()
+    await select(1)
+    expect(container.querySelector('.killer-combinations')?.textContent).toContain('8 cage')
+  } finally {
+    await act(async () => root.unmount()); container.remove(); localStorage.clear(); vi.unstubAllGlobals()
+  }
+})
+
+it('resets only the current cage combinations as one saved undoable move', async () => {
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  localStorage.clear()
+  const board = parseKillerPreviews(raw)[0]!
+  const { readSudokuProgress } = await import('../lib/sudokuProgress')
+  const container = document.createElement('div'); document.body.append(container)
+  let root = createRoot(container)
+  const click = async (name: string) => {
+    const button = [...container.querySelectorAll<HTMLButtonElement>('button')].find(item => item.textContent === name || item.getAttribute('aria-label') === name)!
+    expect(button, name).toBeDefined(); await act(async () => button.click())
+  }
+  const select = async (index: number) => act(async () => container.querySelector<HTMLButtonElement>(`[data-cell="${index}"]`)!.click())
+  try {
+    await act(async () => root.render(<MemoryRouter><KillerSudokuPreviewPage /></MemoryRouter>))
+    await click('Combinations')
+    expect([...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Reset combinations')?.disabled).toBe(true)
+    await click('Cross out 4 + 9'); await click('Cross out 5 + 8')
+    await select(1); await click('Cross out 1 + 2 + 5')
+    await select(0)
+    const before = readSudokuProgress(board)!
+    await click('Reset combinations')
+    const after = readSudokuProgress(board)!
+    expect(after.game.excludedCageCombinations?.[0]).toEqual([])
+    expect(after.game.excludedCageCombinations?.[1]).toEqual([19])
+    expect(after.game.cells).toEqual(before.game.cells)
+    expect(after.game.notes).toEqual(before.game.notes)
+    expect(after.hints).toBe(before.hints)
+    await click('Undo')
+    expect(readSudokuProgress(board)?.game.excludedCageCombinations?.[0]).toEqual([264, 144])
+    await click('Redo')
+    expect(readSudokuProgress(board)?.game.excludedCageCombinations?.[0]).toEqual([])
+    await act(async () => root.unmount()); root = createRoot(container)
+    await act(async () => root.render(<MemoryRouter><KillerSudokuPreviewPage /></MemoryRouter>))
+    await click('Combinations')
+    expect(container.querySelector('[aria-label="Cross out 4 + 9"]')?.getAttribute('aria-pressed')).toBe('false')
+    await select(1)
+    expect(container.querySelector('[aria-label="Cross out 1 + 2 + 5"]')?.getAttribute('aria-pressed')).toBe('true')
+  } finally {
+    await act(async () => root.unmount()); container.remove(); localStorage.clear(); vi.unstubAllGlobals()
+  }
+})

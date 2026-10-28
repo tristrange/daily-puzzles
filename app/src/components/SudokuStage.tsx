@@ -136,7 +136,7 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
     setCopied(ok ? variant : 'failed'); setShareText(ok ? null : text)
     setMessage(ok ? 'Share text copied to the clipboard.' : 'Could not reach the clipboard — the share text is shown below, ready to copy.')
   }
-  const cageIndex = killer?.cages.findIndex(cage => cage.cells.includes(selected)) ?? -1
+  const cageIndex = killer?.cages.findIndex(cage => selection.every(cell => cage.cells.includes(cell))) ?? -1
   const cage = cageIndex >= 0 ? killer?.cages[cageIndex] : undefined
   const toggleCombination = (mask: number) => {
     if (!killer || cageIndex < 0 || solved) return
@@ -144,6 +144,11 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
     const list = excluded[cageIndex]!
     excluded[cageIndex] = list.includes(mask) ? list.filter(item => item !== mask) : [...list, mask]
     commit({ ...current.current, excludedCageCombinations: excluded })
+  }
+  const resetCombinations = () => {
+    if (!killer || cageIndex < 0 || solved || !current.current.excludedCageCombinations?.[cageIndex]?.length) return
+    const excluded = killer.cages.map((_, index) => index === cageIndex ? [] : [...(current.current.excludedCageCombinations?.[index] ?? [])])
+    commit({ ...current.current, excludedCageCombinations: excluded }, 'Cage combinations restored. Undo brings back your crossed-out combinations.')
   }
   const editable = !solved && (selection.length > 1 ? selection.some(i => game.cells[i] === 0) : board.givens[selected] === 0)
   const placedCounts = Array<number>(10).fill(0)
@@ -172,9 +177,10 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
         </div>
         <p className="sudoku-mode" role="status">{selection.length > 1 ? `${selection.length} cells selected · digits update notes in empty cells` : pencil ? 'Notes on · tap digits to mark possibilities' : 'Select a cell, then enter a number'}</p>
       </div>
-      <SudokuBoard board={board} game={game} selected={selected} selection={selection} locked={solved} conflicts={conflicts} hint={hint} instructionsId={instructionsId} onSelect={select} cageActive={!!killer && showCombinations} />
-      {showCombinations && cage && <div id={combinationsId} className="killer-combinations-panel">
-        <KillerCombinations cage={cage} excluded={game.excludedCageCombinations?.[cageIndex] ?? []} onToggle={toggleCombination} disabled={solved} />
+      <SudokuBoard board={board} game={game} selected={selected} selection={selection} locked={solved} conflicts={conflicts} hint={hint} instructionsId={instructionsId} onSelect={select} cageActive={!!cage && showCombinations} />
+      {showCombinations && killer && <div id={combinationsId} className="killer-combinations-panel">
+        {cage ? <KillerCombinations cage={cage} excluded={game.excludedCageCombinations?.[cageIndex] ?? []} onToggle={toggleCombination} onReset={resetCombinations} disabled={solved} />
+          : <section className="killer-combinations" aria-label="Cage combinations"><div className="killer-combinations-heading"><h2>Multiple cages selected</h2></div><p role="status">Select cells from one cage to see its combinations.</p></section>}
       </div>}
     </div>
     <p className={`sudoku-feedback${conflicts.size ? ' error' : ''}`} role="status">{solved ? message || `Solved in ${formatTime(elapsed)} with ${shownHints} hint${shownHints === 1 ? '' : 's'}!${daily ? '' : killer ? ' Choose another board to keep playing.' : ' Choose another level to keep playing.'}`
