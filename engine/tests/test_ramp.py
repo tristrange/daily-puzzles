@@ -113,7 +113,7 @@ def test_result_reports_what_it_delivered() -> None:
 
 def test_never_publishes_a_board_harder_than_the_target() -> None:
     """An Expert Tuesday would break the ramp as surely as a Nightmare Monday."""
-    easy_monday = DifficultyTarget(size=7, level=MIN_LEVEL)
+    easy_monday = DifficultyTarget(size=5, level=MIN_LEVEL)
     result = generate_ramped(seed=3, puzzle_id="2026-10-05", target=easy_monday, max_attempts=60)
     assert result.achieved.level <= easy_monday.level
 

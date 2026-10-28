@@ -205,10 +205,10 @@ class TestGeneration:
         assert marks_board(replayed).region_capacity[0] == STAR_BATTLE_STARS
         assert marks_board(replayed).region_capacity == marks_board(puzzle).region_capacity
         # Replaying the star board through the queens rulebook must not work: the
-        # capacities it would rebuild are one per region, not two.
-        queens_replay = rulebook_for(PuzzleType.QUEENS).replay(puzzle)
-        assert marks_board(queens_replay).region_capacity[0] == 1
-        assert marks_board(queens_replay).region_capacity != marks_board(puzzle).region_capacity
+        # only live star version is 2, so the queens path rejects it rather than
+        # silently rebuilding a one-per-region board.
+        with pytest.raises(GenerationError, match="unsupported queens generator version"):
+            rulebook_for(PuzzleType.QUEENS).replay(puzzle)
 
     def test_counting_and_deducing_go_through_the_rulebook(self) -> None:
         book = rulebook_for(PuzzleType.QUEENS)

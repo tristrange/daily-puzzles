@@ -3,8 +3,8 @@
 Two levers, both in play. **Size** sets the floor — a 9x9 board is never Easy,
 whatever seed it lands on, so the weekend can be made genuinely larger without
 depending on luck. **Band** is what the seed search then aims for, because
-within one size the logic depth varies enormously: measured over 130 logic-only
-8x8 boards the score ran from 14 to 92, spanning four bands.
+within one size the logic depth varies: the same 8x8 size turns up both Medium
+and Expert boards.
 
 Both move together and neither regresses across the week:
 
@@ -25,13 +25,12 @@ through to Expert, so the weekend boards are both the largest and the deepest.
 The Friday 9x9 introduces the big board a day before the peak, so the week ends
 on size *and* depth at once rather than only on depth.
 
-Nightmare is deliberately absent. It is unreachable without guessing: measured
-over 400 logic-only 7x7 boards and 130 at 8x8, not one was Nightmare, and every
-Nightmare board found needed at least one hypothesis. The pipeline's promise is
-that a board is solvable by logic alone, and spending that promise to buy one
-more band would be a bad trade. The reachable top is Expert. Raising it further
-means giving the deduction engine stronger rules so that harder boards *become*
-logic-only, not relaxing what "logic-only" means.
+Nightmare is deliberately absent as a target. The pipeline's promise is that a
+board is solvable by logic alone; version 3 does turn up logic-only 9x9
+Nightmare boards — about one in twelve of the logic-only boards sampled — but
+the ramp tops at Expert, which every weekly size reaches reliably. Raising the
+ceiling is a separate decision about what Sunday should cost, not something a
+generator change should make on its own.
 
 The search aims at the target and keeps the best board the budget turns up, so a
 day whose target is rare still publishes something hard instead of nothing. It
@@ -102,14 +101,13 @@ WEEKLY_RAMP: Final[tuple[DifficultyTarget, ...]] = (
 #: How many seeds a search may try before settling for the best board it found.
 #: The budget counts *attempts*, not boards produced, because a seed that cannot
 #: generate at all has to count against it too or the loop would never end.
-#: Not uniform, because a 9x9 board costs about 9s against 8x8's 0.66s, so the
-#: same budget would be 14x the wall clock. The budgets are set from measured
-#: logic-only hit rates: Expert is 1 board in 130 at 8x8 but only 1 in 12 at 9x9,
-#: which is why the ramp peaks at 9x9 rather than trying to force Expert at 8x8.
-#: Even so a 9x9 weekend sits near 3 minutes a day, so a lead window that spans a
-#: Friday-Sunday can run for several minutes; that is the price of the peak and
-#: it is paid nightly, not on request.
-RAMP_ATTEMPTS: Final[dict[int, int]] = {5: 200, 6: 200, 7: 200, 8: 200, 9: 60}
+#: Size 8 gets the largest budget even though 9x9 is the expensive board to build:
+#: version 3 produces Medium rarely at 8x8 (roughly one logic-only board in
+#: thirty), and Tuesday asks for exactly that, so the search needs the extra
+#: seeds. Size 9 stays small because Expert is common there, while Nightmare is
+#: skipped as harder than the target. A 9x9 seed costs about 0.7s against 8x8's
+#: 0.12s, and both budgets are paid nightly rather than on request.
+RAMP_ATTEMPTS: Final[dict[int, int]] = {5: 200, 6: 200, 7: 200, 8: 600, 9: 60}
 
 
 def target_for(day: date) -> DifficultyTarget:
