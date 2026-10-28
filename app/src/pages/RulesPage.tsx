@@ -56,8 +56,11 @@ export function RulesPage() {
       </ul>
       <h3>Controls and hints</h3>
       <p>Pick Tent, Grass or Erase, then tap or drag. Tapping the selected mark again clears it.
-        Right-click erases. Trees are fixed. 1 or T places a tent; 2 or G marks grass;
-        Enter or Space applies the picker; Delete or Backspace erases.</p>
+        Right-click erases while using a marking tool. Trees are fixed. 1 or T places a tent; 2 or G marks grass;
+        Enter or Space applies the selected tool; Delete or Backspace erases.</p>
+      <p>Choose Highlight to select cells without changing their marks. Drag across cells, or use
+        Shift-click or Shift-arrow to add cells to the highlight. Clear highlights removes the selection;
+        highlights last until you leave or reload the puzzle.</p>
       <p>Hint or H explains a deduction from tree adjacency, non-touching or line counts.
         It can also compare the possible arrangements of one row or column: if all
         use a cell it must be a tent; if none use it, mark grass. Short lists of

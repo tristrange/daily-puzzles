@@ -5,17 +5,18 @@ import { historyCommand } from '../lib/useMoveHistory'
 import { TentsSymbol } from './TentsSymbol'
 
 interface Props {
-  board: Board; game: TentsGame; brush: TentsMark; locked: boolean; conflicts: ReadonlySet<number>
+  board: Board; game: TentsGame; brush: TentsMark | 'highlight'; locked: boolean; conflicts: ReadonlySet<number>
   hint: TentsHint | null; instructionsId: string
   onBegin: () => void; onApply: (cell: number, value: TentsMark) => void; onEnd: (cancel: boolean) => void
   onUndo: () => void; onRedo: () => void; onHint: () => void
   inspection?: { selected: number | null; onSelect: (cell: number) => void }
+  selection?: { cells: readonly number[]; onSelect: (cell: number, extend: boolean) => void }
 }
 
-export function TentsBoard({ board, game, brush, locked, conflicts, hint, instructionsId, onBegin, onApply, onEnd, onUndo, onRedo, onHint, inspection }: Props) {
+export function TentsBoard({ board, game, brush, locked, conflicts, hint, instructionsId, onBegin, onApply, onEnd, onUndo, onRedo, onHint, inspection, selection }: Props) {
   const grid = useRef<HTMLDivElement>(null)
   const [focus, setFocus] = useState(0)
-  const stroke = useRef<{ id: number; value: TentsMark; visited: Set<number> } | null>(null)
+  const stroke = useRef<({ id: number; visited: Set<number> } & ({ kind: 'mark'; value: TentsMark } | { kind: 'highlight' })) | null>(null)
   useEffect(() => {
     if (grid.current?.contains(document.activeElement)) grid.current.querySelector<HTMLElement>(`[data-cell="${focus}"]`)?.focus({ preventScroll: true })
   }, [focus])
@@ -28,7 +29,7 @@ export function TentsBoard({ board, game, brush, locked, conflicts, hint, instru
     if (!active) return
     stroke.current = null
     if (grid.current?.hasPointerCapture(active.id)) grid.current.releasePointerCapture(active.id)
-    onEnd(cancel)
+    if (active.kind === 'mark') onEnd(cancel)
   }
   const start = (event: PointerEvent<HTMLDivElement>) => {
     if (stroke.current && event.pointerId !== stroke.current.id) { finish(true); return }
@@ -39,10 +40,19 @@ export function TentsBoard({ board, game, brush, locked, conflicts, hint, instru
       if (inspection) { setFocus(cell); inspection.onSelect(cell); grid.current?.querySelector<HTMLElement>(`[data-cell="${cell}"]`)?.focus({ preventScroll: true }) }
       return
     }
-    if (board.trees.includes(cell)) return
+    if (selection && (brush === 'highlight' || event.shiftKey)) {
+      if (event.shiftKey && selection.cells.length === 0 && grid.current?.contains(document.activeElement)) selection.onSelect(focus, true)
+      setFocus(cell)
+      grid.current?.querySelector<HTMLElement>(`[data-cell="${cell}"]`)?.focus({ preventScroll: true })
+      stroke.current = { id: event.pointerId, kind: 'highlight', visited: new Set([cell]) }
+      selection.onSelect(cell, event.shiftKey)
+      grid.current?.setPointerCapture(event.pointerId)
+      return
+    }
+    if (brush === 'highlight' || board.trees.includes(cell)) return
     setFocus(cell)
     grid.current?.querySelector<HTMLElement>(`[data-cell="${cell}"]`)?.focus({ preventScroll: true })
-    stroke.current = { id: event.pointerId, value: game[cell] === brush ? 0 : brush, visited: new Set([cell]) }
+    stroke.current = { id: event.pointerId, kind: 'mark', value: game[cell] === brush ? 0 : brush, visited: new Set([cell]) }
     onBegin(); onApply(cell, stroke.current.value)
     grid.current?.setPointerCapture(event.pointerId)
   }
@@ -51,7 +61,9 @@ export function TentsBoard({ board, game, brush, locked, conflicts, hint, instru
     if (!active || active.id !== event.pointerId || locked) return
     const cell = cellAt(event.clientX, event.clientY)
     if (cell === null || active.visited.has(cell)) return
-    active.visited.add(cell); onApply(cell, active.value)
+    active.visited.add(cell)
+    if (active.kind === 'highlight') selection?.onSelect(cell, true)
+    else onApply(cell, active.value)
   }
   const one = (cell: number, value: TentsMark) => {
     if (locked || stroke.current) return
@@ -62,15 +74,25 @@ export function TentsBoard({ board, game, brush, locked, conflicts, hint, instru
     const navigation: Record<string, number> = { ArrowUp: Math.max(0, row - 1) * size + col,
       ArrowDown: Math.min(size - 1, row + 1) * size + col, ArrowLeft: row * size + Math.max(0, col - 1),
       ArrowRight: row * size + Math.min(size - 1, col + 1), Home: row * size, End: row * size + size - 1 }
-    if (navigation[event.key] !== undefined) { event.preventDefault(); setFocus(navigation[event.key]!); inspection?.onSelect(navigation[event.key]!); return }
+    if (navigation[event.key] !== undefined) {
+      event.preventDefault(); setFocus(navigation[event.key]!); inspection?.onSelect(navigation[event.key]!)
+      if (selection && !locked && (brush === 'highlight' || event.shiftKey)) {
+        if (event.shiftKey && selection.cells.length === 0) selection.onSelect(focus, true)
+        selection.onSelect(navigation[event.key]!, event.shiftKey)
+      }
+      return
+    }
     if (locked) { if (inspection && ['Enter', ' '].includes(event.key)) { event.preventDefault(); inspection.onSelect(focus) } return }
     const command = historyCommand(event)
     if (command) { event.preventDefault(); finish(true); if (command === 'undo') onUndo(); else onRedo(); return }
     if (event.ctrlKey || event.metaKey || event.altKey) return
     if (event.key.toLowerCase() === 'h') { event.preventDefault(); onHint(); return }
+    if (brush === 'highlight' && ['Enter', ' '].includes(event.key)) {
+      event.preventDefault(); selection?.onSelect(focus, event.shiftKey); return
+    }
     if (['1', '2', '0', 't', 'T', 'g', 'G', 'Delete', 'Backspace', 'Enter', ' '].includes(event.key)) {
       event.preventDefault()
-      one(focus, ['1', 't', 'T'].includes(event.key) ? 1 : ['2', 'g', 'G'].includes(event.key) ? 2 : ['Enter', ' '].includes(event.key) ? brush : 0)
+      one(focus, ['1', 't', 'T'].includes(event.key) ? 1 : ['2', 'g', 'G'].includes(event.key) ? 2 : ['Enter', ' '].includes(event.key) && brush !== 'highlight' ? brush : 0)
     }
   }
   const count = (cells: number[]) => cells.filter(cell => game[cell] === 1).length
@@ -79,7 +101,7 @@ export function TentsBoard({ board, game, brush, locked, conflicts, hint, instru
       const actual = count(Array.from({ length: board.size }, (_, row) => row * board.size + col))
       return <span className="tents-clue" data-state={actual > clue ? 'error' : actual === clue ? 'met' : undefined} key={col}>{clue}</span>
     })}</div>
-    <div ref={grid} className="tents-board" role="grid" aria-label={`${board.size} by ${board.size} Tents puzzle`} aria-describedby={instructionsId}
+    <div ref={grid} className="tents-board" role="grid" aria-label={`${board.size} by ${board.size} Tents puzzle`} aria-describedby={instructionsId} aria-multiselectable={selection ? true : undefined} data-highlighting={brush === 'highlight' || undefined}
       onKeyDown={key} onPointerDown={start} onPointerMove={move}
       onPointerUp={event => { if (stroke.current?.id === event.pointerId) finish(false) }}
       onPointerCancel={event => { if (stroke.current?.id === event.pointerId) finish(true) }}
@@ -93,10 +115,10 @@ export function TentsBoard({ board, game, brush, locked, conflicts, hint, instru
             return <button className="tents-cell" role="gridcell" type="button" key={cell} data-cell={cell}
               data-tree={tree} data-mark={mark} data-conflict={conflicts.has(cell)}
               data-hint={hint?.cell === cell ? 'target' : support ? 'support' : undefined}
-              data-selected={inspection?.selected === cell ? true : undefined} aria-selected={inspection ? inspection.selected === cell : undefined}
+              data-selected={inspection?.selected === cell || selection?.cells.includes(cell) ? true : undefined} aria-selected={inspection ? inspection.selected === cell : selection ? selection.cells.includes(cell) : undefined}
               tabIndex={cell === focus ? 0 : -1} aria-readonly={tree || locked} onFocus={() => setFocus(cell)}
               aria-label={`Row ${row + 1}, column ${cell % board.size + 1}, ${tree ? 'Tree, fixed' : TENTS_NAMES[mark]}, row needs ${clue}, column needs ${board.colClues[cell % board.size]}${conflicts.has(cell) ? ', conflict' : ''}${hint?.cell === cell ? ', hint target' : support ? ', supports hint' : ''}`}
-              onClick={event => { if (event.detail === 0) { if (inspection) inspection.onSelect(cell); else one(cell, brush) } }} onContextMenu={event => { event.preventDefault(); one(cell, 0) }}>
+              onClick={event => { if (event.detail === 0) { if (inspection) inspection.onSelect(cell); else if (selection && (brush === 'highlight' || event.shiftKey)) selection.onSelect(cell, event.shiftKey); else if (brush !== 'highlight') one(cell, brush) } }} onContextMenu={event => { event.preventDefault(); if (brush !== 'highlight' && !event.shiftKey) one(cell, 0) }}>
               {(tree || mark !== 0) && <TentsSymbol kind={tree ? 'tree' : mark === 1 ? 'tent' : 'grass'} />}
             </button>
           })}
