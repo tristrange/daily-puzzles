@@ -897,6 +897,7 @@
 .game-card-description {
   margin: 0;
   font-size: 0.875rem;
+  min-height: 3em;
 }
 
 .game-card-state {
