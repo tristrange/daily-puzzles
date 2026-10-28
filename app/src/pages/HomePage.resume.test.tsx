@@ -88,6 +88,15 @@ async function render() {
 }
 const link = (label: string) => container.querySelector(`a[aria-label="${label}"]`)
 
+it('groups games with multiple daily puzzles after single-puzzle games', async () => {
+  await render()
+  const titles = [...container.querySelectorAll('.game-card-title')].map(title => title.textContent)
+  expect(titles).toEqual([
+    'Queens', 'Star Battle', 'Word Paths', 'Trio', 'Tents', 'Nurikabe',
+    'Train Tracks', 'Sudoku', 'Killer Sudoku',
+  ])
+})
+
 it('offers each saved daily game with its validated time and original destination', async () => {
   saveAttempts()
   await render()
