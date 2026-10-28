@@ -68,7 +68,7 @@ export function SudokuBoard({ board, game, selected, selection, locked, conflict
           onFocus={() => { if (!stroke.current && !focusing.current) onSelect(cell) }} onClick={event => { if (event.detail === 0) onSelect(cell, event.shiftKey) }}>
           {cage && <span className="killer-cage" aria-hidden="true" data-top={r === 0 || !cage.cells.includes(cell - 9)} data-right={c === 8 || !cage.cells.includes(cell + 1)} data-bottom={r === 8 || !cage.cells.includes(cell + 9)} data-left={c === 0 || !cage.cells.includes(cell - 1)} />}
           {clue && <span className="killer-sum" aria-hidden="true">{cage!.sum}</span>}
-          {value || <span className="sudoku-notes" aria-hidden="true">{Array.from({ length: 9 }, (_, i) => <span key={i}>{notes.includes(i + 1) ? i + 1 : ''}</span>)}</span>}
+          {value ? <span className="sudoku-value">{value}</span> : <span className="sudoku-notes" aria-hidden="true">{Array.from({ length: 9 }, (_, i) => <span key={i}>{notes.includes(i + 1) ? i + 1 : ''}</span>)}</span>}
         </button>
       })}
     </div>)}
