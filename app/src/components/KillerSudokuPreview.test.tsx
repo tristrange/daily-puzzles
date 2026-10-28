@@ -22,7 +22,10 @@ it('plays and saves a Killer Sudoku preview with explained cage hints', async ()
     expect(container.textContent).toContain('Hints explain cage deductions')
     const enter = container.querySelector<HTMLButtonElement>('[aria-label="Enter 6"]')!
     await act(async () => enter.click())
-    expect(container.querySelector('[data-cell="0"]')?.getAttribute('aria-label')).toContain('6')
+    const firstCell = container.querySelector('[data-cell="0"]')!
+    expect(firstCell.getAttribute('aria-label')).toContain('Row 1, column 1, 6, cage total 13')
+    expect(firstCell.textContent).toContain('13')
+    expect(firstCell.textContent).toContain('6')
     expect(localStorage.getItem('daily-puzzles.sudoku-preview.v1.killer-preview-1')).not.toBeNull()
     const undo = [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Undo')!
     await act(async () => undo.click())
