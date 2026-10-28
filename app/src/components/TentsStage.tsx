@@ -29,7 +29,8 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
   const [game, setGame] = useState(() => initial?.game ?? createTentsGame(board))
   const current = useRef(game), before = useRef<TentsGame | null>(null)
   const history = useMoveHistory<TentsGame>()
-  const [brush, setBrush] = useState<TentsMark>(1)
+  const [brush, setBrush] = useState<TentsMark | 'highlight'>(1)
+  const [selection, setSelection] = useState<readonly number[]>([])
   const [result, setResult] = useState<{ hints: number } | null>(null), completed = useRef(false)
   const solved = result !== null
   const hintsUsed = useRef(initial?.hints ?? 0)
@@ -87,6 +88,7 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
   const reset = () => {
     if (completed.current || before.current || !current.current.some(Boolean)) return
     restartAttempt()
+    setSelection([])
     setHint(null); history.remember(current.current); change(createTentsGame(board))
     setMessage('Board cleared. Undo brings it back; total time and hints are kept.'); save()
   }
@@ -135,15 +137,17 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
           <button ref={hintButton} className="tool-button" type="button" onClick={requestHint} disabled={solved}
             aria-label="Get an explained hint" aria-expanded={hint !== null} aria-controls={hint ? hintId : undefined}>Hint</button>
         </div>
-        <div className="tents-picker" role="radiogroup" aria-label="Mark to place">
-          {([1, 2, 0] as const).map(value => <label key={value} className="trio-pick">
-            <input className="sr-only" type="radio" name={pickerId} checked={brush === value} disabled={solved} onChange={() => setBrush(value)} aria-label={value === 1 ? 'Tent' : value === 2 ? 'Grass' : 'Eraser'} />
-            <span className="trio-pick-face"><TentsSymbol kind={value === 1 ? 'tent' : value === 2 ? 'grass' : 'erase'} /><span>{value === 1 ? 'Tent' : value === 2 ? 'Grass' : 'Erase'}</span></span>
+        <div className="tents-picker" role="radiogroup" aria-label="Board tool">
+          {([1, 2, 0, 'highlight'] as const).map(value => <label key={value} className="trio-pick">
+            <input className="sr-only" type="radio" name={pickerId} checked={brush === value} disabled={solved} onChange={() => setBrush(value)} aria-label={value === 1 ? 'Tent' : value === 2 ? 'Grass' : value === 0 ? 'Eraser' : 'Highlight'} />
+            <span className="trio-pick-face"><TentsSymbol kind={value === 1 ? 'tent' : value === 2 ? 'grass' : value === 0 ? 'erase' : 'highlight'} /><span>{value === 1 ? 'Tent' : value === 2 ? 'Grass' : value === 0 ? 'Erase' : 'Highlight'}</span></span>
           </label>)}
         </div>
-        <p className="trio-mode">{solved ? 'All trees have a tent.' : brush === 1 ? 'Place a tent · tap again to clear' : brush === 2 ? 'Mark grass · no tent here' : 'Erase your marks'}</p>
+        <p className="trio-mode">{solved ? 'All trees have a tent.' : brush === 1 ? 'Place a tent · tap again to clear' : brush === 2 ? 'Mark grass · no tent here' : brush === 0 ? 'Erase your marks' : 'Drag to highlight cells'}</p>
+        {selection.length > 0 && <button className="tool-button tents-clear-selection" type="button" onClick={() => setSelection([])}>Clear highlights</button>}
       </div>
       <TentsBoard board={board} game={game} brush={brush} locked={solved} conflicts={conflicts} hint={hint}
+        selection={{ cells: selection, onSelect: (cell, extend) => setSelection(previous => extend ? previous.includes(cell) ? previous : [...previous, cell] : [cell]) }}
         instructionsId={hint ? `${instructionsId} ${hintId}` : instructionsId} onBegin={begin} onApply={apply} onEnd={end} onUndo={undo} onRedo={redo} onHint={requestHint} />
     </div>
     <p className={`trio-feedback${conflicts.size ? ' error' : ''}`} role="status">{solved
@@ -155,6 +159,6 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
       onApply={acceptHint} onDismiss={dismissHint} onShowCell={showHintCell} />}
     {!saving && !solved && <p className="status error" role="status">Progress can&rsquo;t be saved. Keep this page open to retain your attempt.</p>}
     <p className="word-note" id={instructionsId}>Pair every tree with one tent directly above, below, left or right. Match the line counts. Tents cannot touch, even diagonally. Grass marks are optional.</p>
-    <p className="word-note">Pick a mark, then tap or drag. Arrows move; 1 or T places a tent; 2 or G marks grass; Delete erases; H explains a hint. Ctrl/Cmd+Z undoes; Ctrl/Cmd+Shift+Z redoes.</p>
+    <p className="word-note">Pick a mark, then tap or drag. Choose Highlight to select cells without changing marks; drag, Shift-click or Shift-arrow to highlight multiple cells. Arrows move; 1 or T places a tent; 2 or G marks grass; Delete erases; H explains a hint. Ctrl/Cmd+Z undoes; Ctrl/Cmd+Shift+Z redoes.</p>
   </div>
 }
