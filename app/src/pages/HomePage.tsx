@@ -150,9 +150,10 @@ export function TodayCards({ probes, solved }: {
     if (group) group.push(probe)
     else groups.set(family, [probe])
   }
+  const orderedGroups = [...groups].sort(([, first], [, second]) => Number(first.length > 1) - Number(second.length > 1))
   return (
     <ul className="game-cards">
-      {[...groups].map(([family, entries]) => {
+      {orderedGroups.map(([family, entries]) => {
         const probe = entries[0]!
         const sized = family === 'sudoku' || family === 'killer-sudoku' || family === 'train-tracks' && trackVariantOf(probe.id) !== null
         const again = solved.has(probe.id)
