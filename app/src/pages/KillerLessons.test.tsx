@@ -32,6 +32,8 @@ it('teaches the combination tool and saves completion separately from puzzle pro
   expect(container.querySelectorAll('[data-hint="support"]')).toHaveLength(1)
   await click('Check answer')
   expect(container.querySelector('.lesson-feedback[role="status"]')?.textContent).toContain('Not quite')
+  await click('Cross out 5 + 8'); await click('Reset combinations')
+  expect(container.querySelector('[aria-label="Cross out 5 + 8"]')?.getAttribute('aria-pressed')).toBe('false')
   await click('Cross out 5 + 8'); await click('Check answer')
   expect(container.querySelector('.lesson-feedback[role="status"]')?.textContent).toContain('Lesson complete')
   expect(container.querySelector('.lesson-explanation')?.textContent).toContain('column 1')

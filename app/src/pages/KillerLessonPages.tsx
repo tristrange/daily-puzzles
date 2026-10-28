@@ -58,7 +58,7 @@ function KillerExercise({ index }: { index: number }) {
     </div><section className="lesson-task">
       <h2>The idea</h2><p>{lesson.prompt}</p>
       {showPattern ? <p className="lesson-cue">{lesson.cue}</p> : <button type="button" className="tool-button" onClick={() => setClue(true)}>Show a clue</button>}
-      <KillerCombinations cage={cage} excluded={explained ? expected : crossed} disabled={explained} onToggle={mask => { setCrossed(crossed.includes(mask) ? crossed.filter(item => item !== mask) : [...crossed, mask]); setResult('idle') }} />
+      <KillerCombinations cage={cage} excluded={explained ? expected : crossed} disabled={explained} onToggle={mask => { setCrossed(crossed.includes(mask) ? crossed.filter(item => item !== mask) : [...crossed, mask]); setResult('idle') }} onReset={() => { setCrossed([]); setResult('idle') }} />
       <div className="lesson-actions">{!explained ? <><button type="button" className="tool-button primary" onClick={check}>Check answer</button><button type="button" className="tool-button" onClick={() => setResult('revealed')}>Show explanation</button></>
         : <button type="button" className="tool-button" onClick={() => { setCrossed([]); setResult('idle'); setClue(false) }}>Try again</button>}</div>
       <p className="lesson-feedback" role="status" aria-live="polite">{result === 'incorrect' ? 'Not quite. Check the placed digits and try again.' : result === 'correct' ? 'Lesson complete.' : result === 'revealed' ? 'Example shown. Try again to practice.' : ''}</p>
