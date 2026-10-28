@@ -867,6 +867,11 @@
   list-style: none;
 }
 
+.game-card-item {
+  break-inside: avoid;
+  padding-bottom: 1rem;
+}
+
 .game-card {
   display: grid;
   grid-template-columns: 3.5rem minmax(0, 1fr);
@@ -879,8 +884,6 @@
   background: var(--surface);
   box-shadow: 0 6px 24px var(--shadow);
   min-width: 0;
-  margin-bottom: 1rem;
-  break-inside: avoid;
 }
 
 .game-card-description,

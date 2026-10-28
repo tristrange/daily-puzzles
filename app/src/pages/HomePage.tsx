@@ -158,60 +158,62 @@ export function TodayCards({ probes, solved }: {
         const again = solved.has(probe.id)
         const elapsed = !again ? probe.elapsedMs ?? null : null
         return (
-          <li key={family} className={`game-card game-${family}`}>
-            <div className="game-motif" aria-hidden="true">
-              <div className="motif-grid">
-                {Array.from({ length: 9 }, (_, cell) => (
-                  <span key={cell} className={cell === 4 ? 'motif-piece' : ''}>
-                    {cell === 4 && PUZZLE_PIECE[family].glyph}
-                  </span>
-                ))}
+          <li key={family} className="game-card-item">
+            <div className={`game-card game-${family}`}>
+              <div className="game-motif" aria-hidden="true">
+                <div className="motif-grid">
+                  {Array.from({ length: 9 }, (_, cell) => (
+                    <span key={cell} className={cell === 4 ? 'motif-piece' : ''}>
+                      {cell === 4 && PUZZLE_PIECE[family].glyph}
+                    </span>
+                  ))}
+                </div>
               </div>
+              <h2 className="game-card-title">{PUZZLE_TYPE_LABEL[family]}</h2>
+              <p className="game-card-description">{DESCRIPTION[family]}</p>
+              {sized ? (
+                <ul className="track-variants">
+                  {entries.map((entry) => {
+                    const variant = family === 'sudoku' ? sudokuVariantOf(entry.id)! : family === 'killer-sudoku' ? killerVariantOf(entry.id)! : trackVariantOf(entry.id)!
+                    const label = 'side' in variant ? `${variant.label} · ${variant.side}×${variant.side}` : variant.label
+                    const again = solved.has(entry.id)
+                    const elapsed = !again ? entry.elapsedMs ?? null : null
+                    return (
+                      <li key={entry.id}>
+                        {entry.puzzle === null ? (
+                          <div className="track-unpublished">
+                            <span>{label}</span><span className="game-card-state">{entry.unavailable ? 'Not saved — connect to load.' : 'Not published yet.'}</span>
+                          </div>
+                        ) : (
+                          <Link className="tool-button track-choice" to={`/archive/${entry.id}`}
+                            aria-description={progressLabel(again, elapsed)}
+                            aria-label={`${elapsed === null ? 'Play' : 'Resume'} ${PUZZLE_TYPE_LABEL[family]} ${variant.label}${again ? ' again' : elapsed !== null ? ` at ${formatTime(elapsed)}` : ''}`}>
+                            <span className="track-choice-info"><span>{label}</span><span className={`choice-state ${progressClass(again, elapsed)}`}>{progressLabel(again, elapsed)}</span></span>
+                            <span className="track-choice-action">{again ? 'Play again' : elapsed !== null ? 'Resume' : 'Play'} <span aria-hidden="true">↗</span></span>
+                          </Link>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ul>
+              ) : (
+                <>
+                  {probe.puzzle !== null && <p className="game-card-detail">
+                    {probe.puzzle.board.width}&times;{probe.puzzle.board.height} grid
+                    {probe.puzzle.difficulty != null && <> · {DIFFICULTY_LABEL[probe.puzzle.difficulty]}</>}
+                  </p>}
+                  {probe.puzzle === null ? <p className="game-card-state">{probe.unavailable ? 'Not saved — connect to load.' : 'Not published yet.'}</p> : (
+                    <>
+                      <p className={`game-card-state ${progressClass(again, elapsed)}`}>{progressLabel(again, elapsed)}</p>
+                      <Link className="tool-button primary" to={`/archive/${probe.id}`}
+                        aria-label={`${elapsed === null ? 'Play' : 'Resume'} ${PUZZLE_TYPE_LABEL[family]}${again ? ' again' : elapsed !== null ? ` at ${formatTime(elapsed)}` : ''}`}>
+                        {again ? 'Play again' : elapsed !== null ? 'Resume' : 'Play'} <span aria-hidden="true">↗</span>
+                      </Link>
+                    </>
+                  )}
+                </>
+              )}
             </div>
-            <h2 className="game-card-title">{PUZZLE_TYPE_LABEL[family]}</h2>
-            <p className="game-card-description">{DESCRIPTION[family]}</p>
-            {sized ? (
-              <ul className="track-variants">
-                {entries.map((entry) => {
-                  const variant = family === 'sudoku' ? sudokuVariantOf(entry.id)! : family === 'killer-sudoku' ? killerVariantOf(entry.id)! : trackVariantOf(entry.id)!
-                  const label = 'side' in variant ? `${variant.label} · ${variant.side}×${variant.side}` : variant.label
-                  const again = solved.has(entry.id)
-                  const elapsed = !again ? entry.elapsedMs ?? null : null
-                  return (
-                    <li key={entry.id}>
-                      {entry.puzzle === null ? (
-                        <div className="track-unpublished">
-                          <span>{label}</span><span className="game-card-state">{entry.unavailable ? 'Not saved — connect to load.' : 'Not published yet.'}</span>
-                        </div>
-                      ) : (
-                        <Link className="tool-button track-choice" to={`/archive/${entry.id}`}
-                          aria-description={progressLabel(again, elapsed)}
-                          aria-label={`${elapsed === null ? 'Play' : 'Resume'} ${PUZZLE_TYPE_LABEL[family]} ${variant.label}${again ? ' again' : elapsed !== null ? ` at ${formatTime(elapsed)}` : ''}`}>
-                          <span className="track-choice-info"><span>{label}</span><span className={`choice-state ${progressClass(again, elapsed)}`}>{progressLabel(again, elapsed)}</span></span>
-                          <span className="track-choice-action">{again ? 'Play again' : elapsed !== null ? 'Resume' : 'Play'} <span aria-hidden="true">↗</span></span>
-                        </Link>
-                      )}
-                    </li>
-                  )
-                })}
-              </ul>
-            ) : (
-              <>
-                {probe.puzzle !== null && <p className="game-card-detail">
-                  {probe.puzzle.board.width}&times;{probe.puzzle.board.height} grid
-                  {probe.puzzle.difficulty != null && <> · {DIFFICULTY_LABEL[probe.puzzle.difficulty]}</>}
-                </p>}
-                {probe.puzzle === null ? <p className="game-card-state">{probe.unavailable ? 'Not saved — connect to load.' : 'Not published yet.'}</p> : (
-                  <>
-                    <p className={`game-card-state ${progressClass(again, elapsed)}`}>{progressLabel(again, elapsed)}</p>
-                    <Link className="tool-button primary" to={`/archive/${probe.id}`}
-                      aria-label={`${elapsed === null ? 'Play' : 'Resume'} ${PUZZLE_TYPE_LABEL[family]}${again ? ' again' : elapsed !== null ? ` at ${formatTime(elapsed)}` : ''}`}>
-                      {again ? 'Play again' : elapsed !== null ? 'Resume' : 'Play'} <span aria-hidden="true">↗</span>
-                    </Link>
-                  </>
-                )}
-              </>
-            )}
           </li>
         )
       })}
