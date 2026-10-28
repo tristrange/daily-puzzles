@@ -14,7 +14,7 @@ import { useToday } from '../lib/useToday'
 
 type LoadState =
   | { status: 'loading' }
-  | { status: 'ready'; day: string; probes: readonly TodayPuzzle[] }
+  | { status: 'ready'; day: string; probes: readonly TodayPuzzle[]; solved: ReadonlySet<string> }
 
 type TodayPuzzle = ProbedPuzzle & { readonly elapsedMs?: number | null }
 
@@ -41,43 +41,55 @@ async function savedTime(puzzle: Puzzle): Promise<number | null> {
   return puzzle.board instanceof WordGrid ? (await import('../lib/wordProgress')).readWordProgress(puzzle.id, puzzle.board)?.elapsedMs ?? null : null
 }
 
-/**
- * The landing page: a choice between today's puzzles rather than today's puzzle.
- *
- * Every day carries a Queens board and a Star Battle companion, so the first
- * question on arrival is which one to play, and the site has no business
- * answering that on the player's behalf. Both are linked straight to the board,
- * so choosing costs one click rather than a detour through a menu.
- *
- * "Today" is not assumed to be complete. A day can have its Queens board out
- * and no companion yet, and an absent file is reported as such on its own card
- * instead of failing the page.
- */
 export function HomePage() {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
   const todayId = useToday(timeZone)
   const [state, setState] = useState<LoadState>({ status: 'loading' })
-  // Read once, like the archive does: history is not going to change while the
-  // page is open, and the cards only use it to say what has been solved today.
-  const [solved] = useState(() => new Set(readStoredStats().map((record) => record.id)))
-
   useEffect(() => {
     let cancelled = false
-    // `probePuzzles` never rejects: each id fails alone, so there is no whole-page
-    // failure left to handle here.
-    probePuzzles(puzzleIdsForDay(todayId)).then(async (probes) => {
-      if (cancelled) return
-      setState({ status: 'ready', day: todayId, probes })
+    let request = 0
+    let load = 0
+    let available: readonly ProbedPuzzle[] | null = null
+    const refresh = async () => {
+      if (available === null) return
+      const current = ++request
+      const solved = new Set(readStoredStats().map(record => record.id))
+      const probes = available
       const attempts = await Promise.all(probes.map(async probe => {
         try { return { ...probe, elapsedMs: probe.puzzle && !solved.has(probe.id) ? await savedTime(probe.puzzle) : null } }
         catch { return { ...probe, elapsedMs: null } }
       }))
-      if (!cancelled) setState({ status: 'ready', day: todayId, probes: attempts })
-    })
+      if (!cancelled && current === request) setState({ status: 'ready', day: todayId, probes: attempts, solved })
+    }
+    // Returning to the page needs fresh saves, not another round of downloads.
+    // Connectivity changes do need a probe, so offline availability stays honest.
+    const loadPuzzles = () => {
+      const current = ++load
+      void probePuzzles(puzzleIdsForDay(todayId)).then(probes => {
+        if (cancelled || current !== load) return
+        available = probes
+        void refresh()
+      })
+    }
+    loadPuzzles()
+    const onRefresh = () => { void refresh() }
+    const onVisibility = () => { if (!document.hidden) onRefresh() }
+    window.addEventListener('focus', onRefresh)
+    window.addEventListener('pageshow', onRefresh)
+    window.addEventListener('storage', onRefresh)
+    window.addEventListener('online', loadPuzzles)
+    window.addEventListener('offline', loadPuzzles)
+    document.addEventListener('visibilitychange', onVisibility)
     return () => {
       cancelled = true
+      window.removeEventListener('focus', onRefresh)
+      window.removeEventListener('pageshow', onRefresh)
+      window.removeEventListener('storage', onRefresh)
+      window.removeEventListener('online', loadPuzzles)
+      window.removeEventListener('offline', loadPuzzles)
+      document.removeEventListener('visibilitychange', onVisibility)
     }
-  }, [todayId, solved])
+  }, [todayId])
 
   // A result for a previous day is not today's answer. Keeping the day beside
   // the probes lets a rollover show the loading state until the new day lands,
@@ -93,7 +105,10 @@ export function HomePage() {
       </div>
       {ready === null && <p className="status">Checking what&rsquo;s out…</p>}
       {ready !== null && (
-        <TodayCards probes={ready.probes} solved={solved} />
+        <>
+          <TodayProgress probes={ready.probes} solved={ready.solved} />
+          <TodayCards probes={ready.probes} solved={ready.solved} />
+        </>
       )}
       <div className="today-more">
         <Link to="/learn">Learn to solve <span aria-hidden="true">→</span></Link>
@@ -103,6 +118,24 @@ export function HomePage() {
       </div>
     </section>
   )
+}
+
+function TodayProgress({ probes, solved }: { readonly probes: readonly TodayPuzzle[]; readonly solved: ReadonlySet<string> }) {
+  const available = probes.filter(probe => probe.puzzle !== null)
+  const completed = available.filter(probe => solved.has(probe.id)).length
+  if (available.length === 0) return <p className="today-progress">No puzzles available right now.</p>
+  return <div className="today-progress">
+    <p><strong>{completed} of {available.length}</strong> available puzzles completed</p>
+    <progress aria-label="Today's completed puzzles" value={completed} max={available.length} />
+  </div>
+}
+
+function progressLabel(solved: boolean, elapsed: number | null): string {
+  return solved ? 'Completed' : elapsed !== null ? `In progress · ${formatTime(elapsed)}` : 'Not started'
+}
+
+function progressClass(solved: boolean, elapsed: number | null): string {
+  return solved ? 'solved' : elapsed !== null ? 'in-progress' : ''
 }
 
 /** Rendering is shared by the daily page and controlled publication-state tests. */
@@ -152,9 +185,10 @@ export function TodayCards({ probes, solved }: {
                         </div>
                       ) : (
                         <Link className="tool-button track-choice" to={`/archive/${entry.id}`}
+                          aria-description={progressLabel(again, elapsed)}
                           aria-label={`${elapsed === null ? 'Play' : 'Resume'} ${PUZZLE_TYPE_LABEL[family]} ${variant.label}${again ? ' again' : elapsed !== null ? ` at ${formatTime(elapsed)}` : ''}`}>
-                          <span>{label}</span>
-                          <span className={again ? 'solved' : ''}>{again ? 'Solved' : elapsed !== null ? `Resume · ${formatTime(elapsed)}` : 'Play'} <span aria-hidden="true">↗</span></span>
+                          <span className="track-choice-info"><span>{label}</span><span className={`choice-state ${progressClass(again, elapsed)}`}>{progressLabel(again, elapsed)}</span></span>
+                          <span className="track-choice-action">{again ? 'Play again' : elapsed !== null ? 'Resume' : 'Play'} <span aria-hidden="true">↗</span></span>
                         </Link>
                       )}
                     </li>
@@ -163,16 +197,16 @@ export function TodayCards({ probes, solved }: {
               </ul>
             ) : (
               <>
-                <p className="game-card-detail">
-                  {probe.puzzle !== null && <>{probe.puzzle.board.width}&times;{probe.puzzle.board.height} grid</>}
-                  {probe.puzzle?.difficulty != null && <> · {DIFFICULTY_LABEL[probe.puzzle.difficulty]}</>}
-                </p>
+                {probe.puzzle !== null && <p className="game-card-detail">
+                  {probe.puzzle.board.width}&times;{probe.puzzle.board.height} grid
+                  {probe.puzzle.difficulty != null && <> · {DIFFICULTY_LABEL[probe.puzzle.difficulty]}</>}
+                </p>}
                 {probe.puzzle === null ? <p className="game-card-state">{probe.unavailable ? 'Not saved — connect to load.' : 'Not published yet.'}</p> : (
                   <>
-                    {again && <p className="game-card-state solved">Solved today.</p>}
+                    <p className={`game-card-state ${progressClass(again, elapsed)}`}>{progressLabel(again, elapsed)}</p>
                     <Link className="tool-button primary" to={`/archive/${probe.id}`}
                       aria-label={`${elapsed === null ? 'Play' : 'Resume'} ${PUZZLE_TYPE_LABEL[family]}${again ? ' again' : elapsed !== null ? ` at ${formatTime(elapsed)}` : ''}`}>
-                      {again ? 'Play again' : elapsed !== null ? `Resume · ${formatTime(elapsed)}` : 'Play'} <span aria-hidden="true">↗</span>
+                      {again ? 'Play again' : elapsed !== null ? 'Resume' : 'Play'} <span aria-hidden="true">↗</span>
                     </Link>
                   </>
                 )}
