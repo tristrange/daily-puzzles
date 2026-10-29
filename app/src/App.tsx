@@ -4,6 +4,7 @@ import './App.css'
 import { Shell } from './components/Shell'
 import { HomePage } from './pages/HomePage'
 import { LeaderboardGate } from './components/LeaderboardGate'
+import { LessonLayout } from './components/LessonLayout'
 
 const ArchivePage = lazy(() => import('./pages/ArchivePage').then((module) => ({ default: module.ArchivePage })))
 const LeaderboardsPage = lazy(() => import('./pages/LeaderboardsPage').then((module) => ({ default: module.LeaderboardsPage })))
@@ -54,23 +55,25 @@ function App() {
             <Route path="preview/sudoku" element={<SudokuPreviewPage />} />
             <Route path="preview/killer-sudoku" element={<KillerSudokuPreviewPage />} />
             <Route path="stats" element={<StatsPage />} />
-            <Route path="learn" element={<LearnPage />} />
-            <Route path="learn/queens" element={<QueensCoursePage />} />
-            <Route path="learn/queens/:lessonId" element={<QueensLessonPage />} />
-            <Route path="learn/trio" element={<TrioCoursePage />} />
-            <Route path="learn/trio/:lessonId" element={<TrioLessonPage />} />
-            <Route path="learn/nurikabe" element={<GridCoursePage kind="nurikabe" />} />
-            <Route path="learn/nurikabe/:lessonId" element={<GridLessonPage kind="nurikabe" />} />
-            <Route path="learn/tents" element={<GridCoursePage kind="tents" />} />
-            <Route path="learn/tents/:lessonId" element={<GridLessonPage kind="tents" />} />
-            <Route path="learn/train-tracks" element={<GridCoursePage kind="train-tracks" />} />
-            <Route path="learn/train-tracks/:lessonId" element={<GridLessonPage kind="train-tracks" />} />
-            <Route path="learn/killer-sudoku" element={<KillerCoursePage />} />
-            <Route path="learn/killer-sudoku/:lessonId" element={<KillerLessonPage />} />
-            <Route path="learn/sudoku" element={<SudokuCoursePage />} />
-            <Route path="learn/star-battle" element={<StarBattleCoursePage />} />
-            <Route path="learn/star-battle/:lessonId" element={<StarBattleLessonPage />} />
-            <Route path="learn/sudoku/:lessonId" element={<SudokuLessonPage />} />
+            <Route element={<LessonLayout />}>
+              <Route path="learn" element={<LearnPage />} />
+              <Route path="learn/queens" element={<QueensCoursePage />} />
+              <Route path="learn/queens/:lessonId" element={<QueensLessonPage />} />
+              <Route path="learn/trio" element={<TrioCoursePage />} />
+              <Route path="learn/trio/:lessonId" element={<TrioLessonPage />} />
+              <Route path="learn/nurikabe" element={<GridCoursePage kind="nurikabe" />} />
+              <Route path="learn/nurikabe/:lessonId" element={<GridLessonPage kind="nurikabe" />} />
+              <Route path="learn/tents" element={<GridCoursePage kind="tents" />} />
+              <Route path="learn/tents/:lessonId" element={<GridLessonPage kind="tents" />} />
+              <Route path="learn/train-tracks" element={<GridCoursePage kind="train-tracks" />} />
+              <Route path="learn/train-tracks/:lessonId" element={<GridLessonPage kind="train-tracks" />} />
+              <Route path="learn/killer-sudoku" element={<KillerCoursePage />} />
+              <Route path="learn/killer-sudoku/:lessonId" element={<KillerLessonPage />} />
+              <Route path="learn/sudoku" element={<SudokuCoursePage />} />
+              <Route path="learn/star-battle" element={<StarBattleCoursePage />} />
+              <Route path="learn/star-battle/:lessonId" element={<StarBattleLessonPage />} />
+              <Route path="learn/sudoku/:lessonId" element={<SudokuLessonPage />} />
+            </Route>
             <Route path="how-to-play" element={<RulesPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
