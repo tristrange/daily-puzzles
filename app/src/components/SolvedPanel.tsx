@@ -10,8 +10,12 @@
  * tracks-specific, so it is written once.
  */
 
+import { useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { formatTime } from '../domain/game'
-import type { SolveRecord } from '../lib/stats'
+import { PUZZLE_TYPE_LABEL } from '../domain/games'
+import { passportUnlocksForSolve } from '../lib/passport'
+import { readStoredStats, type SolveRecord } from '../lib/stats'
 import { LeaderboardPanel } from './LeaderboardPanel'
 
 export interface SolvedPanelProps {
@@ -37,6 +41,10 @@ export function SolvedPanel({
   puzzleId,
   candidate,
 }: SolvedPanelProps) {
+  const unlocks = useMemo(() => {
+    if (!solved || firstSolve !== null || !candidate || puzzleId !== candidate.id) return []
+    return passportUnlocksForSolve(readStoredStats(), candidate)
+  }, [solved, firstSolve, candidate, puzzleId])
   if (!solved) return null
   return (
     <div className="solved-panel">
@@ -50,6 +58,14 @@ export function SolvedPanel({
           <>Solved again — your first solve, {formatTime(firstSolve.elapsedMs)}, still counts.</>
         )}
       </p>
+      {unlocks.length > 0 && <div className="passport-celebration">
+        {unlocks.map(unlock => <p key={unlock.kind}>
+          {unlock.kind === 'explorer' ? 'Explorer stamp earned!' : unlock.milestone === 1
+            ? `${PUZZLE_TYPE_LABEL[unlock.type]} stamp earned!`
+            : `${unlock.milestone} ${PUZZLE_TYPE_LABEL[unlock.type]} puzzles solved!`}
+        </p>)}
+        <Link to="/stats/passport">View your passport <span aria-hidden="true">→</span></Link>
+      </div>}
       <div className="share-buttons">
         <button type="button" className="tool-button share" onClick={() => onShare('result')}>
           {copied === 'result' ? 'Copied result' : 'Copy result'}

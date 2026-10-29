@@ -13,6 +13,7 @@ const PuzzlePage = lazy(() => import('./pages/PuzzlePage').then((module) => ({ d
 const RulesPage = lazy(() => import('./pages/RulesPage').then((module) => ({ default: module.RulesPage })))
 const StarBattlePage = lazy(() => import('./pages/StarBattlePage').then((module) => ({ default: module.StarBattlePage })))
 const StatsPage = lazy(() => import('./pages/StatsPage').then((module) => ({ default: module.StatsPage })))
+const PassportPage = lazy(() => import('./pages/PassportPage').then((module) => ({ default: module.PassportPage })))
 const LearnPage = lazy(() => import('./pages/LearnPage').then((module) => ({ default: module.LearnPage })))
 const KillerCoursePage = lazy(() => import('./pages/KillerLessonPages').then(module => ({ default: module.KillerCoursePage })))
 const KillerLessonPage = lazy(() => import('./pages/KillerLessonPages').then(module => ({ default: module.KillerLessonPage })))
@@ -55,6 +56,7 @@ function App() {
             <Route path="preview/sudoku" element={<SudokuPreviewPage />} />
             <Route path="preview/killer-sudoku" element={<KillerSudokuPreviewPage />} />
             <Route path="stats" element={<StatsPage />} />
+            <Route path="stats/passport" element={<PassportPage />} />
             <Route element={<LessonLayout />}>
               <Route path="learn" element={<LearnPage />} />
               <Route path="learn/queens" element={<QueensCoursePage />} />

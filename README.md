@@ -98,6 +98,9 @@ separate from daily games, stats and leaderboards.
 - Per-game archives and personal stats, with Sudoku level and Train Tracks size filters.
   Overall and per-game summaries show solve counts, average/fastest times, streaks and
   hints used. First solves count; results are shareable.
+- Puzzle Passport, under Stats, collects game stamps and milestones at 1, 10 and 25
+  distinct daily or archive solves per game. Hints are welcome; preview puzzles do not
+  count. The passport uses the same local history and stats backup as the rest of Stats.
 - Optional per-puzzle leaderboards showing nickname, time and hints, accessible after solving and from navigation. Browsing requires no signup; joining uses an anonymous browser identity, without email or password.
 
 Hints may stall when their supported techniques find nothing further; that does
