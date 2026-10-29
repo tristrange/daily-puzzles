@@ -443,6 +443,7 @@ class MarkRulebook(Rulebook):
                 stars_per_row=(
                     board.region_capacity[0] if self.default_stars_per_row is not None else None
                 ),
+                generator_version=puzzle.generator_version,
             ),
         )
 

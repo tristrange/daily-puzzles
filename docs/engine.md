@@ -33,13 +33,17 @@ code; only the number of stars per row differs.
 
 `engine/src/queens_engine/generator.py` is deterministic end to end. Given a seed it:
 
-1. Places a random queens solution by backtracking over rows with a random column order.
-   The main-diagonal and anti-diagonal invariants are kept in **separate sets** — a value
-   from one can equal a value from the other for cells that do not attack, so a shared set
-   would reject valid placements (a subtle bug the prototype actually had).
-2. Grows regions outward from their queens, one cell at a time, from a random frontier.
-   Each region keeps its queen, stays 4-connected by construction, and the grid is fully
-   claimed because the frontier is connected.
+1. Picks the starting arrangement. Queens version 1 places a random queens solution by
+   backtracking over rows with a random column order; the main-diagonal and anti-diagonal
+   invariants are kept in **separate sets** — a value from one can equal a value from the
+   other for cells that do not attack, so a shared set would reject valid placements (a
+   subtle bug the prototype actually had). Queens version 3 instead picks random region
+   seeds, because growing outward from the queens almost never produced a unique board
+   once every region had to reach three cells.
+2. Grows regions outward, one cell at a time, from a random frontier. Each region stays
+   4-connected by construction, and the grid is fully claimed because the frontier is
+   connected. Version 3 grows the regions below three cells first, so no coloured area is
+   a single cell or a pair; version 1 has no floor and is frozen for replay.
 3. Runs the exact counter as a **uniqueness gate**: boards with more than one solution are
    discarded and the stream moves on (rejection sampling).
 
@@ -154,6 +158,8 @@ A brute-force search over row combinations confirmed the table, and
 20,000 attempts discovering that.
 
 `generatorVersion` is part of the contract too: Queens is version 1 (frozen — the
-committed files replay through the exact PRNG stream that made them) and Star Battle is
-version 2, a separate placement function that cannot perturb the version-1 draws. A new
-star layout bug would be caught by `verify_replay` in CI before it reached a player.
+committed files replay through the exact PRNG stream that made them), version 3 for new
+boards (random region seeds, every region at least three cells) and Star Battle is
+version 2, a separate placement function that cannot perturb either Queens stream. A new
+star layout bug or a Queens region regression would be caught by `verify_replay` in CI
+before it reached a player.

@@ -43,6 +43,23 @@ def _board(size: int, seed: int) -> Board:
     )
 
 
+def _legacy_board(size: int, seed: int) -> Board:
+    """A board from the frozen Queens v1 generator.
+
+    The named anchors below ("seed 0 at size 5 ...") describe specific boards.
+    Version 3 changes which board a seed produces, so anchoring the rule set to
+    the latest generator would rewrite the fixture on every generator change.
+    v1 is frozen for archive replay, which makes it the stable choice here.
+    """
+    return as_marks_board(
+        generate_puzzle(
+            seed=seed,
+            puzzle_id="x",
+            config=GenerationConfig(size=size, generator_version=1),
+        ).board
+    )
+
+
 def _star_board(size: int, seed: int) -> Board:
     return as_marks_board(
         generate_puzzle(
@@ -95,7 +112,7 @@ def test_deduce_is_deterministic() -> None:
 
 def test_rule_anchor_intersection_and_subset() -> None:
     """seed 0 at size 5 leans on an intersection and a subset in pure logic."""
-    board = _board(5, 0)
+    board = _legacy_board(5, 0)
     counts = deduce(board, allow_guesses=False).rule_counts
     assert counts.get(INTERSECTION, 0) >= 1
     assert counts.get(SUBSET, 0) >= 1
@@ -103,7 +120,7 @@ def test_rule_anchor_intersection_and_subset() -> None:
 
 def test_rule_anchor_trial() -> None:
     """seed 6 at size 5 stalls on pure logic and needs exactly one probe."""
-    board = _board(5, 6)
+    board = _legacy_board(5, 6)
     pure = deduce(board, allow_guesses=False)
     assert not pure.solved
     assert pure.needs_guessing
@@ -282,8 +299,8 @@ def test_score_difficulty_matches_trace() -> None:
 
 
 def test_score_difficulty_levels() -> None:
-    assert score_difficulty(_board(5, 0)).level_name == "Easy"
-    assert score_difficulty(_board(5, 6)).needs_guessing is True
+    assert score_difficulty(_legacy_board(5, 0)).level_name == "Easy"
+    assert score_difficulty(_legacy_board(5, 6)).needs_guessing is True
     for size in SIZES:
         for seed in (1, 2, 3):
             level = score_difficulty(_board(size, seed)).level
@@ -300,6 +317,6 @@ def test_generated_boards_stay_within_guess_budget() -> None:
 
 
 def test_difficulty_builds_from_seed_anchor() -> None:
-    difficulty: Difficulty = score_difficulty(_board(5, 6))
+    difficulty: Difficulty = score_difficulty(_legacy_board(5, 6))
     assert difficulty.score == 25.5
     assert difficulty.level_name == "Medium"

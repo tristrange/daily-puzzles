@@ -95,16 +95,26 @@ python -m tools.publish --dry-run --lead 7              # preview without writin
 python -m tools.verify --dir ../app/public/puzzles      # exit 1 on any mismatch
 ```
 
+## Queens region size
+
+New Queens boards use `generatorVersion` 3. Version 3 picks `size` random
+region seeds and grows every region to at least three cells before the ordinary
+random frontier fills the rest of the grid, so no coloured area can be a single
+cell or a pair. Version 1 is frozen: the committed boards were grown from queen
+cells without a floor and still replay byte-for-byte. Version numbers are
+per family, so Train Tracks' version 3 is unrelated.
+
 ## Star Battle
 
 The generator emits both puzzle types. Queens (one star per row, column and
-region) is `generatorVersion` 1 — the frozen stream the committed puzzles were
-built with. Star Battle (k stars per row, column and region, still `size`
-regions, still no two stars touching) is `generatorVersion` 2 and a separate
-placement function, so the version-1 boards replay byte-for-byte.
+region) uses version 3 for new boards and version 1 for the legacy archive.
+Star Battle (k stars per row, column and region, still `size` regions, still no
+two stars touching) is `generatorVersion` 2 and a separate placement function,
+so neither Queens stream is perturbed.
 
 The solver, the board model, the schema and the parsers were already
-capacity-aware; the generator was the last Queens-only piece. Region growth is
+capacity-aware; the generator was the last Queens-only piece. For Star Battle,
+region growth is
 the only stage that changed shape: instead of one queen per region, each region
 seeds from its k stars (bucketed in row-major order) and floods from there, and a
 layout that leaves a region disconnected is rejected like any other invalid
