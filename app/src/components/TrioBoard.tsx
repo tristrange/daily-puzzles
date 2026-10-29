@@ -43,8 +43,13 @@ export function TrioBoard({ board, game, brush, pencil, locked, conflicts, instr
       return
     }
     const cell = cellAt(event.clientX, event.clientY)
-    if (cell === null || board.givens[cell] !== 0) return
+    if (cell === null) return
+    if (board.givens[cell] !== 0) {
+      if (inspection) { setFocus(cell); inspection.onSelect(cell); grid.current?.querySelector<HTMLElement>(`[data-cell="${cell}"]`)?.focus({ preventScroll: true }) }
+      return
+    }
     setFocus(cell)
+    inspection?.onSelect(cell)
     grid.current?.querySelector<HTMLElement>(`[data-cell="${cell}"]`)?.focus({ preventScroll: true })
     stroke.current = { id: event.pointerId, action: trioAction(game, cell, brush, pencil), visited: new Set([cell]) }
     onBegin()
@@ -57,9 +62,10 @@ export function TrioBoard({ board, game, brush, pencil, locked, conflicts, instr
     const cell = cellAt(event.clientX, event.clientY)
     if (cell === null || active.visited.has(cell)) return
     active.visited.add(cell)
+    if (inspection) { setFocus(cell); inspection.onSelect(cell) }
     onApply(cell, active.action)
   }
-  const one = (cell: number, value: TrioValue) => { if (!locked && !stroke.current) { onBegin(); onApply(cell, trioAction(game, cell, value, pencil)); onEnd(false) } }
+  const one = (cell: number, value: TrioValue) => { if (!locked && !stroke.current) { inspection?.onSelect(cell); onBegin(); onApply(cell, trioAction(game, cell, value, pencil)); onEnd(false) } }
   const key = (event: KeyboardEvent<HTMLDivElement>) => {
     const row = Math.floor(focus / 9), col = focus % 9
     const navigation: Record<string, number> = { ArrowUp: Math.max(0, row - 1) * 9 + col, ArrowDown: Math.min(8, row + 1) * 9 + col,
@@ -96,7 +102,7 @@ export function TrioBoard({ board, game, brush, pencil, locked, conflicts, instr
             data-selected={inspection?.selected === cell ? true : undefined} aria-selected={inspection ? inspection.selected === cell : undefined}
             tabIndex={focus === cell ? 0 : -1} aria-readonly={given || locked}
             aria-label={`Row ${row + 1}, column ${col + 1}, ${TRIO_NAMES[value]}${given ? ', given' : ''}${noteLabel ? `, notes ${noteLabel}` : ''}${conflicts.has(cell) ? ', conflict' : ''}${hint?.cell === cell ? ', hint target' : support.has(cell) ? ', supports hint' : ''}${neighbours.length ? `; ${neighbours.join('; ')}` : ''}`}
-            onFocus={() => setFocus(cell)} onClick={(event) => { if (event.detail === 0) { if (inspection) { setFocus(cell); inspection.onSelect(cell) } else one(cell, brush) } }}
+            onFocus={() => { setFocus(cell); if (!locked) inspection?.onSelect(cell) }} onClick={(event) => { if (event.detail === 0) { if (inspection) { setFocus(cell); inspection.onSelect(cell) } if (!locked) one(cell, brush) } }}
             onContextMenu={(event) => { event.preventDefault(); one(cell, 0) }}>
             {value !== 0 ? <TrioSymbol value={value} /> : <span className="trio-notes" aria-hidden="true">{([1, 2, 3] as const).map((v) => <span key={v}>{notes & (1 << (v - 1)) ? <TrioSymbol value={v} /> : null}</span>)}</span>}
           </button>

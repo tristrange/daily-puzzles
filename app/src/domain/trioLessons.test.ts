@@ -35,21 +35,32 @@ it.each(certificate.lessons)('matches the certified prefix, every scoped answer 
     expect(example.reasons.length).toBeLessThanOrEqual(5)
     expect(example.reasons.at(-1)).toContain(trioCandidateNames(example.candidates))
     const solution = proof.unique_solution[example.cell]!
-    expect(example.candidates & (1 << (solution - 1))).not.toBe(0)
+    const solutionBit = 1 << (solution - 1)
+    expect(example.candidates & solutionBit).not.toBe(0)
+    expect(example.proven & solutionBit).not.toBe(0)
+    for (let mask = 1; mask < 8; mask++) if (checkTrioLessonAnswer(lesson, { cell: example.cell, candidates: mask })) {
+      expect(mask & solutionBit).not.toBe(0)
+      expect(mask & (1 << (lesson.goal.remove - 1))).toBe(0)
+    }
     const applied = applyTrioLessonExample(lesson, example)
     expect(applied.cells.every((value, cell) => cell === example.cell || value === lesson.game.cells[cell])).toBe(true)
     expect(applied.notes.every((value, cell) => cell === example.cell || value === lesson.game.notes[cell])).toBe(true)
   }
 })
 
-it('accepts all qualified alternatives and rejects an over-restricted pair response', () => {
+it('accepts qualified alternatives and only accepts extra restrictions proved from the original board', () => {
   const lesson = TRIO_LESSONS.find(lesson => lesson.guidance === 'practice' && lesson.examples.length > 1)!
   expect(lesson.examples.length).toBeGreaterThan(1)
   for (const example of lesson.examples) expect(checkTrioLessonAnswer(lesson, example)).toBe(true)
   for (const lesson of TRIO_TECHNIQUES[2]!.exercises) {
     for (const example of lesson.examples) {
       expect([1, 2, 4].filter(bit => example.candidates & bit)).toHaveLength(2)
-      for (const bit of [1, 2, 4]) expect(checkTrioLessonAnswer(lesson, { cell: example.cell, candidates: bit })).toBe(false)
+      const proof = certificate.lessons.find(item => item.id === lesson.id)!
+      for (const bit of [1, 2, 4]) {
+        const accepted = checkTrioLessonAnswer(lesson, { cell: example.cell, candidates: bit })
+        expect(accepted).toBe(bit === example.proven)
+        if (accepted) expect(bit).toBe(1 << (proof.unique_solution[example.cell]! - 1))
+      }
       expect(example.reasons.at(-1)).toContain(TRIO_NAMES[lesson.goal.remove])
     }
   }
