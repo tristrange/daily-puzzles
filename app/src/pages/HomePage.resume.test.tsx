@@ -189,6 +189,7 @@ it('refreshes saved attempts and solved results when a page is restored or anoth
   })
   expect(link('Play Queens again')).not.toBeNull()
   expect(container.querySelector('.today-progress')?.textContent).toContain('1 of ')
+  expect(container.querySelector('.weekly-challenge')?.textContent).toContain('1 / 3')
   expect(fetchSpy).not.toHaveBeenCalled()
 })
 
