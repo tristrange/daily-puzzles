@@ -70,6 +70,7 @@ export function prepareTrioExercise(exercise: Descriptor, index: number, techniq
   }
   const remove = exercise.goal.remove
   if (remove !== 1 && remove !== 2 && remove !== 3) throw Error('Invalid Trio lesson goal symbol')
+  const goal: { line: number; remove: 1 | 2 | 3 } = { line: exercise.goal.line, remove }
   const line = TRIO_LINES[exercise.goal.line], bit = 1 << (remove - 1)
   if (!line) throw Error('Invalid Trio lesson goal line')
   const cells: TrioValue[] = masks.map(mask => {
@@ -104,9 +105,9 @@ export function prepareTrioExercise(exercise: Descriptor, index: number, techniq
     if (replay.masks[example.cell] !== candidates) throw Error('Trio lesson final effect differs from its response')
     if (techniqueId === 'candidate-chains' && (actions.length < 3 || new Set(actions.map(action => `${action.rule}:${action.group.join()}`)).size < 2 || bits.filter(b => candidates & b).length !== 2)) throw Error('Trio candidate chain must leave the advertised pair')
     const hint: TrioHint = { cell: example.cell, candidates, source: game, steps: replay.steps }
-    return { cell: example.cell, candidates, reasons: replay.steps.map(step => step.reason), hint }
+    return { cell: example.cell, candidates, proven: deduction.candidates[example.cell]!, reasons: replay.steps.map(step => step.reason), hint }
   })
-  return { id: exercise.id, source: exercise.source, board, game, goal: { line: exercise.goal.line, remove }, examples, exerciseNumber: index + 1,
+  return { id: exercise.id, source: exercise.source, board, game, goal, examples, exerciseNumber: index + 1,
     guidance: index === 0 ? 'guided' : 'practice', scope: `${exercise.goal.line < 9 ? 'row' : 'column'} ${exercise.goal.line % 9 + 1}` }
 }
 
@@ -115,15 +116,16 @@ export const TRIO_TECHNIQUES = catalog.map(technique => ({ id: technique.id, tit
 export const TRIO_LESSONS = TRIO_TECHNIQUES.flatMap(technique => technique.exercises)
 export type TrioLesson = typeof TRIO_LESSONS[number]
 export function checkTrioLessonAnswer(lesson: TrioLesson, answer: { cell: number; candidates: number }): boolean {
-  return lesson.examples.some(example => example.cell === answer.cell && example.candidates === answer.candidates)
+  return Number.isInteger(answer.candidates) && answer.candidates > 0 && answer.candidates <= 7 && lesson.examples.some(example =>
+    example.cell === answer.cell && (answer.candidates & ~example.candidates) === 0 && (answer.candidates & example.proven) === example.proven)
 }
 
-export function applyTrioLessonExample(lesson: TrioLesson, example: TrioLesson['examples'][number]): TrioGame {
-  const cells = [...lesson.game.cells], notes = [...lesson.game.notes]
+export function applyTrioLessonExample(lesson: TrioLesson, example: TrioLesson['examples'][number], game = lesson.game): TrioGame {
+  const cells = [...game.cells], notes = [...game.notes]
   if (single(example.candidates)) {
     const value = Math.log2(example.candidates) + 1
     if (!isTrioValue(value)) throw Error('Invalid Trio lesson result')
     cells[example.cell] = value; notes[example.cell] = 0
-  } else notes[example.cell] = example.candidates
+  } else { cells[example.cell] = 0; notes[example.cell] = example.candidates }
   return { cells, notes }
 }

@@ -9,6 +9,7 @@ export function useMoveHistory<T>() {
   return {
     canUndo: past.length > 0,
     canRedo: future.length > 0,
+    clear() { setPast([]); setFuture([]) },
     remember(before: T) {
       setPast((states) => [...states.slice(1 - LIMIT), before])
       setFuture([])
