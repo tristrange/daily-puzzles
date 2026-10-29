@@ -53,9 +53,13 @@ it('shows notes as they are edited across cells, then checks an answer without d
 it('places symbols, supports undo and redo, and protects the prepared starting cells', async () => {
   const lesson = TRIO_TECHNIQUES[1]!.exercises[1]!
   const empty = lesson.game.cells.findIndex((value, i) => !value && !lesson.examples.some(example => example.cell === i))
-  const prepared = lesson.game.cells.findIndex(value => value !== 0)
+  const prepared = lesson.game.cells.findIndex((value, i) => value !== 0 && lesson.board.givens[i] === 0)
+  expect(prepared).toBeGreaterThanOrEqual(0)
   await mount(lesson.id)
   expect(cell(prepared).getAttribute('aria-readonly')).toBe('true')
+  const preparedBefore = cell(prepared).getAttribute('aria-label')
+  await press(prepared, '1')
+  expect(cell(prepared).getAttribute('aria-label')).toBe(preparedBefore)
   const before = cell(empty).getAttribute('aria-label')
   await click('Notes'); await press(empty, '1')
   expect(cell(empty).getAttribute('aria-label')).toContain(', Sun')
@@ -95,6 +99,21 @@ it('accepts a placed symbol when the original puzzle proves that further deducti
   await mount(lesson.id)
   await click('Notes'); await press(example.cell, String(symbol)); await click('Check answer')
   expect(container.querySelector('.lesson-feedback')?.textContent).toContain('Lesson complete')
+})
+
+it('shows the example after a wrong symbol without clearing work in other cells', async () => {
+  const lesson = TRIO_TECHNIQUES[2]!.exercises[1]!, target = lesson.examples[0]!.cell
+  const scratch = lesson.game.notes.findIndex((mask, i) => i !== target && !!(mask & (1 << (lesson.goal.remove - 1))))
+  expect(scratch).toBeGreaterThanOrEqual(0)
+  await mount(lesson.id)
+  await press(scratch, String(lesson.goal.remove))
+  const scratchAfter = cell(scratch).innerHTML
+  await click('Notes'); await press(target, String(lesson.goal.remove))
+  expect(cell(target).getAttribute('aria-label')).toContain(`, ${TRIO_NAMES[lesson.goal.remove]}`)
+  await click('Show explanation')
+  expect(cell(target).getAttribute('aria-label')).toContain(', Empty, notes ')
+  expect(cell(scratch).innerHTML).toBe(scratchAfter)
+  expect(localStorage.getItem('daily-puzzles:trio-lessons:v1')).toBeNull()
 })
 
 it('does not count scratchwork or an explanation as lesson completion', async () => {
