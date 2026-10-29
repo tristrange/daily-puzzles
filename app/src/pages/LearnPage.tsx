@@ -12,6 +12,7 @@ import { GRID_LESSONS } from '../domain/gridLessons'
 import { QUEENS_LESSONS } from '../domain/queensLessons'
 import { readQueensLessons } from '../lib/queensLessonProgress'
 import { KILLER_LESSONS } from '../domain/killerLessons'
+import { KILLER_FORTY_FIVE_LESSONS } from '../domain/killerFortyFiveLessons'
 import { readKillerLessons } from '../lib/killerLessonProgress'
 
 export function LearnPage() {
@@ -34,8 +35,8 @@ export function LearnPage() {
         <p>{SUDOKU_TECHNIQUES.length} techniques · {SUDOKU_LESSONS.length} exercises. Start with locked candidates, then work through pairs, triples, X-Wing and beyond.</p>
         <p className="lesson-progress">{sudokuCompleted.length} of {SUDOKU_LESSONS.length} completed</p>
         <Link className="tool-button primary" to="/learn/sudoku">Learn Sudoku →</Link></li>
-      <li><h2>Killer Sudoku</h2><p>Use cage combinations and placed digits to rule out possibilities.</p>
-        <p className="lesson-progress">{killerCompleted.length} of {KILLER_LESSONS.length} completed</p>
+      <li><h2>Killer Sudoku</h2><p>Use cage combinations and the 45 rule to narrow down possibilities.</p>
+        <p className="lesson-progress">{killerCompleted.length} of {KILLER_LESSONS.length + KILLER_FORTY_FIVE_LESSONS.length} completed</p>
         <Link className="tool-button primary" to="/learn/killer-sudoku">Learn Killer Sudoku →</Link></li>
       <li><h2>Star Battle</h2>
         <p>{STAR_BATTLE_TECHNIQUES.length + 1} techniques · {STAR_BATTLE_LESSONS.length + STAR_BATTLE_CHAINS.length} exercises. Begin with counting spaces, then combine reservations with other deductions.</p>

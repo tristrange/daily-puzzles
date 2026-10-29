@@ -4,6 +4,8 @@ import { KillerCombinations } from '../components/KillerCombinations'
 import { SudokuBoard } from '../components/SudokuBoard'
 import { killerCombinations } from '../domain/killerSudoku'
 import { KILLER_LESSONS } from '../domain/killerLessons'
+import { KILLER_FORTY_FIVE_LESSONS } from '../domain/killerFortyFiveLessons'
+import { KillerFortyFiveLessonPage } from './KillerFortyFiveLessonPage'
 import { createSudokuGame } from '../domain/sudoku'
 import { completeKillerLesson, readKillerLessons } from '../lib/killerLessonProgress'
 
@@ -12,14 +14,21 @@ export function KillerCoursePage() {
   return <section className="learn-page">
     <Link to="/learn" className="lesson-back">← All games</Link>
     <h1 className="page-title">Killer Sudoku techniques</h1>
-    <p className="status">{completed.length} of {KILLER_LESSONS.length} completed · Saved in this browser.</p>
+    <p className="status">{completed.length} of {KILLER_LESSONS.length + KILLER_FORTY_FIVE_LESSONS.length} completed · Saved in this browser.</p>
     <ol className="lesson-cards"><li><p className="eyebrow">Technique 1 · Cage combinations</p>
       <h2>Compare cage combinations</h2>
       <p>List the distinct digits that fit a cage total, then use placed numbers to rule out combinations. For example, four different digits total 10 only as 1 + 2 + 3 + 4.</p>
       <div className="lesson-exercise-links">{KILLER_LESSONS.map((lesson, index) => <Link key={lesson.id} className="tool-button" to={`/learn/killer-sudoku/${lesson.id}`}>
         <span>Exercise {index + 1} · {index === 0 ? 'Guided' : 'Practice'}</span>
         <span className={completed.includes(lesson.id) ? 'lesson-completed' : undefined}>{completed.includes(lesson.id) ? 'Completed' : '→'}</span>
-      </Link>)}</div></li></ol>
+      </Link>)}</div></li>
+      <li><p className="eyebrow">Technique 2 · Innies and outies</p>
+        <h2>The 45 rule</h2>
+        <p>Every row, column and box totals 45. Compare cage totals with that sum to find what crossing cells must add to, then eliminate combinations.</p>
+        <div className="lesson-exercise-links">{KILLER_FORTY_FIVE_LESSONS.map((lesson, index) => <Link key={lesson.id} className="tool-button" to={`/learn/killer-sudoku/${lesson.id}`}>
+          <span>Exercise {index + 1} · {index === 0 ? 'Guided' : 'Practice'}</span>
+          <span className={completed.includes(lesson.id) ? 'lesson-completed' : undefined}>{completed.includes(lesson.id) ? 'Completed' : '→'}</span>
+        </Link>)}</div></li></ol>
     <p className="status">Lesson progress is separate from daily games.</p>
   </section>
 }
@@ -27,8 +36,10 @@ export function KillerCoursePage() {
 export function KillerLessonPage() {
   const { lessonId } = useParams()
   const index = KILLER_LESSONS.findIndex(lesson => lesson.id === lessonId)
-  if (index < 0) return <section><h1 className="page-title">Lesson not found</h1><Link to="/learn/killer-sudoku">All Killer Sudoku techniques</Link></section>
-  return <KillerExercise key={lessonId} index={index} />
+  if (index >= 0) return <KillerExercise key={lessonId} index={index} />
+  const advancedIndex = KILLER_FORTY_FIVE_LESSONS.findIndex(lesson => lesson.id === lessonId)
+  if (advancedIndex >= 0) return <KillerFortyFiveLessonPage key={lessonId} lesson={KILLER_FORTY_FIVE_LESSONS[advancedIndex]!} index={advancedIndex} />
+  return <section><h1 className="page-title">Lesson not found</h1><Link to="/learn/killer-sudoku">All Killer Sudoku techniques</Link></section>
 }
 
 function KillerExercise({ index }: { index: number }) {
@@ -64,7 +75,7 @@ function KillerExercise({ index }: { index: number }) {
       <p className="lesson-feedback" role="status" aria-live="polite">{result === 'incorrect' ? 'Not quite. Check the placed digits and try again.' : result === 'correct' ? 'Lesson complete.' : result === 'revealed' ? 'Example shown. Try again to practice.' : ''}</p>
       {saveFailed && <p className="status">This browser could not save your completion.</p>}
       {explained && <section className="lesson-explanation"><h2>Why it works</h2><p>{lesson.explanation}</p>
-        {KILLER_LESSONS[index + 1] ? <Link className="tool-button primary" aria-label="Next exercise" to={`/learn/killer-sudoku/${KILLER_LESSONS[index + 1]!.id}`}>Next exercise →</Link> : <Link className="tool-button primary" to="/preview/killer-sudoku">Try a full Killer Sudoku →</Link>}</section>}
+        {KILLER_LESSONS[index + 1] ? <Link className="tool-button primary" aria-label="Next exercise" to={`/learn/killer-sudoku/${KILLER_LESSONS[index + 1]!.id}`}>Next exercise →</Link> : <Link className="tool-button primary" to={`/learn/killer-sudoku/${KILLER_FORTY_FIVE_LESSONS[0]!.id}`}>Next technique →</Link>}</section>}
     </section></div>
     <p className="lesson-note">Practice one deduction. Completion saves separately from your puzzles.</p>
   </section>

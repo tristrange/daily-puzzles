@@ -250,7 +250,7 @@ export function RulesPage() {
       <h2 id="killer-sudoku" tabIndex={-1}>Killer Sudoku</h2>
       <p>Follow the usual Sudoku rules. Digits in each dashed cage add to its small total, and a digit cannot repeat inside a cage, even across different rows, columns or boxes.</p>
       <p>Select cells from one cage and open Combinations to list its distinct-digit totals. Cross out any sets you have ruled out, or reset the crossed-out sets for that cage. Marks save with your puzzle and Undo restores them. The list does not use your marks to calculate hints.</p>
-      <p><Link to="/learn/killer-sudoku">Practice cage combinations</Link> with three exercises.</p>
+      <p><Link to="/learn/killer-sudoku">Practice cage combinations and the 45 rule</Link> with seven exercises.</p>
       <p>Play an Easy, Medium and Hard puzzle each day. Each has one verified solution and can be completed using cage and single-digit deductions; the levels are an initial guide to difficulty. Hints check for mistakes first, then explain a deduction; applying a hint is optional and undoable. <Link to="/preview/killer-sudoku">Practice boards</Link> save separately from daily puzzles.</p>
 
       <h2 id="nurikabe" tabIndex={-1}>Nurikabe</h2>

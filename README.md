@@ -82,8 +82,8 @@ separate from daily games, stats and leaderboards.
 - Tents has a Highlight tool for selecting cells without changing marks. Drag, Shift-click or Shift-arrow to highlight several cells; highlights can be cleared separately.
 - [Learn to solve](https://tristrange.github.io/daily-puzzles/#/learn) groups lessons by
   game. Queens has nine exercises combining region reservations, lines and no-touch.
-  Sudoku has 21 exercises through XY-Wing and Swordfish. Killer Sudoku has three exercises
-  on cage combinations. Star Battle has 15 exercises through
+  Sudoku has 21 exercises through XY-Wing and Swordfish. Killer Sudoku has seven exercises
+  on cage combinations and the 45 rule. Star Battle has 15 exercises through
   linked reservations and forced stars. Trio has 12 exercises combining quotas,
   no-three restrictions, links and candidate chains. Tents has 15 exercises on
   tree options, line arrangements and competing tree pairings. Nurikabe has nine on sea
