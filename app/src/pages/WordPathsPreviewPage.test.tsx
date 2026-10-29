@@ -14,5 +14,5 @@ it('offers ten playable previews without publishing a daily slot', () => {
   expect(html).toContain('href="/how-to-play#word-paths"')
   expect(html).toContain('role="grid"')
   expect(html).toContain('do not count toward daily stats')
-  expect(puzzleIdsForDay('2026-10-14')).not.toContain('2026-10-14-words')
+  expect(puzzleIdsForDay('2026-09-25')).not.toContain('2026-09-25-words')
 })

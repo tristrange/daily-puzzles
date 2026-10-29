@@ -9,7 +9,8 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import date
+from datetime import date, timedelta
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -171,3 +172,19 @@ def test_daily_slots_agree_with_shared_contract(case: dict[str, Any]) -> None:
     assert [
         identifier for book in rulebooks() if book.published for identifier in book.daily_ids(day)
     ] == case["ids"]
+
+
+def test_backfilled_archive_has_every_daily_slot_and_original_tracks() -> None:
+    archive = Path(__file__).resolve().parents[2] / "app/public/puzzles"
+    for offset in range(25):
+        day = date(2026, 9, 26) + timedelta(days=offset)
+        ids = [
+            identifier
+            for book in rulebooks()
+            if book.published
+            for identifier in book.daily_ids(day)
+        ]
+        assert len(ids) == 15
+        assert all((archive / f"{identifier}.json").is_file() for identifier in ids)
+        if day <= date(2026, 10, 16):
+            assert (archive / f"{day}-tracks.json").is_file()

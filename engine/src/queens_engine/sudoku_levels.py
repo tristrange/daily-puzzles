@@ -21,6 +21,7 @@ class SudokuVariant:
 _PATH = Path(__file__).resolve().parents[3] / "conformance/id-cases/manifest.json"
 _CONTRACT = json.loads(_PATH.read_text(encoding="utf-8"))["sudoku"]
 SUDOKU_START: Final = date.fromisoformat(_CONTRACT["activationDay"])
+SUDOKU_ARCHIVE_START: Final = date.fromisoformat(_CONTRACT["archiveStart"])
 SUDOKU_VARIANTS: Final[tuple[SudokuVariant, ...]] = tuple(
     SudokuVariant(cast("Level", v["name"]), v["suffix"], v["label"]) for v in _CONTRACT["variants"]
 )

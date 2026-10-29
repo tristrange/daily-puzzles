@@ -22,6 +22,7 @@ class TrackVariant:
 _PATH = Path(__file__).resolve().parents[3] / "conformance/id-cases/manifest.json"
 _CONTRACT = json.loads(_PATH.read_text(encoding="utf-8"))["trainTracks"]
 TRACK_SIZES_START: Final = date.fromisoformat(_CONTRACT["activationDay"])
+TRACK_SIZES_ARCHIVE_START: Final = date.fromisoformat(_CONTRACT["archiveStart"])
 TRACK_VARIANTS: Final[tuple[TrackVariant, ...]] = tuple(
     TrackVariant(cast("TrackSize", v["name"]), v["suffix"], v["side"], v["label"])
     for v in _CONTRACT["variants"]

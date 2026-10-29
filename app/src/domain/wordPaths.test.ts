@@ -67,10 +67,11 @@ describe('Word Paths file contract', () => {
     expect(Object.isFrozen(grid)).toBe(true)
   })
 
-  it('registers identity without changing pre-launch daily slots', () => {
+  it('registers Word Paths throughout the archive', () => {
     expect(puzzleIdFor('2026-10-14', 'word-paths')).toBe('2026-10-14-words')
     expect(PUZZLE_TYPE_PUBLISHED['word-paths']).toBe(true)
-    expect(puzzleIdsForDay('2026-10-14')).not.toContain('2026-10-14-words')
+    expect(puzzleIdsForDay('2026-10-14')).toContain('2026-10-14-words')
+    expect(puzzleIdsForDay('2026-09-25')).not.toContain('2026-09-25-words')
   })
 })
 

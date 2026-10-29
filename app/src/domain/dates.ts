@@ -17,18 +17,18 @@
  * correct, and never fetched.
  */
 
-import { SUDOKU_START, SUDOKU_VARIANTS, KILLER_START, KILLER_VARIANTS } from './sudokuLevels'
+import { SUDOKU_ARCHIVE_START, SUDOKU_VARIANTS, KILLER_START, KILLER_VARIANTS } from './sudokuLevels'
 import type { SudokuLevel } from './sudoku'
 import { PUZZLE_TYPES, type PuzzleType } from './board'
-import { TRACK_SIZES_START, TRACK_VARIANTS, type TrackSize } from './trackSizes'
+import { TRACK_SIZES_ARCHIVE_START, TRACK_VARIANTS, type TrackSize } from './trackSizes'
 import {
   DEFAULT_PUZZLE_TYPE,
   PUZZLE_TYPE_PUBLISHED,
   PUZZLE_TYPE_SUFFIX,
-  WORD_PATHS_START,
+  WORD_PATHS_ARCHIVE_START,
   TRIO_START,
   TENTS_START,
-  NURIKABE_START,
+  NURIKABE_ARCHIVE_START,
   isDefaultPuzzleType,
 } from './games'
 
@@ -154,13 +154,13 @@ export function puzzleIdFor(day: string, type: PuzzleType, trackSize?: TrackSize
  */
 export function puzzleIdsForDay(day: string): string[] {
   return PUZZLE_TYPES.filter((type) => PUZZLE_TYPE_PUBLISHED[type] &&
-    (type !== 'word-paths' || day >= WORD_PATHS_START) &&
+    (type !== 'word-paths' || day >= WORD_PATHS_ARCHIVE_START) &&
     (type !== 'trio' || day >= TRIO_START) &&
     (type !== 'tents' || day >= TENTS_START) &&
-    (type !== 'nurikabe' || day >= NURIKABE_START) &&
-    (type !== 'sudoku' || day >= SUDOKU_START) &&
+    (type !== 'nurikabe' || day >= NURIKABE_ARCHIVE_START) &&
+    (type !== 'sudoku' || day >= SUDOKU_ARCHIVE_START) &&
     (type !== 'killer-sudoku' || day >= KILLER_START)).flatMap((type) =>
-    type === 'train-tracks' && day >= TRACK_SIZES_START
+    type === 'train-tracks' && day >= TRACK_SIZES_ARCHIVE_START
       ? TRACK_VARIANTS.map((v) => puzzleIdFor(day, type, v.name))
       : type === 'sudoku' || type === 'killer-sudoku' ? SUDOKU_VARIANTS.map(v => puzzleIdFor(day, type, undefined, v.name))
       : [puzzleIdFor(day, type)],

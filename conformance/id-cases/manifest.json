@@ -1,5 +1,6 @@
 {
   "comment": "Puzzle id naming, asserted from both sides. The publisher writes ids with the engine's `puzzle_id` and the app routes them with its own id helpers, so a spelling the two disagree on is a puzzle that is published, correct, and unfindable. Adding a family means adding its cases here in the same commit as the registry entry.",
+  "archiveStart": "2026-09-26",
   "types": [
     {
       "type": "queens",
@@ -189,6 +190,8 @@
   ],
   "trainTracks": {
     "activationDay": "2026-10-14",
+    "archiveStart": "2026-09-26",
+    "legacyUntil": "2026-10-16",
     "variants": [
       {
         "name": "small",
@@ -951,7 +954,8 @@
     }
   ],
   "wordPaths": {
-    "activationDay": "2026-10-15"
+    "activationDay": "2026-10-15",
+    "archiveStart": "2026-09-26"
   },
   "dailyCases": [
     {
@@ -967,9 +971,16 @@
       "ids": [
         "2026-09-26",
         "2026-09-26-star",
-        "2026-09-26-tracks",
+        "2026-09-26-tracks-small",
+        "2026-09-26-tracks-medium",
+        "2026-09-26-tracks-large",
+        "2026-09-26-words",
         "2026-09-26-trio",
         "2026-09-26-tents",
+        "2026-09-26-sudoku-easy",
+        "2026-09-26-sudoku-medium",
+        "2026-09-26-sudoku-hard",
+        "2026-09-26-nurikabe",
         "2026-09-26-killer-sudoku-easy",
         "2026-09-26-killer-sudoku-medium",
         "2026-09-26-killer-sudoku-hard"
@@ -983,8 +994,12 @@
         "2026-10-14-tracks-small",
         "2026-10-14-tracks-medium",
         "2026-10-14-tracks-large",
+        "2026-10-14-words",
         "2026-10-14-trio",
         "2026-10-14-tents",
+        "2026-10-14-sudoku-easy",
+        "2026-10-14-sudoku-medium",
+        "2026-10-14-sudoku-hard",
         "2026-10-14-nurikabe",
         "2026-10-14-killer-sudoku-easy",
         "2026-10-14-killer-sudoku-medium",
@@ -1002,6 +1017,9 @@
         "2026-10-15-words",
         "2026-10-15-trio",
         "2026-10-15-tents",
+        "2026-10-15-sudoku-easy",
+        "2026-10-15-sudoku-medium",
+        "2026-10-15-sudoku-hard",
         "2026-10-15-nurikabe",
         "2026-10-15-killer-sudoku-easy",
         "2026-10-15-killer-sudoku-medium",
@@ -1019,6 +1037,9 @@
         "2026-10-16-words",
         "2026-10-16-trio",
         "2026-10-16-tents",
+        "2026-10-16-sudoku-easy",
+        "2026-10-16-sudoku-medium",
+        "2026-10-16-sudoku-hard",
         "2026-10-16-nurikabe",
         "2026-10-16-killer-sudoku-easy",
         "2026-10-16-killer-sudoku-medium",
@@ -1036,6 +1057,9 @@
         "2026-10-20-words",
         "2026-10-20-trio",
         "2026-10-20-tents",
+        "2026-10-20-sudoku-easy",
+        "2026-10-20-sudoku-medium",
+        "2026-10-20-sudoku-hard",
         "2026-10-20-nurikabe",
         "2026-10-20-killer-sudoku-easy",
         "2026-10-20-killer-sudoku-medium",
@@ -1091,6 +1115,7 @@
   },
   "sudoku": {
     "activationDay": "2026-10-21",
+    "archiveStart": "2026-09-26",
     "variants": [
       {
         "name": "easy",
@@ -1110,7 +1135,8 @@
     ]
   },
   "nurikabe": {
-    "activationDay": "2026-10-12"
+    "activationDay": "2026-10-12",
+    "archiveStart": "2026-09-26"
   },
   "killerSudoku": {
     "activationDay": "2026-09-26",

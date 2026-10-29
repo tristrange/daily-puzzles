@@ -61,7 +61,8 @@ def test_rejects_invalid_generation_seeds(seed: int) -> None:
 def test_daily_contract_and_unknown_generator_version() -> None:
     book = rulebook_for(PuzzleType.NURIKABE)
     puzzle = load_puzzle(FIXTURE)
-    assert book.daily_ids(date(2026, 10, 11)) == ()
+    assert book.daily_ids(date(2026, 9, 25)) == ()
+    assert book.daily_ids(date(2026, 9, 26)) == ("2026-09-26-nurikabe",)
     assert book.daily_ids(date(2026, 10, 12)) == ("2026-10-12-nurikabe",)
     assert not book.rated and not book.logic_only and book.deduce(puzzle.board) is None
     assert book.dimensions(puzzle) == (7, 7)

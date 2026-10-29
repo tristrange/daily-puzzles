@@ -37,6 +37,7 @@ through the lead horizon and exits 1 without writing anything.
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from datetime import date, timedelta
 from functools import cache
@@ -75,7 +76,13 @@ DEFAULT_LEAD_DAYS = 3
 #: The first day the archive must cover. A monitor cannot infer this from the
 #: files, because deleting every puzzle for the first day would move the minimum
 #: forward and hide the gap.
-ARCHIVE_START = date(2026, 9, 26)
+ARCHIVE_START = date.fromisoformat(
+    json.loads(
+        (Path(__file__).resolve().parents[2] / "conformance/id-cases/manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )["archiveStart"]
+)
 
 
 def _nearby_star_layouts(

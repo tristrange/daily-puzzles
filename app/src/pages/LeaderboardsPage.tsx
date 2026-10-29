@@ -1,25 +1,24 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { archiveStart as ARCHIVE_START } from '../../../conformance/id-cases/manifest.json'
 import { PUZZLE_TYPES, type PuzzleType } from '../domain/board'
 import { formatPuzzleLabel, puzzleIdParts, puzzleIdFor } from '../domain/dates'
-import { NURIKABE_START, PUZZLE_TYPE_LABEL, PUZZLE_TYPE_PUBLISHED, TENTS_START, TRIO_START, WORD_PATHS_START } from '../domain/games'
-import { TRACK_SIZES_START, TRACK_VARIANTS, trackVariantOf, type TrackSize } from '../domain/trackSizes'
-import { SUDOKU_START, SUDOKU_VARIANTS, sudokuVariantOf, KILLER_START, killerVariantOf } from '../domain/sudokuLevels'
+import { NURIKABE_ARCHIVE_START, PUZZLE_TYPE_LABEL, PUZZLE_TYPE_PUBLISHED, TENTS_START, TRIO_START, WORD_PATHS_ARCHIVE_START } from '../domain/games'
+import { TRACK_LEGACY_END, TRACK_SIZES_ARCHIVE_START, TRACK_VARIANTS, trackVariantOf, type TrackSize } from '../domain/trackSizes'
+import { SUDOKU_ARCHIVE_START, SUDOKU_VARIANTS, sudokuVariantOf, KILLER_START, killerVariantOf } from '../domain/sudokuLevels'
 import type { SudokuLevel } from '../domain/sudoku'
 import { LeaderboardPanel } from '../components/LeaderboardPanel'
 import { useToday } from '../lib/useToday'
 
-// The archive floor also appears in the publisher; later launches have their own dates.
-const ARCHIVE_START = '2026-09-26'
 const FIRST_DAY: Record<PuzzleType, string> = {
   queens: ARCHIVE_START,
   'star-battle': ARCHIVE_START,
   'train-tracks': ARCHIVE_START,
-  'word-paths': WORD_PATHS_START,
+  'word-paths': WORD_PATHS_ARCHIVE_START,
   trio: TRIO_START,
   tents: TENTS_START,
-  sudoku: SUDOKU_START,
-  nurikabe: NURIKABE_START,
+  sudoku: SUDOKU_ARCHIVE_START,
+  nurikabe: NURIKABE_ARCHIVE_START,
   'killer-sudoku': KILLER_START,
 }
 
@@ -34,7 +33,7 @@ export function LeaderboardsPage() {
   const day = valid ? parsed.day : today, type = valid ? parsed.type : 'queens'
   const sudokuVariant = valid && type === 'sudoku' ? sudokuVariantOf(requested) : type === 'killer-sudoku' ? killerVariantOf(requested) : null
   const variant = valid && type === 'train-tracks' ? trackVariantOf(requested) : null
-  const change = (nextType: PuzzleType, nextDay: string, size?: TrackSize, level?: SudokuLevel) => {
+  const change = (nextType: PuzzleType, nextDay: string, size?: TrackSize | 'original', level?: SudokuLevel) => {
     if (!puzzleIdParts(nextDay) || nextDay > today) return
     const first = FIRST_DAY[nextType]
     if (first > today) {
@@ -42,7 +41,11 @@ export function LeaderboardsPage() {
       return
     }
     const dayToShow = nextDay < first ? first : nextDay
-    const chosen = nextType === 'train-tracks' && dayToShow >= TRACK_SIZES_START ? size ?? variant?.name ?? 'small' : undefined
+    const originalAvailable = dayToShow >= ARCHIVE_START && dayToShow <= TRACK_LEGACY_END
+    const keepOriginal = size === 'original' || (size === undefined && type === 'train-tracks' && variant === null)
+    const chosen = nextType === 'train-tracks' && dayToShow >= TRACK_SIZES_ARCHIVE_START && !(originalAvailable && keepOriginal)
+      ? (size === 'original' ? undefined : size) ?? variant?.name ?? 'small'
+      : undefined
     const id = puzzleIdFor(dayToShow, nextType, chosen, (nextType === 'sudoku' || nextType === 'killer-sudoku') ? level ?? sudokuVariant?.name ?? 'easy' : undefined)
     setNotice(dayToShow === nextDay ? null : { id, message: `${PUZZLE_TYPE_LABEL[nextType]} starts on ${formatPuzzleLabel(first, timeZone)}. Showing the first available date.` })
     setParams({ id })
@@ -56,9 +59,9 @@ export function LeaderboardsPage() {
       {(type === 'sudoku' || type === 'killer-sudoku') && <label>Level<select value={sudokuVariant?.name ?? 'easy'} onChange={event => change(type, day, undefined, event.target.value as SudokuLevel)}>
         {SUDOKU_VARIANTS.map(level => <option key={level.name} value={level.name}>{level.label}</option>)}
       </select></label>}
-      {type === 'train-tracks' && <label>Size<select value={variant?.name ?? 'original'} onChange={event => change(type, day, event.target.value as TrackSize)}>
-        {!variant && <option value="original">Original</option>}
-        {day >= TRACK_SIZES_START && TRACK_VARIANTS.map(size => <option key={size.name} value={size.name}>{size.label} · {size.side}×{size.side}</option>)}
+      {type === 'train-tracks' && <label>Size<select value={variant?.name ?? 'original'} onChange={event => change(type, day, event.target.value === 'original' ? 'original' : TRACK_VARIANTS.find(size => size.name === event.target.value)?.name)}>
+        {(day <= TRACK_LEGACY_END || !variant) && <option value="original">Original</option>}
+        {day >= TRACK_SIZES_ARCHIVE_START && TRACK_VARIANTS.map(size => <option key={size.name} value={size.name}>{size.label} · {size.side}×{size.side}</option>)}
       </select></label>}
     </div>
     {notice?.id === requested && <p className="status" role="status">{notice.message}</p>}

@@ -627,18 +627,18 @@ class TestDailyTrackSlots:
     @pytest.mark.parametrize(
         "day,names",
         [
-            (date(2026, 10, 13), ("2026-10-13-tracks",)),
+            (date(2026, 9, 25), ("2026-09-25-tracks",)),
             (
-                date(2026, 10, 14),
+                date(2026, 9, 26),
                 (
-                    "2026-10-14-tracks-small",
-                    "2026-10-14-tracks-medium",
-                    "2026-10-14-tracks-large",
+                    "2026-09-26-tracks-small",
+                    "2026-09-26-tracks-medium",
+                    "2026-09-26-tracks-large",
                 ),
             ),
         ],
     )
-    def test_publishes_the_required_slots_on_each_side_of_activation(
+    def test_publishes_the_required_slots_on_each_side_of_archive_start(
         self, tmp_path: Path, day: date, names: tuple[str, ...]
     ) -> None:
         book = rulebook_for(PuzzleType.TRAIN_TRACKS)
@@ -918,11 +918,11 @@ def test_first_four_daily_track_batches_are_committed() -> None:
 
 
 class TestDailyWordSlots:
-    def test_activation_and_idempotent_resume(self, tmp_path: Path) -> None:
+    def test_archive_start_and_idempotent_resume(self, tmp_path: Path) -> None:
         book = rulebook_for(PuzzleType.WORD_PATHS)
         with patch.object(publish, "rulebooks", return_value=(book,)):
             before = _run_publish(
-                tmp_path, date(2026, 10, 14), 0, dry_run=False, clock=date(2026, 10, 14)
+                tmp_path, date(2026, 9, 25), 0, dry_run=False, clock=date(2026, 9, 25)
             )
             assert not any(line.startswith("publish ") for line in before)
             assert not list(tmp_path.glob("*.json"))
