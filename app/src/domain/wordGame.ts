@@ -1,5 +1,5 @@
 /** Pure Word Paths rules, independent of pointer input and storage. */
-import { WORD_PATHS_V2_VOCABULARY } from './wordVocabulary'
+import { WORD_PATHS_V2_VOCABULARY, WORD_PATHS_V3_VOCABULARY } from './wordVocabulary'
 import { WordGrid, spellPath, adjacent, WORD_PATHS_VOCABULARY } from './wordPaths'
 export { spellPath } from './wordPaths'
 
@@ -8,7 +8,7 @@ export type WordGame = {
   readonly words: readonly (readonly number[])[]
   readonly trace: readonly number[]
 }
-const vocabularies = { 1: new Set(WORD_PATHS_VOCABULARY), 2: new Set(WORD_PATHS_V2_VOCABULARY) }
+const vocabularies = { 1: new Set(WORD_PATHS_VOCABULARY), 2: new Set(WORD_PATHS_V2_VOCABULARY), 3: new Set(WORD_PATHS_V3_VOCABULARY) }
 
 export function createWordGame(grid: WordGrid): WordGame {
   return { grid, words: [], trace: [] }

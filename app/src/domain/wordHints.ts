@@ -1,16 +1,18 @@
 /** Find one completion from the current words, never from a shipped answer. */
 import type { WordGame } from './wordGame'
 import { WORD_PATHS_VOCABULARY, type WordGrid } from './wordPaths'
-import { WORD_PATHS_V2_VOCABULARY } from './wordVocabulary'
+import { WORD_PATHS_V2_VOCABULARY, WORD_PATHS_V3_VOCABULARY } from './wordVocabulary'
 
 export type WordHintResult = { kind: 'hint'; path: readonly number[] }
   | { kind: 'dead-end' | 'limit' | 'none' }
 
 const dictionaries = new Map<number, { words: Set<string>; prefixes: Set<string> }>()
-function dictionary(version: 1 | 2) {
+function dictionary(version: 1 | 2 | 3) {
   let result = dictionaries.get(version)
   if (!result) {
-    const words = new Set(version === 1 ? WORD_PATHS_VOCABULARY : WORD_PATHS_V2_VOCABULARY)
+    const source = version === 1 ? WORD_PATHS_VOCABULARY
+      : version === 2 ? WORD_PATHS_V2_VOCABULARY : WORD_PATHS_V3_VOCABULARY
+    const words = new Set(source)
     const prefixes = new Set<string>()
     for (const word of words) for (let n = 1; n <= word.length; n++) prefixes.add(word.slice(0, n))
     result = { words, prefixes }
@@ -38,7 +40,7 @@ export function findWordHint(game: WordGame, maxStates = 50_000): WordHintResult
   try {
     step()
     const { words, prefixes } = dictionary(grid.vocabularyVersion)
-    // Distinct lengths 3–6 allow at most 18 letters, even in a blocked 7×7 grid.
+    // Distinct lengths 3–7 allow at most 25 letters, even in a blocked 7×7 grid.
     let bit = 0
     const bits = grid.letters.map((letter) => letter === null ? 0 : 1 << bit++)
     const occupied = game.words.flat().reduce((mask, cell) => mask | bits[cell]!, 0)

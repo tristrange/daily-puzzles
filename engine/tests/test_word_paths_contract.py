@@ -27,12 +27,15 @@ from queens_engine.word_paths import (
     spell_path,
     v1_vocabulary,
     v2_vocabulary,
+    v3_seven_letter_vocabulary,
+    v3_vocabulary,
     vocabulary_paths,
 )
 from test_word_paths import reference_covers
 
 CASES = CONFORMANCE_DIR / "word-paths"
 DIGEST = "e054967cc550e50a1f0d245fab7e18979870922f0c41e2d4cc7ff2010d93f0ce"
+V3_DIGEST = "1fbbc6ebccabbf7a17457c6e83fb61b15ec78d49fcc9cf5a9ffec43974ba536c"
 
 
 def test_frozen_vocabulary() -> None:
@@ -41,14 +44,25 @@ def test_frozen_vocabulary() -> None:
     assert hashlib.sha256("\n".join(words).encode()).hexdigest() == DIGEST
 
 
+def test_frozen_v3_vocabularies() -> None:
+    seven = v3_seven_letter_vocabulary()
+    assert len(seven) == 428
+    assert all(len(word) == 7 for word in seven)
+    words = v3_vocabulary()
+    assert len(words) == 28453
+    assert hashlib.sha256("\n".join(words).encode()).hexdigest() == V3_DIGEST
+    assert set(v1_vocabulary()) <= set(words)
+    assert set(seven) <= set(words)
+
+
 def test_word_rulebook_roundtrip_and_metadata() -> None:
     book = rulebook_for(PuzzleType.WORD_PATHS)
     assert book.published
     assert not any((book.rated, book.on_ramp, book.logic_only))
     puzzle = book.generate(seed=7, puzzle_id="2026-10-14-words")
-    assert puzzle.generator_version == 2
+    assert puzzle.generator_version == 3
     assert puzzle.difficulty is None
-    assert book.dimensions(puzzle) == (5, 5)
+    assert book.dimensions(puzzle) == (6, 6)
     assert book.deduce(puzzle.board) is None
     assert book.count_solutions(puzzle.board) == 1
     assert parse_puzzle(json.loads(dumps_puzzle(puzzle))) == puzzle
@@ -59,9 +73,9 @@ def test_word_rulebook_roundtrip_and_metadata() -> None:
         "letters",
         "wordLengths",
     }
-    assert len(book.render(puzzle).splitlines()) == 6
+    assert len(book.render(puzzle).splitlines()) == 7
     with pytest.raises(GenerationError, match="version"):
-        verify_replay(replace(puzzle, generator_version=3))
+        verify_replay(replace(puzzle, generator_version=4))
     with pytest.raises(GenerationError, match="word grid"):
         book.count_solutions(
             rulebook_for(PuzzleType.QUEENS).generate(seed=7, puzzle_id="2026-10-14").board
@@ -117,8 +131,8 @@ def test_seed_matches_the_independent_cover_solver(seed: int) -> None:
     book = rulebook_for(PuzzleType.WORD_PATHS)
     puzzle = book.generate(seed=seed, puzzle_id="2026-10-14-words")
     assert isinstance(puzzle.board, WordGrid)
-    assert len(reference_covers(puzzle.board, v2_vocabulary())) == 1
-    assert len(vocabulary_paths(puzzle.board, v2_vocabulary())) <= 12
+    assert len(reference_covers(puzzle.board, v3_vocabulary())) == 1
+    assert len(vocabulary_paths(puzzle.board, v3_vocabulary())) <= 50
     assert verify_replay(puzzle) == puzzle
 
 
@@ -158,3 +172,22 @@ def test_first_week_of_daily_words_is_replayable_and_independently_unique() -> N
         assert len(vocabulary_paths(puzzle.board, v2_vocabulary())) <= 12
         assert verify_replay(puzzle) == puzzle
         assert dumps_puzzle(puzzle) == path.read_text()
+
+
+def test_v3_preview_batch_is_distinct_replayable_and_independently_unique() -> None:
+    manifest: Any = json.loads((CASES / "manifest.json").read_text())
+    assert {p.name for p in (CASES / "v3").glob("*.json")} == set(manifest["v3Samples"])
+    fingerprints: set[tuple[str | None, ...]] = set()
+    for filename in manifest["v3Samples"]:
+        raw = (CASES / "v3" / filename).read_text()
+        puzzle = parse_puzzle(json.loads(raw))
+        assert puzzle.generator_version == 3
+        assert isinstance(puzzle.board, WordGrid)
+        assert puzzle.board.vocabulary_version == 3
+        assert (puzzle.board.width, puzzle.board.height) == (6, 6)
+        assert puzzle.board.word_lengths == (3, 4, 5, 6, 7)
+        assert len(reference_covers(puzzle.board, v3_vocabulary())) == 1
+        assert len(vocabulary_paths(puzzle.board, v3_vocabulary())) <= 50
+        assert verify_replay(puzzle) == puzzle
+        fingerprints.add(puzzle.board.letters)
+    assert len(fingerprints) == 10

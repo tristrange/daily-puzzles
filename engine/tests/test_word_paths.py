@@ -165,7 +165,7 @@ def test_invalid_budget_is_rejected(max_states: int) -> None:
         ("ABC1",),
         ("ABC\n",),
         ("AB",),
-        ("ABCDEFG",),
+        ("ABCDEFGH",),
     ],
 )
 def test_solver_rejects_invalid_vocabulary(vocabulary: tuple[str, ...]) -> None:

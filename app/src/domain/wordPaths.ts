@@ -14,7 +14,7 @@ export class WordGridError extends Error {
 }
 
 export class WordGrid {
-  readonly vocabularyVersion: 1 | 2
+  readonly vocabularyVersion: 1 | 2 | 3
   readonly width: number
   readonly height: number
   readonly letters: readonly (string | null)[]
@@ -22,7 +22,7 @@ export class WordGrid {
   readonly cellCount: number
 
   constructor(width: number, height: number, letters: readonly (string | null)[], wordLengths: readonly number[], vocabularyVersion = 1) {
-    if (vocabularyVersion !== 1 && vocabularyVersion !== 2) throw new WordGridError('unsupported vocabulary version')
+    if (vocabularyVersion !== 1 && vocabularyVersion !== 2 && vocabularyVersion !== 3) throw new WordGridError('unsupported vocabulary version')
     this.vocabularyVersion = vocabularyVersion
     if ([width, height].some((n) => !Number.isInteger(n) || n < 1 || n > 7)) {
       throw new WordGridError('dimensions must be integers from 1 to 7')
@@ -33,8 +33,8 @@ export class WordGrid {
     if (letters.some((letter) => letter !== null && (typeof letter !== 'string' || !/^[A-Z]$/.test(letter)))) {
       throw new WordGridError('cells must contain one A-Z letter or null for a blocker')
     }
-    if (wordLengths.length === 0 || wordLengths.some((n) => !Number.isInteger(n) || n < 3 || n > 6)) {
-      throw new WordGridError('word lengths must be integers from 3 to 6')
+    if (wordLengths.length === 0 || wordLengths.some((n) => !Number.isInteger(n) || n < 3 || n > 7)) {
+      throw new WordGridError('word lengths must be integers from 3 to 7')
     }
     if (new Set(wordLengths).size !== wordLengths.length) {
       throw new WordGridError('the pilot requires distinct word lengths')

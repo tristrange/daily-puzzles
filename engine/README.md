@@ -195,39 +195,42 @@ The shared ID manifest pins this date; existing legacy files remain unchanged.
 
 ## English Word Paths
 
-The Wend-inspired version-2 constructor lives in `word_paths_gen_v2.py`, using
-frozen version-1 candidates from `word_paths_gen.py`. Daily slots start on
+The Wend-inspired version-3 constructor lives in `word_paths_gen_v3.py` and is
+the default for new boards. Version 2 remains frozen in `word_paths_gen_v2.py`,
+re-proving version-1 candidates against the broader list. Daily slots start on
 **2026-10-15**, as defined in `conformance/id-cases/manifest.json` and read by both
-engine and app. Its 5×5 board has lengths 3, 4, 5, 6, eighteen letters and seven
-blocked cells. Every letter is used once, with orthogonal paths and no overlap.
-Locally valid words can lead to dead ends. Submission order and palindrome
-reversal do not multiply solutions; other distinct paths do.
+engine and app. A version-3 board is 6×6 with lengths 3, 4, 5, 6 and 7: twenty-five
+letters and eleven blocked cells. Every letter is used once, with orthogonal paths
+and no overlap. Locally valid words can lead to dead ends. Submission order and
+palindrome reversal do not multiply solutions; other distinct paths do.
 
-New boards accept **16,781** words from pinned SCOWL 2020.12.07 level 60, while
-answers still come from the familiar 748-word authored pilot pool. Selection,
-archive hash, normalized digest and full licenses are recorded in
+Version 3 accepts **28,453** words: the pinned SCOWL 2020.12.07 selection extended
+to seven letters, the familiar 748-word authored pool, and 428 authored
+seven-letter answers. The 3–6 letter answers still come from the familiar pool.
+Selection, archive hash, normalized digests and full licenses are recorded in
 [`data/word-paths-vocabulary.md`](src/queens_engine/data/word-paths-vocabulary.md).
 No AI service or runtime dictionary download is required. Uniqueness means one
 complete cover against the board’s entire versioned vocabulary, not all English.
 
-Version 2 tries at most fifty frozen-v1 candidates, allows eight extra legal
-paths and shares a 500,000-state budget across construction and checking.
-Exhaustion fails explicitly and never establishes uniqueness. There is no smaller
-vocabulary fallback. The [100-seed report](../docs/measurements/word-paths-vocabulary-v2.json)
-records 99 successes independently verified by a separate direct-letter solver
-and one bounded failure; all outcomes remain in the denominator. The ordinary
-publisher can retry a failed slot using its existing seed-bump policy.
+Version 3 tries at most twenty candidates, allows fifty legal paths and shares a
+500,000-state budget across construction and checking. Exhaustion fails explicitly
+and never establishes uniqueness. There is no smaller vocabulary fallback. The
+[100-seed report](../docs/measurements/word-paths-v3.json) records 100 successes
+independently verified by a separate direct-letter solver. The ordinary publisher
+can retry a failed slot using its existing seed-bump policy.
 
 The initial seven answer-free daily files cover October 15–21; later dates use
-the usual publisher without backfilling before activation. Ten v2 preview files
-use separate seeds and are not published archive files. Original ten v1 golden
-files remain unchanged. Reports contain answers for editorial review and must
-not go in `app/public/puzzles`. The maintainer has confirmed physical iPhone play.
+the usual publisher without backfilling before activation. Ten v2 and ten v3
+preview files use separate seeds and are not published archive files. Original
+ten v1 golden files remain unchanged. Reports contain answers for editorial review
+and must not go in `app/public/puzzles`. The maintainer has confirmed physical
+iPhone play for the version-2 boards; the version-3 preview still needs a device
+pass.
 
 ## Word Paths file versions
 
 The `word-paths` family uses `YYYY-MM-DD-words` IDs. Generate and replay a local
-version-2 sample without changing the public archive (commands from `engine/`):
+version-3 sample without changing the public archive (commands from `engine/`):
 
 ```sh
 uv run python -m tools.generate --date 2026-10-15 --type word-paths --out /tmp/word-paths-preview
@@ -240,10 +243,12 @@ Parsing checks structure; replay and the exact solver establish content validity
 Marks-only knobs are refused.
 
 `generatorVersion: 1` freezes the original recipe and 748-word list; version 2
-freezes the broader list and new rejection policy. Engine and browser choose the
+freezes the broader 3–6 letter list and its rejection policy; version 3 freezes
+the 6×6 recipe and the 28,453-word 3–7 letter list. Engine and browser choose the
 same list from the envelope version, rejecting unknown versions. Original replay
-and v1 progress keys are unchanged; v2 attempts use separate keys. After publishing
-v2 content, rollback must retain v2-capable readers and both frozen lists.
+and earlier progress keys are unchanged; new attempts use separate keys. After
+publishing version-3 content, rollback must retain version-3-capable readers and
+all three frozen lists.
 
 ## The rules are a public interface
 

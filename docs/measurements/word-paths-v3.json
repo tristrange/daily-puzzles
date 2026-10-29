@@ -1,0 +1,852 @@
+{
+  "recipe": {
+    "generatorVersion": 3,
+    "side": 6,
+    "wordLengths": [
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "letters": 25,
+    "blockers": 11,
+    "maxCandidates": 20,
+    "maxLegalPaths": 50,
+    "budgetStates": 500000
+  },
+  "vocabularies": {
+    "answers": 1176,
+    "sevenLetterAnswers": 428,
+    "acceptance": 28453,
+    "acceptanceSha256": "1fbbc6ebccabbf7a17457c6e83fb61b15ec78d49fcc9cf5a9ffec43974ba536c",
+    "sevenLetterSha256": "00d8a6a540b234315bd883a9b114fbc32eb93cd1c5b2f16a8f8e969081860b74",
+    "v1Sha256": "e054967cc550e50a1f0d245fab7e18979870922f0c41e2d4cc7ff2010d93f0ce"
+  },
+  "summary": {
+    "successes": 100,
+    "failures": 0,
+    "legalPaths": {
+      "min": 14,
+      "median": 34,
+      "p90": 43,
+      "max": 50
+    },
+    "familiarPaths": {
+      "min": 5,
+      "median": 9,
+      "p90": 13,
+      "max": 20
+    },
+    "solverStates": {
+      "min": 213,
+      "median": 351,
+      "p90": 499,
+      "max": 591
+    },
+    "allCoversOne": true,
+    "allReferenceCoversOne": true
+  },
+  "seeds": [
+    {
+      "seed": 0,
+      "legalPaths": 21,
+      "familiarPaths": 6,
+      "solverStates": 264,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 1,
+      "legalPaths": 28,
+      "familiarPaths": 8,
+      "solverStates": 392,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 2,
+      "legalPaths": 29,
+      "familiarPaths": 9,
+      "solverStates": 345,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 3,
+      "legalPaths": 34,
+      "familiarPaths": 9,
+      "solverStates": 351,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 4,
+      "legalPaths": 31,
+      "familiarPaths": 7,
+      "solverStates": 334,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 5,
+      "legalPaths": 25,
+      "familiarPaths": 9,
+      "solverStates": 288,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 6,
+      "legalPaths": 45,
+      "familiarPaths": 9,
+      "solverStates": 412,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 7,
+      "legalPaths": 15,
+      "familiarPaths": 7,
+      "solverStates": 266,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 8,
+      "legalPaths": 40,
+      "familiarPaths": 10,
+      "solverStates": 395,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 9,
+      "legalPaths": 34,
+      "familiarPaths": 10,
+      "solverStates": 321,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 10,
+      "legalPaths": 31,
+      "familiarPaths": 8,
+      "solverStates": 355,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 11,
+      "legalPaths": 34,
+      "familiarPaths": 7,
+      "solverStates": 319,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 12,
+      "legalPaths": 28,
+      "familiarPaths": 5,
+      "solverStates": 304,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 13,
+      "legalPaths": 30,
+      "familiarPaths": 5,
+      "solverStates": 341,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 14,
+      "legalPaths": 22,
+      "familiarPaths": 6,
+      "solverStates": 323,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 15,
+      "legalPaths": 14,
+      "familiarPaths": 6,
+      "solverStates": 216,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 16,
+      "legalPaths": 47,
+      "familiarPaths": 9,
+      "solverStates": 527,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 17,
+      "legalPaths": 23,
+      "familiarPaths": 5,
+      "solverStates": 272,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 18,
+      "legalPaths": 48,
+      "familiarPaths": 20,
+      "solverStates": 538,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 19,
+      "legalPaths": 23,
+      "familiarPaths": 8,
+      "solverStates": 288,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 20,
+      "legalPaths": 17,
+      "familiarPaths": 8,
+      "solverStates": 232,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 21,
+      "legalPaths": 20,
+      "familiarPaths": 6,
+      "solverStates": 277,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 22,
+      "legalPaths": 34,
+      "familiarPaths": 10,
+      "solverStates": 419,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 23,
+      "legalPaths": 40,
+      "familiarPaths": 12,
+      "solverStates": 359,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 24,
+      "legalPaths": 47,
+      "familiarPaths": 13,
+      "solverStates": 420,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 25,
+      "legalPaths": 38,
+      "familiarPaths": 13,
+      "solverStates": 338,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 26,
+      "legalPaths": 34,
+      "familiarPaths": 10,
+      "solverStates": 511,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 27,
+      "legalPaths": 44,
+      "familiarPaths": 9,
+      "solverStates": 466,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 28,
+      "legalPaths": 22,
+      "familiarPaths": 9,
+      "solverStates": 288,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 29,
+      "legalPaths": 20,
+      "familiarPaths": 6,
+      "solverStates": 274,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 30,
+      "legalPaths": 25,
+      "familiarPaths": 9,
+      "solverStates": 394,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 31,
+      "legalPaths": 43,
+      "familiarPaths": 13,
+      "solverStates": 391,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 32,
+      "legalPaths": 23,
+      "familiarPaths": 8,
+      "solverStates": 258,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 33,
+      "legalPaths": 39,
+      "familiarPaths": 11,
+      "solverStates": 504,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 34,
+      "legalPaths": 40,
+      "familiarPaths": 10,
+      "solverStates": 499,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 35,
+      "legalPaths": 28,
+      "familiarPaths": 10,
+      "solverStates": 231,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 36,
+      "legalPaths": 35,
+      "familiarPaths": 7,
+      "solverStates": 424,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 37,
+      "legalPaths": 33,
+      "familiarPaths": 9,
+      "solverStates": 410,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 38,
+      "legalPaths": 39,
+      "familiarPaths": 14,
+      "solverStates": 551,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 39,
+      "legalPaths": 38,
+      "familiarPaths": 8,
+      "solverStates": 334,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 40,
+      "legalPaths": 35,
+      "familiarPaths": 15,
+      "solverStates": 438,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 41,
+      "legalPaths": 26,
+      "familiarPaths": 10,
+      "solverStates": 291,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 42,
+      "legalPaths": 26,
+      "familiarPaths": 6,
+      "solverStates": 290,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 43,
+      "legalPaths": 16,
+      "familiarPaths": 7,
+      "solverStates": 213,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 44,
+      "legalPaths": 38,
+      "familiarPaths": 9,
+      "solverStates": 297,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 45,
+      "legalPaths": 24,
+      "familiarPaths": 10,
+      "solverStates": 254,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 46,
+      "legalPaths": 24,
+      "familiarPaths": 7,
+      "solverStates": 328,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 47,
+      "legalPaths": 48,
+      "familiarPaths": 13,
+      "solverStates": 436,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 48,
+      "legalPaths": 30,
+      "familiarPaths": 8,
+      "solverStates": 412,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 49,
+      "legalPaths": 36,
+      "familiarPaths": 8,
+      "solverStates": 418,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 50,
+      "legalPaths": 38,
+      "familiarPaths": 12,
+      "solverStates": 324,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 51,
+      "legalPaths": 19,
+      "familiarPaths": 6,
+      "solverStates": 284,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 52,
+      "legalPaths": 32,
+      "familiarPaths": 7,
+      "solverStates": 334,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 53,
+      "legalPaths": 41,
+      "familiarPaths": 7,
+      "solverStates": 403,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 54,
+      "legalPaths": 34,
+      "familiarPaths": 6,
+      "solverStates": 382,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 55,
+      "legalPaths": 36,
+      "familiarPaths": 8,
+      "solverStates": 409,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 56,
+      "legalPaths": 19,
+      "familiarPaths": 7,
+      "solverStates": 298,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 57,
+      "legalPaths": 22,
+      "familiarPaths": 8,
+      "solverStates": 296,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 58,
+      "legalPaths": 31,
+      "familiarPaths": 8,
+      "solverStates": 443,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 59,
+      "legalPaths": 30,
+      "familiarPaths": 13,
+      "solverStates": 371,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 60,
+      "legalPaths": 33,
+      "familiarPaths": 9,
+      "solverStates": 322,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 61,
+      "legalPaths": 37,
+      "familiarPaths": 8,
+      "solverStates": 430,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 62,
+      "legalPaths": 50,
+      "familiarPaths": 10,
+      "solverStates": 440,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 63,
+      "legalPaths": 33,
+      "familiarPaths": 7,
+      "solverStates": 388,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 64,
+      "legalPaths": 49,
+      "familiarPaths": 11,
+      "solverStates": 508,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 65,
+      "legalPaths": 30,
+      "familiarPaths": 14,
+      "solverStates": 486,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 66,
+      "legalPaths": 23,
+      "familiarPaths": 9,
+      "solverStates": 286,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 67,
+      "legalPaths": 36,
+      "familiarPaths": 10,
+      "solverStates": 494,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 68,
+      "legalPaths": 40,
+      "familiarPaths": 9,
+      "solverStates": 334,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 69,
+      "legalPaths": 35,
+      "familiarPaths": 7,
+      "solverStates": 300,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 70,
+      "legalPaths": 42,
+      "familiarPaths": 8,
+      "solverStates": 591,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 71,
+      "legalPaths": 20,
+      "familiarPaths": 7,
+      "solverStates": 308,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 72,
+      "legalPaths": 39,
+      "familiarPaths": 10,
+      "solverStates": 395,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 73,
+      "legalPaths": 32,
+      "familiarPaths": 9,
+      "solverStates": 298,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 74,
+      "legalPaths": 26,
+      "familiarPaths": 7,
+      "solverStates": 276,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 75,
+      "legalPaths": 39,
+      "familiarPaths": 11,
+      "solverStates": 404,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 76,
+      "legalPaths": 48,
+      "familiarPaths": 12,
+      "solverStates": 576,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 77,
+      "legalPaths": 36,
+      "familiarPaths": 8,
+      "solverStates": 355,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 78,
+      "legalPaths": 30,
+      "familiarPaths": 8,
+      "solverStates": 388,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 79,
+      "legalPaths": 34,
+      "familiarPaths": 10,
+      "solverStates": 336,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 80,
+      "legalPaths": 33,
+      "familiarPaths": 12,
+      "solverStates": 399,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 81,
+      "legalPaths": 39,
+      "familiarPaths": 12,
+      "solverStates": 399,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 82,
+      "legalPaths": 36,
+      "familiarPaths": 9,
+      "solverStates": 351,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 83,
+      "legalPaths": 38,
+      "familiarPaths": 15,
+      "solverStates": 389,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 84,
+      "legalPaths": 18,
+      "familiarPaths": 6,
+      "solverStates": 282,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 85,
+      "legalPaths": 32,
+      "familiarPaths": 10,
+      "solverStates": 390,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 86,
+      "legalPaths": 28,
+      "familiarPaths": 8,
+      "solverStates": 376,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 87,
+      "legalPaths": 38,
+      "familiarPaths": 12,
+      "solverStates": 548,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 88,
+      "legalPaths": 28,
+      "familiarPaths": 9,
+      "solverStates": 322,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 89,
+      "legalPaths": 43,
+      "familiarPaths": 12,
+      "solverStates": 309,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 90,
+      "legalPaths": 41,
+      "familiarPaths": 8,
+      "solverStates": 458,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 91,
+      "legalPaths": 33,
+      "familiarPaths": 10,
+      "solverStates": 304,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 92,
+      "legalPaths": 26,
+      "familiarPaths": 6,
+      "solverStates": 298,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 93,
+      "legalPaths": 36,
+      "familiarPaths": 7,
+      "solverStates": 397,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 94,
+      "legalPaths": 34,
+      "familiarPaths": 14,
+      "solverStates": 334,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 95,
+      "legalPaths": 37,
+      "familiarPaths": 12,
+      "solverStates": 354,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 96,
+      "legalPaths": 25,
+      "familiarPaths": 12,
+      "solverStates": 297,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 97,
+      "legalPaths": 35,
+      "familiarPaths": 6,
+      "solverStates": 334,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 98,
+      "legalPaths": 26,
+      "familiarPaths": 6,
+      "solverStates": 330,
+      "covers": 1,
+      "referenceCovers": 1
+    },
+    {
+      "seed": 99,
+      "legalPaths": 37,
+      "familiarPaths": 12,
+      "solverStates": 383,
+      "covers": 1,
+      "referenceCovers": 1
+    }
+  ]
+}

@@ -69,7 +69,13 @@ describe('versioned word acceptance', () => {
     const grid = new WordGrid(5, 5, letters, [3,4,5,6])
     expect(submitWord({ ...createWordGame(grid), trace:[7,2,3,4] }).accepted).toBe(false)
   })
+  it('accepts a seven-letter answer only through version 3', () => {
+    const letters = ['P', 'I', 'C', 'T', 'U', 'R', 'E']
+    const grid = new WordGrid(7, 1, letters, [7], 3)
+    expect(submitWord({ ...createWordGame(grid), trace: [0,1,2,3,4,5,6] }).accepted).toBe(true)
+    expect(submitWord({ ...createWordGame(new WordGrid(7, 1, letters, [7], 2)), trace: [0,1,2,3,4,5,6] }).accepted).toBe(false)
+  })
   it('rejects unknown vocabulary versions at the grid boundary', () => {
-    expect(() => new WordGrid(5, 5, letters, [3,4,5,6], 3)).toThrow('vocabulary version')
+    expect(() => new WordGrid(5, 5, letters, [3,4,5,6], 4)).toThrow('vocabulary version')
   })
 })

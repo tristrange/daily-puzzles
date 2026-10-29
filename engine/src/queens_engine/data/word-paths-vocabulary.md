@@ -14,5 +14,16 @@ semantic SHA256 `b5ffd19f0acf8e99fe2d2160ec86329e72bf6eeb6fe75f3786f013fc47da689
 
 This includes ordinary inflections and British/American spellings. It is a finite
 word-game dictionary, not every English word. Answer selection remains narrower.
+
+Version3 applies the same SCOWL selection to `[a-z]{3,7}` and unions the v1 pool
+(which adds nothing). This yields 28,453 entries with semantic SHA256
+`1fbbc6ebccabbf7a17457c6e83fb61b15ec78d49fcc9cf5a9ffec43974ba536c`. The
+three- to six-letter answers remain the v1 pool; the fifth, seven-letter answer
+comes from `word-paths-en-v3-seven.txt`, a 428-word authored list checked against
+the same SCOWL files (semantic SHA256
+`00d8a6a540b234315bd883a9b114fbc32eb93cd1c5b2f16a8f8e969081860b74`). That list
+is already contained in the SCOWL selection, so it narrows answer choice without
+changing decoy acceptance.
+
 All redistribution notices are retained in `app/public/word-paths-vocabulary-notice.txt`,
 which ships with the site. Future changes require a new version, preserving replay.
