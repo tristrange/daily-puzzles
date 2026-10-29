@@ -1,31 +1,37 @@
 # Repository Guidelines
 
-## Project Structure & Module Organization
+## Project structure
 
-This repository is currently an empty starting point: no application code, tests, assets, or dependency manifests have been committed. When introducing the initial implementation, document the chosen language, framework, and directory layout in `README.md`.
+- `app/src/` contains React components, pages, rules, and storage. `app/public/` holds assets and puzzle JSON.
+- `engine/src/queens_engine/` contains Python generators and solvers. Tests live in `engine/tests/`; publishing tools live in `engine/tools/`.
+- `schema/` and `conformance/` contain shared formats and fixtures. `backend/leaderboard/` contains the optional leaderboard. Guides live in `docs/`.
 
-Keep application code, tests, and static assets in clearly named directories, such as `src/`, `tests/`, and `assets/`, if appropriate to the chosen stack. Group related puzzle logic together and separate it from presentation code.
+## Development and verification
 
-## Build, Test, and Development Commands
+Use Node.js 22.12+ and, for engine work, Python 3.13+ and `uv`.
 
-No build, test, or local development commands are configured yet. When adding tooling, provide repeatable commands through the stack’s standard task runner and document them in `README.md`. Include dependency installation, local development, production builds, and test execution. Do not assume commands such as `npm test` exist until their configuration is committed.
+- From `app/`, run `npm ci` and `npm run dev` to start the site. Run `npm test`, `npm run typecheck`, `npm run lint`, and `npm run build` for app checks.
+- From `engine/`, run `uv sync --frozen`, then `uv run pytest -q -m 'not generator_sweep'`, `uv run pyright`, `uv run ruff check .`, and `uv run ruff format --check .`.
+- For changes to the engine, schema, or published puzzles, also run `uv run python -m tools.verify --dir ../app/public/puzzles --jobs 2` and `uv run python -m tools.schema_ids --check` from `engine/`.
 
-## Coding Style & Naming Conventions
+Run checks relevant to the change. Frontend-only and documentation-only PRs can skip engine jobs; pushes to `main` run them. See `README.md` for details.
 
-Follow the conventions of the language and framework selected for the project. Configure a formatter and linter early, and use them consistently. Choose descriptive names for puzzle rules, state, and validation functions. Keep functions focused and avoid mixing puzzle generation with user interface behavior. Document indentation and file naming rules when the initial stack is established.
+## Style and tests
 
-## Testing Guidelines
+TypeScript uses two-space indentation, single quotes, and PascalCase components. Python uses four-space indentation and snake_case; Ruff enforces a 100-character line limit.
 
-No test framework or coverage threshold exists yet. Add tests alongside new behavior and document how to run them. Prioritize puzzle validity, solution checking, boundary cases, and reproducibility where randomness is involved. Use descriptive test names that state the expected behavior.
+App tests use Vitest and live beside code as `*.test.ts` or `*.test.tsx`. Engine tests use pytest and Hypothesis in `engine/tests/test_*.py`. Add focused behavior tests and update shared fixtures when the app and engine must agree. No coverage threshold is configured.
 
-## Commit & Pull Request Guidelines
+## Puzzle data and secrets
 
-There is no commit history from which to infer existing conventions. Use concise, imperative commit subjects, such as `Add puzzle validation`. Keep commits focused on one coherent change.
+Preserve published puzzles and IDs, saved progress, leaderboard results, and offline behavior. Never commit Supabase service-role keys or Turnstile secrets, or expose them through `VITE_` variables. See `docs/leaderboard-setup.md`.
 
-Pull requests should explain the change, its purpose, and how it was verified. Link relevant issues and include screenshots for visual changes. Call out new dependencies, configuration requirements, and any checks that could not be run.
+## Commits and pull requests
 
-Use a pull request for anything with a product or design decision in it — a new feature, a change in behaviour, a puzzle published for a date, anything where a maintainer might reasonably have wanted a say. Open it, wait for the checks, report the result, and let the maintainer review and merge it. Never merge such a pull request yourself.
+Use concise, imperative commit subjects. History includes plain subjects and prefixes such as `fix:` and `feat:`. Use branch names such as `feat/new-game` or `fix/mobile-input`.
 
-Commit straight to `main` for small, low-risk changes where the only reasonable outcome is the one being implemented: documentation, CI configuration, dependency bumps, a one-line fix. Verify locally first, keep the commit to that single thing, and say plainly what was pushed. When it is not obvious which kind of change something is, treat it as the kind that needs review.
+In PRs, explain the change and verification, link relevant issues, and include screenshots for visual changes. Note new dependencies, configuration requirements, and checks that could not run.
 
-The reasoning is that a maintainer's attention is the scarce resource. A second pair of eyes earns its cost on a decision, and does not on a typo; sending everything through a pull request trains the reviewer to skim.
+Use a PR for product or design decisions, behavior changes, and puzzle publishing. Wait for checks and let the maintainer review and merge. Never merge those PRs yourself.
+
+Commit directly to `main` for uncontroversial, low-risk changes such as documentation, CI configuration, dependency bumps, or one-line fixes. Verify locally, keep the commit focused, and report what was pushed. When unsure, use a PR.
