@@ -5,7 +5,7 @@ import { formatPuzzleLabel, puzzleDay } from '../domain/dates'
 import { DEFAULT_PUZZLE_TYPE, DIFFICULTY_LABEL, PUZZLE_TYPE_LABEL, PUZZLE_TYPE_PUBLISHED } from '../domain/games'
 import { sudokuVariantOf, killerVariantOf } from '../domain/sudokuLevels'
 import { trackVariantOf } from '../domain/trackSizes'
-import { archiveHref, MAX_ARCHIVE_PAGE, parseArchivePage, puzzleHref } from '../lib/archive'
+import { archiveHref, hasOlderArchive, MAX_ARCHIVE_PAGE, parseArchivePage, puzzleHref } from '../lib/archive'
 import {
   ARCHIVE_WINDOW_DAYS,
   groupPublishedPuzzles,
@@ -78,14 +78,15 @@ function ArchiveGame({ type, page }: { readonly type: PuzzleType; readonly page:
         <p className="status error">Could not read the archive.</p>
       )}
       {current.status === 'ready' && <ArchiveGroups groups={groups} timeZone={timeZone} page={page} />}
-      <ArchivePager game={type} page={page} />
+      <ArchivePager game={type} page={page} todayId={todayId} />
     </div>
   )
 }
 
-function ArchivePager({ game, page }: {
+function ArchivePager({ game, page, todayId }: {
   readonly game: PuzzleType
   readonly page: number
+  readonly todayId: string
 }) {
   return (
     <nav className="archive-pager" aria-label="Archive pages">
@@ -94,7 +95,7 @@ function ArchivePager({ game, page }: {
           ← Newer
         </Link>
       )}
-      {page < MAX_ARCHIVE_PAGE && (
+      {page < MAX_ARCHIVE_PAGE && hasOlderArchive(todayId, page) && (
         <Link className="tool-button" aria-label="Show older puzzles" to={archiveHref(game, page + 1)}>
           Older →
         </Link>
