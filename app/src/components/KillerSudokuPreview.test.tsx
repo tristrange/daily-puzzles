@@ -35,6 +35,32 @@ it('plays and saves a Killer Sudoku preview with explained cage hints', async ()
   }
 })
 
+it('keeps a clue and all notes readable to assistive technology through undo', async () => {
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  localStorage.clear()
+  const container = document.createElement('div'); document.body.append(container)
+  const root = createRoot(container)
+  const click = async (label: string) => {
+    const button = [...container.querySelectorAll<HTMLButtonElement>('button')].find(item => item.textContent === label || item.getAttribute('aria-label') === label)!
+    await act(async () => button.click())
+  }
+  try {
+    await act(async () => root.render(<MemoryRouter><KillerSudokuPreviewPage /></MemoryRouter>))
+    await click('Notes')
+    for (let digit = 1; digit <= 9; digit++) await click(`Enter ${digit}`)
+    const cell = () => container.querySelector('[data-cell="0"]')!
+    expect(cell().getAttribute('aria-label')).toContain('cage total 13')
+    expect(cell().getAttribute('aria-label')).toContain('notes 1, 2, 3, 4, 5, 6, 7, 8, 9')
+    expect(cell().textContent).toContain('123456789')
+    await click('Notes')
+    await click('Enter 6')
+    await click('Undo')
+    expect(cell().getAttribute('aria-label')).toContain('notes 1, 2, 3, 4, 5, 6, 7, 8, 9')
+  } finally {
+    await act(async () => root.unmount()); container.remove(); localStorage.clear(); vi.unstubAllGlobals()
+  }
+})
+
 
 it('completes a board only after the cages and Sudoku rules are satisfied', async () => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)

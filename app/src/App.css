@@ -1331,8 +1331,9 @@
 .sudoku-cell[data-hint='support'] { outline: 1px dashed var(--accent); outline-offset: -4px; }
 .sudoku-cell[data-hint='target'] { outline: 3px solid var(--hint); outline-offset: -4px; }
 .sudoku-cell:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; z-index: 1; }
-.sudoku-notes { position: absolute; inset: 2px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); font-size: clamp(.5rem, 1.6vw, .75rem); font-weight: 550; color: var(--text); }
-.sudoku-notes span { display: grid; place-items: center; }
+.sudoku-notes { position: absolute; inset: 2px; display: grid; grid-template-rows: repeat(3, minmax(0, 1fr)); font-size: clamp(.5rem, 1.6vw, .75rem); font-weight: 550; line-height: 1; color: var(--text); }
+.sudoku-notes-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); min-height: 0; }
+.sudoku-notes-row > span { display: grid; place-items: center; }
 .killer-cage { position: absolute; inset: 3px; z-index: 1; pointer-events: none; border: 0 dashed var(--text); }
 .killer-cage[data-top='false'] { top: -1px; }
 .killer-cage[data-right='false'] { right: -1px; }
@@ -1345,16 +1346,11 @@
 .killer-sum { position: absolute; top: 4px; left: 5px; z-index: 2; color: var(--text-h); font: 700 clamp(.625rem, 1.7vw, .75rem)/1 var(--sans); pointer-events: none; }
 .sudoku-cell[data-cage-clue='true'] .sudoku-notes { padding-top: .8rem; }
 @container (max-width: 34rem) {
-  .sudoku-cell[data-cage-clue='true'] .sudoku-value { position: absolute; inset: calc(4px + clamp(.625rem, 1.7vw, .75rem)) 2px 6px; display: grid; place-items: center; font-size: min(4cqw, 1.5rem); line-height: 1; }
-  .sudoku-cell[data-cage-clue='true'] .sudoku-notes { top: calc(4px + clamp(.625rem, 1.7vw, .75rem)); bottom: 4px; padding-top: 0; grid-template-rows: repeat(3, minmax(0, 1fr)); font-size: min(1.7cqw, .75rem); line-height: 1; }
-}
-@container (max-width: 26rem) {
-  .sudoku-cell[data-cage-clue='true'] .sudoku-value { transform: scale(.85); }
-  .sudoku-cell[data-cage-clue='true'] .sudoku-notes span { transform: scale(.7); }
-}
-@container (max-width: 20rem) {
-  .sudoku-cell[data-cage-clue='true'] .sudoku-value { transform: scale(.7); }
-  .sudoku-cell[data-cage-clue='true'] .sudoku-notes span { transform: scale(.55); }
+  /* One cell is a ninth of the board: leave space for the total and borders. */
+  .sudoku-cell[data-cage-clue='true'] .sudoku-value { position: absolute; inset: calc(4px + clamp(.625rem, 1.7vw, .75rem)) 2px 4px; display: grid; place-items: center; font-size: clamp(.5rem, 11.111cqw - 20px, 1.5rem); line-height: 1; }
+  .sudoku-cell[data-cage-clue='true'] .sudoku-notes { padding-top: 0; }
+  /* Keep the other two rows at their normal size by sharing only the first row with the total. */
+  .sudoku-cell[data-cage-clue='true'] .sudoku-notes-row:first-child { padding-left: 1.0625rem; font-size: clamp(.25rem, (11.111cqw - 22px) / 2.1, 1em); }
 }
 .sudoku-feedback { min-height: 1.5em; text-align: center; font-size: .875rem; }
 @media (min-width: 48rem) {
