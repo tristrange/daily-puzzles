@@ -27,10 +27,13 @@ from queens_engine.sudoku import Level, SudokuGrid
 from queens_engine.sudoku_gen import SudokuGenerationError, candidate, certify, generate
 
 
-def test_sudoku_names_only_three_level_slots_after_activation() -> None:
+def test_sudoku_names_only_three_level_slots_from_archive_start() -> None:
     kind = PuzzleType("sudoku")
     book = rulebook_for(kind)
-    assert book.daily_ids(date(2026, 10, 20)) == ()
+    assert book.daily_ids(date(2026, 9, 25)) == ()
+    assert book.daily_ids(date(2026, 9, 26)) == tuple(
+        f"2026-09-26-sudoku-{level}" for level in ("easy", "medium", "hard")
+    )
     expected = tuple(f"2026-10-21-sudoku-{level}" for level in ("easy", "medium", "hard"))
     assert book.daily_ids(date(2026, 10, 21)) == expected
     assert puzzle_id(date(2026, 10, 21), kind) == expected[0]

@@ -295,7 +295,12 @@ class TestTracks:
 
     def test_daily_slots_change_without_renaming_legacy_ids(self) -> None:
         book = rulebook_for(PuzzleType.TRAIN_TRACKS)
-        assert book.daily_ids(date(2026, 10, 13)) == ("2026-10-13-tracks",)
+        assert book.daily_ids(date(2026, 9, 25)) == ("2026-09-25-tracks",)
+        assert book.daily_ids(date(2026, 9, 26)) == (
+            "2026-09-26-tracks-small",
+            "2026-09-26-tracks-medium",
+            "2026-09-26-tracks-large",
+        )
         assert book.daily_ids(date(2026, 10, 14)) == (
             "2026-10-14-tracks-small",
             "2026-10-14-tracks-medium",

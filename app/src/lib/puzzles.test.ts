@@ -202,9 +202,8 @@ describe('listPublishedPuzzles', () => {
       return spaShellResponse()
     }
     await listPublishedPuzzles('2026-10-03', probeFetcher)
-    // Each day has five original families and three Killer Sudoku levels.
-    // Missing companion files still need a probe before being reported absent.
-    expect(probes).toHaveLength(ARCHIVE_WINDOW_DAYS * 8)
+    // Each day has 15 daily slots plus the original Train Tracks board.
+    expect(probes).toHaveLength(ARCHIVE_WINDOW_DAYS * 16)
     expect(probes).toContain('2026-10-03.json')
     expect(probes).toContain('2026-10-03-star.json')
     expect(probes).toContain('2026-09-27-trio.json')
@@ -259,7 +258,7 @@ describe('listPublishedPuzzles', () => {
       return response
     }
     const found = await listPublishedPuzzles('2026-10-03', countingFetcher)
-    expect(answeredOk).toBe(ARCHIVE_WINDOW_DAYS * 8)
+    expect(answeredOk).toBe(ARCHIVE_WINDOW_DAYS * 16)
     expect(found).toEqual(queens)
   })
 
@@ -412,7 +411,7 @@ describe('groupPublishedPuzzles', () => {
 })
 
 
-it('discovers Word Paths only from launch onward and tolerates one missing daily file', async () => {
+it('discovers backfilled Word Paths and tolerates a missing daily file', async () => {
   const requested: string[] = []
   const fetcher = async (url: string) => {
     const id = url.split('/').at(-1)?.replace('.json', '') ?? ''
@@ -423,5 +422,8 @@ it('discovers Word Paths only from launch onward and tolerates one missing daily
   expect(await listPublishedPuzzles('2026-10-16', fetcher)).toEqual([
     { id: '2026-10-15-words', type: 'word-paths', difficulty: null, width: 5, height: 5 },
   ])
-  expect(requested.filter((id) => id.endsWith('-words'))).toEqual(['2026-10-16-words', '2026-10-15-words'])
+  expect(requested.filter((id) => id.endsWith('-words'))).toEqual([
+    '2026-10-16-words', '2026-10-15-words', '2026-10-14-words', '2026-10-13-words',
+    '2026-10-12-words', '2026-10-11-words', '2026-10-10-words',
+  ])
 })

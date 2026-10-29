@@ -14,13 +14,13 @@ const probes = () => levels.map((level, i) => {
     board: { size: 9, level, givens: raw[i]!.givens } }), elapsedMs: level === 'medium' ? 12345 : null }
 })
 
-it('rejects direct Sudoku leaderboard links before launch and accepts all levels from launch onward', () => {
+it('rejects direct Sudoku leaderboard links before the archive and accepts all levels from its start', () => {
   vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-22T12:00:00Z'))
   try {
-    for (const level of levels) for (const day of ['2026-10-20', '2026-10-21', '2026-10-22']) {
+    for (const level of levels) for (const day of ['2026-09-25', '2026-09-26', '2026-10-22']) {
       const id = `${day}-sudoku-${level}`
       const html = renderToStaticMarkup(<MemoryRouter initialEntries={[`/leaderboards?id=${id}`]}><LeaderboardsPage /></MemoryRouter>)
-      if (day === '2026-10-20') {
+      if (day === '2026-09-25') {
         expect(html).toContain('Choose a published puzzle')
         expect(html).not.toContain('Play this puzzle')
         expect(html).not.toContain('aria-label="Puzzle leaderboard"')

@@ -62,9 +62,11 @@ export const PUZZLE_TYPE_PUBLISHED: Record<PuzzleType, boolean> = {
 }
 
 export const WORD_PATHS_START = wordPaths.activationDay
+export const WORD_PATHS_ARCHIVE_START = wordPaths.archiveStart
 export const TRIO_START = trio.activationDay
 export const TENTS_START = tents.activationDay
 export const NURIKABE_START = nurikabe.activationDay
+export const NURIKABE_ARCHIVE_START = nurikabe.archiveStart
 
 /** The family whose id carries no suffix: the day's default puzzle. */
 export const DEFAULT_PUZZLE_TYPE: PuzzleType = 'queens'

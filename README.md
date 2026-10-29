@@ -19,7 +19,7 @@ Supabase backend.
 | **Queens** | Variable size, rated difficulty | One queen in each row, column and coloured region. Queens cannot touch, including diagonally; sharing a longer diagonal is allowed. |
 | **Star Battle** | 9×9, two stars per group | Two stars in each row, column and region. Stars cannot touch, including diagonally. |
 | **Train Tracks** | Small 8×8, Medium 10×10 and Large 12×12 | Connect the two edge endpoints with one unbranched track, matching row and column counts. All three sizes publish every day. |
-| **Word Paths** | 5×5, English | Trace four orthogonal words of lengths 3, 4, 5 and 6, using every letter once without overlap. |
+| **Word Paths** | 5×5 or 6×6, English | Trace orthogonal words of the listed lengths, using every letter once without overlap. |
 | **Trio** | 9×9 | Place three suns, moons and stars in every row and column. No three identical symbols consecutively; respect adjacent same/different clues. |
 | **Tents** | 10×10, 18 tents | Pair trees with orthogonally adjacent tents, match row/column counts and keep tents apart, including diagonally. Each tree and tent must have a one-to-one pairing. |
 | **Nurikabe** | 7×7 | Shade one connected sea around numbered islands. Each island has its clue's area; no 2×2 sea squares. |
@@ -29,10 +29,13 @@ Supabase backend.
 Train Tracks sizes describe dimensions, not difficulty. New boards use every row
 and column; older 7×7 boards remain playable with their original rules. The `?`
 marker means definite track with an undecided shape and counts toward clues.
+Every game has archive puzzles from September 26, 2026, including all daily
+variants; original Train Tracks boards remain available alongside the three sizes.
 
 ### Sudoku levels and controls
 
-Easy, Medium and Hard publish separately each day from October 21, 2026.
+Easy, Medium and Hard publish separately each day, with archive puzzles from
+September 26, 2026.
 The [three fixed preview boards](https://tristrange.github.io/daily-puzzles/#/preview/sudoku?board=1)
 remain available for practice. Killer Sudoku also publishes three levels daily, with archive puzzles from September 26, 2026. Cage digits must add to the displayed total without repeating. Its explained hints and combination tool help with cage deductions; [practice boards](https://tristrange.github.io/daily-puzzles/#/preview/killer-sudoku) save separately. Killer levels use the number of hidden-single deductions in a deterministic solve as an initial difficulty guide; players may find different routes or experience difficulty differently.
 
@@ -58,7 +61,7 @@ previews also remain available with separate progress.
 
 ### Daily Nurikabe
 
-One original 7×7 Nurikabe publishes each day, with archive boards from October 12,
+One original 7×7 Nurikabe publishes each day, with archive boards from September 26,
 2026. Shade a connected sea around numbered islands, with no solid 2×2 sea square.
 Land dots are optional working notes. Daily solves support personal stats, sharing,
 offline saves and optional leaderboards. Explained hints cover island boundaries,

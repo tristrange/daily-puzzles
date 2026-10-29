@@ -3,6 +3,7 @@ import { sudoku, killerSudoku } from '../../../conformance/id-cases/manifest.jso
 import type { SudokuLevel } from './sudoku'
 
 export const SUDOKU_START = sudoku.activationDay
+export const SUDOKU_ARCHIVE_START = sudoku.archiveStart
 export const SUDOKU_VARIANTS = sudoku.variants as readonly { name: SudokuLevel; suffix: string; label: string }[]
 export function sudokuVariantOf(id: string) {
   return id.includes('-killer-sudoku-') ? null : SUDOKU_VARIANTS.find(variant => id.endsWith(variant.suffix)) ?? null

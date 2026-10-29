@@ -10,6 +10,8 @@ export type TrackVariant = {
 }
 
 export const TRACK_SIZES_START = trainTracks.activationDay
+export const TRACK_SIZES_ARCHIVE_START = trainTracks.archiveStart
+export const TRACK_LEGACY_END = trainTracks.legacyUntil
 export const TRACK_VARIANTS = trainTracks.variants as readonly TrackVariant[]
 
 /** Classify the suffix; calendar validation remains in the ID parser. */

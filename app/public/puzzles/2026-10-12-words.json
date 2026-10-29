@@ -1,0 +1,7 @@
+{
+  "id": "2026-10-12-words",
+  "type": "word-paths",
+  "seed": 588478877,
+  "generatorVersion": 3,
+  "board": {"width": 6, "height": 6, "letters": ["C", "O", "U", "J", null, null, "E", "E", "M", "P", null, null, "A", "G", "N", "M", null, null, "N", "R", "A", "O", "V", "I", null, "T", "S", "F", "G", "N", null, null, "Y", "L", null, null], "wordLengths": [3, 4, 5, 6, 7]}
+}

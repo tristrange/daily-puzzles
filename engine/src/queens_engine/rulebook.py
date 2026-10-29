@@ -72,14 +72,14 @@ from .sudoku_gen import GENERATOR_VERSION as SUDOKU_GENERATOR_VERSION
 from .sudoku_gen import MAX_ATTEMPTS as SUDOKU_SEED_BATCH_SIZE
 from .sudoku_gen import SudokuGenerationError
 from .sudoku_gen import generate as generate_sudoku_grid
-from .sudoku_levels import SUDOKU_START, SUDOKU_VARIANTS, sudoku_variant
+from .sudoku_levels import SUDOKU_ARCHIVE_START, SUDOKU_VARIANTS, sudoku_variant
 from .tents import TentsGrid
 from .tents import solutions as tents_solutions
 from .tents_gen import GENERATOR_VERSION as TENTS_GENERATOR_VERSION
 from .tents_gen import SIDE as TENTS_SIZE
 from .tents_gen import TENT_COUNT, TentsGenerationError
 from .tents_gen import generate as generate_tents_grid
-from .track_sizes import TRACK_SIZES_START, TRACK_VARIANTS, TrackSize, track_variant
+from .track_sizes import TRACK_SIZES_ARCHIVE_START, TRACK_VARIANTS, TrackSize, track_variant
 from .tracks import TrackGrid
 from .tracks import count_solutions as count_track_solutions
 from .tracks_gen import TrackGenerationError, generate_grid
@@ -537,7 +537,7 @@ class TrackRulebook(Rulebook):
         self.logic_only = False
 
     def daily_ids(self, day: date) -> tuple[str, ...]:
-        if day < TRACK_SIZES_START:
+        if day < TRACK_SIZES_ARCHIVE_START:
             return super().daily_ids(day)
         return tuple(puzzle_id(day, self.puzzle_type, track_size=v.name) for v in TRACK_VARIANTS)
 
@@ -709,13 +709,13 @@ class TrackRulebook(Rulebook):
         }
 
 
-WORD_PATHS_START: Final = date.fromisoformat(
-    json.loads(
-        (Path(__file__).resolve().parents[3] / "conformance/id-cases/manifest.json").read_text(
-            encoding="utf-8"
-        )
-    )["wordPaths"]["activationDay"]
-)
+_WORD_PATHS_CONTRACT = json.loads(
+    (Path(__file__).resolve().parents[3] / "conformance/id-cases/manifest.json").read_text(
+        encoding="utf-8"
+    )
+)["wordPaths"]
+WORD_PATHS_START: Final = date.fromisoformat(_WORD_PATHS_CONTRACT["activationDay"])
+WORD_PATHS_ARCHIVE_START: Final = date.fromisoformat(_WORD_PATHS_CONTRACT["archiveStart"])
 
 
 class WordPathRulebook(Rulebook):
@@ -729,7 +729,7 @@ class WordPathRulebook(Rulebook):
     logic_only = False
 
     def daily_ids(self, day: date) -> tuple[str, ...]:
-        return super().daily_ids(day) if day >= WORD_PATHS_START else ()
+        return super().daily_ids(day) if day >= WORD_PATHS_ARCHIVE_START else ()
 
     def generate(
         self,
@@ -1177,13 +1177,13 @@ class TentsRulebook(Rulebook):
         }
 
 
-NURIKABE_START: Final = date.fromisoformat(
-    json.loads(
-        (Path(__file__).resolve().parents[3] / "conformance/id-cases/manifest.json").read_text(
-            encoding="utf-8"
-        )
-    )["nurikabe"]["activationDay"]
-)
+_NURIKABE_CONTRACT = json.loads(
+    (Path(__file__).resolve().parents[3] / "conformance/id-cases/manifest.json").read_text(
+        encoding="utf-8"
+    )
+)["nurikabe"]
+NURIKABE_START: Final = date.fromisoformat(_NURIKABE_CONTRACT["activationDay"])
+NURIKABE_ARCHIVE_START: Final = date.fromisoformat(_NURIKABE_CONTRACT["archiveStart"])
 
 
 class NurikabeRulebook(Rulebook):
@@ -1195,7 +1195,7 @@ class NurikabeRulebook(Rulebook):
     default_size = NURIKABE_SIZE
 
     def daily_ids(self, day: date) -> tuple[str, ...]:
-        return super().daily_ids(day) if day >= NURIKABE_START else ()
+        return super().daily_ids(day) if day >= NURIKABE_ARCHIVE_START else ()
 
     def generate(
         self,
@@ -1326,7 +1326,7 @@ class SudokuRulebook(Rulebook):
     def daily_ids(self, day: date) -> tuple[str, ...]:
         return (
             tuple(f"{day.isoformat()}{v.suffix}" for v in SUDOKU_VARIANTS)
-            if day >= SUDOKU_START
+            if day >= SUDOKU_ARCHIVE_START
             else ()
         )
 
