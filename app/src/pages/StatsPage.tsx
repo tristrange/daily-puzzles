@@ -16,6 +16,7 @@ import {
   type Stats,
 } from '../lib/stats'
 import { useToday } from '../lib/useToday'
+import { passportProgress } from '../lib/passport'
 
 /** How many solves the page lists under "Recent solves". */
 const RECENT_LIMIT = 10
@@ -64,6 +65,7 @@ export function StatsPage() {
   const importInput = useRef<HTMLInputElement>(null)
   const todayId = useToday(timeZone)
   const stats = summarise(records, todayId)
+  const passport = passportProgress(records)
   const gameRecords = records.filter(record => record.puzzleType === type && (
     variant === null || ((type === 'sudoku' || type === 'killer-sudoku') ? (killerVariantOf(record.id) ?? sudokuVariantOf(record.id))?.name
       : trackVariantOf(record.id)?.name ?? 'original') === variant.name
@@ -129,6 +131,10 @@ export function StatsPage() {
       <p className={notice === '' ? 'stats-notice' : 'stats-notice status'} role="status" aria-live="polite">
         {notice}
       </p>
+      <Link className="passport-teaser" to="/stats/passport">
+        <span><strong>Puzzle Passport</strong><small>{passport.earned} of {passport.total} game stamps collected</small></span>
+        <span>View passport <span aria-hidden="true">→</span></span>
+      </Link>
       {stats.solved === 0 ? (
         <>
           <p className="status">Nothing yet — solve a puzzle and it will show up here.</p>
