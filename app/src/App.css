@@ -198,9 +198,11 @@
   margin: 0 0 1rem;
 }
 
+.puzzle-heading:has(.puzzle-learn) { min-height: 5rem; }
+
 .puzzle { position: relative; }
 
-.puzzle-rules {
+.puzzle-rules, .puzzle-learn {
   position: absolute;
   top: 0;
   right: 0;
@@ -213,7 +215,8 @@
   text-decoration: none;
 }
 
-.puzzle-rules:hover { text-decoration: underline; }
+.puzzle-learn { top: 2.75rem; }
+.puzzle-rules:hover, .puzzle-learn:hover { text-decoration: underline; }
 
 .puzzle-page { position: relative; }
 
@@ -1094,6 +1097,7 @@
 .recent-solves { max-width: 44rem; }
 
 .learn-page, .lesson-page { max-width: 64rem; margin-inline: auto; }
+.lesson-return { max-width: 64rem; margin-inline: auto; }
 .lesson-cards { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: 1rem; }
 .lesson-cards li { display: flex; flex-direction: column; align-items: start; padding: 1.25rem; border: 1px solid var(--border); border-radius: 1.1rem; background: var(--surface); }
 .lesson-cards h2 { font-size: 1.2rem; margin: .5rem 0 0; }

@@ -2,7 +2,7 @@ import { PlayTimer } from './PlayTimer'
 import { SolvedPanel } from './SolvedPanel'
 import { useLeaderboard } from '../lib/useLeaderboard'
 import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { formatPuzzleLabel, puzzleOfToday } from '../domain/dates'
 import {
   clearCell,
@@ -24,7 +24,7 @@ import {
 import { DIFFICULTY_LABEL, PUZZLE_PIECE, PUZZLE_TYPE_HAS_HINTS, PUZZLE_TYPE_LABEL } from '../domain/games'
 import { hintCellName } from '../domain/hints'
 import { checkedHint, type CheckedHint } from '../domain/checkedHints'
-import type { Board } from '../domain/board'
+import type { Board, PuzzleType } from '../domain/board'
 import { isMarksPuzzle, isTracksPuzzle, isTrioPuzzle, isTentsPuzzle, isSudokuPuzzle, isNurikabePuzzle, type Puzzle } from '../domain/puzzle'
 import { sudokuVariantOf, killerVariantOf } from '../domain/sudokuLevels'
 import { trackVariantOf } from '../domain/trackSizes'
@@ -53,6 +53,18 @@ type LoadState =
   | { status: 'loading' }
   | { status: 'ready'; puzzle: Puzzle }
   | { status: 'error'; message: string }
+
+const LESSON_PATHS = {
+  queens: '/learn/queens',
+  'star-battle': '/learn/star-battle',
+  'train-tracks': '/learn/train-tracks',
+  'word-paths': null,
+  trio: '/learn/trio',
+  tents: '/learn/tents',
+  sudoku: '/learn/sudoku',
+  nurikabe: '/learn/nurikabe',
+  'killer-sudoku': '/learn/killer-sudoku',
+} satisfies Record<PuzzleType, string | null>
 
 /** Whether two states hold exactly the same pieces and marks. */
 function sameState(a: GameState, b: GameState): boolean {
@@ -470,6 +482,7 @@ export function PuzzleView({
   notFoundMessage?: string
 }) {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const location = useLocation()
   const [state, setState] = useState<LoadState>({ status: 'loading' })
 
   useEffect(() => {
@@ -500,6 +513,8 @@ export function PuzzleView({
   if (state.status === 'error') {
     return <p className="status error">{state.message}</p>
   }
+  const lessonPath = LESSON_PATHS[state.puzzle.puzzleType]
+  const puzzlePath = `/archive/${state.puzzle.id}${location.pathname.startsWith('/archive/') ? location.search : ''}`
   return (
     <article className="puzzle">
       <div className="puzzle-heading">
@@ -510,6 +525,8 @@ export function PuzzleView({
           rel="noopener"
           aria-label={`${PUZZLE_TYPE_LABEL[state.puzzle.puzzleType]} rules (opens in a new tab)`}
         >Rules <span aria-hidden="true">↗</span></Link>
+        {lessonPath && <Link className="puzzle-learn" to={lessonPath} state={{ returnTo: puzzlePath }}
+          aria-label={`Learn ${PUZZLE_TYPE_LABEL[state.puzzle.puzzleType]} techniques`}>Learn <span aria-hidden="true">→</span></Link>}
         <p className="eyebrow">{formatPuzzleLabel(id, timeZone)}</p>
         <h1>{PUZZLE_TYPE_LABEL[state.puzzle.puzzleType]}</h1>
         <p className="puzzle-detail">
