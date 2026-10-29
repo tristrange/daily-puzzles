@@ -4,7 +4,7 @@ import { puzzleTypeOf } from '../domain/dates'
 import { createWordGame, isWordSolved, spellPath, submitWord, type WordGame } from '../domain/wordGame'
 import type { WordGrid } from '../domain/wordPaths'
 
-const key = (id: string, preview: boolean, version: 1 | 2 = 1) => `daily-puzzles.word-progress.${preview ? 'preview.' : ''}${id}${version === 1 ? '' : '.v2'}`
+const key = (id: string, preview: boolean, version: 1 | 2 | 3 = 1) => `daily-puzzles.word-progress.${preview ? 'preview.' : ''}${id}${version === 1 ? '' : `.v${version}`}`
 const fingerprint = (grid: WordGrid) => JSON.stringify([grid.width, grid.height, grid.letters, grid.wordLengths])
 
 export function readWordProgress(id: string, grid: WordGrid, preview = false): { game: WordGame; elapsedMs: number; attemptElapsedMs?: number; hints: number } | null {
@@ -56,6 +56,6 @@ export function storeWordProgress(id: string, game: WordGame, time: PlayTime, pr
   } catch { return false }
 }
 
-export function clearWordProgress(id: string, preview = false, version: 1 | 2 = 1): void {
+export function clearWordProgress(id: string, preview = false, version: 1 | 2 | 3 = 1): void {
   try { localStorage.removeItem(key(id, preview, version)) } catch { /* Play remains usable without storage. */ }
 }

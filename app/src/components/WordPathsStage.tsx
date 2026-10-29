@@ -1,6 +1,6 @@
 import { PlayTimer } from './PlayTimer'
 import { useLeaderboard } from '../lib/useLeaderboard'
-import { useId, useMemo, useRef, useState } from 'react'
+import { useId, useMemo, useRef, useState, type CSSProperties } from 'react'
 import type { Puzzle } from '../domain/puzzle'
 import type { WordGrid } from '../domain/wordPaths'
 import { createWordGame, clearTrace, traceCell, submitWord, undoWord, resetWordGame, isWordSolved, spellPath, type WordGame } from '../domain/wordGame'
@@ -184,7 +184,7 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
             </div>
           </div>
         </div>
-        <ol className="word-slots" aria-label="Words to find">
+        <ol className="word-slots" aria-label="Words to find" style={{ '--word-slot-columns': grid.wordLengths.length } as CSSProperties}>
           {[...grid.wordLengths].sort((a, b) => a - b).map((length) => {
             const path = game.words.find((word) => word.length === length)
             return <li key={length} data-length={path ? length : undefined} className={path ? 'filled' : ''}>

@@ -1405,12 +1405,13 @@
 .word-cell[data-length='4'], .word-slots [data-length='4'] { --word-fill: light-dark(#d9ede5, #263f36); }
 .word-cell[data-length='5'], .word-slots [data-length='5'] { --word-fill: light-dark(#f7e7cb, #4a3a24); }
 .word-cell[data-length='6'], .word-slots [data-length='6'] { --word-fill: light-dark(#f3dfe4, #492d38); }
+.word-cell[data-length='7'], .word-slots [data-length='7'] { --word-fill: light-dark(#dfe8f5, #28394b); }
 .word-workspace { max-width: 24rem; margin: 0 auto; }
 .word-play-area { min-width: 0; }
 .word-selection { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem; align-items: center; margin: 0.5rem auto 0; }
 .word-selection output { display: block; color: var(--text-h); font-size: 1rem; font-weight: 600; letter-spacing: 0.04em; overflow-wrap: anywhere; }
 .word-actions { display: flex; gap: 0.5rem; }
-.word-slots { list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.4rem; padding: 0; margin: 0.5rem 0 0; }
+.word-slots { list-style: none; display: grid; grid-template-columns: repeat(var(--word-slot-columns, 4), minmax(0, 1fr)); gap: 0.4rem; padding: 0; margin: 0.5rem 0 0; }
 .word-slots li { min-width: 0; border: 1px solid var(--border); border-radius: 0.75rem; padding: 0.4rem; background: var(--surface); }
 .word-slots span { display: block; font-size: 0.75rem; }
 .word-slots strong { display: block; overflow-wrap: anywhere; font-size: 0.8125rem; color: var(--text-h); letter-spacing: 0.1em; font-weight: 650; }

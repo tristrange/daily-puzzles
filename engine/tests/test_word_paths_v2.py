@@ -6,7 +6,7 @@ from dataclasses import replace
 
 import pytest
 
-from queens_engine import GenerationError, PuzzleParseError, parse_puzzle, rulebook_for
+from queens_engine import GenerationError, Puzzle, PuzzleParseError, parse_puzzle
 from queens_engine.board import PuzzleType
 from queens_engine.puzzle import CONFORMANCE_DIR
 from queens_engine.rulebook import verify_replay
@@ -52,12 +52,11 @@ def test_old_board_two_is_ambiguous_in_the_broader_dictionary() -> None:
 
 @pytest.mark.parametrize("seed", [0, 1, 7, 2**32 - 1])
 def test_v2_generation_is_unique_against_the_entire_acceptance_list(seed: int) -> None:
-    puzzle = rulebook_for(PuzzleType.WORD_PATHS).generate(seed=seed, puzzle_id="2026-10-15-words")
-    assert puzzle.generator_version == 2
-    assert isinstance(puzzle.board, WordGrid)
-    assert puzzle.board.vocabulary_version == 2
-    assert len(reference_covers(puzzle.board, v2_vocabulary())) == 1
-    assert len(vocabulary_paths(puzzle.board, v2_vocabulary())) <= 12
+    grid = generate_grid(seed=seed, budget=SearchBudget(500_000))
+    assert grid.vocabulary_version == 2
+    assert len(reference_covers(grid, v2_vocabulary())) == 1
+    assert len(vocabulary_paths(grid, v2_vocabulary())) <= 12
+    puzzle = Puzzle("2026-10-15-words", PuzzleType.WORD_PATHS, seed, 2, grid)
     assert verify_replay(puzzle) == puzzle
 
 
@@ -68,6 +67,10 @@ def test_schema_and_grid_bind_the_acceptance_version_to_the_envelope() -> None:
     assert isinstance(grid, WordGrid)
     assert grid.vocabulary_version == 2
     raw["generatorVersion"] = 3
+    grid = parse_puzzle(raw).board
+    assert isinstance(grid, WordGrid)
+    assert grid.vocabulary_version == 3
+    raw["generatorVersion"] = 4
     with pytest.raises(PuzzleParseError):
         parse_puzzle(raw)
 

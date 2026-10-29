@@ -5,13 +5,14 @@ import { describe, expect, it } from 'vitest'
 import { parsePuzzle } from './puzzle'
 import { puzzleIdsForDay, puzzleIdFor } from './dates'
 import { PUZZLE_TYPE_PUBLISHED } from './games'
-import { WORD_PATHS_V2_VOCABULARY } from './wordVocabulary'
+import { WORD_PATHS_V2_VOCABULARY, WORD_PATHS_V3_VOCABULARY } from './wordVocabulary'
 import { WordGrid, WORD_PATHS_VOCABULARY } from './wordPaths'
 
 const casesDir = join(new URL('../../..', import.meta.url).pathname, 'conformance/word-paths')
 const manifest = JSON.parse(readFileSync(join(casesDir, 'manifest.json'), 'utf8')) as {
   vocabularySha256: string
   v2Samples: string[]
+  v3Samples: string[]
   samples: string[]
   rejects: { name: string; envelope?: Record<string, unknown>; board?: Record<string, unknown>; error: string }[]
 }
@@ -28,6 +29,8 @@ describe('Word Paths file contract', () => {
   it('lists every shared sample', () => {
     expect(readdirSync(casesDir).filter((name) => name.endsWith('.json')).sort())
       .toEqual(['manifest.json', 'path-cases.json', ...manifest.samples].sort())
+    expect(readdirSync(join(casesDir, 'v2')).sort()).toEqual([...manifest.v2Samples].sort())
+    expect(readdirSync(join(casesDir, 'v3')).sort()).toEqual([...manifest.v3Samples].sort())
   })
 
   it.each(manifest.samples)('parses %s exactly', (file) => {
@@ -76,12 +79,15 @@ it('selects the grid vocabulary from the validated generator version', () => {
   const raw = read('2026-10-15-words.json')
   const old = parsePuzzle(raw)
   const expanded = parsePuzzle({ ...raw, generatorVersion:2 })
+  const current = parsePuzzle({ ...raw, generatorVersion:3 })
   expect(old.board).toBeInstanceOf(WordGrid)
   expect(expanded.board).toBeInstanceOf(WordGrid)
-  if (!(old.board instanceof WordGrid) || !(expanded.board instanceof WordGrid)) throw new Error('word grid')
+  expect(current.board).toBeInstanceOf(WordGrid)
+  if (!(old.board instanceof WordGrid) || !(expanded.board instanceof WordGrid) || !(current.board instanceof WordGrid)) throw new Error('word grid')
   expect(old.board.vocabularyVersion).toBe(1)
   expect(expanded.board.vocabularyVersion).toBe(2)
-  expect(() => parsePuzzle({ ...raw, generatorVersion:3 })).toThrow()
+  expect(current.board.vocabularyVersion).toBe(3)
+  expect(() => parsePuzzle({ ...raw, generatorVersion:4 })).toThrow()
 })
 
 
@@ -98,5 +104,23 @@ it.each(manifest.v2Samples)('parses v2 preview %s with the broad acceptance cont
   expect(puzzle.board).toBeInstanceOf(WordGrid)
   if (!(puzzle.board instanceof WordGrid)) throw new Error('word grid')
   expect(puzzle.board.vocabularyVersion).toBe(2)
+  expect(puzzle.board.letters).toEqual(raw.board.letters)
+})
+
+it('uses exactly the frozen Python v3 vocabulary', () => {
+  expect(WORD_PATHS_V3_VOCABULARY).toHaveLength(28453)
+  expect(createHash('sha256').update(WORD_PATHS_V3_VOCABULARY.join('\n')).digest('hex'))
+    .toBe('1fbbc6ebccabbf7a17457c6e83fb61b15ec78d49fcc9cf5a9ffec43974ba536c')
+})
+
+it.each(manifest.v3Samples)('parses v3 preview %s as a six by six board', (file) => {
+  const raw = JSON.parse(readFileSync(join(casesDir, 'v3', file), 'utf8'))
+  const puzzle = parsePuzzle(raw)
+  expect(puzzle.generatorVersion).toBe(3)
+  expect(puzzle.board).toBeInstanceOf(WordGrid)
+  if (!(puzzle.board instanceof WordGrid)) throw new Error('word grid')
+  expect(puzzle.board.vocabularyVersion).toBe(3)
+  expect([puzzle.board.width, puzzle.board.height]).toEqual([6, 6])
+  expect(puzzle.board.wordLengths).toEqual([3, 4, 5, 6, 7])
   expect(puzzle.board.letters).toEqual(raw.board.letters)
 })

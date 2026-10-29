@@ -100,6 +100,7 @@ from .word_paths import (
 from .word_paths import count_solutions as count_word_solutions
 from .word_paths_gen import generate_grid as generate_word_grid
 from .word_paths_gen_v2 import generate_grid as generate_word_grid_v2
+from .word_paths_gen_v3 import generate_grid as generate_word_grid_v3
 
 #: Star Battle stays at one size until the deduction engine can rate a star board,
 #: so there is nothing to ramp towards and the size is pinned rather than tuned.
@@ -741,23 +742,27 @@ class WordPathRulebook(Rulebook):
     ) -> Puzzle:
         if any(value is not None for value in (size, stars_per_row, max_attempts)):
             raise GenerationError("word-paths uses fixed versioned recipes, without overrides")
-        return self._generate(seed, puzzle_id, 2)
+        return self._generate(seed, puzzle_id, 3)
 
     def _generate(self, seed: int, identifier: str, version: int) -> Puzzle:
         parsed = split_puzzle_id(identifier)
         if parsed is None or parsed[1] is not self.puzzle_type:
             raise GenerationError("word-paths requires a canonical date-words id")
+        if version not in (1, 2, 3):
+            raise GenerationError(f"unsupported word-paths generator version {version}")
         try:
-            grid = (
-                generate_word_grid(
-                    seed=seed,
-                    vocabulary=v1_vocabulary(),
-                    budget=SearchBudget(250_000),
-                    max_attempts=50,
-                )
-                if version == 1
-                else generate_word_grid_v2(seed=seed, budget=SearchBudget(500_000))
-            )
+            match version:
+                case 1:
+                    grid = generate_word_grid(
+                        seed=seed,
+                        vocabulary=v1_vocabulary(),
+                        budget=SearchBudget(250_000),
+                        max_attempts=50,
+                    )
+                case 2:
+                    grid = generate_word_grid_v2(seed=seed, budget=SearchBudget(500_000))
+                case _:
+                    grid = generate_word_grid_v3(seed=seed, budget=SearchBudget(500_000))
         except (ValueError, WordSearchLimitError) as error:
             raise GenerationError(str(error)) from error
         return Puzzle(identifier, self.puzzle_type, seed, version, grid)
@@ -796,7 +801,7 @@ class WordPathRulebook(Rulebook):
         del board, allow_guesses
 
     def replay(self, puzzle: Puzzle) -> Puzzle:
-        if puzzle.generator_version not in (1, 2):
+        if puzzle.generator_version not in (1, 2, 3):
             raise GenerationError(
                 f"unsupported word-paths generator version {puzzle.generator_version}"
             )

@@ -3,7 +3,7 @@ import { parsePuzzle } from '../domain/puzzle'
 import { WordGrid } from '../domain/wordPaths'
 import { WordPathsStage } from '../components/WordPathsStage'
 
-const samples = import.meta.glob('@shared/conformance/word-paths/v2/*-words.json', { eager: true, import: 'default' })
+const samples = import.meta.glob('@shared/conformance/word-paths/v3/*-words.json', { eager: true, import: 'default' })
 const WORD_PATHS_PREVIEWS = Object.entries(samples).sort(([a], [b]) => a.localeCompare(b)).map(([, raw]) => {
   const puzzle = parsePuzzle(raw)
   if (puzzle.puzzleType !== 'word-paths' || !(puzzle.board instanceof WordGrid)) throw new Error('Expected a Word Paths preview')
@@ -21,7 +21,7 @@ export function WordPathsPreviewPage() {
       <article className="puzzle">
         <div className="puzzle-heading">
           <p className="eyebrow">Playtest preview</p><h1>Word Paths</h1>
-          <p className="puzzle-detail">Board {index + 1} of {WORD_PATHS_PREVIEWS.length} · 5×5</p>
+          <p className="puzzle-detail">Board {index + 1} of {WORD_PATHS_PREVIEWS.length} · {sample.grid.width}×{sample.grid.height}</p>
         </div>
         <div className="word-preview-picker">
           <label htmlFor="word-preview-board">Choose a board</label>

@@ -230,7 +230,7 @@
       "then": {
         "not": { "properties": { "difficulty": {} }, "required": ["difficulty"] },
         "properties": {
-          "generatorVersion": { "enum": [1, 2] },
+          "generatorVersion": { "enum": [1, 2, 3] },
           "board": {
             "type": "object",
             "additionalProperties": false,
@@ -244,8 +244,8 @@
                 "items": { "type": ["string", "null"], "minLength": 1, "maxLength": 1, "pattern": "^[A-Z]$" }
               },
               "wordLengths": {
-                "type": "array", "minItems": 1, "maxItems": 4, "uniqueItems": true,
-                "items": { "type": "integer", "minimum": 3, "maximum": 6 }
+                "type": "array", "minItems": 1, "maxItems": 5, "uniqueItems": true,
+                "items": { "type": "integer", "minimum": 3, "maximum": 7 }
               }
             }
           }

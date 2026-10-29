@@ -1,5 +1,8 @@
 import { expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { WordGrid } from './wordPaths'
+import { parsePuzzle } from './puzzle'
 import { createWordGame, submitWord } from './wordGame'
 import { findWordHint } from './wordHints'
 
@@ -26,6 +29,20 @@ it('uses the board vocabulary version rather than the familiar answer pool', () 
   const letters = ['C', 'A', 'M', 'E']
   expect(findWordHint(createWordGame(new WordGrid(4, 1, letters, [4])))).toEqual({ kind: 'dead-end' })
   expect(findWordHint(createWordGame(new WordGrid(4, 1, letters, [4], 2)))).toEqual({ kind: 'hint', path: [0, 1, 2, 3] })
+})
+
+it('uses the version 3 vocabulary for seven-letter boards', () => {
+  const grid = new WordGrid(7, 1, ['P', 'I', 'C', 'T', 'U', 'R', 'E'], [7], 3)
+  expect(findWordHint(createWordGame(grid))).toEqual({ kind: 'hint', path: [0, 1, 2, 3, 4, 5, 6] })
+})
+
+it('finds a hint on a six by six version 3 preview within the default budget', () => {
+  const casesDir = join(new URL('../../..', import.meta.url).pathname, 'conformance/word-paths/v3')
+  const puzzle = parsePuzzle(JSON.parse(readFileSync(join(casesDir, '2026-10-14-words.json'), 'utf8')))
+  if (!(puzzle.board instanceof WordGrid)) throw new Error('word grid')
+  const result = findWordHint(createWordGame(puzzle.board))
+  expect(result.kind).toBe('hint')
+  if (result.kind === 'hint') expect(puzzle.board.wordLengths).toContain(result.path.length)
 })
 
 it('does not confuse cells beyond index 31 on a blocked seven-row board', () => {

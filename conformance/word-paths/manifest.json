@@ -276,7 +276,7 @@
           3,
           4,
           5,
-          7
+          8
         ]
       },
       "error": "maximum:board/wordLengths/3"
@@ -327,7 +327,7 @@
     {
       "name": "unknown version",
       "envelope": {
-        "generatorVersion": 3
+        "generatorVersion": 4
       },
       "error": "enum:generatorVersion"
     },
@@ -387,6 +387,18 @@
     }
   ],
   "v2Samples": [
+    "2026-10-14-words.json",
+    "2026-10-15-words.json",
+    "2026-10-16-words.json",
+    "2026-10-17-words.json",
+    "2026-10-18-words.json",
+    "2026-10-19-words.json",
+    "2026-10-20-words.json",
+    "2026-10-21-words.json",
+    "2026-10-22-words.json",
+    "2026-10-23-words.json"
+  ],
+  "v3Samples": [
     "2026-10-14-words.json",
     "2026-10-15-words.json",
     "2026-10-16-words.json",

@@ -94,3 +94,15 @@ it('preserves v1 attempts when the same board receives v2 acceptance', () => {
   expect(readWordProgress(id, grid, true)?.elapsedMs).toBe(4321)
   expect(readWordProgress(id, expanded, true)).toBeNull()
 })
+
+it('keeps version 3 attempts separate from earlier versions', () => {
+  const values = memory()
+  storeWordProgress(id, partial(), { elapsedMs: 1000 }, true)
+  const current = new WordGrid(grid.width, grid.height, grid.letters, grid.wordLengths, 3)
+  storeWordProgress(id, createWordGame(current), { elapsedMs: 2000 }, true)
+  expect(readWordProgress(id, grid, true)?.elapsedMs).toBe(1000)
+  expect(readWordProgress(id, current, true)?.elapsedMs).toBe(2000)
+  clearWordProgress(id, true, 3)
+  expect(readWordProgress(id, current, true)).toBeNull()
+  expect(values.size).toBe(1)
+})

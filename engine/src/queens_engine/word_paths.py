@@ -17,7 +17,7 @@ from .solver import DEFAULT_LIMIT
 
 MAX_DIMENSION: Final = 7
 MIN_WORD_LENGTH: Final = 3
-MAX_WORD_LENGTH: Final = 6
+MAX_WORD_LENGTH: Final = 7
 PILOT_VOCABULARY_PATH: Final = Path(__file__).with_name("data") / "word-paths-en-v1.txt"
 
 
@@ -34,7 +34,7 @@ class WordGrid:
     vocabulary_version: int = 1
 
     def __post_init__(self) -> None:
-        if type(self.vocabulary_version) is not int or self.vocabulary_version not in (1, 2):
+        if type(self.vocabulary_version) is not int or self.vocabulary_version not in (1, 2, 3):
             raise WordGridError("unsupported vocabulary version")
         object.__setattr__(self, "letters", tuple(self.letters))
         object.__setattr__(self, "word_lengths", tuple(self.word_lengths))
@@ -50,7 +50,7 @@ class WordGrid:
             type(n) is not int or not MIN_WORD_LENGTH <= n <= MAX_WORD_LENGTH
             for n in self.word_lengths
         ):
-            raise WordGridError("word lengths must be integers from 3 to 6")
+            raise WordGridError("word lengths must be integers from 3 to 7")
         if len(set(self.word_lengths)) != len(self.word_lengths):
             raise WordGridError("the pilot requires distinct word lengths")
         if sum(self.word_lengths) != sum(letter is not None for letter in self.letters):
@@ -98,7 +98,7 @@ def validate_vocabulary(words: Collection[str]) -> None:
         or not (word.isascii() and word.isalpha() and word.isupper())
         for word in words
     ):
-        raise WordGridError("vocabulary words must contain 3 to 6 A-Z letters")
+        raise WordGridError("vocabulary words must contain 3 to 7 A-Z letters")
 
 
 def pilot_vocabulary() -> tuple[str, ...]:
@@ -138,10 +138,59 @@ def v2_vocabulary() -> tuple[str, ...]:
     return words
 
 
+@cache
+def v3_seven_letter_vocabulary() -> tuple[str, ...]:
+    """The authored seven-letter answers added for version 3.
+
+    Versions 1 and 2 stop at six letters, so a five-word board needs a longer
+    answer pool. The three- to six-letter answers stay in `v1_vocabulary`;
+    generation draws from both.
+    """
+    words = tuple(
+        line.strip()
+        for line in PILOT_VOCABULARY_PATH.with_name("word-paths-en-v3-seven.txt")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line.strip() and not line.startswith("#")
+    )
+    if not words or any(len(word) != MAX_WORD_LENGTH for word in words):
+        raise WordGridError("version 3 answer additions must be seven-letter words")
+    validate_vocabulary(words)
+    digest = hashlib.sha256("\n".join(words).encode()).hexdigest()
+    if digest != "00d8a6a540b234315bd883a9b114fbc32eb93cd1c5b2f16a8f8e969081860b74":
+        raise WordGridError("version 3 answer digest mismatch; introduce a new version")
+    return words
+
+
+def v3_answer_vocabulary() -> tuple[str, ...]:
+    """The familiar answer pool for version 3: v1 plus the seven-letter additions."""
+    return tuple(sorted((*v1_vocabulary(), *v3_seven_letter_vocabulary())))
+
+
+@cache
+def v3_vocabulary() -> tuple[str, ...]:
+    """Frozen SCOWL acceptance list for version 3, now including seven-letter words."""
+    words = tuple(
+        line.strip()
+        for line in PILOT_VOCABULARY_PATH.with_name("word-paths-en-v3.txt")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line.strip() and not line.startswith("#")
+    )
+    validate_vocabulary(words)
+    if not set(v1_vocabulary()) <= set(words):
+        raise WordGridError("version 3 acceptance must contain every earlier answer")
+    digest = hashlib.sha256("\n".join(words).encode()).hexdigest()
+    if digest != "1fbbc6ebccabbf7a17457c6e83fb61b15ec78d49fcc9cf5a9ffec43974ba536c":
+        raise WordGridError("version 3 vocabulary digest mismatch; introduce a new version")
+    return words
+
+
 def vocabulary_for_version(version: int) -> tuple[str, ...]:
-    if type(version) is not int or version not in (1, 2):
+    vocabularies = {1: v1_vocabulary, 2: v2_vocabulary, 3: v3_vocabulary}
+    if type(version) is not int or version not in vocabularies:
         raise WordGridError("unsupported vocabulary version")
-    return v1_vocabulary() if version == 1 else v2_vocabulary()
+    return vocabularies[version]()
 
 
 class WordSearchLimitError(RuntimeError):

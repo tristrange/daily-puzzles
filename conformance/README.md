@@ -12,7 +12,7 @@ rule, so every shared claim is pinned here and asserted from both sides.
 | `board-cases/` | Board semantics: whether a board is constructible at all, which rule rejects it, and how out-of-range access fails. | M7 |
 | `hint-cases/` | The *first forced move* the deduction rules produce, from an empty board or an explicit player state. | M6 |
 | `id-cases/` | Puzzle id naming: each family's suffix, which day and family an id names, and that `schema/puzzle.schema.json` accepts the same set. | M3 |
-| `word-paths/` | Ten replayable v1 files and shared invalid mutations; Python also checks independent unique covers. Vocabulary digest pins the same English list in both languages. | Word Paths contract |
+| `word-paths/` | Ten replayable v1 files, ten v2 previews, ten v3 previews and shared invalid mutations; Python also checks independent unique covers. Vocabulary digests pin the same English lists in both languages. | Word Paths contract |
 | `band-cases/` | Difficulty band naming: every band's name, and that the range is a contiguous 1-based sequence both sides index as `level - 1`. | M15 |
 
 These are deliberately separate. `schema-cases/` proves the two languages parse a file
