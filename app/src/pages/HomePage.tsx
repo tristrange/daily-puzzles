@@ -9,12 +9,13 @@ import { trackVariantOf } from '../domain/trackSizes'
 import { formatTime } from '../domain/game'
 import { isMarksPuzzle, isTracksPuzzle, isTrioPuzzle, isTentsPuzzle, isSudokuPuzzle, isNurikabePuzzle, type Puzzle } from '../domain/puzzle'
 import { WordGrid } from '../domain/wordPaths'
-import { readStoredStats } from '../lib/stats'
+import { readStoredStats, type SolveRecord } from '../lib/stats'
 import { useToday } from '../lib/useToday'
+import { WeeklyChallenge } from '../components/WeeklyChallenge'
 
 type LoadState =
   | { status: 'loading' }
-  | { status: 'ready'; day: string; probes: readonly TodayPuzzle[]; solved: ReadonlySet<string> }
+  | { status: 'ready'; day: string; probes: readonly TodayPuzzle[]; solved: ReadonlySet<string>; records: readonly SolveRecord[] }
 
 type TodayPuzzle = ProbedPuzzle & { readonly elapsedMs?: number | null }
 
@@ -53,13 +54,14 @@ export function HomePage() {
     const refresh = async () => {
       if (available === null) return
       const current = ++request
-      const solved = new Set(readStoredStats().map(record => record.id))
+      const records = readStoredStats()
+      const solved = new Set(records.map(record => record.id))
       const probes = available
       const attempts = await Promise.all(probes.map(async probe => {
         try { return { ...probe, elapsedMs: probe.puzzle && !solved.has(probe.id) ? await savedTime(probe.puzzle) : null } }
         catch { return { ...probe, elapsedMs: null } }
       }))
-      if (!cancelled && current === request) setState({ status: 'ready', day: todayId, probes: attempts, solved })
+      if (!cancelled && current === request) setState({ status: 'ready', day: todayId, probes: attempts, solved, records })
     }
     // Returning to the page needs fresh saves, not another round of downloads.
     // Connectivity changes do need a probe, so offline availability stays honest.
@@ -107,6 +109,7 @@ export function HomePage() {
       {ready !== null && (
         <>
           <TodayProgress probes={ready.probes} solved={ready.solved} />
+          <WeeklyChallenge records={ready.records} today={todayId} timeZone={timeZone} />
           <TodayCards probes={ready.probes} solved={ready.solved} />
         </>
       )}

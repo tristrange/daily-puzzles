@@ -101,6 +101,9 @@ separate from daily games, stats and leaderboards.
 - Puzzle Passport, under Stats, collects game stamps and milestones at 1, 10 and 25
   distinct daily or archive solves per game. Hints are welcome; preview puzzles do not
   count. The passport uses the same local history and stats backup as the rest of Stats.
+- The optional weekly challenge on Today uses first solves recorded Monday–Sunday in
+  the current time zone. Archive puzzles and hints count; replays do not. The featured
+  size or level goal rotates weekly, and missing a week has no penalty.
 - Optional per-puzzle leaderboards showing nickname, time and hints, accessible after solving and from navigation. Browsing requires no signup; joining uses an anonymous browser identity, without email or password.
 
 Hints may stall when their supported techniques find nothing further; that does
