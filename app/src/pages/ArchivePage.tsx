@@ -13,6 +13,7 @@ import {
   type PublishedGroup,
   type PublishedPuzzle,
 } from '../lib/puzzles'
+import { readStoredStats } from '../lib/stats'
 import { useToday } from '../lib/useToday'
 
 
@@ -21,6 +22,13 @@ type LoadState =
   | { status: 'ready'; day: string; page: number; puzzles: readonly PublishedPuzzle[] }
   | { status: 'error'; day: string; page: number }
 
+const NO_SOLVES: ReadonlySet<string> = new Set()
+
+/** Puzzle ids with a solve saved on this device. */
+function storedSolvedIds(): ReadonlySet<string> {
+  return new Set(typeof window === 'undefined' ? [] : readStoredStats().map((record) => record.id))
+}
+
 export function ArchivePage() {
   const [params] = useSearchParams()
   const type = PUZZLE_TYPES.find(type => type === params.get('game') && PUZZLE_TYPE_PUBLISHED[type]) ?? DEFAULT_PUZZLE_TYPE
@@ -28,6 +36,7 @@ export function ArchivePage() {
   return (
     <section className="archive-page">
       <h1 className="page-title">Archive</h1>
+      <p className="archive-note">Completed marks reflect solve history saved in this browser.</p>
       <nav className="game-picker" aria-label="Archive game">
         {PUZZLE_TYPES.filter(type => PUZZLE_TYPE_PUBLISHED[type]).map(game => (
           <Link key={game} to={archiveHref(game, page)} aria-current={game === type ? 'page' : undefined}>
@@ -44,6 +53,25 @@ function ArchiveGame({ type, page }: { readonly type: PuzzleType; readonly page:
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
   const todayId = useToday(timeZone)
   const [state, setState] = useState<LoadState>({ status: 'loading' })
+  const [solved, setSolved] = useState(storedSolvedIds)
+
+  useEffect(() => {
+    // Returning from a puzzle remounts this page, but a restored page or another
+    // tab only announces itself through these events. Puzzle loading stays on its
+    // own effect so refreshing completion never re-downloads the window.
+    const refresh = () => setSolved(storedSolvedIds())
+    const onVisibility = () => { if (!document.hidden) refresh() }
+    window.addEventListener('focus', refresh)
+    window.addEventListener('pageshow', refresh)
+    window.addEventListener('storage', refresh)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      window.removeEventListener('focus', refresh)
+      window.removeEventListener('pageshow', refresh)
+      window.removeEventListener('storage', refresh)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -77,7 +105,7 @@ function ArchiveGame({ type, page }: { readonly type: PuzzleType; readonly page:
       {current.status === 'error' && (
         <p className="status error">Could not read the archive.</p>
       )}
-      {current.status === 'ready' && <ArchiveGroups groups={groups} timeZone={timeZone} page={page} />}
+      {current.status === 'ready' && <ArchiveGroups groups={groups} timeZone={timeZone} page={page} solved={solved} />}
       <ArchivePager game={type} page={page} todayId={todayId} />
     </div>
   )
@@ -104,15 +132,21 @@ function ArchivePager({ game, page, todayId }: {
   )
 }
 
+function CompletedMark() {
+  return <span className="archive-completed"><span aria-hidden="true">✓</span> Completed</span>
+}
+
 /** Render the loaded archive separately from discovery, including partial offline results. */
 export function ArchiveGroups({
   groups,
   timeZone,
   page,
+  solved = NO_SOLVES,
 }: {
   readonly groups: readonly PublishedGroup[]
   readonly timeZone: string
   readonly page: number
+  readonly solved?: ReadonlySet<string>
 }) {
   if (groups.length === 0) {
     return <p className="status">No puzzles in this archive window. Connect to load puzzles that are not saved on this device.</p>
@@ -140,8 +174,10 @@ export function ArchiveGroups({
                         const variant = (group.type === 'sudoku' || group.type === 'killer-sudoku') ? (killerVariantOf(puzzle.id) ?? sudokuVariantOf(puzzle.id)) : trackVariantOf(puzzle.id)
                         const dimensions = puzzle.width != null && puzzle.height != null ? `${puzzle.width}×${puzzle.height}` : ''
                         const label = variant ? `${variant.label}${dimensions ? ` · ${dimensions}` : ''}` : dimensions || 'Original'
-                        return <Link key={puzzle.id} to={puzzleHref(puzzle.id, page)} aria-label={`${formatPuzzleLabel(day, timeZone)}, ${PUZZLE_TYPE_LABEL[group.type]} ${label}`}>
+                        const completed = solved.has(puzzle.id)
+                        return <Link key={puzzle.id} to={puzzleHref(puzzle.id, page)} aria-label={`${formatPuzzleLabel(day, timeZone)}, ${PUZZLE_TYPE_LABEL[group.type]} ${label}${completed ? ', Completed' : ''}`}>
                           {variant ? <>{variant.label}<span className="archive-dimensions">{dimensions && ` · ${dimensions}`}</span></> : label}
+                          {completed && <CompletedMark />}
                         </Link>
                       })}
                     </div>
@@ -149,6 +185,7 @@ export function ArchiveGroups({
                     <Link key={puzzle.id} to={puzzleHref(puzzle.id, page)}>
                       <time dateTime={day}>{formatPuzzleLabel(day, timeZone)}</time>
                       {puzzle.difficulty != null && <span className="stat-detail">{DIFFICULTY_LABEL[puzzle.difficulty]}</span>}
+                      {solved.has(puzzle.id) && <CompletedMark />}
                     </Link>
                   ))}
                 </li>
