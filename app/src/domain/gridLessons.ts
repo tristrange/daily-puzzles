@@ -16,6 +16,26 @@ export type GridLesson = Common & (
   | { kind: 'train-tracks'; board: TrackGrid; state: TracksGame; answers: (Answer & { brush: number })[]; reason: string; prompt: string }
 )
 
+export const GRID_TECHNIQUES = {
+  nurikabe: [
+    { id: 'sea', title: 'Keep the sea connected', intro: 'The sea must form one connected area. Look for a cell that every possible route between two sea areas must cross.' },
+    { id: 'island-shapes', title: 'Overlap island shapes', intro: 'Compare all shapes that fit an island’s size and its surroundings. A cell in every shape must be land.' },
+    { id: 'connect-land', title: 'Connect isolated land', intro: 'Find which island can reach isolated land, then compare its possible routes to that land.' },
+  ],
+  tents: [
+    { id: 'protect', title: 'Protect a tree’s options', intro: 'A tent cannot touch another tent. Look for a placement that would block every remaining tent position for a tree.' },
+    { id: 'line', title: 'Reserve space for trees', intro: 'Trees whose remaining tent positions all lie in one line reserve space in that line.' },
+    { id: 'arrangements', title: 'Compare line arrangements', intro: 'List the possible tent arrangements in a row or column. A cell used in every arrangement must contain a tent.' },
+    { id: 'matching', title: 'Pair competing trees', intro: 'Several trees can share tent positions. Compare ways to give each tree its own tent without any tents touching.' },
+    { id: 'matching-count', title: 'Combine tree pairings and counts', intro: 'Use a row or column limit to rule out tree pairings, then look for a cell decided by the remaining possibilities.' },
+  ],
+  'train-tracks': [
+    { id: 'corridor', title: 'Find a necessary route', intro: 'Two known tracks must belong to one route. Look for cells that every possible connection between them has to use.' },
+    { id: 'counts', title: 'Combine counts and connections', intro: 'A full row or column closes its remaining cells. Use that restriction to find where the route must pass.' },
+    { id: 'loop', title: 'Avoid closing a loop', intro: 'Two open ends of the same track segment cannot join each other before the route reaches both edge ends.' },
+  ],
+} as const satisfies Record<GridLesson['kind'], readonly { id: string; title: string; intro: string }[]>
+
 export const GRID_LESSONS: GridLesson[] = catalog.map((exercise, index): GridLesson => {
   const common: Common = { id: exercise.id, source: exercise.source, axis: exercise.axis, line: exercise.line,
     exerciseNumber: index % 3 + 1, guidance: index % 3 === 0 ? 'guided' : 'practice',

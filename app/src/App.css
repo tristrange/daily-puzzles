@@ -1137,6 +1137,9 @@
 
 .learn-page, .lesson-page { max-width: 64rem; margin-inline: auto; }
 .lesson-return { max-width: 64rem; margin-inline: auto; }
+.learning-overview { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem 1rem; margin: 1.25rem 0; padding: 1rem 1.25rem; border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); }
+.learning-overview strong { color: var(--text-h); }
+.learning-overview p { flex-basis: 100%; margin: 0; font-size: .875rem; }
 .lesson-cards { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: 1rem; }
 .lesson-cards li { display: flex; flex-direction: column; align-items: start; padding: 1.25rem; border: 1px solid var(--border); border-radius: 1.1rem; background: var(--surface); }
 .lesson-cards h2 { font-size: 1.2rem; margin: .5rem 0 0; }
@@ -1144,6 +1147,7 @@
 .lesson-exercise-links { display: grid; gap: .5rem; width: 100%; margin-top: auto; }
 .lesson-exercise-links .tool-button { display: flex; justify-content: space-between; gap: .75rem; width: 100%; text-align: left; }
 .lesson-cards .lesson-progress { margin: 0 0 .75rem; }
+.technique-practiced, .technique-celebration { color: var(--hint); font-weight: 600; }
 .lesson-exercise-links .lesson-completed { margin: 0; }
 .lesson-siblings { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.25rem; }
 .lesson-siblings [aria-current='page'] { border-color: var(--accent); background: var(--accent-border); color: var(--accent); }

@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { InteractiveBoard } from '../components/InteractiveBoard'
+import { TechniqueCelebration, TechniqueProgress } from '../components/TechniqueProgress'
 import { hintCellName } from '../domain/hints'
 import { QUEENS_LESSONS, QUEENS_TECHNIQUES } from '../domain/queensLessons'
 import { readQueensLessons, completeQueensLesson } from '../lib/queensLessonProgress'
+import { finishesTechnique } from '../lib/learningAchievements'
 
 const noop = () => {}
 const noConflicts = new Set<number>()
@@ -16,6 +18,7 @@ export function QueensCoursePage() {
     <p className="status">{completed.length} of {QUEENS_LESSONS.length} completed · Saved in this browser.</p>
     <ol className="lesson-cards">{QUEENS_TECHNIQUES.map((technique, index) => <li key={technique.id}>
       <p className="eyebrow">Technique {index + 1} · Combine deductions</p><h2>{technique.title}</h2><p>{technique.intro}</p>
+      <TechniqueProgress exercises={QUEENS_LESSONS.filter(item => item.technique === technique.id)} completed={completed} />
       <div className="lesson-exercise-links">{QUEENS_LESSONS.filter(item => item.technique === technique.id).map(item =>
         <Link key={item.id} className="tool-button" to={`/learn/queens/${item.id}`}><span>Exercise {item.exerciseNumber} · {item.guidance === 'guided' ? 'Guided' : 'Practice'}</span>
           <span className={completed.includes(item.id) ? 'lesson-completed' : undefined}>{completed.includes(item.id) ? 'Completed' : '→'}</span></Link>)}</div>
@@ -36,6 +39,7 @@ function QueensExercise({ lesson }: { lesson: typeof QUEENS_LESSONS[number] }) {
   const [result, setResult] = useState<'idle' | 'incorrect' | 'correct' | 'revealed'>('idle')
   const [clue, setClue] = useState(false), [saveFailed, setSaveFailed] = useState(false)
   const [completed, setCompleted] = useState(readQueensLessons)
+  const [newAchievement, setNewAchievement] = useState(false)
   const heading = useRef<HTMLHeadingElement>(null)
   useEffect(() => { window.scrollTo({ top: 0 }); heading.current?.focus({ preventScroll: true }) }, [])
   const technique = QUEENS_TECHNIQUES.find(item => item.id === lesson.technique)!
@@ -49,8 +53,11 @@ function QueensExercise({ lesson }: { lesson: typeof QUEENS_LESSONS[number] }) {
   const check = () => {
     if (selected === null) return
     if (!lesson.answers.includes(selected)) { setResult('incorrect'); return }
-    setResult('correct'); setSaveFailed(!completeQueensLesson(lesson.id))
-    setCompleted([...new Set([...completed, lesson.id])])
+    const before = readQueensLessons()
+    const saved = completeQueensLesson(lesson.id)
+    setResult('correct'); setSaveFailed(!saved)
+    setCompleted([...new Set([...completed, ...before, lesson.id])])
+    setNewAchievement(saved && finishesTechnique(siblings, before, lesson.id))
   }
   const retry = () => { setSelected(null); setResult('idle'); setClue(false); window.scrollTo({ top: 0 }); heading.current?.focus({ preventScroll: true }) }
   return <section className="lesson-page">
@@ -72,7 +79,7 @@ function QueensExercise({ lesson }: { lesson: typeof QUEENS_LESSONS[number] }) {
         <p>{selected === null ? 'Select a cell to begin.' : `Selected ${hintCellName(lesson.board, selected)}.`}</p></fieldset>
       <div className="lesson-actions">{!explained ? <><button type="button" className="tool-button primary" disabled={selected === null} onClick={check}>Check answer</button><button type="button" className="tool-button" onClick={() => setResult('revealed')}>Show explanation</button></>
         : <button type="button" className="tool-button" onClick={retry}>Try again</button>}</div>
-      <p className="lesson-feedback" role="status" aria-live="polite">{result === 'incorrect' && 'Not quite. Revisit the reservation and try again.'}{result === 'correct' && 'Lesson complete.'}{result === 'revealed' && 'Example shown. Try again to practice.'}</p>
+      <p className="lesson-feedback" role="status" aria-live="polite">{result === 'incorrect' && 'Not quite. Revisit the reservation and try again.'}{result === 'correct' && 'Lesson complete.'}{result === 'correct' && newAchievement && <TechniqueCelebration title={technique.title} />}{result === 'revealed' && 'Example shown. Try again to practice.'}</p>
       {saveFailed && <p className="status">This browser could not save your completion. It is shown here until you leave this exercise.</p>}
       {explained && <section className="lesson-explanation"><h2>Why it works</h2><ol>{lesson.reasons.map(reason => <li key={reason}>{reason}</li>)}</ol>
         {next ? <Link className="tool-button primary" to={`/learn/queens/${next.id}`} aria-label="Next exercise">Next exercise →</Link> : <Link className="tool-button primary" to="/learn/queens">All techniques →</Link>}</section>}
