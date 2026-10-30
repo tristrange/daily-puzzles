@@ -240,6 +240,38 @@
   font-size: 0.875rem;
 }
 
+.puzzle-link-share {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.puzzle-link-share .puzzle-link-copy {
+  min-height: 2.5rem;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.8125rem;
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+
+.puzzle-link-message {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.8125rem;
+}
+
+.puzzle-link-field {
+  width: min(100%, 24rem);
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  background: var(--surface);
+  color: var(--text-h);
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+}
+
 .board {
   display: grid;
   gap: 3px;

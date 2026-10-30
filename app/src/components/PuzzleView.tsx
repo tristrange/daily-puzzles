@@ -484,6 +484,9 @@ export function PuzzleView({
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
   const location = useLocation()
   const [state, setState] = useState<LoadState>({ status: 'loading' })
+  const [linkCopied, setLinkCopied] = useState<boolean | null>(null)
+  const [linkFallback, setLinkFallback] = useState<string | null>(null)
+  const [linkAnnouncement, setLinkAnnouncement] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -515,6 +518,19 @@ export function PuzzleView({
   }
   const lessonPath = LESSON_PATHS[state.puzzle.puzzleType]
   const puzzlePath = `/archive/${state.puzzle.id}${location.pathname.startsWith('/archive/') ? location.search : ''}`
+  /** Share the puzzle itself, never this player's board. */
+  const copyPuzzleLink = async () => {
+    const link = puzzleShareLink(state.puzzle.id)
+    if (await copyText(link)) {
+      setLinkCopied(true)
+      setLinkFallback(null)
+      setLinkAnnouncement('Puzzle link copied to the clipboard.')
+      return
+    }
+    setLinkCopied(false)
+    setLinkFallback(link)
+    setLinkAnnouncement('Could not reach the clipboard — the puzzle link is shown below, ready to copy.')
+  }
   return (
     <article className="puzzle">
       <div className="puzzle-heading">
@@ -535,6 +551,23 @@ export function PuzzleView({
           {state.puzzle.board.width}&times;{state.puzzle.board.height} grid
           {state.puzzle.difficulty != null && <> · {DIFFICULTY_LABEL[state.puzzle.difficulty]}</>}
         </p>
+        <div className="puzzle-link-share">
+          <button type="button" className="tool-button puzzle-link-copy" onClick={copyPuzzleLink}>
+            {linkCopied === true ? 'Link copied' : 'Copy puzzle link'}
+          </button>
+          <p className={linkFallback === null ? 'sr-only' : 'puzzle-link-message'} role="status" aria-live="polite">{linkAnnouncement}</p>
+          {linkFallback !== null && (
+            <input
+              className="puzzle-link-field"
+              type="text"
+              readOnly
+              aria-label="Puzzle link"
+              value={linkFallback}
+              ref={(node) => { node?.select() }}
+              onFocus={(event) => event.currentTarget.select()}
+            />
+          )}
+        </div>
       </div>
       <div key={state.puzzle.id}>
         {isNurikabePuzzle(state.puzzle) ? (
