@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { STAR_BATTLE_LESSONS, STAR_BATTLE_TECHNIQUES } from '../domain/starBattleLessons'
 import { STAR_BATTLE_CHAINS } from '../domain/starBattleChains'
 import { readCompletedStarBattleLessons } from '../lib/starBattleLessonProgress'
+import { TechniqueProgress } from '../components/TechniqueProgress'
 
 export function StarBattleCoursePage() {
   const [completed] = useState(readCompletedStarBattleLessons)
@@ -16,7 +17,7 @@ export function StarBattleCoursePage() {
       {STAR_BATTLE_TECHNIQUES.map((technique, index) => <li key={technique.id}>
         <p className="eyebrow">Technique {index + 1} · {technique.stage}</p>
         <h2>{technique.title}</h2><p>{technique.introduction}</p>
-        <p className="lesson-progress">{technique.exercises.filter(exercise => completed.includes(exercise.id)).length} of {technique.exercises.length} completed</p>
+        <TechniqueProgress exercises={technique.exercises} completed={completed} />
         <div className="lesson-exercise-links">
           {technique.exercises.map(exercise => <Link key={exercise.id} className="tool-button" to={`/learn/star-battle/${exercise.id}`}>
             <span>Exercise {exercise.exerciseNumber} · {exercise.guidance === 'guided' ? 'Guided' : 'Practice'}</span>
@@ -27,7 +28,7 @@ export function StarBattleCoursePage() {
       <li>
         <p className="eyebrow">Technique 5 · Combine deductions</p>
         <h2>From reservation to stars</h2><p>Use a reservation to remove a space, then count the remaining spaces in a line.</p>
-        <p className="lesson-progress">{STAR_BATTLE_CHAINS.filter(exercise => completed.includes(exercise.id)).length} of {STAR_BATTLE_CHAINS.length} completed</p>
+        <TechniqueProgress exercises={STAR_BATTLE_CHAINS} completed={completed} />
         <div className="lesson-exercise-links">
           {STAR_BATTLE_CHAINS.map(exercise => <Link key={exercise.id} className="tool-button" to={`/learn/star-battle/${exercise.id}`}>
             <span>Exercise {exercise.exerciseNumber} · {exercise.guidance === 'guided' ? 'Guided' : 'Practice'}</span>

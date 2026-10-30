@@ -3,31 +3,14 @@ import { Link, useParams } from 'react-router-dom'
 import { NurikabeBoard } from '../components/NurikabeBoard'
 import { TentsBoard } from '../components/TentsBoard'
 import { TracksBoard } from '../components/TracksBoard'
+import { TechniqueCelebration, TechniqueProgress } from '../components/TechniqueProgress'
 import '../components/Nurikabe.css'
-import { GRID_LESSONS, type GridLesson } from '../domain/gridLessons'
+import { GRID_LESSONS, GRID_TECHNIQUES, type GridLesson } from '../domain/gridLessons'
 import { readGridLessons, completeGridLesson } from '../lib/gridLessonProgress'
+import { finishesTechnique } from '../lib/learningAchievements'
 
 type Kind = GridLesson['kind']
 const names = { nurikabe: 'Nurikabe', tents: 'Tents', 'train-tracks': 'Train Tracks' } as const
-const techniques = {
-  nurikabe: [
-    { id: 'sea', title: 'Keep the sea connected', intro: 'The sea must form one connected area. Look for a cell that every possible route between two sea areas must cross.' },
-    { id: 'island-shapes', title: 'Overlap island shapes', intro: 'Compare all shapes that fit an island’s size and its surroundings. A cell in every shape must be land.' },
-    { id: 'connect-land', title: 'Connect isolated land', intro: 'Find which island can reach isolated land, then compare its possible routes to that land.' },
-  ],
-  tents: [
-    { id: 'protect', title: 'Protect a tree’s options', intro: 'A tent cannot touch another tent. Look for a placement that would block every remaining tent position for a tree.' },
-    { id: 'line', title: 'Reserve space for trees', intro: 'Trees whose remaining tent positions all lie in one line reserve space in that line.' },
-    { id: 'arrangements', title: 'Compare line arrangements', intro: 'List the possible tent arrangements in a row or column. A cell used in every arrangement must contain a tent.' },
-    { id: 'matching', title: 'Pair competing trees', intro: 'Several trees can share tent positions. Compare ways to give each tree its own tent without any tents touching.' },
-    { id: 'matching-count', title: 'Combine tree pairings and counts', intro: 'Use a row or column limit to rule out tree pairings, then look for a cell decided by the remaining possibilities.' },
-  ],
-  'train-tracks': [
-    { id: 'corridor', title: 'Find a necessary route', intro: 'Two known tracks must belong to one route. Look for cells that every possible connection between them has to use.' },
-    { id: 'counts', title: 'Combine counts and connections', intro: 'A full row or column closes its remaining cells. Use that restriction to find where the route must pass.' },
-    { id: 'loop', title: 'Avoid closing a loop', intro: 'Two open ends of the same track segment cannot join each other before the route reaches both edge ends.' },
-  ],
-} as const
 const noop = () => {}
 const noConflicts = new Set<number>()
 
@@ -38,8 +21,9 @@ export function GridCoursePage({ kind }: { kind: Kind }) {
     <Link to="/learn" className="lesson-back">← All games</Link>
     <h1 className="page-title">{names[kind]} techniques</h1>
     <p className="status">{completed.length} of {lessons.length} completed · Saved in this browser.</p>
-    <ol className="lesson-cards">{techniques[kind].map((technique, index) => <li key={technique.id}><p className="eyebrow">Technique {index + 1} · Look ahead</p>
+    <ol className="lesson-cards">{GRID_TECHNIQUES[kind].map((technique, index) => <li key={technique.id}><p className="eyebrow">Technique {index + 1} · Look ahead</p>
       <h2>{technique.title}</h2><p>{technique.intro}</p>
+      <TechniqueProgress exercises={lessons.filter(lesson => lesson.technique === technique.id)} completed={completed} />
       <div className="lesson-exercise-links">{lessons.filter(lesson => lesson.technique === technique.id).map(lesson => <Link key={lesson.id} className="tool-button" to={`/learn/${kind}/${lesson.id}`}>
         <span>Exercise {lesson.exerciseNumber} · {lesson.guidance === 'guided' ? 'Guided' : 'Practice'}</span>
         <span className={completed.includes(lesson.id) ? 'lesson-completed' : undefined}>{completed.includes(lesson.id) ? 'Completed' : '→'}</span>
@@ -61,9 +45,10 @@ function GridExercise({ lesson }: { lesson: GridLesson }) {
   const [result, setResult] = useState<'idle' | 'incorrect' | 'correct' | 'revealed'>('idle')
   const [clue, setClue] = useState(false), [saveFailed, setSaveFailed] = useState(false)
   const [completed, setCompleted] = useState(() => readGridLessons(lesson.kind))
+  const [newAchievement, setNewAchievement] = useState(false)
   const heading = useRef<HTMLHeadingElement>(null)
   useEffect(() => { window.scrollTo({ top: 0 }); heading.current?.focus({ preventScroll: true }) }, [])
-  const technique = techniques[lesson.kind].find(item => item.id === lesson.technique)!
+  const technique = GRID_TECHNIQUES[lesson.kind].find(item => item.id === lesson.technique)!
   const siblings = GRID_LESSONS.filter(item => item.kind === lesson.kind && item.technique === lesson.technique), next = siblings[lesson.exerciseNumber]
   const explained = result === 'correct' || result === 'revealed'
   const answer = lesson.answers.find(item => item.cell === selected) ?? lesson.answers[0]!
@@ -80,8 +65,11 @@ function GridExercise({ lesson }: { lesson: GridLesson }) {
   const check = () => {
     if (selected === null) return
     if (!lesson.answers.some(item => item.cell === selected)) { setResult('incorrect'); return }
-    setResult('correct'); setSaveFailed(!completeGridLesson(lesson.kind, lesson.id))
-    setCompleted([...new Set([...completed, lesson.id])])
+    const before = readGridLessons(lesson.kind)
+    const saved = completeGridLesson(lesson.kind, lesson.id)
+    setResult('correct'); setSaveFailed(!saved)
+    setCompleted([...new Set([...completed, ...before, lesson.id])])
+    setNewAchievement(saved && finishesTechnique(siblings, before, lesson.id))
   }
   const retry = () => { setSelected(null); setResult('idle'); setClue(false); window.scrollTo({ top: 0 }); heading.current?.focus({ preventScroll: true }) }
   const inspection = { selected, onSelect: (cell: number) => { if (!explained) { setSelected(cell); setResult('idle') } } }
@@ -113,7 +101,7 @@ function GridExercise({ lesson }: { lesson: GridLesson }) {
         <p>{selected === null ? 'Select a cell to begin.' : `Selected ${location(selected)}.`}</p></fieldset>
       <div className="lesson-actions">{!explained ? <><button type="button" className="tool-button primary" disabled={selected === null} onClick={check}>Check answer</button><button type="button" className="tool-button" onClick={() => setResult('revealed')}>Show explanation</button></>
         : <button type="button" className="tool-button" onClick={retry}>Try again</button>}</div>
-      <p className="lesson-feedback" role="status" aria-live="polite">{result === 'incorrect' && 'Not quite. Revisit the pattern and try again.'}{result === 'correct' && 'Lesson complete.'}{result === 'revealed' && 'Example shown. Try again to practice.'}</p>
+      <p className="lesson-feedback" role="status" aria-live="polite">{result === 'incorrect' && 'Not quite. Revisit the pattern and try again.'}{result === 'correct' && 'Lesson complete.'}{result === 'correct' && newAchievement && <TechniqueCelebration title={technique.title} />}{result === 'revealed' && 'Example shown. Try again to practice.'}</p>
       {saveFailed && <p className="status">This browser could not save your completion. It is shown here until you leave this exercise.</p>}
       {explained && <section className="lesson-explanation"><h2>Why it works</h2>{explanation.split('\n').map(line => <p key={line}>{line}</p>)}
         {next ? <Link className="tool-button primary" to={`/learn/${lesson.kind}/${next.id}`} aria-label="Next exercise">Next exercise →</Link>

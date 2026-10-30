@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { InteractiveBoard } from '../components/InteractiveBoard'
+import { TechniqueCelebration } from '../components/TechniqueProgress'
 import { hintCellName, type Hint } from '../domain/hints'
 import { STAR_BATTLE_LESSONS, STAR_BATTLE_TECHNIQUES, starLessonGroupName, type StarBattleLesson } from '../domain/starBattleLessons'
 import { readCompletedStarBattleLessons, storeCompletedStarBattleLessons } from '../lib/starBattleLessonProgress'
 import { STAR_BATTLE_CHAINS } from '../domain/starBattleChains'
 import { StarBattleChainExercise } from './StarBattleChainExercise'
+import { finishesTechnique } from '../lib/learningAchievements'
 
 const noop = () => {}
 const noConflicts = new Set<number>()
@@ -28,6 +30,7 @@ function StarBattleExercise({ lesson, technique }: { lesson: StarBattleLesson; t
   const [clueRequested, setClueRequested] = useState(false)
   const [completed, setCompleted] = useState(readCompletedStarBattleLessons)
   const [saveFailed, setSaveFailed] = useState(false)
+  const [newAchievement, setNewAchievement] = useState(false)
   const heading = useRef<HTMLHeadingElement>(null)
   useEffect(() => { window.scrollTo({ top: 0 }); heading.current?.focus({ preventScroll: true }) }, [])
   const explained = result === 'correct' || result === 'revealed'
@@ -41,8 +44,11 @@ function StarBattleExercise({ lesson, technique }: { lesson: StarBattleLesson; t
     if (answer === null) return
     if (answer !== hint.action) { setResult('incorrect'); return }
     setResult('correct')
-    const ids = [...new Set([...completed, ...readCompletedStarBattleLessons(), lesson.id])]
-    setCompleted(ids); setSaveFailed(!storeCompletedStarBattleLessons(ids))
+    const before = readCompletedStarBattleLessons()
+    const ids = [...new Set([...completed, ...before, lesson.id])]
+    const saved = storeCompletedStarBattleLessons(ids)
+    setCompleted(ids); setSaveFailed(!saved)
+    setNewAchievement(saved && finishesTechnique(technique.exercises, before, lesson.id))
   }
   return <section className="lesson-page">
     <header className="lesson-heading">
@@ -97,6 +103,7 @@ function StarBattleExercise({ lesson, technique }: { lesson: StarBattleLesson; t
         <p className="lesson-feedback" role="status" aria-live="polite">
           {result === 'incorrect' && 'Not quite. Revisit the groups and try again, or open the explanation.'}
           {result === 'correct' && 'Lesson complete. This move follows from the available spaces and remaining stars.'}
+          {result === 'correct' && newAchievement && <TechniqueCelebration title={technique.title} />}
           {result === 'revealed' && 'The move is shown on the board. Try again to practice this deduction.'}
         </p>
         {saveFailed && <p className="status">This browser could not save your completion. It is shown here until you leave this exercise.</p>}

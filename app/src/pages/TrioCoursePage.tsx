@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { TRIO_LESSONS, TRIO_TECHNIQUES } from '../domain/trioLessons'
 import { readCompletedTrioLessons } from '../lib/trioLessonProgress'
+import { TechniqueProgress } from '../components/TechniqueProgress'
 
 export function TrioCoursePage() {
   const [completed] = useState(readCompletedTrioLessons)
@@ -15,7 +16,7 @@ export function TrioCoursePage() {
       {TRIO_TECHNIQUES.map((technique, index) => <li key={technique.id}>
         <p className="eyebrow">Technique {index + 1} · {technique.stage}</p>
         <h2>{technique.title}</h2><p>{technique.introduction}</p>
-        <p className="lesson-progress">{technique.exercises.filter(exercise => completed.includes(exercise.id)).length} of {technique.exercises.length} completed</p>
+        <TechniqueProgress exercises={technique.exercises} completed={completed} />
         <div className="lesson-exercise-links">
           {technique.exercises.map(exercise => <Link key={exercise.id} className="tool-button" to={`/learn/trio/${exercise.id}`}>
             <span>Exercise {exercise.exerciseNumber} · {exercise.guidance === 'guided' ? 'Guided' : 'Practice'}</span>

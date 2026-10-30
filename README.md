@@ -95,6 +95,8 @@ separate from daily games, stats and leaderboards.
   Only a correctly checked answer records completion, separately from daily games.
   The [lesson roadmap](docs/learn-roadmap.md) prioritizes advanced coverage across
   the existing logic games before another puzzle family.
+- Learning achievements recognize completing every exercise in a technique. They use
+  the existing browser-local lesson progress, which is separate from Stats backups.
 - Per-game archives and personal stats, with Sudoku level and Train Tracks size filters.
   Overall and per-game summaries show solve counts, average/fastest times, streaks and
   hints used. First solves count; results are shareable.

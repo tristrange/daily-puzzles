@@ -2,11 +2,13 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { TrioBoard } from '../components/TrioBoard'
 import { TrioSymbol } from '../components/TrioSymbol'
+import { TechniqueCelebration } from '../components/TechniqueProgress'
 import { editTrio, TRIO_NAMES, trioConflicts, type TrioAction, type TrioGame, type TrioValue } from '../domain/trio'
 import { trioCandidateNames, trioCellName } from '../domain/trioHints'
 import { applyTrioLessonExample, checkTrioLessonAnswer, TRIO_LESSONS, TRIO_TECHNIQUES, type TrioLesson } from '../domain/trioLessons'
 import { readCompletedTrioLessons, storeCompletedTrioLessons } from '../lib/trioLessonProgress'
 import { useMoveHistory } from '../lib/useMoveHistory'
+import { finishesTechnique } from '../lib/learningAchievements'
 
 type Response = { kind: 'idle' | 'incorrect' } | { kind: 'correct' | 'revealed'; example: TrioLesson['examples'][number] }
 
@@ -27,6 +29,7 @@ function TrioExercise({ lesson, technique }: { lesson: TrioLesson; technique: ty
   const [clueRequested, setClueRequested] = useState(false)
   const [completed, setCompleted] = useState(readCompletedTrioLessons)
   const [saveFailed, setSaveFailed] = useState(false)
+  const [newAchievement, setNewAchievement] = useState(false)
   const heading = useRef<HTMLHeadingElement>(null)
   useEffect(() => { window.scrollTo({ top: 0 }); heading.current?.focus({ preventScroll: true }) }, [])
   const explained = 'example' in response
@@ -59,8 +62,11 @@ function TrioExercise({ lesson, technique }: { lesson: TrioLesson; technique: ty
     })
     if (!answer) { setResponse({ kind: 'incorrect' }); return }
     setResponse({ kind: 'correct', example: answer })
-    const ids = [...new Set([...completed, ...readCompletedTrioLessons(), lesson.id])]
-    setCompleted(ids); setSaveFailed(!storeCompletedTrioLessons(ids))
+    const previousCompletions = readCompletedTrioLessons()
+    const ids = [...new Set([...completed, ...previousCompletions, lesson.id])]
+    const saved = storeCompletedTrioLessons(ids)
+    setCompleted(ids); setSaveFailed(!saved)
+    setNewAchievement(saved && finishesTechnique(technique.exercises, previousCompletions, lesson.id))
   }
   const reveal = () => {
     if (before.current) return
@@ -114,6 +120,7 @@ function TrioExercise({ lesson, technique }: { lesson: TrioLesson; technique: ty
         <p className="lesson-feedback" role="status" aria-live="polite">
           {response.kind === 'incorrect' && `Not quite. Find an exclusion in ${lesson.scope} and remove ${TRIO_NAMES[lesson.goal.remove]}.`}
           {response.kind === 'correct' && `Lesson complete. This deduction leaves ${trioCandidateNames(example.candidates)}.`}
+          {response.kind === 'correct' && newAchievement && <TechniqueCelebration title={technique.title} />}
           {response.kind === 'revealed' && `Example shown. This deduction leaves ${trioCandidateNames(example.candidates)}. Try again to practice.`}
         </p>
         {saveFailed && <p className="status">This browser could not save your completion. It is shown here until you leave this exercise.</p>}

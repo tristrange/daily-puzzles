@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { KillerCombinations } from '../components/KillerCombinations'
 import { SudokuBoard } from '../components/SudokuBoard'
+import { TechniqueCelebration } from '../components/TechniqueProgress'
 import { KILLER_FORTY_FIVE_LESSONS, fortyFiveExcluded, fortyFiveFacts, type KillerFortyFiveLesson } from '../domain/killerFortyFiveLessons'
 import { createSudokuGame } from '../domain/sudoku'
 import { completeKillerLesson, readKillerLessons } from '../lib/killerLessonProgress'
+import { finishesTechnique } from '../lib/learningAchievements'
 
 export function KillerFortyFiveLessonPage({ lesson, index }: { lesson: KillerFortyFiveLesson; index: number }) {
   const facts = fortyFiveFacts(lesson), target = facts.targetCells[0]!
@@ -12,6 +14,7 @@ export function KillerFortyFiveLessonPage({ lesson, index }: { lesson: KillerFor
   const [crossed, setCrossed] = useState<readonly number[]>([])
   const [result, setResult] = useState<'idle' | 'incorrect' | 'correct' | 'revealed'>('idle')
   const [clue, setClue] = useState(false), [completed, setCompleted] = useState(readKillerLessons), [saveFailed, setSaveFailed] = useState(false)
+  const [newAchievement, setNewAchievement] = useState(false)
   const heading = useRef<HTMLHeadingElement>(null)
   useEffect(() => { window.scrollTo({ top: 0 }); heading.current?.focus({ preventScroll: true }) }, [])
   const explained = result === 'correct' || result === 'revealed', showPattern = index === 0 || clue || explained
@@ -20,7 +23,10 @@ export function KillerFortyFiveLessonPage({ lesson, index }: { lesson: KillerFor
     support: facts.unitCells.filter(cell => !facts.targetCells.includes(cell)) } : null
   const check = () => {
     if (crossed.length !== expected.length || !expected.every(mask => crossed.includes(mask))) { setResult('incorrect'); return }
-    setResult('correct'); setSaveFailed(!completeKillerLesson(lesson.id)); setCompleted([...new Set([...completed, lesson.id])])
+    const before = readKillerLessons()
+    const saved = completeKillerLesson(lesson.id)
+    setResult('correct'); setSaveFailed(!saved); setCompleted([...new Set([...completed, ...before, lesson.id])])
+    setNewAchievement(saved && finishesTechnique(KILLER_FORTY_FIVE_LESSONS, before, lesson.id))
   }
   return <section className="lesson-page">
     <header className="lesson-heading"><p className="eyebrow">Killer Sudoku · Exercise {index + 1} of {KILLER_FORTY_FIVE_LESSONS.length} · {index === 0 ? 'Guided' : 'Practice'}{completed.includes(lesson.id) && ' · Completed'}</p>
@@ -40,7 +46,7 @@ export function KillerFortyFiveLessonPage({ lesson, index }: { lesson: KillerFor
       <KillerCombinations cage={facts.cage} excluded={explained ? expected : crossed} disabled={explained} onToggle={mask => { setCrossed(crossed.includes(mask) ? crossed.filter(item => item !== mask) : [...crossed, mask]); setResult('idle') }} onReset={() => { setCrossed([]); setResult('idle') }} />
       <div className="lesson-actions">{!explained ? <><button type="button" className="tool-button primary" onClick={check}>Check answer</button><button type="button" className="tool-button" onClick={() => setResult('revealed')}>Show explanation</button></>
         : <button type="button" className="tool-button" onClick={() => { setCrossed([]); setResult('idle'); setClue(false) }}>Try again</button>}</div>
-      <p className="lesson-feedback" role="status" aria-live="polite">{result === 'incorrect' ? 'Not quite. Check the subtotal and try again.' : result === 'correct' ? 'Lesson complete.' : result === 'revealed' ? 'Example shown. Try again to practice.' : ''}</p>
+      <p className="lesson-feedback" role="status" aria-live="polite">{result === 'incorrect' ? 'Not quite. Check the subtotal and try again.' : result === 'correct' ? 'Lesson complete.' : result === 'revealed' ? 'Example shown. Try again to practice.' : ''}{result === 'correct' && newAchievement && <TechniqueCelebration title="The 45 rule" />}</p>
       {saveFailed && <p className="status">This browser could not save your completion.</p>}
       {explained && <section className="lesson-explanation"><h2>Why it works</h2><p>{lesson.explanation}</p>
         {KILLER_FORTY_FIVE_LESSONS[index + 1] ? <Link className="tool-button primary" aria-label="Next exercise" to={`/learn/killer-sudoku/${KILLER_FORTY_FIVE_LESSONS[index + 1]!.id}`}>Next exercise →</Link> : <Link className="tool-button primary" to="/learn/killer-sudoku">All techniques →</Link>}</section>}

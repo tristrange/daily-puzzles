@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { SudokuBoard } from '../components/SudokuBoard'
+import { TechniqueCelebration } from '../components/TechniqueProgress'
 import { sudokuCellName, sudokuDigits } from '../domain/sudoku'
 import { SUDOKU_LESSONS, SUDOKU_TECHNIQUES, type SudokuLesson } from '../domain/sudokuLessons'
 import { readCompletedLessons, storeCompletedLessons } from '../lib/lessonProgress'
+import { finishesTechnique } from '../lib/learningAchievements'
 
 export function SudokuLessonPage() {
   const { lessonId } = useParams()
@@ -21,6 +23,7 @@ function LessonExercise({ lesson }: { lesson: SudokuLesson }) {
   const [result, setResult] = useState<'idle' | 'incorrect' | 'correct' | 'revealed'>('idle')
   const [completed, setCompleted] = useState(readCompletedLessons)
   const [saveFailed, setSaveFailed] = useState(false)
+  const [newAchievement, setNewAchievement] = useState(false)
   const [clueRequested, setClueRequested] = useState(false)
   const heading = useRef<HTMLHeadingElement>(null)
   useEffect(() => { window.scrollTo({ top: 0 }); heading.current?.focus({ preventScroll: true }) }, [])
@@ -31,8 +34,11 @@ function LessonExercise({ lesson }: { lesson: SudokuLesson }) {
   const check = () => {
     if (answer !== step.after) { setResult('incorrect'); return }
     setResult('correct')
-    const ids = [...new Set([...completed, ...readCompletedLessons(), lesson.id])]
-    setCompleted(ids); setSaveFailed(!storeCompletedLessons(ids))
+    const before = readCompletedLessons()
+    const ids = [...new Set([...completed, ...before, lesson.id])]
+    const saved = storeCompletedLessons(ids)
+    setCompleted(ids); setSaveFailed(!saved)
+    setNewAchievement(saved && finishesTechnique(technique.exercises, before, lesson.id))
   }
   return <section className="lesson-page">
     <header className="lesson-heading">
@@ -71,6 +77,7 @@ function LessonExercise({ lesson }: { lesson: SudokuLesson }) {
         <p className="lesson-feedback" role="status" aria-live="polite">
           {result === 'incorrect' && 'Not quite. Revisit the pattern and try again, or open the explanation.'}
           {result === 'correct' && `Lesson complete. ${sudokuCellName(step.cell)} can retain ${sudokuDigits(step.after).join(', ')}.`}
+          {result === 'correct' && newAchievement && <TechniqueCelebration title={technique.title} />}
           {result === 'revealed' && `The remaining candidates are ${sudokuDigits(step.after).join(', ')}. Try again to practice this deduction.`}
         </p>
         {saveFailed && <p className="status">This browser could not save your completion. It is shown here until you leave this exercise.</p>}
