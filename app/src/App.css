@@ -758,6 +758,8 @@
 }
 
 .archive-page { max-width: 44rem; margin: 0 auto; }
+.archive-note { margin: -0.5rem 0 1rem; font-size: 0.8125rem; color: var(--text); }
+.archive-completed { display: inline-flex; align-items: center; gap: 0.2rem; color: var(--hint); font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
 .archive-pager { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; margin-top: 1rem; }
 .game-picker { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 1.25rem; }
 .game-picker a {
@@ -773,6 +775,7 @@
 .game-picker a[aria-current='page'] { background: var(--accent-border); color: var(--accent); font-weight: 600; }
 .archive-variants { display: flex; flex-wrap: wrap; gap: 0.25rem 0.5rem; }
 .archive .archive-variants a { gap: 0; min-width: 2.75rem; justify-content: center; padding-inline: 0.6rem; border: 1px solid var(--border); border-radius: 0.6rem; font-size: 0.8125rem; }
+.archive .archive-variants .archive-completed { margin-left: 0.3rem; }
 .archive > li > time { flex: 0 0 10rem; }
 
 .archive-group {

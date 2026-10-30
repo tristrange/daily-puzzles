@@ -10,10 +10,10 @@ import { ArchiveGroups, ArchivePage } from './ArchivePage'
 const UTC = 'UTC'
 
 /** Render the archive body the way the page does, for a set of published entries. */
-function render(puzzles: readonly PublishedPuzzle[], page = 0): string {
+function render(puzzles: readonly PublishedPuzzle[], page = 0, solved: readonly string[] = []): string {
   return renderToStaticMarkup(
     <MemoryRouter>
-      <ArchiveGroups groups={groupPublishedPuzzles(puzzles)} timeZone={UTC} page={page} />
+      <ArchiveGroups groups={groupPublishedPuzzles(puzzles)} timeZone={UTC} page={page} solved={new Set(solved)} />
     </MemoryRouter>,
   )
 }
@@ -95,6 +95,34 @@ describe('ArchiveGroups', () => {
     expect(html).toContain('Sat, Oct 3, 2026')
   })
 
+  it('marks a completed puzzle and leaves unsolved puzzles unmarked', () => {
+    const html = render([queens('2026-10-03'), queens('2026-10-02')], 0, ['2026-10-03'])
+    const link = (id: string) => html.match(new RegExp(`<a[^>]*href="/archive/${id}"[^>]*>.*?</a>`))?.[0]
+    expect(link('2026-10-03')).toContain('Completed')
+    expect(link('2026-10-02')).not.toContain('Completed')
+    expect(html.match(/class="archive-completed"/g)).toHaveLength(1)
+  })
+
+  it('marks individual sizes and levels by puzzle id, including in their labels', () => {
+    const html = render([
+      { id: '2026-10-17-tracks-small', type: 'train-tracks', difficulty: null, width: 8, height: 8 },
+      { id: '2026-10-17-tracks-medium', type: 'train-tracks', difficulty: null, width: 10, height: 10 },
+      { id: '2026-10-17-tracks-large', type: 'train-tracks', difficulty: null, width: 12, height: 12 },
+      { id: '2026-10-17-sudoku-easy', type: 'sudoku', difficulty: null, width: 9, height: 9 },
+      { id: '2026-10-17-sudoku-medium', type: 'sudoku', difficulty: null, width: 9, height: 9 },
+      { id: '2026-10-17-sudoku-hard', type: 'sudoku', difficulty: null, width: 9, height: 9 },
+      { id: '2026-10-17-killer-sudoku-easy', type: 'killer-sudoku', difficulty: null, width: 9, height: 9 },
+      { id: '2026-10-17-killer-sudoku-medium', type: 'killer-sudoku', difficulty: null, width: 9, height: 9 },
+      { id: '2026-10-17-killer-sudoku-hard', type: 'killer-sudoku', difficulty: null, width: 9, height: 9 },
+    ], 0, ['2026-10-17-tracks-medium', '2026-10-17-sudoku-hard', '2026-10-17-killer-sudoku-medium'])
+    expect(html.match(/class="archive-completed"/g)).toHaveLength(3)
+    expect(html).toContain('aria-label="Sat, Oct 17, 2026, Train Tracks Medium · 10×10, Completed"')
+    expect(html).toContain('aria-label="Sat, Oct 17, 2026, Sudoku Hard · 9×9, Completed"')
+    expect(html).toContain('aria-label="Sat, Oct 17, 2026, Killer Sudoku Medium · 9×9, Completed"')
+    expect(html).toContain('aria-label="Sat, Oct 17, 2026, Train Tracks Small · 8×8"')
+    expect(html).not.toContain('aria-label="Sat, Oct 17, 2026, Train Tracks Small · 8×8, Completed"')
+  })
+
   it('omits a family with nothing published', () => {
     const html = render([queens('2026-10-03')])
     expect(html).toContain('<h2 class="archive-group-title">Queens</h2>')
@@ -107,6 +135,11 @@ describe('ArchiveGroups', () => {
   })
 })
 
+
+it('says completion comes from solve history saved in this browser', () => {
+  const html = renderToStaticMarkup(<MemoryRouter><ArchivePage /></MemoryRouter>)
+  expect(html).toContain('Completed marks reflect solve history saved in this browser.')
+})
 
 it('lists published Word Paths under its own archive heading', () => {
   const html = render([
