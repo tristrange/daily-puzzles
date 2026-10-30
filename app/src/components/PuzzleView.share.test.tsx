@@ -120,4 +120,5 @@ it('shows a selectable link when copying fails', async () => {
   expect(container.querySelector('.puzzle-link-share [role="status"]')?.textContent).toBe(
     'Could not reach the clipboard — the puzzle link is shown below, ready to copy.',
   )
+  expect(container.querySelector('.puzzle-link-share [role="status"]')?.classList.contains('sr-only')).toBe(false)
 })

@@ -555,6 +555,7 @@ export function PuzzleView({
           <button type="button" className="tool-button puzzle-link-copy" onClick={copyPuzzleLink}>
             {linkCopied === true ? 'Link copied' : 'Copy puzzle link'}
           </button>
+          <p className={linkFallback === null ? 'sr-only' : 'puzzle-link-message'} role="status" aria-live="polite">{linkAnnouncement}</p>
           {linkFallback !== null && (
             <input
               className="puzzle-link-field"
@@ -566,7 +567,6 @@ export function PuzzleView({
               onFocus={(event) => event.currentTarget.select()}
             />
           )}
-          <p className="sr-only" role="status" aria-live="polite">{linkAnnouncement}</p>
         </div>
       </div>
       <div key={state.puzzle.id}>

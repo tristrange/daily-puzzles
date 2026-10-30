@@ -255,6 +255,12 @@
   border-color: var(--accent-border);
 }
 
+.puzzle-link-message {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.8125rem;
+}
+
 .puzzle-link-field {
   width: min(100%, 24rem);
   padding: 0.45rem 0.6rem;
