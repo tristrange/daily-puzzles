@@ -143,11 +143,13 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
             <span className="trio-pick-face"><TentsSymbol kind={value === 1 ? 'tent' : value === 2 ? 'grass' : value === 0 ? 'erase' : 'highlight'} /><span>{value === 1 ? 'Tent' : value === 2 ? 'Grass' : value === 0 ? 'Erase' : 'Highlight'}</span></span>
           </label>)}
         </div>
-        <p className="trio-mode">{solved ? 'All trees have a tent.' : brush === 1 ? 'Place a tent · tap again to clear' : brush === 2 ? 'Mark grass · no tent here' : brush === 0 ? 'Erase your marks' : 'Drag to highlight cells'}</p>
+        <p className="trio-mode">{solved ? 'All trees have a tent.' : brush === 1 ? 'Place a tent · tap again to clear' : brush === 2 ? 'Mark grass · no tent here' : brush === 0 ? 'Erase your marks' : 'Tap to toggle · drag to highlight'}</p>
         {selection.length > 0 && <button className="tool-button tents-clear-selection" type="button" onClick={() => setSelection([])}>Clear highlights</button>}
       </div>
       <TentsBoard board={board} game={game} brush={brush} locked={solved} conflicts={conflicts} hint={hint}
-        selection={{ cells: selection, onSelect: (cell, extend) => setSelection(previous => extend ? previous.includes(cell) ? previous : [...previous, cell] : [cell]) }}
+        selection={{ cells: selection, onSelect: (cell, mode) => setSelection(previous => mode === 'add'
+          ? previous.includes(cell) ? previous : [...previous, cell]
+          : previous.includes(cell) ? previous.filter(selected => selected !== cell) : [...previous, cell]) }}
         instructionsId={hint ? `${instructionsId} ${hintId}` : instructionsId} onBegin={begin} onApply={apply} onEnd={end} onUndo={undo} onRedo={redo} onHint={requestHint} />
     </div>
     <p className={`trio-feedback${conflicts.size ? ' error' : ''}`} role="status">{solved
@@ -159,6 +161,6 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
       onApply={acceptHint} onDismiss={dismissHint} onShowCell={showHintCell} />}
     {!saving && !solved && <p className="status error" role="status">Progress can&rsquo;t be saved. Keep this page open to retain your attempt.</p>}
     <p className="word-note" id={instructionsId}>Pair every tree with one tent directly above, below, left or right. Match the line counts. Tents cannot touch, even diagonally. Grass marks are optional.</p>
-    <p className="word-note">Pick a mark, then tap or drag. Choose Highlight to select cells without changing marks; drag, Shift-click or Shift-arrow to highlight multiple cells. Arrows move; 1 or T places a tent; 2 or G marks grass; Delete erases; H explains a hint. Ctrl/Cmd+Z undoes; Ctrl/Cmd+Shift+Z redoes.</p>
+    <p className="word-note">Pick a mark, then tap or drag. Choose Highlight to select cells without changing marks; drag, Shift-click or Shift-arrow to highlight multiple cells, and Space or Enter to toggle the focused cell. Arrows move; 1 or T places a tent; 2 or G marks grass; Delete erases; H explains a hint. Ctrl/Cmd+Z undoes; Ctrl/Cmd+Shift+Z redoes.</p>
   </div>
 }
