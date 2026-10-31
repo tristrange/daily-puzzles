@@ -34,6 +34,16 @@ async function key(index: number, value: string) {
   await act(async () => cell(index).focus())
   await act(async () => cell(index).dispatchEvent(new KeyboardEvent('keydown', { key: value, bubbles: true })))
 }
+function pointerDriver(pointerId = 1) {
+  const grid = container.querySelector<HTMLElement>('[role="grid"]')!
+  Object.assign(grid, { setPointerCapture: () => {}, hasPointerCapture: () => false })
+  Object.defineProperty(document, 'elementFromPoint', { configurable: true, value: (x: number) => cell(x) })
+  return async (type: string, index: number) => {
+    const event = new MouseEvent(type, { bubbles: true, clientX: index, button: 0 })
+    Object.defineProperty(event, 'pointerId', { value: pointerId })
+    await act(async () => grid.dispatchEvent(event))
+  }
+}
 
 it.each([0, 6])('plays preview %s with keyboard, saved Undo/Redo and confirmed Reset', async index => {
   const board = parseTentsBoard(raw[index])
@@ -221,6 +231,61 @@ it('extends highlights with Shift-click and Shift-arrow without placing marks', 
   Object.defineProperty(up, 'pointerId', { value: 1 })
   await act(async () => grid.dispatchEvent(up))
   expect([0, 1, 3].map(index => cell(index).getAttribute('aria-selected'))).toEqual(['true', 'true', 'true'])
+  expect(readTentsProgress(board)?.game.every(mark => mark === 0) ?? true).toBe(true)
+  expect(button('Undo').disabled).toBe(true)
+})
+
+it('adds separate highlight taps and removes one when tapped again', async () => {
+  await act(async () => root.render(<TentsStage board={board} />))
+  await act(async () => container.querySelector<HTMLInputElement>('input[aria-label="Highlight"]')!.click())
+  const pointer = pointerDriver()
+  await pointer('pointerdown', 0); await pointer('pointerup', 0)
+  await pointer('pointerdown', 3); await pointer('pointerup', 3)
+  expect([0, 3].map(index => cell(index).getAttribute('aria-selected'))).toEqual(['true', 'true'])
+  await pointer('pointerdown', 0); await pointer('pointerup', 0)
+  expect(cell(0).getAttribute('aria-selected')).toBe('false')
+  expect(cell(3).getAttribute('aria-selected')).toBe('true')
+  expect(readTentsProgress(board)?.game.every(mark => mark === 0) ?? true).toBe(true)
+  expect(button('Undo').disabled).toBe(true)
+})
+
+it('adds a drag to existing highlights even when it starts on a highlighted cell', async () => {
+  const game = createTentsGame(board).map((value, index) => index === 0 ? 2 : value)
+  storeTentsProgress(board, game, { elapsedMs: 1000 }, 0)
+  await act(async () => root.render(<TentsStage board={board} />))
+  await act(async () => container.querySelector<HTMLInputElement>('input[aria-label="Highlight"]')!.click())
+  const pointer = pointerDriver()
+  const tree = board.trees.find(cell => ![0, 3, 8, 9].includes(cell))!
+  await pointer('pointerdown', tree); await pointer('pointerup', tree)
+  await pointer('pointerdown', 0); await pointer('pointerup', 0)
+  await pointer('pointerdown', 3); await pointer('pointerup', 3)
+  await pointer('pointerdown', 0); await pointer('pointermove', 8); await pointer('pointermove', 9); await pointer('pointerup', 9)
+  expect([tree, 0, 3, 8, 9].map(index => cell(index).getAttribute('aria-selected'))).toEqual(
+    ['true', 'true', 'true', 'true', 'true'],
+  )
+  expect(readTentsProgress(board)?.game).toEqual(game)
+  expect(button('Undo').disabled).toBe(true)
+})
+
+it('toggles highlights with Space and Enter without losing them when focus moves', async () => {
+  await act(async () => root.render(<TentsStage board={board} />))
+  await act(async () => container.querySelector<HTMLInputElement>('input[aria-label="Highlight"]')!.click())
+  const pointer = pointerDriver()
+  await pointer('pointerdown', 0); await pointer('pointerup', 0)
+  await pointer('pointerdown', 3); await pointer('pointerup', 3)
+  await key(8, ' ')
+  expect(cell(8).getAttribute('aria-selected')).toBe('true')
+  await key(8, 'Enter')
+  expect(cell(8).getAttribute('aria-selected')).toBe('false')
+  await key(8, 'Enter')
+  expect(cell(8).getAttribute('aria-selected')).toBe('true')
+  await key(8, 'ArrowLeft')
+  expect([0, 3, 8].map(index => cell(index).getAttribute('aria-selected'))).toEqual(['true', 'true', 'true'])
+  await key(7, ' ')
+  expect(cell(7).getAttribute('aria-selected')).toBe('true')
+  await key(7, ' ')
+  expect(cell(7).getAttribute('aria-selected')).toBe('false')
+  expect([0, 3, 8].map(index => cell(index).getAttribute('aria-selected'))).toEqual(['true', 'true', 'true'])
   expect(readTentsProgress(board)?.game.every(mark => mark === 0) ?? true).toBe(true)
   expect(button('Undo').disabled).toBe(true)
 })
