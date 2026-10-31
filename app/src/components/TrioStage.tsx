@@ -1,12 +1,12 @@
 import { PlayTimer } from './PlayTimer'
 import { useLeaderboard } from '../lib/useLeaderboard'
-import { useId, useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useId, useRef, useState } from 'react'
 import { createTrioGame, editTrio, isTrioSolved, TRIO_NAMES, trioConflicts, type TrioAction, type TrioBoard as Board, type TrioGame, type TrioValue } from '../domain/trio'
 import { usePlayClock } from '../lib/usePlayClock'
 import { formatTime } from '../domain/game'
 import { readTrioProgress, storeTrioProgress } from '../lib/trioProgress'
 import { applyTrioHint, findTrioHint, type TrioHint } from '../domain/trioHints'
-import { TrioBoard } from './TrioBoard'
+import { TRIO_NOTE_TAP_MS, TrioBoard, type TrioNoteGesture, type TrioNoteTap } from './TrioBoard'
 import { TrioSymbol } from './TrioSymbol'
 import { TrioHintPanel } from './TrioHintPanel'
 import type { Puzzle } from '../domain/puzzle'
@@ -16,6 +16,9 @@ import { buildShareText, buildTrioSolutionShareText, copyText, puzzleShareLink }
 import { SolvedPanel } from './SolvedPanel'
 import { ResetButton } from './ResetButton'
 import { useMoveHistory } from '../lib/useMoveHistory'
+import type { PlayTime } from '../lib/playTime'
+
+type PendingWin = { before: TrioGame; winning: TrioGame; time: PlayTime; solvedAt: number; timer: ReturnType<typeof setTimeout> | null }
 
 export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) {
   const daily = puzzle !== undefined
@@ -30,10 +33,12 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
   const [game, setGame] = useState(() => initial?.game ?? createTrioGame(board))
   const current = useRef(game)
   const before = useRef<TrioGame | null>(null)
+  const pendingWin = useRef<PendingWin | null>(null)
   const history = useMoveHistory<TrioGame>()
   const [brush, setBrush] = useState<TrioValue>(1)
   const [pencil, setPencil] = useState(false)
   const [solved, setSolved] = useState(false)
+  const [solvedTime, setSolvedTime] = useState<PlayTime | null>(null)
   const completed = useRef(false)
   const [saving, setSaving] = useState(true)
   const [message, setMessage] = useState('')
@@ -43,39 +48,93 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
   const instructionsId = useId(), pickerId = useId(), hintId = useId()
   const conflicts = trioConflicts(board, game.cells)
 
+  // A held stroke can still be cancelled; a pending win may be replaced by a second tap.
   const { time, settle, stop, restartAttempt } = usePlayClock(initial ?? { elapsedMs: 0 }, time => {
-    setSaving(storeTrioProgress(board, current.current, time, daily, hintsUsed.current))
+    setSaving(storeTrioProgress(board, pendingWin.current?.before ?? before.current ?? current.current, time, daily, hintsUsed.current))
   })
-  const elapsed = time.elapsedMs
-  const save = () => { setSaving(storeTrioProgress(board, current.current, settle(), daily, hintsUsed.current)) }
+  const elapsed = (solvedTime ?? time).elapsedMs
+  const save = () => { setSaving(storeTrioProgress(board, pendingWin.current?.before ?? before.current ?? current.current, settle(), daily, hintsUsed.current)) }
   const change = (next: TrioGame) => { current.current = next; setGame(next) }
-  const begin = () => { before.current = current.current; setHint(null) }
+  const finishSolve = (timeAtMove?: PlayTime, solvedAt?: number) => {
+    if (completed.current) return
+    const stoppedTime = stop(), resultTime = timeAtMove ?? stoppedTime
+    setSolvedTime(resultTime)
+    if (puzzle) {
+      // oxlint-disable-next-line react/purity -- Called by player events or the pending-tap timer.
+      const when = solvedAt ?? Date.now(), earlier = readStoredStats().find(record => record.id === puzzle.id)
+      setFirstSolve(earlier ?? null)
+      const record: SolveRecord = { id: puzzle.id, puzzleType: 'trio', size: 9,
+        ...resultTime, hints: hintsUsed.current, solvedAt: when }
+      setStats(summarise(storeSolve(record), puzzleOfToday(new Date(when), Intl.DateTimeFormat().resolvedOptions().timeZone)))
+      if (!earlier) { setCandidate(record); offerSolve(record) }
+    }
+    completed.current = true; setSolved(true)
+  }
+  const finishPending = () => {
+    const pending = pendingWin.current
+    if (!pending) return
+    pendingWin.current = null
+    if (pending.timer !== null) clearTimeout(pending.timer)
+    change(pending.winning); finishSolve(pending.time, pending.solvedAt); save()
+  }
+  const finishOnExit = useEffectEvent(() => finishPending())
+  useEffect(() => {
+    const hidden = () => { if (document.hidden) finishOnExit() }
+    document.addEventListener('visibilitychange', hidden)
+    window.addEventListener('pagehide', finishOnExit); window.addEventListener('blur', finishOnExit)
+    return () => {
+      document.removeEventListener('visibilitychange', hidden)
+      window.removeEventListener('pagehide', finishOnExit); window.removeEventListener('blur', finishOnExit)
+      finishOnExit()
+    }
+  }, [])
+  const begin = (repeat?: TrioNoteTap) => {
+    const pending = pendingWin.current
+    if (pending) {
+      if (repeat && repeat.before === pending.before && repeat.after === pending.winning) {
+        if (pending.timer !== null) clearTimeout(pending.timer)
+        pending.timer = null
+      } else finishPending()
+    }
+    if (completed.current) return false
+    before.current = current.current; setHint(null)
+    return true
+  }
   const apply = (cell: number, action: TrioAction) => {
     if (!completed.current) { change(editTrio(board, current.current, cell, action)); setMessage('') }
   }
-  const end = (cancel: boolean) => {
+  const end = (cancel: boolean, gesture?: TrioNoteGesture): TrioGame => {
     const previous = before.current
     before.current = null
-    if (!previous || completed.current) return
-    if (cancel) change(previous)
-    else if (previous !== current.current) {
-      history.remember(previous)
-      if (isTrioSolved(board, current.current.cells)) {
-        const stoppedTime = stop()
-        if (puzzle) {
-          const when = Date.now()
-          const earlier = readStoredStats().find(record => record.id === puzzle.id)
-          setFirstSolve(earlier ?? null)
-          const record: SolveRecord = { id: puzzle.id, puzzleType: 'trio', size: 9,
-            ...stoppedTime, hints: hintsUsed.current, solvedAt: when }
-          setStats(summarise(storeSolve(record), puzzleOfToday(new Date(when), Intl.DateTimeFormat().resolvedOptions().timeZone)))
-          if (!earlier) { setCandidate(record); offerSolve(record) }
-        }
-        completed.current = true
-        setSolved(true)
-      }
+    if (!previous || completed.current) return current.current
+    if (cancel) {
+      change(previous)
+      if (pendingWin.current) finishPending()
+      else save()
+      return current.current
+    }
+    if (gesture?.kind === 'double' && previous === gesture.first.after) {
+      // The first tap already saved the original board in Undo history.
+      const pending = pendingWin.current
+      if (pending?.timer !== null && pending?.timer !== undefined) clearTimeout(pending.timer)
+      pendingWin.current = null
+      change(editTrio(board, gesture.first.before, gesture.first.cell, { value: gesture.first.symbol }))
+      setMessage(`Placed ${TRIO_NAMES[gesture.first.symbol].toLowerCase()} from the note. Undo restores the note.`)
+    } else if (pendingWin.current) {
+      finishPending()
+      return current.current
+    } else if (previous !== current.current) history.remember(previous)
+    if (isTrioSolved(board, current.current.cells)) {
+      if (gesture?.kind === 'single' && current.current.cells[gesture.cell] !== gesture.symbol) {
+        // A winning first tap can still be replaced by a different lone note on the second tap.
+        // oxlint-disable-next-line react/purity -- This records the time of the player's finishing tap.
+        const pending: PendingWin = { before: previous, winning: current.current, time: settle(), solvedAt: Date.now(), timer: null }
+        pendingWin.current = pending
+        pending.timer = setTimeout(finishPending, TRIO_NOTE_TAP_MS)
+      } else { setMessage(''); finishSolve() }
     }
     save()
+    return current.current
   }
   const undo = () => {
     if (completed.current || before.current) return
@@ -155,7 +214,7 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
     <div className="trio-workspace">
       <div className="trio-controls">
         <div className="puzzle-tools">
-          <PlayTimer time={time} />
+          <PlayTimer time={solvedTime ?? time} />
           <button className="tool-button" type="button" onClick={undo} disabled={solved || !history.canUndo}>Undo</button>
           <button className="tool-button" type="button" onClick={redo} disabled={solved || !history.canRedo}>Redo</button>
           <ResetButton onReset={reset} disabled={solved || game.cells.every((v, i) => v === board.givens[i] && game.notes[i] === 0)} />
@@ -175,7 +234,7 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
         </div>
       </div>
       <TrioBoard board={board} game={game} brush={brush} pencil={pencil} locked={solved} conflicts={conflicts} instructionsId={hint ? `${instructionsId} ${hintId}` : instructionsId} hint={hint}
-        onApply={apply} onBegin={begin} onEnd={end} onUndo={undo} onRedo={redo} onPencil={() => setPencil(!pencil)} />
+        noteShortcut onInterrupt={finishPending} onApply={apply} onBegin={begin} onEnd={end} onUndo={undo} onRedo={redo} onPencil={() => setPencil(!pencil)} />
     </div>
     <p className={`trio-feedback${conflicts.size ? ' error' : ''}`} role="status">
       {solved ? message || `Solved in ${formatTime(elapsed)}!${daily ? '' : ' Choose another board to keep playing.'}` : conflicts.size ? `${conflicts.size} cells conflict with the rules. You can keep editing or Undo.` : message || '\u00a0'}
@@ -185,7 +244,7 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
     {!saving && !solved && <p className="status error" role="status">Progress can&rsquo;t be saved. Keep this page open to retain your attempt.</p>}
     <p className="word-note" id={instructionsId}>Three of each symbol in every row and column. No three identical symbols consecutively.
       = means same; × means different. Cells with a corner dot are fixed.</p>
-    <p className="word-note">Pick a symbol, then tap or drag. Notes marks possible symbols in empty cells. Placing a symbol removes notes ruled out by counts, consecutive symbols and linked clues. Undo restores them. Clear notes removes all pencil marks.
+    <p className="word-note">Pick a symbol, then tap or drag. Notes marks possible symbols in empty cells. Double-tap or double-click a cell with one note to place it. Placing a symbol removes notes ruled out by counts, consecutive symbols and linked clues. Undo restores them. Clear notes removes all pencil marks.
       Arrows move; 1–3 place symbols; N toggles notes; Delete erases; Ctrl/Cmd+Z undoes; Ctrl/Cmd+Shift+Z redoes.</p>
   </div>
 }

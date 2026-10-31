@@ -1,41 +1,70 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
+import { useEffect, useEffectEvent, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { relationBroken, TRIO_NAMES, trioAction, type TrioAction, type TrioBoard as Board, type TrioGame, type TrioSymbol as SymbolValue, type TrioValue } from '../domain/trio'
 import { historyCommand } from '../lib/useMoveHistory'
 import { TrioSymbol } from './TrioSymbol'
 import type { TrioHint } from '../domain/trioHints'
+
+export const TRIO_NOTE_TAP_MS = 500
+const TAP_SLOP = 12
+
+export interface TrioNoteTap { cell: number; symbol: SymbolValue; before: TrioGame; after: TrioGame }
+export type TrioNoteGesture = { kind: 'single'; cell: number; symbol: SymbolValue } | { kind: 'double'; first: TrioNoteTap }
+type PreviousTap = TrioNoteTap & { at: number; pointerType: string; brush: TrioValue; pencil: boolean }
 
 interface Props {
   board: Board; game: TrioGame; brush: TrioValue; pencil: boolean; locked: boolean
   conflicts: ReadonlySet<number>; instructionsId: string
   hint?: TrioHint | null
   inspection?: { selected: number | null; onSelect: (cell: number) => void }
+  noteShortcut?: boolean; onInterrupt?: () => void
   onApply: (cell: number, action: TrioAction) => void
-  onBegin: () => void; onEnd: (cancel: boolean) => void; onUndo: () => void; onRedo: () => void; onPencil: () => void
+  onBegin: (repeat?: TrioNoteTap) => boolean | void; onEnd: (cancel: boolean, gesture?: TrioNoteGesture) => TrioGame | void
+  onUndo: () => void; onRedo: () => void; onPencil: () => void
 }
 
-export function TrioBoard({ board, game, brush, pencil, locked, conflicts, instructionsId, hint, inspection, onApply, onBegin, onEnd, onUndo, onRedo, onPencil }: Props) {
+export function TrioBoard({ board, game, brush, pencil, locked, conflicts, instructionsId, hint, inspection, noteShortcut = false, onInterrupt, onApply, onBegin, onEnd, onUndo, onRedo, onPencil }: Props) {
   const grid = useRef<HTMLDivElement>(null)
   const [focus, setFocus] = useState(() => Math.max(0, board.givens.indexOf(0)))
-  const stroke = useRef<{ id: number; action: TrioAction; visited: Set<number> } | null>(null)
+  const stroke = useRef<{ id: number; action: TrioAction; visited: Set<number>; cell: number; before: TrioGame; symbol: SymbolValue | null
+    repeat: PreviousTap | null; brush: TrioValue; pencil: boolean; x: number; y: number; started: number; pointerType: string; tap: boolean } | null>(null)
+  const previousTap = useRef<PreviousTap | null>(null)
   const support = new Set(hint?.steps.flatMap((step) => [...step.group]))
+  const interruptOutside = useEffectEvent(() => onInterrupt?.())
   useEffect(() => {
     if (grid.current?.contains(document.activeElement)) grid.current.querySelector<HTMLElement>(`[data-cell="${focus}"]`)?.focus()
   }, [focus])
+  useEffect(() => {
+    if (!noteShortcut) return
+    const outside = (event: globalThis.PointerEvent) => {
+      if (!(event.target instanceof Node) || !grid.current?.contains(event.target)) { previousTap.current = null; interruptOutside() }
+    }
+    document.addEventListener('pointerdown', outside, true)
+    return () => document.removeEventListener('pointerdown', outside, true)
+  }, [noteShortcut])
 
   const cellAt = (x: number, y: number): number | null => {
     const element = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-cell]')
     return element && grid.current?.contains(element) ? Number(element.dataset['cell']) : null
   }
-  const finish = (cancel: boolean) => {
+  const finish = (cancel: boolean, event?: PointerEvent<HTMLDivElement>) => {
     const active = stroke.current
     if (!active) return
     stroke.current = null
     if (grid.current?.hasPointerCapture(active.id)) grid.current.releasePointerCapture(active.id)
-    onEnd(cancel)
+    if (cancel || !event) { previousTap.current = null; onEnd(true); return }
+    const now = event.timeStamp, target = cellAt(event.clientX, event.clientY)
+    const tap = active.tap && active.visited.size === 1 && now - active.started <= TRIO_NOTE_TAP_MS && target === active.cell
+      && Math.hypot(event.clientX - active.x, event.clientY - active.y) <= TAP_SLOP && !event.shiftKey && !event.altKey
+    const repeat = tap && active.repeat && now - active.repeat.at <= TRIO_NOTE_TAP_MS ? active.repeat : null
+    const gesture: TrioNoteGesture | undefined = repeat ? { kind: 'double', first: repeat }
+      : tap && active.symbol ? { kind: 'single', cell: active.cell, symbol: active.symbol } : undefined
+    const after = onEnd(false, gesture)
+    previousTap.current = gesture?.kind === 'single' && after
+      ? { cell: active.cell, symbol: gesture.symbol, before: active.before, after, at: now, pointerType: active.pointerType, brush: active.brush, pencil: active.pencil } : null
   }
   const start = (event: PointerEvent<HTMLDivElement>) => {
-    if (stroke.current && event.pointerId !== stroke.current.id) { finish(true); return }
-    if (event.button !== 0 || event.ctrlKey) return
+    if (stroke.current) { if (event.pointerId !== stroke.current.id) finish(true); return }
+    if (event.button !== 0 || event.ctrlKey) { previousTap.current = null; onInterrupt?.(); return }
     if (locked) {
       if (!inspection) return
       const cell = cellAt(event.clientX, event.clientY)
@@ -43,30 +72,44 @@ export function TrioBoard({ board, game, brush, pencil, locked, conflicts, instr
       return
     }
     const cell = cellAt(event.clientX, event.clientY)
-    if (cell === null) return
+    if (cell === null) { previousTap.current = null; onInterrupt?.(); return }
     if (board.givens[cell] !== 0) {
+      previousTap.current = null; onInterrupt?.()
       if (inspection) { setFocus(cell); inspection.onSelect(cell); grid.current?.querySelector<HTMLElement>(`[data-cell="${cell}"]`)?.focus({ preventScroll: true }) }
       return
     }
+    const prior = previousTap.current
+    previousTap.current = null
+    const tap = noteShortcut && !event.shiftKey && !event.altKey && !event.metaKey && event.isPrimary !== false
+    const repeat = tap && prior && prior.cell === cell && prior.pointerType === event.pointerType
+      && prior.brush === brush && prior.pencil === pencil && event.timeStamp - prior.at <= TRIO_NOTE_TAP_MS && game === prior.after ? prior : null
+    if (onBegin(repeat ?? undefined) === false) return
     setFocus(cell)
     inspection?.onSelect(cell)
     grid.current?.querySelector<HTMLElement>(`[data-cell="${cell}"]`)?.focus({ preventScroll: true })
-    stroke.current = { id: event.pointerId, action: trioAction(game, cell, brush, pencil), visited: new Set([cell]) }
-    onBegin()
+    const mask = game.cells[cell] === 0 ? game.notes[cell] : 0
+    const symbol = mask === 1 ? 1 : mask === 2 ? 2 : mask === 4 ? 3 : null
+    stroke.current = { id: event.pointerId, action: trioAction(game, cell, brush, pencil), visited: new Set([cell]), cell,
+      before: game, symbol, repeat, brush, pencil, x: event.clientX, y: event.clientY, started: event.timeStamp, pointerType: event.pointerType, tap }
     onApply(cell, stroke.current.action)
     grid.current?.setPointerCapture(event.pointerId)
   }
   const move = (event: PointerEvent<HTMLDivElement>) => {
     const active = stroke.current
     if (!active || active.id !== event.pointerId || locked) return
+    if (Math.hypot(event.clientX - active.x, event.clientY - active.y) > TAP_SLOP) active.tap = false
     const cell = cellAt(event.clientX, event.clientY)
     if (cell === null || active.visited.has(cell)) return
     active.visited.add(cell)
     if (inspection) { setFocus(cell); inspection.onSelect(cell) }
     onApply(cell, active.action)
   }
-  const one = (cell: number, value: TrioValue) => { if (!locked && !stroke.current) { inspection?.onSelect(cell); onBegin(); onApply(cell, trioAction(game, cell, value, pencil)); onEnd(false) } }
+  const one = (cell: number, value: TrioValue) => {
+    if (locked || stroke.current || onBegin() === false) return
+    inspection?.onSelect(cell); onApply(cell, trioAction(game, cell, value, pencil)); onEnd(false)
+  }
   const key = (event: KeyboardEvent<HTMLDivElement>) => {
+    previousTap.current = null; onInterrupt?.()
     const row = Math.floor(focus / 9), col = focus % 9
     const navigation: Record<string, number> = { ArrowUp: Math.max(0, row - 1) * 9 + col, ArrowDown: Math.min(8, row + 1) * 9 + col,
       ArrowLeft: row * 9 + Math.max(0, col - 1), ArrowRight: row * 9 + Math.min(8, col + 1), Home: row * 9, End: row * 9 + 8 }
@@ -84,9 +127,10 @@ export function TrioBoard({ board, game, brush, pencil, locked, conflicts, instr
   }
   return <div ref={grid} role="grid" aria-label="9 by 9 Trio puzzle" aria-describedby={instructionsId} className="trio-board"
     onKeyDown={key} onPointerDown={start} onPointerMove={move}
-    onPointerUp={(event) => { if (stroke.current?.id === event.pointerId) finish(false) }}
+    onPointerUp={(event) => { if (stroke.current?.id === event.pointerId) finish(false, event) }}
     onPointerCancel={(event) => { if (stroke.current?.id === event.pointerId) finish(true) }}
-    onLostPointerCapture={(event) => { if (event.target === event.currentTarget && stroke.current?.id === event.pointerId) finish(true) }}>
+    onLostPointerCapture={(event) => { if (event.target === event.currentTarget && stroke.current?.id === event.pointerId) finish(true) }}
+    onBlur={event => { if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget)) { previousTap.current = null; onInterrupt?.() } }}>
     {Array.from({ length: 9 }, (_, row) => <div role="row" className="trio-row" key={row}>
       {Array.from({ length: 9 }, (_, col) => {
         const cell = row * 9 + col, value = game.cells[cell]!, notes = game.notes[cell]!, given = board.givens[cell] !== 0

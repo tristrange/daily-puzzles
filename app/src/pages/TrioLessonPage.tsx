@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { TrioBoard } from '../components/TrioBoard'
+import { TrioBoard, type TrioNoteGesture } from '../components/TrioBoard'
 import { TrioSymbol } from '../components/TrioSymbol'
 import { TechniqueCelebration } from '../components/TechniqueProgress'
 import { editTrio, TRIO_NAMES, trioConflicts, type TrioAction, type TrioGame, type TrioValue } from '../domain/trio'
@@ -41,11 +41,15 @@ function TrioExercise({ lesson, technique }: { lesson: TrioLesson; technique: ty
   const change = (nextGame: TrioGame) => { current.current = nextGame; setGame(nextGame) }
   const begin = () => { before.current = current.current; setResponse({ kind: 'idle' }) }
   const apply = (cell: number, action: TrioAction) => change(editTrio(board, current.current, cell, action))
-  const end = (cancel: boolean) => {
+  const end = (cancel: boolean, gesture?: TrioNoteGesture) => {
     const previous = before.current; before.current = null
     if (!previous) return
     if (cancel) change(previous)
+    else if (gesture?.kind === 'double' && previous === gesture.first.after) {
+      change(editTrio(board, gesture.first.before, gesture.first.cell, { value: gesture.first.symbol }))
+    }
     else if (previous !== current.current) history.remember(previous)
+    return current.current
   }
   const undo = () => { if (!before.current) { const previous = history.undo(current.current); if (previous) { change(previous); setResponse({ kind: 'idle' }) } } }
   const redo = () => { if (!before.current) { const nextGame = history.redo(current.current); if (nextGame) { change(nextGame); setResponse({ kind: 'idle' }) } } }
@@ -101,8 +105,8 @@ function TrioExercise({ lesson, technique }: { lesson: TrioLesson; technique: ty
       <div className="lesson-board">
         <TrioBoard board={board} game={game} brush={brush} pencil={pencil} locked={explained}
           conflicts={conflicts} instructionsId="trio-lesson-board-guide" hint={showPattern ? example.hint : null}
-          inspection={{ selected: explained ? example.cell : selected, onSelect: setSelected }} onApply={apply} onBegin={begin} onEnd={end} onUndo={undo} onRedo={redo} onPencil={() => setPencil(!pencil)} />
-        <p id="trio-lesson-board-guide" className="lesson-board-guide">Prepared symbols are fixed. Choose a symbol, then tap or drag to edit; Notes switches between notes and symbols. Undo restores your changes. Arrows move; 1–3 edit, N switches Notes, and Delete erases.{showPattern && ' Green outline: example. Dashed outlines: supporting cells.'}</p>
+          noteShortcut inspection={{ selected: explained ? example.cell : selected, onSelect: setSelected }} onApply={apply} onBegin={begin} onEnd={end} onUndo={undo} onRedo={redo} onPencil={() => setPencil(!pencil)} />
+        <p id="trio-lesson-board-guide" className="lesson-board-guide">Prepared symbols are fixed. Choose a symbol, then tap or drag to edit; Notes switches between notes and symbols. Double-tap or double-click a cell with one note to place it. Undo restores your changes. Arrows move; 1–3 edit, N switches Notes, and Delete erases.{showPattern && ' Green outline: example. Dashed outlines: supporting cells.'}</p>
         {conflicts.size > 0 && <p className="status error" role="status">Some working symbols conflict with the rules. You can edit or undo them.</p>}
       </div>
       <section className="lesson-task" aria-labelledby="trio-lesson-idea">
