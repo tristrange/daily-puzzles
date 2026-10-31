@@ -154,18 +154,21 @@ merge; a desktop viewport check does not prove installation.
 ## Offline support
 
 The production-only `OfflineStatus` registers `sw.js` within `BASE_URL` and
-announces app readiness after activation. Vite’s `build/offline.ts` emits the
+reports offline and update status. Vite’s `build/offline.ts` emits the
 worker from `offline/sw.js`, hashing the template, emitted HTML/code/styles and
 explicit public shell files. Install requests bypass the HTTP cache to avoid
 retaining an older HTML response in a new build cache. Lazy Word Paths code and its dictionary are
 precached too. Development mode does not register a worker.
 
 App caches are `daily-puzzles.app:<base>:<build hash>`. Navigation uses the
-installed HTML to keep its chunk versions consistent. Updates use the normal
-waiting lifecycle: the status line says when a new version is ready; finish the
-game, then close every open app window and reopen. There is no forced activation
-or reload. Activation removes only older app
-caches for this exact base; neighboring apps and player data are untouched.
+installed HTML to keep its chunk versions consistent. Today applies an available
+update automatically; other routes offer **Update now** and warn that reloads
+clear undo/redo history. Activating a worker does not reload other tabs. It keeps
+the three previous app shells and serves their cached assets to older tabs, so a
+tab left open through more than three later updates should refresh before it
+navigates. Cleanup is scoped to this base; puzzle downloads and player data are
+untouched. Older app versions must first close all app windows once to install
+the update flow. Foreground checks for new versions are throttled to five minutes.
 
 `src/lib/puzzles.ts` owns downloads separately in
 `daily-puzzles.puzzles:<base>:v1`. It validates schema and requested ID before

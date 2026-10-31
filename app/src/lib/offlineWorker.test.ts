@@ -8,28 +8,31 @@ const files = { 'index.html': '<html>app</html>', 'assets/main.js': 'main', 'ass
 
 function worker(base = '/', broken = false) {
   const listeners = new Map<string, (event: unknown) => void>()
+  const source = renderOfflineWorker(base, files, template())
+  const currentName = JSON.parse(source.match(/const CACHE_NAME = (.+)/)![1]!) as string
   const addAll = vi.fn(async (_files: Request[]) => { if (broken) throw new Error('offline') })
   const match = vi.fn(async () => new Response('installed build'))
   const remove = vi.fn(async () => true)
   const claim = vi.fn(async () => {})
+  const skipWaiting = vi.fn(async () => {})
   const fetcher = vi.fn(async () => new Response('network'))
   const caches = {
     open: vi.fn(async () => ({ addAll, match })),
     keys: async () => [
-      `daily-puzzles.app:${base}:old`,
+      ...[1, 2, 3, 4].map((version) => `daily-puzzles.app:${base}:old${version}`),
+      currentName,
       `daily-puzzles.puzzles:${base}:v1`,
       'daily-puzzles.app:/neighbor/:old',
       'unrelated',
     ],
     delete: remove,
   }
-  const source = renderOfflineWorker(base, files, template())
   vm.runInNewContext(source, {
     self: {
       location: new URL(`https://example.test${base}sw.js`),
       addEventListener: (name: string, handler: (event: unknown) => void) => listeners.set(name, handler),
       clients: { claim },
-      skipWaiting: () => { throw new Error('must not force an update') },
+      skipWaiting,
     }, caches, fetch: fetcher, URL, Request,
   })
   const lifecycle = (name: string) => {
@@ -45,13 +48,19 @@ function worker(base = '/', broken = false) {
     })
     return pending
   }
-  return { source, lifecycle, request, addAll, match, remove, claim, fetcher }
+  const message = (data: unknown) => {
+    let pending: Promise<unknown> | undefined
+    listeners.get('message')!({ data, waitUntil: (promise: Promise<unknown>) => { pending = promise } })
+    return pending
+  }
+  return { source, lifecycle, request, message, addAll, match, remove, claim, skipWaiting, fetcher }
 }
 
 describe.each(['/', '/daily-puzzles/'])('offline worker at %s', (base) => {
   it('installs the complete shell including lazy chunks under the correct base', async () => {
     const sw = worker(base)
     await sw.lifecycle('install')
+    expect(sw.skipWaiting).not.toHaveBeenCalled()
     expect(sw.addAll.mock.calls[0]![0].map((request) => new URL(request.url).pathname)).toEqual([
       `${base}`, `${base}assets/main.js`, `${base}assets/words.js`,
     ])
@@ -59,10 +68,10 @@ describe.each(['/', '/daily-puzzles/'])('offline worker at %s', (base) => {
   it('fails installation if even one shell file cannot be fetched', async () => {
     await expect(worker(base, true).lifecycle('install')).rejects.toThrow('offline')
   })
-  it('removes only this base’s old app caches and claims without forcing a reload', async () => {
+  it('retains the three newest previous shells and removes only older shells for this base', async () => {
     const sw = worker(base)
     await sw.lifecycle('activate')
-    expect(sw.remove.mock.calls).toEqual([[`daily-puzzles.app:${base}:old`]])
+    expect(sw.remove.mock.calls).toEqual([[`daily-puzzles.app:${base}:old1`]])
     expect(sw.claim).toHaveBeenCalledOnce()
   })
   it('serves consistent installed HTML and cached lazy code when the network is gone', async () => {
@@ -79,6 +88,13 @@ describe.each(['/', '/daily-puzzles/'])('offline worker at %s', (base) => {
     }
     expect(sw.request(base, 'navigate', 'POST')).toBeUndefined()
   })
+  it('activates early only when a player requests an update', async () => {
+    const sw = worker(base)
+    expect(sw.message({ type: 'OTHER' })).toBeUndefined()
+    expect(sw.skipWaiting).not.toHaveBeenCalled()
+    await sw.message({ type: 'ACTIVATE_UPDATE' })
+    expect(sw.skipWaiting).toHaveBeenCalledOnce()
+  })
 })
 
 it('changes the cache version for worker-only and asset-only changes', () => {
@@ -90,10 +106,14 @@ it('changes the cache version for worker-only and asset-only changes', () => {
   expect(cacheName(first)).not.toBe(cacheName(changedFile))
 })
 
-it('installs build B despite warm HTTP-cached HTML A, then reopens B and its lazy code offline', async () => {
+it('serves a new shell and the previous build’s lazy code offline after an update', async () => {
   const base = 'https://example.test/'
   const oldName = 'daily-puzzles.app:/:old'
-  const stored = new Map<string, Map<string, string>>([[oldName, new Map()]])
+  const puzzleName = 'daily-puzzles.puzzles:/:v1'
+  const stored = new Map<string, Map<string, string>>([
+    [oldName, new Map([[`${base}assets/old.js`, 'old lazy code']])],
+    [puzzleName, new Map([[`${base}puzzles/board.json`, 'saved puzzle']])],
+  ])
   const listeners = new Map<string, (event: unknown) => void>()
   const buildB = { ...files, 'index.html': '<script src="/assets/main.js"></script>build B' }
   const network = new Map(Object.entries(buildB).map(([name, body]) => [new URL(name === 'index.html' ? '' : name, base).href, body]))
@@ -126,8 +146,9 @@ it('installs build B despite warm HTTP-cached HTML A, then reopens B and its laz
     listeners.get(name)!({ waitUntil: (promise: Promise<unknown>) => { pending = promise } })
     await pending
   }
-  expect(stored.has(oldName)).toBe(false)
-  for (const [path, mode, expected] of [['', 'navigate', 'build B'], ['assets/main.js', 'cors', 'main'], ['assets/words.js', 'cors', 'lazy dictionary']]) {
+  expect(stored.has(oldName)).toBe(true)
+  expect(stored.get(puzzleName)!.get(`${base}puzzles/board.json`)).toBe('saved puzzle')
+  for (const [path, mode, expected] of [['', 'navigate', 'build B'], ['assets/main.js', 'cors', 'main'], ['assets/words.js', 'cors', 'lazy dictionary'], ['assets/old.js', 'cors', 'old lazy code']]) {
     let pending: Promise<Response> | undefined
     listeners.get('fetch')!({ request: { url: new URL(path!, base).href, mode, method: 'GET' }, respondWith: (promise: Promise<Response>) => { pending = promise } })
     expect(await (await pending)!.text()).toContain(expected)

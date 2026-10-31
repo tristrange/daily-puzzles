@@ -4,60 +4,108 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { OfflineMessage, OfflineStatus } from './OfflineStatus'
 import { registerOfflineApp } from '../lib/offline'
 
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers() })
+
+function setupWorker(controller: object | null = {}) {
+  const waiting = { postMessage: vi.fn() }
+  const registration = Object.assign(new EventTarget(), {
+    waiting: null as typeof waiting | null,
+    installing: null as (EventTarget & { state: string }) | null,
+    update: vi.fn(async () => {}),
+  })
+  const serviceWorker = Object.assign(new EventTarget(), {
+    controller,
+    register: vi.fn(async () => registration),
+    ready: Promise.resolve(registration),
+  })
+  const document = Object.assign(new EventTarget(), { visibilityState: 'visible' })
+  vi.stubGlobal('window', new EventTarget())
+  vi.stubGlobal('document', document)
+  vi.stubGlobal('navigator', { onLine: true, serviceWorker })
+  return { waiting, registration, serviceWorker, document }
+}
 
 it('registers within the app base and waits for activation before reporting readiness', async () => {
-  let activate!: (value: unknown) => void
-  const register = vi.fn(async () => ({ waiting: null, installing: null, addEventListener: () => {} }))
-  vi.stubGlobal('navigator', { serviceWorker: { register, ready: new Promise((resolve) => { activate = resolve }) } })
+  let activate!: () => void
+  const { serviceWorker, registration } = setupWorker()
+  serviceWorker.ready = new Promise((resolve) => { activate = () => resolve(registration) })
   const done = vi.fn()
   const pending = registerOfflineApp().then(done)
   await Promise.resolve()
   expect(done).not.toHaveBeenCalled()
-  activate({})
+  activate()
   await pending
-  expect(register).toHaveBeenCalledWith('/sw.js', { scope: '/', updateViaCache: 'none' })
+  expect(serviceWorker.register).toHaveBeenCalledWith('/sw.js', { scope: '/', updateViaCache: 'none' })
   expect(done).toHaveBeenCalledWith(true)
 })
 
 it('reports a waiting update without reloading the page', async () => {
   const update = vi.fn()
-  const register = vi.fn(async () => ({ waiting: {}, installing: null, addEventListener: () => {} }))
-  vi.stubGlobal('navigator', {
-    serviceWorker: { register, ready: Promise.resolve({}), controller: {} },
-  })
+  const { waiting, registration } = setupWorker()
+  registration.waiting = waiting
 
   expect(await registerOfflineApp(update)).toBe(true)
   expect(update).toHaveBeenCalledOnce()
+  expect(update.mock.calls[0]![0].activate()).toBe(true)
+  expect(waiting.postMessage).toHaveBeenCalledWith({ type: 'ACTIVATE_UPDATE' })
+  registration.waiting = null
+  expect(update.mock.calls[0]![0].activate()).toBe(false)
 })
 
 it('reports a worker that finishes installing while the app is open', async () => {
   const update = vi.fn()
-  let updateFound: (() => void) | undefined
-  let stateChange: (() => void) | undefined
-  const installing = {
-    state: 'installing',
-    addEventListener: (_type: string, listener: () => void) => { stateChange = listener },
-  }
-  const registration = {
-    waiting: null as typeof installing | null,
-    installing: installing as typeof installing | null,
-    addEventListener: (type: string, listener: () => void) => {
-      if (type === 'updatefound') updateFound = listener
-    },
-  }
-  vi.stubGlobal('navigator', {
-    serviceWorker: { register: async () => registration, ready: Promise.resolve({}), controller: {} },
-  })
+  const { registration, waiting } = setupWorker()
+  const installing = Object.assign(new EventTarget(), { state: 'installing' })
 
   await registerOfflineApp(update)
   registration.installing = installing
-  updateFound?.()
-  registration.waiting = installing
+  registration.dispatchEvent(new Event('updatefound'))
+  registration.waiting = waiting
   installing.state = 'installed'
-  stateChange?.()
+  installing.dispatchEvent(new Event('statechange'))
 
   expect(update).toHaveBeenCalledOnce()
+})
+
+it('ignores the first installation, but notices a later controller change and cleans up listeners', async () => {
+  const update = vi.fn()
+  const { serviceWorker } = setupWorker(null)
+  const abort = new AbortController()
+  await registerOfflineApp(update, abort.signal)
+  serviceWorker.controller = {}
+  serviceWorker.dispatchEvent(new Event('controllerchange'))
+  expect(update).not.toHaveBeenCalled()
+  serviceWorker.controller = {}
+  serviceWorker.dispatchEvent(new Event('controllerchange'))
+  expect(update).toHaveBeenCalledWith({ kind: 'active' })
+  abort.abort()
+  serviceWorker.controller = {}
+  serviceWorker.dispatchEvent(new Event('controllerchange'))
+  expect(update).toHaveBeenCalledOnce()
+})
+
+it('notices an update that activates while registration is still pending', async () => {
+  const update = vi.fn()
+  const { registration, serviceWorker } = setupWorker()
+  let finish!: () => void
+  serviceWorker.register.mockImplementation(() => new Promise((resolve) => { finish = () => resolve(registration) }))
+  const result = registerOfflineApp(update)
+  serviceWorker.controller = {}
+  finish()
+  expect(await result).toBe(true)
+  expect(update).toHaveBeenCalledWith({ kind: 'active' })
+})
+
+it('checks for updates on return to the app without polling constantly', async () => {
+  vi.useFakeTimers()
+  const { registration } = setupWorker()
+  await registerOfflineApp()
+  window.dispatchEvent(new Event('focus'))
+  expect(registration.update).not.toHaveBeenCalled()
+  vi.advanceTimersByTime(5 * 60 * 1000)
+  window.dispatchEvent(new Event('focus'))
+  window.dispatchEvent(new Event('pageshow'))
+  expect(registration.update).toHaveBeenCalledOnce()
 })
 
 it('leaves online play usable when service workers are absent or registration is denied', async () => {
@@ -99,10 +147,11 @@ it('stays quiet online when nothing needs attention', () => {
   expect(html).not.toContain('Open puzzles online to save them.')
 })
 
-it('announces a waiting update without forcing a reload', () => {
+it('announces a waiting update with an actionable warning', () => {
   const html = renderToStaticMarkup(
     <MemoryRouter><OfflineMessage online updateReady downloadFailed={false} /></MemoryRouter>,
   )
   expect(html).toContain('A new version is ready.')
-  expect(html).toContain('Close every open app window to update.')
+  expect(html).toContain('Update now')
+  expect(html).toContain('clears undo and redo history')
 })

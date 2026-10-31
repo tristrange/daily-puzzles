@@ -1582,6 +1582,28 @@
   margin: 0;
 }
 
+.offline-status button {
+  min-height: 2.75rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  background: var(--surface);
+  color: var(--text-h);
+  font: inherit;
+  cursor: pointer;
+}
+
+.offline-status button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.offline-status button:disabled { opacity: 0.6; cursor: wait; }
+
+@media (max-width: 30rem) {
+  .offline-update-note { display: block; }
+}
+
 /* Controls share the board's space rather than taking two rows above it. */
 @media (min-width: 48rem) {
   .tracks-workspace { display: flex; align-items: flex-start; justify-content: center; gap: 2rem; }
