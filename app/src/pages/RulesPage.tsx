@@ -226,6 +226,7 @@ export function RulesPage() {
       <p>Select a cell, then tap a number or press 1–9. N toggles Notes; tap digits
         to toggle their pencil marks in an empty cell. Entering a number clears that
         cell&rsquo;s notes and removes that digit from notes in its row, column and box.
+        Double-tap or double-click an empty cell with one note to place that digit.
         Undo restores the number and affected notes together. Erase clears the selected editable cell. Clear notes removes
         all pencil marks in one undoable move. Arrows and Home/End move around the board.</p>
       <p>Hint explains a placement or candidate elimination, with target and support
@@ -248,7 +249,7 @@ export function RulesPage() {
         their attempts save separately and do not affect daily stats, streaks or leaderboards.</p>
 
       <h2 id="killer-sudoku" tabIndex={-1}>Killer Sudoku</h2>
-      <p>Follow the usual Sudoku rules. Digits in each dashed cage add to its small total, and a digit cannot repeat inside a cage, even across different rows, columns or boxes.</p>
+      <p>Follow the usual Sudoku rules and controls, including double-tapping a single note to place it. Digits in each dashed cage add to its small total, and a digit cannot repeat inside a cage, even across different rows, columns or boxes.</p>
       <p>Select cells from one cage and open Combinations to list its distinct-digit totals. Cross out any sets you have ruled out, or reset the crossed-out sets for that cage. Marks save with your puzzle and Undo restores them. The list does not use your marks to calculate hints.</p>
       <p><Link to="/learn/killer-sudoku">Practice cage combinations and the 45 rule</Link> with seven exercises.</p>
       <p>Play an Easy, Medium and Hard puzzle each day. Each has one verified solution and can be completed using cage and single-digit deductions; the levels are an initial guide to difficulty. Hints check for mistakes first, then explain a deduction; applying a hint is optional and undoable. <Link to="/preview/killer-sudoku">Practice boards</Link> save separately from daily puzzles.</p>

@@ -1,15 +1,27 @@
-import { type KeyboardEvent, type PointerEvent, useRef } from 'react'
-import { SUDOKU_PEERS, sudokuCellName, sudokuDigits, type SudokuBoard as Board, type SudokuGame } from '../domain/sudoku'
+import { type KeyboardEvent, type PointerEvent, useEffect, useRef } from 'react'
+import { SUDOKU_PEERS, sudokuCellName, sudokuDigits, sudokuSingle, type SudokuBoard as Board, type SudokuGame } from '../domain/sudoku'
 import type { SudokuHint } from '../domain/sudokuHints'
 import { isKillerSudokuBoard } from '../domain/killerSudoku'
 
-export function SudokuBoard({ board, game, selected, selection, locked, conflicts, hint, instructionsId, onSelect, cageActive = false, cageFocus = selected }: {
+const DOUBLE_TAP_MS = 500, TAP_SLOP = 12
+
+export function SudokuBoard({ board, game, selected, selection, locked, conflicts, hint, instructionsId, onSelect, onConfirmNote, cageActive = false, cageFocus = selected }: {
   board: Board; game: SudokuGame; selected: number; selection: readonly number[]; locked: boolean; conflicts: ReadonlySet<number>
-  hint: SudokuHint | null; instructionsId: string; cageActive?: boolean; cageFocus?: number; onSelect: (cell: number, extend?: boolean) => void
+  hint: SudokuHint | null; instructionsId: string; cageActive?: boolean; cageFocus?: number; onSelect: (cell: number, extend?: boolean) => void; onConfirmNote?: (cell: number) => void
 }) {
   const grid = useRef<HTMLDivElement>(null), support = new Set(hint?.support)
   const cages = isKillerSudokuBoard(board) ? board.cages : null
-  const stroke = useRef<{ id: number; visited: Set<number> } | null>(null), focusing = useRef(false)
+  const stroke = useRef<{ id: number; visited: Set<number>; cell: number; x: number; y: number; start: number; pointerType: string; tap: boolean } | null>(null)
+  const previousTap = useRef<{ cell: number; at: number; mask: number; pointerType: string } | null>(null), focusing = useRef(false)
+  const confirmEnabled = !!onConfirmNote
+  useEffect(() => {
+    if (!confirmEnabled) return
+    const outside = (event: globalThis.PointerEvent) => {
+      if (!(event.target instanceof Node) || !grid.current?.contains(event.target)) previousTap.current = null
+    }
+    document.addEventListener('pointerdown', outside, true)
+    return () => document.removeEventListener('pointerdown', outside, true)
+  }, [confirmEnabled])
   const digit = selection.length === 1 ? game.cells[selected] : 0, matches = game.cells.flatMap((value, cell) => digit && value === digit ? [cell] : [])
   const matchingRows = new Set(matches.map(cell => Math.floor(cell / 9))), matchingColumns = new Set(matches.map(cell => cell % 9))
   const focus = (cell: number, preventScroll = false) => {
@@ -22,27 +34,51 @@ export function SudokuBoard({ board, game, selected, selection, locked, conflict
     stroke.current = null
     if (active && grid.current?.hasPointerCapture(active.id)) grid.current.releasePointerCapture(active.id)
   }
+  const cancel = () => { previousTap.current = null; finish() }
   const start = (event: PointerEvent<HTMLDivElement>) => {
-    if (stroke.current) { if (event.pointerId !== stroke.current.id) finish(); return }
-    if (locked || event.button !== 0 || event.ctrlKey || event.metaKey || event.isPrimary === false) return
+    if (stroke.current) { if (event.pointerId !== stroke.current.id) cancel(); return }
+    if (locked || event.button !== 0 || event.ctrlKey || event.metaKey || event.isPrimary === false) { previousTap.current = null; return }
     const target = (event.target as Element).closest<HTMLElement>('[data-cell]')
     if (!target) return
     event.preventDefault()
     const cell = Number(target.dataset['cell'])
-    stroke.current = { id: event.pointerId, visited: new Set([cell]) }
+    stroke.current = { id: event.pointerId, visited: new Set([cell]), cell, x: event.clientX, y: event.clientY,
+      start: performance.now(), pointerType: event.pointerType, tap: !event.shiftKey && !event.altKey }
+    if (event.shiftKey || event.altKey) previousTap.current = null
     onSelect(cell, event.shiftKey); focus(cell, true)
     grid.current?.setPointerCapture(event.pointerId)
   }
   const move = (event: PointerEvent<HTMLDivElement>) => {
     const active = stroke.current
     if (!active || active.id !== event.pointerId || locked) return
+    if (Math.hypot(event.clientX - active.x, event.clientY - active.y) > TAP_SLOP) active.tap = false
     const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-cell]')
     if (!target || !grid.current?.contains(target)) return
     const cell = Number(target.dataset['cell'])
     if (active.visited.has(cell)) return
     active.visited.add(cell); onSelect(cell, true); focus(cell, true)
   }
+  const end = (event: PointerEvent<HTMLDivElement>) => {
+    const active = stroke.current
+    if (!active || active.id !== event.pointerId) return
+    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-cell]')
+    const now = performance.now(), mask = game.notes[active.cell] ?? 0
+    const tap = active.tap && active.visited.size === 1 && now - active.start <= DOUBLE_TAP_MS && !event.shiftKey
+      && Math.hypot(event.clientX - active.x, event.clientY - active.y) <= TAP_SLOP
+      && !!target && grid.current?.contains(target) && Number(target.dataset['cell']) === active.cell
+    finish()
+    if (!tap || !onConfirmNote || board.givens[active.cell] !== 0 || game.cells[active.cell] !== 0 || !sudokuSingle(mask)) {
+      previousTap.current = null
+      return
+    }
+    const previous = previousTap.current
+    if (previous && previous.cell === active.cell && previous.pointerType === active.pointerType && previous.mask === mask && now - previous.at <= DOUBLE_TAP_MS) {
+      previousTap.current = null
+      onConfirmNote(active.cell)
+    } else previousTap.current = { cell: active.cell, at: now, mask, pointerType: active.pointerType }
+  }
   const navigate = (event: KeyboardEvent<HTMLDivElement>) => {
+    previousTap.current = null
     const r = Math.floor(selected / 9), c = selected % 9
     const moves: Record<string, number> = { ArrowUp: Math.max(0, r - 1) * 9 + c, ArrowDown: Math.min(8, r + 1) * 9 + c,
       ArrowLeft: r * 9 + Math.max(0, c - 1), ArrowRight: r * 9 + Math.min(8, c + 1), Home: r * 9, End: r * 9 + 8 }
@@ -50,10 +86,10 @@ export function SudokuBoard({ board, game, selected, selection, locked, conflict
     if (cell !== undefined) { event.preventDefault(); onSelect(cell, event.shiftKey); focus(cell) }
   }
   return <div ref={grid} className="sudoku-board" role="grid" aria-label={cages ? '9 by 9 Killer Sudoku puzzle' : '9 by 9 Sudoku puzzle'} aria-multiselectable="true" aria-describedby={instructionsId} onKeyDown={navigate}
-    onPointerDown={start} onPointerMove={move}
-    onPointerUp={event => { if (stroke.current?.id === event.pointerId) finish() }}
-    onPointerCancel={event => { if (stroke.current?.id === event.pointerId) finish() }}
-    onLostPointerCapture={event => { if (event.target === event.currentTarget && stroke.current?.id === event.pointerId) finish() }}>
+    onPointerDown={start} onPointerMove={move} onPointerUp={end}
+    onPointerCancel={event => { if (stroke.current?.id === event.pointerId) cancel() }}
+    onLostPointerCapture={event => { if (event.target === event.currentTarget && stroke.current?.id === event.pointerId) cancel() }}
+    onBlur={event => { if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget)) previousTap.current = null }}>
     {Array.from({ length: 9 }, (_, r) => <div role="row" className="sudoku-row" key={r}>
       {Array.from({ length: 9 }, (_, c) => {
         const cell = r * 9 + c, value = game.cells[cell]!, given = board.givens[cell] !== 0, notes = sudokuDigits(game.notes[cell]!)
@@ -65,7 +101,7 @@ export function SudokuBoard({ board, game, selected, selection, locked, conflict
           data-hint={hint?.cell === cell ? 'target' : support.has(cell) ? 'support' : undefined}
           aria-selected={selection.includes(cell)} aria-readonly={given || locked}
           aria-label={`${sudokuCellName(cell)}, ${value || 'Empty'}${given ? ', given' : ''}${cage ? `, cage total ${cage.sum}, cells ${cage.cells.map(sudokuCellName).join('; ')}` : ''}${notes.length ? `, notes ${notes.join(', ')}` : ''}${conflicts.has(cell) ? ', conflict' : ''}${hint?.cell === cell ? ', hint target' : support.has(cell) ? ', supports hint' : ''}`}
-          onFocus={() => { if (!stroke.current && !focusing.current) onSelect(cell) }} onClick={event => { if (event.detail === 0) onSelect(cell, event.shiftKey) }}>
+          onFocus={() => { if (!stroke.current && !focusing.current) { previousTap.current = null; onSelect(cell) } }} onClick={event => { if (event.detail === 0) onSelect(cell, event.shiftKey) }}>
           {cage && <span className="killer-cage" aria-hidden="true" data-top={r === 0 || !cage.cells.includes(cell - 9)} data-right={c === 8 || !cage.cells.includes(cell + 1)} data-bottom={r === 8 || !cage.cells.includes(cell + 9)} data-left={c === 0 || !cage.cells.includes(cell - 1)} />}
           {clue && <span className="killer-sum" aria-hidden="true">{cage!.sum}</span>}
           {value ? <span className="sudoku-value">{value}</span> : <span className="sudoku-notes" aria-hidden="true">{Array.from({ length: 3 }, (_, row) =>

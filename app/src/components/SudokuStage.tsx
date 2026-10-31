@@ -78,6 +78,13 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
     for (const i of empty) if (!value || Boolean(next.notes[i]! & bit) === remove) next = edit(next, i, value, true)
     commit(next)
   }
+  const confirmNote = (cell: number) => {
+    const before = current.current, mask = before.notes[cell] ?? 0
+    if (completed.current || board.givens[cell] !== 0 || before.cells[cell] !== 0 || !sudokuSingle(mask)) return
+    const value = sudokuDigits(mask)[0]!, next = edit(before, cell, value)
+    commit(next)
+    if (next !== before && !completed.current) setMessage(`Placed ${value} in ${sudokuCellName(cell).toLowerCase()}. Undo restores the note.`)
+  }
   const undo = () => {
     if (completed.current) return
     const next = history.undo(current.current)
@@ -177,7 +184,7 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
         </div>
         <p className="sudoku-mode" role="status">{selection.length > 1 ? `${selection.length} cells selected · digits update notes in empty cells` : pencil ? 'Notes on · tap digits to mark possibilities' : 'Select a cell, then enter a number'}</p>
       </div>
-      <SudokuBoard board={board} game={game} selected={selected} selection={selection} locked={solved} conflicts={conflicts} hint={hint} instructionsId={instructionsId} onSelect={select} cageActive={!!cage && showCombinations} />
+      <SudokuBoard board={board} game={game} selected={selected} selection={selection} locked={solved} conflicts={conflicts} hint={hint} instructionsId={instructionsId} onSelect={select} onConfirmNote={confirmNote} cageActive={!!cage && showCombinations} />
       {showCombinations && killer && <div id={combinationsId} className="killer-combinations-panel">
         {cage ? <KillerCombinations cage={cage} excluded={game.excludedCageCombinations?.[cageIndex] ?? []} onToggle={toggleCombination} onReset={resetCombinations} disabled={solved} />
           : <section className="killer-combinations" aria-label="Cage combinations"><div className="killer-combinations-heading"><h2>Multiple cages selected</h2></div><p role="status">Select cells from one cage to see its combinations.</p></section>}
@@ -192,7 +199,7 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
       onApply={acceptHint} onDismiss={dismiss} onShowCell={showCell} />}
     {!saving && !solved && <p className="status error" role="status">Progress can&rsquo;t be saved. Keep this page open to retain your attempt.</p>}
     <p className="word-note" id={instructionsId}>Digits 1–9 once in every row, column and 3×3 box. Given numbers are fixed.
-      Select a cell, then tap a number. Drag, Shift-click or Shift-arrow to select multiple cells; digits then update notes in empty cells, and Erase clears their notes.
+      Select a cell, then tap a number. Double-tap or double-click a cell with one note to place it. Drag, Shift-click or Shift-arrow to select multiple cells; digits then update notes in empty cells, and Erase clears their notes.
       Arrows move; 1–9 enter; N toggles notes; Delete erases; H explains a hint; Ctrl/Cmd+Z undoes; Ctrl/Cmd+Shift+Z redoes.</p>
   </div>
 }
