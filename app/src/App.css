@@ -1451,6 +1451,11 @@
 .sudoku-controls { display: contents; }
 .sudoku-controls .puzzle-tools { grid-area: tools; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; width: min(100%, 36rem); gap: .35rem; padding: .35rem; }
 .sudoku-controls .puzzle-tools .tool-button { padding-inline: .4rem; }
+.sudoku-check-result { grid-column: 1 / -1; padding: .3rem .4rem; font-size: .8125rem; line-height: 1.4; }
+.sudoku-check-result.sr-only { padding: 0; }
+.sudoku-check-result p { margin: 0; }
+.sudoku-check-result .tool-button { width: 100%; margin-top: .4rem; }
+.sudoku-check-result span { display: block; margin-top: .25rem; font-size: .75rem; }
 .sudoku-keypad { grid-area: keys; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .4rem; width: min(100%, 36rem); }
 .sudoku-keypad .tool-button { font-size: 1.1rem; min-height: 2.75rem; padding-inline: .25rem; }
 .sudoku-keypad .tool-button:last-child { font-size: .8125rem; }
@@ -1499,6 +1504,7 @@
   .sudoku-controls { display: block; grid-area: controls; }
   .sudoku-controls .puzzle-tools { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sudoku-controls .timer { grid-column: 1 / -1; padding-block: .35rem; }
+  .sudoku-check-button { grid-column: 1 / -1; }
   .sudoku-keypad { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-block: .75rem; }
   .sudoku-keypad .tool-button:last-child { grid-column: 1 / -1; }
   .sudoku-board { width: min(100%, 36rem, max(24rem, 100svh - 18rem)); }

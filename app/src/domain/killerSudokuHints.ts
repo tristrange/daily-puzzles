@@ -1,7 +1,7 @@
 /** Killer Sudoku preview hints: cage deductions and a bounded uniqueness check. */
 import { editKillerSudoku, killerCombinations, killerConflicts, type KillerCage, type KillerSudokuBoard } from './killerSudoku'
 import { SUDOKU_PEERS, SUDOKU_UNITS, sudokuCellName, sudokuDigit, sudokuDigits, sudokuSingle, type SudokuGame, type SudokuSolution } from './sudoku'
-import type { SudokuHint, SudokuHintResult } from './sudokuHints'
+import { checkEntriesAgainstSolution, type SudokuEntryCheck, type SudokuHint, type SudokuHintResult } from './sudokuHints'
 
 const ALL = 511
 const boxOf = (cell: number) => Math.floor(cell / 27) * 3 + Math.floor(cell % 9 / 3)
@@ -79,12 +79,15 @@ function cagePossibilities(cage: KillerCage, cells: readonly number[]): Map<numb
 }
 
 const verifiedBoards = new WeakMap<KillerSudokuBoard, SudokuSolution>()
-export function findKillerSudokuHint(board: KillerSudokuBoard, game: SudokuGame): SudokuHintResult {
+export function checkKillerSudokuEntries(board: KillerSudokuBoard, game: SudokuGame): SudokuEntryCheck {
   let verified = verifiedBoards.get(board)
   if (!verified) { verified = solveKillerSudoku(board); verifiedBoards.set(board, verified) }
-  if (verified.kind !== 'unique') return { kind: 'unverified' }
-  const mistake = game.cells.findIndex((value, cell) => value !== 0 && value !== verified.cells[cell])
-  if (mistake >= 0) return { kind: 'mistake', cell: mistake }
+  return checkEntriesAgainstSolution(verified, game.cells)
+}
+
+export function findKillerSudokuHint(board: KillerSudokuBoard, game: SudokuGame): SudokuHintResult {
+  const check = checkKillerSudokuEntries(board, game)
+  if (check.kind !== 'correct') return check
   let best: { cage: KillerCage; cell: number; mask: number } | null = null
   const possible = Array<number>(81).fill(0)
   for (const cage of board.cages) for (const [cell, mask] of cagePossibilities(cage, game.cells)) {

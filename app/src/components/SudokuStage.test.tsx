@@ -6,12 +6,13 @@ import raw from '../data/sudoku-previews.json'
 import killerRaw from '../data/killer-sudoku-previews.json'
 import playtest from '../domain/fixtures/sudoku-hard-playtest.json'
 import proof from '../../../docs/measurements/sudoku-preview.json'
+import killerProof from '../../../docs/measurements/killer-sudoku-preview.json'
 import type { Puzzle } from '../domain/puzzle'
 import { readStoredStats } from '../lib/stats'
 import { LeaderboardContext } from '../lib/useLeaderboard'
 import { createLeaderboardStore } from '../lib/leaderboardProgress'
 import { MemoryRouter } from 'react-router-dom'
-import { parseSudokuBoards } from '../domain/sudoku'
+import { parseSudokuBoards, SUDOKU_ROWS } from '../domain/sudoku'
 import { parseKillerPreviews } from '../domain/killerSudoku'
 import { readSudokuProgress, storeSudokuProgress } from '../lib/sudokuProgress'
 import { SudokuStage } from './SudokuStage'
@@ -266,6 +267,67 @@ it('warns freely, then counts a revealed correction before optionally applying i
   expect(readSudokuProgress(board)?.hints).toBe(1)
 })
 
+it.each([
+  { name: 'Sudoku', puzzle: board, solution: proof.samples[0]!.solution },
+  { name: 'Killer Sudoku', puzzle: parseKillerPreviews(killerRaw)[0]!, solution: killerProof.samples[0]!.solution },
+])('$name checks progress without revealing a hint or changing notes', async ({ puzzle: currentBoard, solution }) => {
+  const editable = currentBoard.givens.findIndex(value => value === 0)
+  const noteCell = currentBoard.givens.findIndex((value, i) => value === 0 && i !== editable)
+  const notes = Array<number>(81).fill(0); notes[noteCell] = 511
+  storeSudokuProgress(currentBoard, { cells: [...currentBoard.givens], notes }, { elapsedMs: 0 }, 0)
+  await act(async () => root.render(<SudokuStage board={currentBoard} />))
+  const checkStatus = container.querySelector('.sudoku-check-result [role="status"]')
+  expect(checkStatus?.textContent).toBe('')
+  await click('Check progress')
+  expect(container.querySelector('.sudoku-check-result [role="status"]')).toBe(checkStatus)
+  expect(container.textContent).toContain('Add a number before checking')
+  await click(`Enter ${solution[editable]}`); await click('Check progress')
+  expect(container.textContent).toContain('Your entered numbers are correct so far')
+  expect(container.textContent).toContain('Notes are not checked')
+  expect(readSudokuProgress(currentBoard)?.hints).toBe(0)
+  const before = readSudokuProgress(currentBoard)!.game
+  await click('Check progress')
+  expect(readSudokuProgress(currentBoard)!.game).toEqual(before)
+  await click(`Enter ${solution[editable]! % 9 + 1}`)
+  expect(container.textContent).not.toContain('Your entered numbers are correct so far')
+  await click('Check progress')
+  expect(container.textContent).toContain('At least one entered number is incorrect')
+  expect(container.querySelector('[data-hint="target"]')).toBeNull()
+  expect(readSudokuProgress(currentBoard)?.hints).toBe(0)
+  await click('Undo'); await click('Check progress')
+  expect(container.textContent).toContain('Your entered numbers are correct so far')
+  expect(readSudokuProgress(currentBoard)?.game).toEqual(before)
+})
+
+it.each([
+  { name: 'Sudoku', puzzle: board, wrong: 5 },
+  { name: 'Killer Sudoku', puzzle: parseKillerPreviews(killerRaw)[0]!, wrong: 7 },
+])('$name only counts a hint when a checked mistake is revealed', async ({ name, puzzle: currentBoard, wrong }) => {
+  await act(async () => root.render(<SudokuStage board={currentBoard} />))
+  await click(`Enter ${wrong}`); await click('Check progress')
+  expect(container.textContent).toContain('At least one entered number is incorrect')
+  if (name === 'Sudoku') expect(container.querySelector('[data-conflict="true"]')).toBeNull()
+  expect(container.querySelector('[data-hint="target"]')).toBeNull()
+  expect(readSudokuProgress(currentBoard)?.hints).toBe(0)
+  await click('Show the mistake')
+  expect(cell(currentBoard.givens.indexOf(0)).dataset['hint']).toBe('target')
+  expect(readSudokuProgress(currentBoard)?.hints).toBe(1)
+  await click('Dismiss hint')
+  expect(document.activeElement?.getAttribute('aria-label')).toBe('Check progress')
+  expect(readSudokuProgress(currentBoard)?.game.cells[currentBoard.givens.indexOf(0)]).toBe(wrong)
+})
+
+it.each([
+  { ...board, id: 'ambiguous-check', givens: Array<number>(81).fill(0) },
+  { ...parseKillerPreviews(killerRaw)[0]!, id: 'ambiguous-killer-check', givens: Array<number>(81).fill(0), cages: SUDOKU_ROWS.map(cells => ({ cells, sum: 45 })) },
+])('does not claim progress is correct when $id lacks a verified unique solution', async ambiguous => {
+  await act(async () => root.render(<SudokuStage board={ambiguous} />))
+  await click('Enter 1'); await click('Check progress')
+  expect(container.textContent).toContain('could not verify this puzzle')
+  expect(container.textContent).not.toContain('correct so far')
+  expect(readSudokuProgress(ambiguous)?.hints).toBe(0)
+})
+
 it('dismisses a hint from its focused board target and returns focus to Hint', async () => {
   await mount(); await click('Get an explained hint')
   await act(async () => container.querySelector<HTMLButtonElement>('.hint-location')!.click())
@@ -363,6 +425,9 @@ it('records a daily first solve, shares the exact level and preserves preview pr
   const leaderboard = { ...createLeaderboardStore(null, null, null), offerSolve }
   const renderDaily = () => root.render(<MemoryRouter><LeaderboardContext.Provider value={leaderboard}><SudokuStage board={daily} puzzle={puzzle} /></LeaderboardContext.Provider></MemoryRouter>)
   await act(async () => renderDaily())
+  await click('Check progress')
+  expect(container.textContent).toContain('Your entered numbers are correct so far')
+  expect(readSudokuProgress(daily, true)?.hints).toBe(2)
   await click(`Enter ${proof.samples[0]!.solution[index]}`)
   expect(container.textContent).toContain('Solved — nice!')
   expect(readSudokuProgress(daily, true)).toBeNull()

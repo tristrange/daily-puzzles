@@ -5,6 +5,7 @@ import { editSudoku, isSudokuSolved, solveSudoku, SUDOKU_COLUMNS, SUDOKU_PEERS, 
 export interface SudokuStep { cell: number; before: number; after: number; rule: string; group: readonly number[]; dependencies: readonly number[]; reason: string }
 export interface SudokuHint { cell: number; candidates: number; source: SudokuGame; reasons: readonly string[]; supportingReasons?: readonly string[]; support: readonly number[]; correction?: boolean }
 export type SudokuHintResult = { kind: 'hint'; hint: SudokuHint } | { kind: 'mistake'; cell: number } | { kind: 'none' | 'unverified' | 'contradiction' }
+export type SudokuEntryCheck = { kind: 'correct' } | { kind: 'unverified' } | { kind: 'mistake'; cell: number }
 export class SudokuContradictionError extends Error {}
 const count = (mask: number) => sudokuDigits(mask).length
 const cellLabel = (cell: number) => `R${Math.floor(cell / 9) + 1}C${cell % 9 + 1}`
@@ -106,12 +107,21 @@ export function deduceSudoku(board: SudokuBoard, cells: readonly number[], level
 }
 
 const solutions = new WeakMap<SudokuBoard, SudokuSolution>()
-export function findSudokuHint(board: SudokuBoard, game: SudokuGame): SudokuHintResult {
+export function checkEntriesAgainstSolution(solution: SudokuSolution, cells: readonly number[]): SudokuEntryCheck {
+  if (solution.kind !== 'unique') return { kind: 'unverified' }
+  const wrong = cells.findIndex((value, cell) => value !== 0 && value !== solution.cells[cell])
+  return wrong < 0 ? { kind: 'correct' } : { kind: 'mistake', cell: wrong }
+}
+
+export function checkSudokuEntries(board: SudokuBoard, game: SudokuGame): SudokuEntryCheck {
   let verified = solutions.get(board)
   if (!verified) { verified = solveSudoku(board); solutions.set(board, verified) }
-  if (verified.kind !== 'unique') return { kind: 'unverified' }
-  const answer = verified.cells, wrong = game.cells.findIndex((value, cell) => value !== 0 && value !== answer[cell])
-  if (wrong >= 0) return { kind: 'mistake', cell: wrong }
+  return checkEntriesAgainstSolution(verified, game.cells)
+}
+
+export function findSudokuHint(board: SudokuBoard, game: SudokuGame): SudokuHintResult {
+  const check = checkSudokuEntries(board, game)
+  if (check.kind !== 'correct') return check
   try {
     const { steps } = deduceSudoku(board, game.cells)
     const index = steps.findIndex(step => game.cells[step.cell] === 0 && (sudokuSingle(step.after) || game.notes[step.cell] === 0 || (game.notes[step.cell]! & ~step.after) !== 0))

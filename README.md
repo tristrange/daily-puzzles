@@ -47,7 +47,10 @@ matching numbers and their rows/columns. Picker digits dim at nine placements,
 without claiming that the entries are correct. Drag over cells or use Shift-click
 or Shift-arrow to select several; digits then update notes in empty selected
 cells even with Notes off. A group edit takes one Undo. Explained hints show
-remaining candidates and keep supporting deductions expandable.
+remaining candidates and keep supporting deductions expandable. Check reports
+whether entered numbers are correct so far without checking notes or counting as a
+hint; revealing a specific mistake counts as one hint. These controls also apply to
+Killer Sudoku.
 
 Each board has a verified unique solution and a complete logical solve. The
 levels describe the techniques required by the project's solver and remain

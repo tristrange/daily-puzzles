@@ -232,8 +232,9 @@ export function RulesPage() {
       <p>Hint explains a placement or candidate elimination, with target and support
         highlights. It shows remaining candidates; Supporting deductions expands the
         earlier reasoning. Apply move is optional and undoable. Notes never prove hints.
-        A wrong number first produces a free general warning; Show the mistake reveals
-        one correction and counts as a hint. Undo and Reset do not refund shown hints.
+        Check reports whether your entered numbers are correct so far without checking
+        notes or counting as a hint. A wrong number first produces a free general warning;
+        Show the mistake reveals one correction and counts as a hint. Undo and Reset do not refund shown hints.
         Select a filled cell to softly highlight matching numbers and their rows and columns.
         Picker digits dim once nine are placed, including givens. They remain usable;
         this count does not confirm that the placements are correct.</p>
