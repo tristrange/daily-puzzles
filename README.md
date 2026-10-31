@@ -40,7 +40,8 @@ The [three fixed preview boards](https://tristrange.github.io/daily-puzzles/#/pr
 remain available for practice. Killer Sudoku also publishes three levels daily, with archive puzzles from September 26, 2026. Cage digits must add to the displayed total without repeating. Its explained hints and combination tool help with cage deductions; [practice boards](https://tristrange.github.io/daily-puzzles/#/preview/killer-sudoku) save separately. Killer levels use the number of hidden-single deductions in a deterministic solve as an initial difficulty guide; players may find different routes or experience difficulty differently.
 
 Select a cell, then use the keypad or keyboard. Notes mark candidates; entering
-a number removes it from peer notes in its row, column and box. Clear notes,
+a number removes it from peer notes in its row, column and box. Double-tap or
+double-click a cell with one note to place it. Clear notes,
 Undo/Redo and confirmed Reset are available. Selecting a number softly highlights
 matching numbers and their rows/columns. Picker digits dim at nine placements,
 without claiming that the entries are correct. Drag over cells or use Shift-click
