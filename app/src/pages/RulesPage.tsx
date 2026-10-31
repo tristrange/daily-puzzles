@@ -303,7 +303,7 @@ export function RulesPage() {
         keep separate progress and stats.</p>
 
       <h2>Playing offline</h2>
-      <p>Wait for “App ready offline”, then open the puzzles you want while online.
+      <p>Open the puzzles you want while online to save them.
         Today saves its available boards; browsing the archive saves the boards it loads.
         These boards can reopen without a connection. New or unsaved boards need internet;
         if a download warning appears, keep a connection to play them.</p>

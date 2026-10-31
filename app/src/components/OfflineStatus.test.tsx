@@ -75,14 +75,7 @@ it('points offline players to their saved archive without promising all puzzles 
   expect(html).toContain('saved puzzles')
 })
 
-it('warns when the shell activates but a puzzle cannot be saved', async () => {
-  vi.stubGlobal('navigator', {
-    serviceWorker: {
-      register: async () => ({ waiting: null, installing: null, addEventListener: () => {} }),
-      ready: Promise.resolve({}),
-    },
-  })
-  const ready = await registerOfflineApp()
+it('warns when a puzzle cannot be saved', async () => {
   const events = new EventTarget()
   vi.stubGlobal('window', events)
   let downloadFailed = false
@@ -92,15 +85,23 @@ it('warns when the shell activates but a puzzle cannot be saved', async () => {
   const { default: puzzle } = await import('../../public/puzzles/2026-10-15.json')
   expect((await loadPuzzle(puzzle.id, async () => new Response(JSON.stringify(puzzle)))).id).toBe(puzzle.id)
   expect(downloadFailed).toBe(true)
-  const html = renderToStaticMarkup(<MemoryRouter><OfflineMessage online ready={ready} updateReady={false} downloadFailed={downloadFailed} /></MemoryRouter>)
-  expect(html).toContain('App ready offline.')
+  const html = renderToStaticMarkup(<MemoryRouter><OfflineMessage online updateReady={false} downloadFailed={downloadFailed} /></MemoryRouter>)
+  expect(html).not.toContain('App ready offline.')
+  expect(html).not.toContain('Open puzzles online to save them.')
   expect(html).toContain('Some puzzles could not be saved')
+})
+
+it('stays quiet online when nothing needs attention', () => {
+  const html = renderToStaticMarkup(
+    <MemoryRouter><OfflineMessage online updateReady={false} downloadFailed={false} /></MemoryRouter>,
+  )
+  expect(html).not.toContain('App ready offline.')
   expect(html).not.toContain('Open puzzles online to save them.')
 })
 
 it('announces a waiting update without forcing a reload', () => {
   const html = renderToStaticMarkup(
-    <MemoryRouter><OfflineMessage online ready updateReady downloadFailed={false} /></MemoryRouter>,
+    <MemoryRouter><OfflineMessage online updateReady downloadFailed={false} /></MemoryRouter>,
   )
   expect(html).toContain('A new version is ready.')
   expect(html).toContain('Close every open app window to update.')

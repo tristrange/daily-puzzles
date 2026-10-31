@@ -76,10 +76,6 @@ h3 {
   font-optical-sizing: auto;
 }
 
-/* The bottom padding lives on the footer rather than here. This element and
-   `.shell` both claim a full viewport height, so a padding on top of that adds
-   its own height to the page: the shell fitted, and the footer still ended up
-   below the fold by exactly the padding. */
 #root {
   max-width: 1120px;
   margin: 0 auto;

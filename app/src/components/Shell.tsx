@@ -43,10 +43,6 @@ export function Shell() {
       <main ref={content} className="content" id="main-content" tabIndex={-1}>
         <Outlet />
       </main>
-      <footer className="site-footer">
-        <span>A little logic, every day.</span>
-        <span>Hand-built. Played at your pace.</span>
-      </footer>
     </div>
   )
 }
