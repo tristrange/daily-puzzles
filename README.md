@@ -122,8 +122,8 @@ without that integration.
 ## Install and play offline
 
 On iPhone, open the site in Safari and choose **Share → Add to Home Screen**.
-After the first online visit, wait for **App ready offline**. Today downloads its
-available daily boards; opening Archive downloads the puzzles it loads. Saved
+On the first visit, stay online while Today downloads its available daily boards;
+opening Archive downloads the puzzles it loads. Saved
 boards can then be played without a connection. New or unopened daily puzzles
 still need internet.
 
@@ -131,8 +131,10 @@ The installed app and Safari have separate progress and downloads. Open the
 installed app online before relying on it offline. Clearing site data or browser
 cache eviction can remove saved data; progress does not sync between devices.
 Losing an anonymous leaderboard identity also loses self-service access to its
-published results. When an update is ready, close every open app window and
-reopen it to activate the update.
+published results. When an update is ready, Today updates automatically. On a
+puzzle or lesson, use **Update now** when ready; reloading clears undo and redo
+history. Other open puzzles are not refreshed. Older app versions may need one
+final close and reopen to receive this update system.
 
 ## Puzzle guarantees
 
