@@ -8,6 +8,7 @@ vi.mock('react', async (original) => ({
   ...await original<typeof import('react')>(),
   useRef: (current: unknown) => ({ current }),
   useState: (initial: () => unknown) => [initial(), vi.fn()],
+  useEffectEvent: (callback: unknown) => callback,
   useEffect: () => {},
 }))
 
@@ -17,8 +18,8 @@ it('keeps a held stroke isolated from keyboard edits and cancels it before Undo'
   const board: Board = { id: 'trio-preview-1', givens: Array.from({ length: 81 }, () => 0), relations: [] }
   const events: string[] = []
   const element = TrioBoard({ board, game: createTrioGame(board), brush: 1, pencil: false, locked: false,
-    conflicts: new Set(), instructionsId: 'rules', onBegin: () => events.push('begin'),
-    onApply: () => events.push('apply'), onEnd: (cancel) => events.push(cancel ? 'cancel' : 'commit'),
+    conflicts: new Set(), instructionsId: 'rules', onBegin: () => { events.push('begin') },
+    onApply: () => events.push('apply'), onEnd: (cancel) => { events.push(cancel ? 'cancel' : 'commit') },
     onUndo: () => events.push('undo'), onRedo: () => events.push('redo'), onPencil: vi.fn(),
   }) as ReactElement<ComponentProps<'div'>>
   const props = element.props

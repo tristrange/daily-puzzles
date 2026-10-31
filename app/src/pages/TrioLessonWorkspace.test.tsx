@@ -91,6 +91,27 @@ it('undoes a dragged note stroke across multiple cells as one move', async () =>
   expect(cells.map(index => cell(index).getAttribute('aria-label'))).toEqual(before)
 })
 
+it('confirms a single working note with a double tap and undoes it as one move', async () => {
+  const lesson = TRIO_TECHNIQUES[2]!.exercises[1]!
+  const target = lesson.game.notes.findIndex((mask, index) => !lesson.game.cells[index] && [3, 5, 6].includes(mask))
+  expect(target).toBeGreaterThanOrEqual(0)
+  const symbols = ([1, 2, 3] as const).filter(value => lesson.game.notes[target]! & (1 << (value - 1)))
+  await mount(lesson.id); await press(target, String(symbols[0]))
+  const singleNote = cell(target).getAttribute('aria-label')
+  expect(singleNote).toContain(`notes ${TRIO_NAMES[symbols[1]!]}`)
+  Object.defineProperty(document, 'elementFromPoint', { configurable: true, value: () => cell(target) })
+  const grid = container.querySelector<HTMLElement>('[role="grid"]')!
+  Object.defineProperties(grid, { setPointerCapture: { value: vi.fn() }, hasPointerCapture: { value: () => false } })
+  const pointer = (type: string) => Object.assign(new Event(type, { bubbles: true }), { button: 0, pointerId: 1, pointerType: 'touch', clientX: 0, clientY: 0 })
+  for (let i = 0; i < 2; i++) {
+    await act(async () => cell(target).dispatchEvent(pointer('pointerdown')))
+    await act(async () => cell(target).dispatchEvent(pointer('pointerup')))
+  }
+  expect(cell(target).getAttribute('aria-label')).toContain(`, ${TRIO_NAMES[symbols[1]!]}`)
+  expect(cell(target).getAttribute('aria-label')).not.toContain('notes ')
+  await click('Undo'); expect(cell(target).getAttribute('aria-label')).toBe(singleNote)
+})
+
 it('accepts a placed symbol when the original puzzle proves that further deduction', async () => {
   const options = TRIO_TECHNIQUES[2]!.exercises.flatMap(lesson => lesson.examples.map(example => ({ lesson, example })))
   const found = options.find(({ example }) => [1, 2, 4].includes(example.proven) && example.proven !== example.candidates)
