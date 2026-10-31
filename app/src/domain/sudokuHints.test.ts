@@ -4,9 +4,15 @@ import raw from '../data/sudoku-previews.json'
 import playtest from './fixtures/sudoku-hard-playtest.json'
 import proof from '../../../docs/measurements/sudoku-preview.json'
 import { createSudokuGame, editSudoku, parseSudokuBoards, type SudokuLevel } from './sudoku'
-import { deduceSudoku, findSudokuHint, nextSudokuStep, applySudokuHint } from './sudokuHints'
+import { deduceSudoku, findSudokuHint, nextSudokuStep, applySudokuHint, checkEntriesAgainstSolution } from './sudokuHints'
 
 const boards = parseSudokuBoards(raw)
+it('does not judge entries when the solution search is incomplete, ambiguous, or impossible', () => {
+  for (const kind of ['incomplete', 'multiple', 'none'] as const) {
+    expect(checkEntriesAgainstSolution({ kind }, [1])).toEqual({ kind: 'unverified' })
+  }
+})
+
 it('matches independent shared rule positions, including all advanced techniques', () => {
   for (const item of cases) {
     const masks = Array<number>(81).fill(511)
