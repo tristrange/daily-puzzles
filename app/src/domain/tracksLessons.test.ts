@@ -68,6 +68,15 @@ it('checks the prepared route, count, loop and combined deductions', () => {
         const lineEnds = board.givens.flatMap((piece, cell) => PIECE_ENDS[piece]!.filter(direction => board.neighbour(cell, direction) === null))
         expect(lineEnds).toHaveLength(2)
         expect(PIECE_ENDS[state.pieces[39]!]).toEqual([WEST, NORTH])
+        expect(lesson.prompt).toContain('column 8')
+        expect(lesson.prompt).toContain('Which cell does this force to contain track?')
+        expect(lesson.prompt).not.toContain('row 7')
+        const rowSeven = Array.from({ length: board.width }, (_, col) => board.index(6, col))
+        const givenLeft = rowSeven[3]!
+        expect(state.pieces[givenLeft]).toBe(3)
+        expect(PIECE_ENDS[3]).toContain(EAST)
+        expect(board.neighbour(givenLeft, EAST)).toBe(rowSeven[4])
+        expect(lesson.answers.map(answer => answer.cell)).not.toContain(rowSeven[4])
         const below = 47
         expect(board.neighbour(below, NORTH)).toBe(39)
         expect(board.neighbour(below, EAST)).toBeNull()

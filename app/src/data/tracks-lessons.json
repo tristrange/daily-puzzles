@@ -127,7 +127,7 @@
     "board": {"width": 8, "height": 8, "rowClues": [4, 7, 6, 7, 6, 5, 3, 4], "colClues": [5, 6, 5, 5, 6, 2, 6, 7], "givens": [0, 0, 0, 0, 2, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
     "pieces": [0, 0, 0, 0, 2, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     "answers": [{"cell": 55, "brush": 8, "support": [4, 8, 39, 47]}],
-    "prompt": "Column 8 needs seven tracks. The given track at row 5, column 8 cannot connect south. Find a cell in row 7 that must contain track.",
+    "prompt": "Column 8 needs seven tracks. The given track at row 5, column 8 cannot connect south, and row 6, column 8 cannot leave the right edge. Which cell does this force to contain track?",
     "reason": "The givens at row 1, column 5 and row 2, column 1 already use the line's two edge ends, so no other track may leave the board. A track at row 6, column 8 could not run off the right edge, and the given at row 5, column 8 has no south arm to meet it, so that cell could only turn south and west. Its south arm would require row 7, column 8 to contain track. If row 7, column 8 were empty, row 6, column 8 would also have to be empty. Column 8 has eight cells and needs seven tracks, so only one can be empty; two empty cells are impossible. Therefore row 7, column 8 must contain track. Its direction is not yet fixed, so mark it with ?."
   },
   {
