@@ -94,7 +94,7 @@ it.each(['island-shapes', 'connect-land'])('checks a %s exercise and preserves e
   expect(JSON.parse(localStorage.getItem('daily-puzzles:nurikabe-lessons:v1')!)).toEqual(['nurikabe-sea-connection-1', lesson.id])
 })
 
-it.each(['corridor', 'counts', 'loop'])('checks a Train Tracks %s exercise without changing daily progress', async technique => {
+it.each(['corridor', 'counts', 'loop', 'edges'])('checks a Train Tracks %s exercise without changing daily progress', async technique => {
   const lesson = GRID_LESSONS.find(item => item.kind === 'train-tracks' && item.technique === technique && item.guidance === 'practice')!
   if (lesson.kind !== 'train-tracks') throw Error('Expected Train Tracks')
   localStorage.setItem('daily-progress-sentinel', 'unchanged')

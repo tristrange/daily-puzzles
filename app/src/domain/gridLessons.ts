@@ -33,6 +33,7 @@ export const GRID_TECHNIQUES = {
     { id: 'corridor', title: 'Find a necessary route', intro: 'Two known tracks must belong to one route. Look for cells that every possible connection between them has to use.' },
     { id: 'counts', title: 'Combine counts and connections', intro: 'A full row or column closes its remaining cells. Use that restriction to find where the route must pass.' },
     { id: 'loop', title: 'Avoid closing a loop', intro: 'Two open ends of the same track segment cannot join each other before the route reaches both edge ends.' },
+    { id: 'edges', title: 'Combine edges, counts and connections', intro: 'A track cannot leave the board except at the two line ends. Use that, a row or column count, and the connections each track needs to decide a cell.' },
   ],
 } as const satisfies Record<GridLesson['kind'], readonly { id: string; title: string; intro: string }[]>
 
