@@ -3,6 +3,7 @@ import { useLeaderboard } from '../lib/useLeaderboard'
 import { useEffect, useEffectEvent, useId, useRef, useState } from 'react'
 import { createTrioGame, editTrio, isTrioSolved, TRIO_NAMES, trioConflicts, type TrioAction, type TrioBoard as Board, type TrioGame, type TrioValue } from '../domain/trio'
 import { usePlayClock } from '../lib/usePlayClock'
+import { hintSignature, useReturnedHint } from '../lib/hintReturn'
 import { formatTime } from '../domain/game'
 import { readTrioProgress, storeTrioProgress } from '../lib/trioProgress'
 import { applyTrioHint, findTrioHint, type TrioHint } from '../domain/trioHints'
@@ -42,7 +43,12 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
   const completed = useRef(false)
   const [saving, setSaving] = useState(true)
   const [message, setMessage] = useState('')
-  const [hint, setHint] = useState<TrioHint | null>(null)
+  const hintState = JSON.stringify([board.givens, board.relations, game.cells, game.notes])
+  const returnedHint = useReturnedHint(board.id, hintState, () => {
+    const result = findTrioHint(board, game)
+    return result.kind === 'hint' ? result.hint : null
+  })
+  const [hint, setHint] = useState<TrioHint | null>(returnedHint)
   const stage = useRef<HTMLDivElement>(null)
   const hintButton = useRef<HTMLButtonElement>(null)
   const instructionsId = useId(), pickerId = useId(), hintId = useId()
@@ -240,7 +246,8 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
       {solved ? message || `Solved in ${formatTime(elapsed)}!${daily ? '' : ' Choose another board to keep playing.'}` : conflicts.size ? `${conflicts.size} cells conflict with the rules. You can keep editing or Undo.` : message || '\u00a0'}
     </p>
     {daily && <SolvedPanel puzzleId={puzzle?.id} candidate={candidate} solved={solved} firstSolve={firstSolve} streak={stats?.currentStreak ?? 0} copied={copied} shareText={shareText} onShare={share} />}
-    {hint && <TrioHintPanel hint={hint} id={hintId} onApply={acceptHint} onDismiss={dismissHint} onShowCell={showHintCell} />}
+    {hint && <TrioHintPanel hint={hint} id={hintId} onApply={acceptHint} onDismiss={dismissHint} onShowCell={showHintCell} puzzleId={puzzle?.id} saving={saving}
+      resume={{ id: board.id, state: hintState, signature: hintSignature(hint) }} />}
     {!saving && !solved && <p className="status error" role="status">Progress can&rsquo;t be saved. Keep this page open to retain your attempt.</p>}
     <p className="word-note" id={instructionsId}>Three of each symbol in every row and column. No three identical symbols consecutively.
       = means same; × means different. Cells with a corner dot are fixed.</p>
