@@ -1,11 +1,19 @@
-import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { PUZZLE_TYPES, type PuzzleType } from '../domain/board'
 import { formatPuzzleLabel, puzzleDay } from '../domain/dates'
 import { DEFAULT_PUZZLE_TYPE, DIFFICULTY_LABEL, PUZZLE_TYPE_LABEL, PUZZLE_TYPE_PUBLISHED } from '../domain/games'
 import { sudokuVariantOf, killerVariantOf } from '../domain/sudokuLevels'
 import { trackVariantOf } from '../domain/trackSizes'
-import { archiveHref, hasOlderArchive, MAX_ARCHIVE_PAGE, parseArchivePage, puzzleHref } from '../lib/archive'
+import {
+  archiveHref,
+  findSurprisePuzzle,
+  hasOlderArchive,
+  MAX_ARCHIVE_PAGE,
+  parseArchivePage,
+  puzzleHref,
+  type SurpriseOutcome,
+} from '../lib/archive'
 import {
   ARCHIVE_WINDOW_DAYS,
   groupPublishedPuzzles,
@@ -22,11 +30,33 @@ type LoadState =
   | { status: 'ready'; day: string; page: number; puzzles: readonly PublishedPuzzle[] }
   | { status: 'error'; day: string; page: number }
 
+type SurpriseState =
+  | { status: 'idle' }
+  | { status: 'searching'; type: PuzzleType; page: number }
+  | { status: 'message'; type: PuzzleType; page: number; text: string }
+
 const NO_SOLVES: ReadonlySet<string> = new Set()
 
 /** Puzzle ids with a solve saved on this device. */
 function storedSolvedIds(): ReadonlySet<string> {
   return new Set(typeof window === 'undefined' ? [] : readStoredStats().map((record) => record.id))
+}
+
+function surpriseMessage(
+  outcome: Extract<SurpriseOutcome, { status: 'none' }>,
+  label: string,
+): string {
+  if (outcome.checked === 0 && outcome.completed === 0) {
+    return `No ${label} puzzles are in the archive yet.`
+  }
+  if (outcome.unavailable && outcome.completed === 0) {
+    return 'Couldn’t reach the archive. Check your connection and try again.'
+  }
+  if (outcome.completed > 0) {
+    const unchecked = outcome.unavailable ? ' Some archive dates could not be checked.' : ''
+    return `No unsolved ${label} puzzle was found. The ${label} puzzles found are already completed.${unchecked}`
+  }
+  return `No unsolved ${label} puzzle was found. Try again or choose another game.`
 }
 
 export function ArchivePage() {
@@ -52,8 +82,15 @@ export function ArchivePage() {
 function ArchiveGame({ type, page }: { readonly type: PuzzleType; readonly page: number }) {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
   const todayId = useToday(timeZone)
+  const navigate = useNavigate()
   const [state, setState] = useState<LoadState>({ status: 'loading' })
   const [solved, setSolved] = useState(storedSolvedIds)
+  const [surprise, setSurprise] = useState<SurpriseState>({ status: 'idle' })
+  const latest = useRef({ type, page })
+
+  useEffect(() => {
+    latest.current = { type, page }
+  }, [type, page])
 
   useEffect(() => {
     // Returning from a puzzle remounts this page, but a restored page or another
@@ -88,6 +125,27 @@ function ArchiveGame({ type, page }: { readonly type: PuzzleType; readonly page:
     }
   }, [todayId, page])
 
+  const currentSurprise = surprise.status !== 'idle' && surprise.type === type && surprise.page === page
+    ? surprise
+    : { status: 'idle' as const }
+
+  const surpriseMe = async () => {
+    if (currentSurprise.status === 'searching') return
+    setSurprise({ status: 'searching', type, page })
+    const outcome = await findSurprisePuzzle({ todayId, type, solved })
+    if (latest.current.type !== type || latest.current.page !== page) {
+      setSurprise(current => current.status === 'searching' && current.type === type && current.page === page
+        ? { status: 'idle' }
+        : current)
+      return
+    }
+    if (outcome.status === 'found') {
+      navigate(puzzleHref(outcome.puzzle.id, page))
+      return
+    }
+    setSurprise({ status: 'message', type, page, text: surpriseMessage(outcome, PUZZLE_TYPE_LABEL[type]) })
+  }
+
   // A result for a previous day or page is not the current archive window.
   // Keeping both beside the result lets a rollover or page change show loading
   // until the requested window lands, without an effect writing loading.
@@ -101,6 +159,23 @@ function ArchiveGame({ type, page }: { readonly type: PuzzleType; readonly page:
 
   return (
     <div>
+      <div className="archive-surprise">
+        <button
+          type="button"
+          className="tool-button primary"
+          onClick={surpriseMe}
+          disabled={currentSurprise.status === 'searching'}
+          aria-label={`Surprise me: open a random unsolved ${PUZZLE_TYPE_LABEL[type]} puzzle`}
+        >
+          Surprise me
+        </button>
+        {currentSurprise.status === 'searching' && (
+          <p className="status" role="status">Finding an unsolved {PUZZLE_TYPE_LABEL[type]} puzzle…</p>
+        )}
+        {currentSurprise.status === 'message' && (
+          <p className="status" role="status">{currentSurprise.text}</p>
+        )}
+      </div>
       {current.status === 'loading' && <p className="status" role="status">Scanning archive…</p>}
       {current.status === 'error' && (
         <p className="status error">Could not read the archive.</p>

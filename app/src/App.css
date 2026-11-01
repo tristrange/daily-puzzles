@@ -791,6 +791,8 @@
 
 .archive-page { max-width: 44rem; margin: 0 auto; }
 .archive-note { margin: -0.5rem 0 1rem; font-size: 0.8125rem; color: var(--text); }
+.archive-surprise { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+.archive-surprise .status { padding: 0; }
 .archive-completed { display: inline-flex; align-items: center; gap: 0.2rem; color: var(--hint); font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
 .archive-pager { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; margin-top: 1rem; }
 .game-picker { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 1.25rem; }
