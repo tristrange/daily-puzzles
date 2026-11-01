@@ -58,14 +58,22 @@ it('checks the prepared route, count, loop and combined deductions', () => {
         expect(board.neighbour(corner, SOUTH)).toBe(answer)
         expect(lesson.answers).toEqual([{ cell: answer, brush: MAYBE, support: [7, 23, 31, 39, 47, 55, 63] }])
       } else if (raw.id === 'tracks-edges-2') {
-        const cells = column(0), clue = board.colClues[0]!
+        const cells = column(7), clue = board.colClues[7]!
+        const givenTracks = cells.filter(cell => state.pieces[cell] !== 0)
         const open = cells.filter(cell => state.pieces[cell] === 0)
-        const known = cells.filter(cell => state.pieces[cell] !== 0 && state.pieces[cell] !== CROSS)
-        expect(cells.map(cell => state.pieces[cell])).toEqual([CROSS, 5, MAYBE, 0, 0, 0, CROSS, CROSS])
-        expect(PIECE_ENDS[state.pieces[cells[1]!]!]).toContain(SOUTH)
-        expect(known).toEqual([8, 16])
-        expect(clue - known.length).toBe(open.length)
-        expect(lesson.answers).toEqual(open.map(cell => ({ cell, brush: MAYBE, support: [0, 8, 16, 48, 56] })))
+        expect(cells.map(cell => state.pieces[cell])).toEqual([0, 0, 0, 0, 6, 0, 0, 0])
+        expect(givenTracks).toEqual([39])
+        expect(clue).toBe(7)
+        expect(open.length).toBeGreaterThan(clue - givenTracks.length)
+        const lineEnds = board.givens.flatMap((piece, cell) => PIECE_ENDS[piece]!.filter(direction => board.neighbour(cell, direction) === null))
+        expect(lineEnds).toHaveLength(2)
+        expect(PIECE_ENDS[state.pieces[39]!]).toEqual([WEST, NORTH])
+        const below = 47
+        expect(board.neighbour(below, NORTH)).toBe(39)
+        expect(board.neighbour(below, EAST)).toBeNull()
+        expect(PIECE_ENDS.slice(1).filter(ends => !ends.includes(NORTH) && !ends.includes(EAST))).toEqual([[SOUTH, WEST]])
+        expect(board.neighbour(below, SOUTH)).toBe(55)
+        expect(lesson.answers).toEqual([{ cell: 55, brush: MAYBE, support: [4, 8, 39, 47] }])
       } else if (raw.id === 'tracks-edges-3') {
         const cells = column(0), clue = board.colClues[0]!
         const known = cells.filter(cell => state.pieces[cell] !== 0 && state.pieces[cell] !== CROSS)
@@ -75,6 +83,7 @@ it('checks the prepared route, count, loop and combined deductions', () => {
         expect(clue).toBe(3)
         expect(clue - known.length).toBe(1)
         expect(candidates).toEqual([24, 32, 40, 48, 56])
+        expect(board.givens.flatMap((piece, cell) => PIECE_ENDS[piece]!.filter(direction => board.neighbour(cell, direction) === null))).toHaveLength(2)
         expect(lesson.answers).toEqual(candidates.map(cell => ({ cell, brush: CROSS, support: [0, 8, 16] })))
         for (const cell of candidates) {
           expect(board.neighbour(cell, WEST)).toBeNull()

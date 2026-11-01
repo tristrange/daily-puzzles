@@ -117,18 +117,18 @@
     "board": {"width": 8, "height": 8, "rowClues": [4, 7, 6, 7, 6, 5, 3, 4], "colClues": [5, 6, 5, 5, 6, 2, 6, 7], "givens": [0, 0, 0, 0, 2, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
     "pieces": [0, 0, 0, 0, 2, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     "answers": [{"cell": 15, "brush": 8, "support": [7, 23, 31, 39, 47, 55, 63]}],
-    "prompt": "Column 8 needs seven tracks. Find the only cell in column 8 that must contain track whether the top-right corner is empty or a track.",
-    "reason": "Column 8 has eight cells and needs seven tracks, so at most one can be empty. If the top-right corner is empty, every other cell in the column, including row 2, column 8, must be track. If the corner is a track, it cannot leave the board to the north or east, so it must turn south and west. Its south arm then requires row 2, column 8 to be track. Either way, row 2, column 8 must contain track; its direction is not yet fixed, so mark it with ?."
+    "prompt": "Column 8 needs seven tracks. If the top-right corner is a track, it cannot leave the board to the north or east. Which cell directly below it must contain track?",
+    "reason": "Column 8 has eight cells and needs seven tracks, so only one can be empty. The givens at row 1, column 5 and row 2, column 1 already use the line's two edge ends, so no other track may leave the board. If the top-right corner is empty, every other cell in the column must be track, including row 2, column 8. If the corner is a track, it cannot leave the board to the north or east, so it must turn south and west. Its south arm then requires row 2, column 8 to be track. Either way, row 2, column 8 must contain track; its direction is not yet fixed, so mark it with ?."
   },
   {
     "id": "tracks-edges-2",
     "source": "2026-10-31-tracks-small",
     "technique": "edges",
     "board": {"width": 8, "height": 8, "rowClues": [4, 7, 6, 7, 6, 5, 3, 4], "colClues": [5, 6, 5, 5, 6, 2, 6, 7], "givens": [0, 0, 0, 0, 2, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
-    "pieces": [7, 0, 0, 0, 2, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 3, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0],
-    "answers": [{"cell": 24, "brush": 8, "support": [0, 8, 16, 48, 56]}, {"cell": 32, "brush": 8, "support": [0, 8, 16, 48, 56]}, {"cell": 40, "brush": 8, "support": [0, 8, 16, 48, 56]}],
-    "prompt": "Column 1 needs five tracks. Find every blank cell in column 1 that must contain track.",
-    "reason": "Row 2 is a given track, and its south end forces row 3 to contain track. Those two tracks, together with the crossed cells in rows 1, 7 and 8, leave only rows 4, 5 and 6 open in column 1. The column needs five tracks, so all three open cells must be track. Their directions are not yet fixed, so mark each with ?."
+    "pieces": [0, 0, 0, 0, 2, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    "answers": [{"cell": 55, "brush": 8, "support": [4, 8, 39, 47]}],
+    "prompt": "Column 8 needs seven tracks. The given track at row 5, column 8 cannot connect south. Find a cell in row 7 that must contain track.",
+    "reason": "The givens at row 1, column 5 and row 2, column 1 already use the line's two edge ends, so no other track may leave the board. A track at row 6, column 8 could not run off the right edge, and the given at row 5, column 8 has no south arm to meet it, so that cell could only turn south and west. Its south arm would require row 7, column 8 to contain track. If row 7, column 8 were empty, row 6, column 8 would also have to be empty. Column 8 has eight cells and needs seven tracks, so only one can be empty; two empty cells are impossible. Therefore row 7, column 8 must contain track. Its direction is not yet fixed, so mark it with ?."
   },
   {
     "id": "tracks-edges-3",
@@ -137,7 +137,7 @@
     "board": {"width": 8, "height": 8, "rowClues": [4, 3, 3, 4, 4, 3, 4, 4], "colClues": [3, 3, 1, 4, 4, 4, 5, 5], "givens": [5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5]},
     "pieces": [5, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5],
     "answers": [{"cell": 24, "brush": 7, "support": [0, 8, 16]}, {"cell": 32, "brush": 7, "support": [0, 8, 16]}, {"cell": 40, "brush": 7, "support": [0, 8, 16]}, {"cell": 48, "brush": 7, "support": [0, 8, 16]}, {"cell": 56, "brush": 7, "support": [0, 8, 16]}],
-    "prompt": "Column 1 needs three tracks. Find every cell in column 1 below row 3 that cannot contain track.",
-    "reason": "Rows 1 and 2 already contain track, so column 1 needs exactly one more. If a blank cell in rows 4 to 8 were that track, the count would rule out every other blank cell in the column. That leaves the candidate with no connection to any cell above or below it, and it sits on the west edge, so it cannot leave the board either. Only its east side remains, which is not enough for a track. None of rows 4 to 8 can be the third track, so mark all five out."
+    "prompt": "Column 1 needs three tracks. Find a cell below row 3 that cannot contain track.",
+    "reason": "The given at row 1, column 1 turns south, so row 2, column 1 also contains track, and column 1 needs exactly one more. The given corners at row 1, column 1 and row 8, column 8 already use the line's two edge ends, so no other track may leave the board. If a blank cell in rows 4 to 8 were the third track, every other blank cell in the column would be empty. That leaves the candidate with no connection above or below it. It cannot leave the board on the west edge, and its east side alone is not enough for a track. Any of these five cells can be marked out."
   }
 ]
