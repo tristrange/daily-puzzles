@@ -69,7 +69,7 @@ it('recognizes existing complete techniques across all courses and refreshes whe
   }
   localStorage.setItem('daily-progress-sentinel', 'untouched')
   await mount('/learn')
-  expect(container.querySelector('.learning-overview')?.textContent).toContain('10 of 31 techniques practiced')
+  expect(container.querySelector('.learning-overview')?.textContent).toContain('10 of 32 techniques practiced')
   expect(container.textContent).toContain('not included in Stats backups')
   for (const [kind, count] of [['queens', 1], ['sudoku', 1], ['killer-sudoku', 2], ['star-battle', 2], ['trio', 1], ['nurikabe', 1], ['tents', 1], ['train-tracks', 1]] as const) {
     await mount(`/learn/${kind}`)
@@ -78,7 +78,7 @@ it('recognizes existing complete techniques across all courses and refreshes whe
   await mount('/learn')
   localStorage.removeItem('daily-puzzles:queens-lessons:v1')
   await act(async () => window.dispatchEvent(new Event('pageshow')))
-  expect(container.querySelector('.learning-overview')?.textContent).toContain('9 of 31 techniques practiced')
+  expect(container.querySelector('.learning-overview')?.textContent).toContain('9 of 32 techniques practiced')
   expect(localStorage.getItem('daily-progress-sentinel')).toBe('untouched')
 })
 

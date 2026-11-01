@@ -109,5 +109,35 @@
     "outside": 5,
     "prompt": "Find the ? cell in row 2 that must connect to row 1, column 6 to avoid closing a loop.",
     "reason": "The ? cells at row 2, column 6 and row 3, column 6 are already connected by the shown track segment. Joining them directly would close a loop, leaving the route unable to reach both ends. The track at row 2, column 6 must instead connect its existing segment to row 1, column 6; the remaining side is blocked or outside the board. Use the turn from north to east track."
+  },
+  {
+    "id": "tracks-edges-1",
+    "source": "2026-10-31-tracks-small",
+    "technique": "edges",
+    "board": {"width": 8, "height": 8, "rowClues": [4, 7, 6, 7, 6, 5, 3, 4], "colClues": [5, 6, 5, 5, 6, 2, 6, 7], "givens": [0, 0, 0, 0, 2, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
+    "pieces": [0, 0, 0, 0, 2, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    "answers": [{"cell": 15, "brush": 8, "support": [7, 23, 31, 39, 47, 55, 63]}],
+    "prompt": "Column 8 needs seven tracks. If the top-right corner is a track, it cannot leave the board to the north or east. Which cell directly below it must contain track?",
+    "reason": "Column 8 has eight cells and needs seven tracks, so only one can be empty. The givens at row 1, column 5 and row 2, column 1 already use the line's two edge ends, so no other track may leave the board. If the top-right corner is empty, every other cell in the column must be track, including row 2, column 8. If the corner is a track, it cannot leave the board to the north or east, so it must turn south and west. Its south arm then requires row 2, column 8 to be track. Either way, row 2, column 8 must contain track; its direction is not yet fixed, so mark it with ?."
+  },
+  {
+    "id": "tracks-edges-2",
+    "source": "2026-10-31-tracks-small",
+    "technique": "edges",
+    "board": {"width": 8, "height": 8, "rowClues": [4, 7, 6, 7, 6, 5, 3, 4], "colClues": [5, 6, 5, 5, 6, 2, 6, 7], "givens": [0, 0, 0, 0, 2, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
+    "pieces": [0, 0, 0, 0, 2, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    "answers": [{"cell": 55, "brush": 8, "support": [4, 8, 39, 47]}],
+    "prompt": "Column 8 needs seven tracks. The given track at row 5, column 8 cannot connect south, and row 6, column 8 cannot leave the right edge. Which cell does this force to contain track?",
+    "reason": "The givens at row 1, column 5 and row 2, column 1 already use the line's two edge ends, so no other track may leave the board. A track at row 6, column 8 could not run off the right edge, and the given at row 5, column 8 has no south arm to meet it, so that cell could only turn south and west. Its south arm would require row 7, column 8 to contain track. If row 7, column 8 were empty, row 6, column 8 would also have to be empty. Column 8 has eight cells and needs seven tracks, so only one can be empty; two empty cells are impossible. Therefore row 7, column 8 must contain track. Its direction is not yet fixed, so mark it with ?."
+  },
+  {
+    "id": "tracks-edges-3",
+    "source": "2026-10-19-tracks-small",
+    "technique": "edges",
+    "board": {"width": 8, "height": 8, "rowClues": [4, 3, 3, 4, 4, 3, 4, 4], "colClues": [3, 3, 1, 4, 4, 4, 5, 5], "givens": [5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5]},
+    "pieces": [5, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5],
+    "answers": [{"cell": 24, "brush": 7, "support": [0, 8, 16]}, {"cell": 32, "brush": 7, "support": [0, 8, 16]}, {"cell": 40, "brush": 7, "support": [0, 8, 16]}, {"cell": 48, "brush": 7, "support": [0, 8, 16]}, {"cell": 56, "brush": 7, "support": [0, 8, 16]}],
+    "prompt": "Column 1 needs three tracks. Find a cell below row 3 that cannot contain track.",
+    "reason": "The given at row 1, column 1 turns south, so row 2, column 1 also contains track, and column 1 needs exactly one more. The given corners at row 1, column 1 and row 8, column 8 already use the line's two edge ends, so no other track may leave the board. If a blank cell in rows 4 to 8 were the third track, every other blank cell in the column would be empty. That leaves the candidate with no connection above or below it. It cannot leave the board on the west edge, and its east side alone is not enough for a track. Any of these five cells can be marked out."
   }
 ]
