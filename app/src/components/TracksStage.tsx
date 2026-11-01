@@ -58,7 +58,10 @@ export function TracksStage({
   const hintId = useId()
   const [hint, setHint] = useState<TrackHint | null>(null)
   const [hintMessage, setHintMessage] = useState('')
-  const hintReasons = useMemo(() => hint ? hint.steps.map((step) => step.reason) : [], [hint])
+  const hintReasons = useMemo(() => ({
+    reasons: hint ? [hint.steps.at(-1)!.reason] : [],
+    supportingReasons: hint?.steps.slice(0, -1).map((step) => step.reason) ?? [],
+  }), [hint])
   const hintsUsed = useRef(initialProgress?.hints ?? 0)
   const clearHint = () => { setHint(null); setHintMessage('') }
   const history = useMoveHistory<TracksGame>()
@@ -206,7 +209,7 @@ export function TracksStage({
     setHint(result.kind === 'hint' ? result.hint : null)
     const message = result.kind === 'contradiction'
       ? 'Your tracks and crosses lead to a contradiction. Check your entries or Undo before asking for a hint.'
-      : result.kind === 'none' ? 'These count and connection rules found no further deduction. This does not prove that guessing is necessary.' : ''
+      : result.kind === 'none' ? 'These hint techniques found no further deduction. This does not prove that guessing is necessary.' : ''
     setHintMessage(message)
     setAnnouncement(message)
     if (result.kind === 'hint') {
@@ -328,7 +331,7 @@ export function TracksStage({
       </p>
       {hint && <HintPanel id={hintId} location={trackCellName(grid, hint.cell)}
         title={hint.brush === CROSS ? 'Rule out track' : hint.brush === MAYBE ? 'Mark definite track' : `Place ${TRACK_CELL_NAME[hint.brush]}`}
-        reasons={hintReasons} effect={`${hint.brush === MAYBE ? 'Apply puts ? in this cell. It counts as track; choose its direction later. ' : ''}Uses your placed tracks, ? cells and crosses as starting assumptions.`}
+        reasons={hintReasons.reasons} supportingReasons={hintReasons.supportingReasons} effect={`${hint.brush === MAYBE ? 'Apply puts ? in this cell. It counts as track; choose its direction later. ' : ''}Uses your placed tracks, ? cells and crosses as starting assumptions.`}
         onApply={acceptHint} onDismiss={dismissHint} onShowCell={showHintCell} />}
       <SolvedPanel
         puzzleId={puzzle.id} candidate={candidate}

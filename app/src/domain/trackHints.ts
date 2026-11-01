@@ -1,8 +1,8 @@
-/** Count and connection deductions only: no search and no stored solution. */
-import { DIRECTIONS, OPPOSITE, PIECE_COUNT, PIECE_ENDS, type TrackGrid } from './tracks'
+/** Explain deductions from the player's marks without searching for a solution. */
+import { DIRECTIONS, EAST, OPPOSITE, PIECE_COUNT, PIECE_ENDS, SOUTH, type TrackGrid } from './tracks'
 import { CROSS, MAYBE, TRACK_CELL_NAME, isTracksSolved, paintBrush, type TracksGame } from './tracksGame'
 
-type Rule = 'edge' | 'row-count' | 'column-count' | 'connection'
+type Rule = 'edge' | 'row-count' | 'column-count' | 'connection' | 'line-connection' | 'line-capacity' | 'loop'
 export interface TrackHintStep {
   cell: number; before: number; after: number; rule: Rule; group: readonly number[]
   reason: string; dependencies: readonly number[]
@@ -56,9 +56,9 @@ export function findTrackHint(game: TracksGame): TrackHintResult {
     }
   }
   const lines = [
-    ...grid.rowClues.map((clue, row) => ({ clue, rule: 'row-count' as const, name: `Row ${row + 1}`,
+    ...grid.rowClues.map((clue, row) => ({ clue, rule: 'row-count' as const, name: `Row ${row + 1}`, direction: EAST,
       cells: Array.from({ length: grid.width }, (_, col) => grid.index(row, col)) })),
-    ...grid.colClues.map((clue, col) => ({ clue, rule: 'column-count' as const, name: `Column ${col + 1}`,
+    ...grid.colClues.map((clue, col) => ({ clue, rule: 'column-count' as const, name: `Column ${col + 1}`, direction: SOUTH,
       cells: Array.from({ length: grid.height }, (_, row) => grid.index(row, col)) })),
   ]
   while (valid) {
@@ -84,6 +84,91 @@ export function findTrackHint(game: TracksGame): TrackHintResult {
           `The cell at ${trackCellName(grid, other)} cannot connect ${directions[back]}, so ${trackCellName(grid, cell)} cannot connect ${directions[direction]} towards it.`)
         else if (!(candidates[other]! & (ALL ^ ARMS[back]!))) restrict(cell, ARMS[direction]!, 'connection', [cell, other],
           `The cell at ${trackCellName(grid, other)} must connect ${directions[back]}. The track at ${trackCellName(grid, cell)} must meet it with a ${directions[direction]} connection.`)
+      }
+    }
+    // If a track in one cell must connect to its neighbour, crossing out the
+    // neighbour also crosses out that cell. A nearly full line may not have room
+    // for both to be empty, even when neither is fixed on its own yet.
+    for (const { clue, name, cells, direction } of lines) {
+      const empty = cells.filter((cell) => !(candidates[cell]! & TRACK))
+      const allowedEmpty = cells.length - clue
+      for (let i = 0; empty.length + 2 > allowedEmpty && i < cells.length - 1; i++) {
+        const first = cells[i]!, second = cells[i + 1]!
+        for (const [target, other, towardTarget] of [[first, second, (direction + OPPOSITE) % DIRECTIONS],
+          [second, first, direction]] as const) {
+          if (!(candidates[target]! & EMPTY) || !(candidates[target]! & TRACK)
+            || !(candidates[other]! & EMPTY) || !(candidates[other]! & TRACK)
+            || (candidates[other]! & TRACK & (ALL ^ ARMS[towardTarget]!))) continue
+          const count = empty.length + 2
+          restrict(target, TRACK, 'line-connection', [target, other, ...empty],
+            `${name} allows ${allowedEmpty} empty ${allowedEmpty === 1 ? 'cell' : 'cells'}. If ${trackCellName(grid, target)} were empty, ${trackCellName(grid, other)} would also be empty because a track there must connect to it. That would leave ${count} empty cells in ${name.toLowerCase()}${empty.length ? `, including the ${empty.length} already ruled out` : ''}.`)
+        }
+      }
+      // When a line needs just one more track, a cell cannot be used if every
+      // shape it could take also needs another unfilled cell in that line.
+      const fixed = cells.filter((cell) => !(candidates[cell]! & EMPTY))
+      if (fixed.length + 1 !== clue) continue
+      for (const cell of cells) {
+        const tracks = candidates[cell]! & TRACK
+        if (!(candidates[cell]! & EMPTY) || !tracks) continue
+        let requiresAnother = 0
+        const neighbours: number[] = []
+        for (const side of [direction, (direction + OPPOSITE) % DIRECTIONS]) {
+          const other = grid.neighbour(cell, side)
+          if (other !== null && (candidates[other]! & EMPTY)) {
+            requiresAnother |= ARMS[side]!
+            neighbours.push(other)
+          }
+        }
+        if (tracks & (ALL ^ requiresAnother)) continue
+        restrict(cell, EMPTY, 'line-capacity', [cell, ...fixed, ...neighbours],
+          `${name} already has ${fixed.length} of its ${clue} required tracks, so it needs only one more. Any track at ${trackCellName(grid, cell)} would also need another track in this ${direction === EAST ? 'row' : 'column'} that is not already counted, exceeding the count.`)
+      }
+    }
+
+    // Build the connections already forced by the current candidate sets.
+    // Any additional connection between cells on the same segment would close a
+    // loop instead of allowing one route between the two edge ends.
+    const parent = Array.from({ length: grid.cellCount }, (_, cell) => cell)
+    const neighbours = Array.from({ length: grid.cellCount }, () => [] as number[])
+    const root = (cell: number): number => {
+      while (parent[cell] !== cell) cell = parent[cell]!
+      return cell
+    }
+    const mustConnect = (cell: number, direction: number) => !(candidates[cell]! & (ALL ^ ARMS[direction]!))
+    for (let cell = 0; valid && cell < grid.cellCount; cell++) {
+      for (const direction of [EAST, SOUTH]) {
+        const other = grid.neighbour(cell, direction), back = (direction + OPPOSITE) % DIRECTIONS
+        if (other === null || !mustConnect(cell, direction) || !mustConnect(other, back)) continue
+        const a = root(cell), b = root(other)
+        if (a === b) { valid = false; break }
+        parent[a] = b
+        neighbours[cell]!.push(other); neighbours[other]!.push(cell)
+      }
+    }
+    if (!valid) break
+    const path = (start: number, end: number): number[] => {
+      const previous = Array<number>(grid.cellCount).fill(-1), queue = [start]
+      previous[start] = start
+      for (let i = 0; i < queue.length && previous[end] === -1; i++) {
+        const cell = queue[i]!
+        for (const other of neighbours[cell]!) if (previous[other] === -1) {
+          previous[other] = cell; queue.push(other)
+        }
+      }
+      const result = [end]
+      while (result.at(-1) !== start) result.push(previous[result.at(-1)!]!)
+      return result
+    }
+    for (let cell = 0; valid && cell < grid.cellCount; cell++) {
+      for (const direction of [EAST, SOUTH]) {
+        const other = grid.neighbour(cell, direction), back = (direction + OPPOSITE) % DIRECTIONS
+        if (other === null || !(candidates[cell]! & ARMS[direction]!) || !(candidates[other]! & ARMS[back]!)
+          || (mustConnect(cell, direction) && mustConnect(other, back)) || root(cell) !== root(other)) continue
+        const group = path(cell, other)
+        const reason = `The highlighted track already connects ${trackCellName(grid, cell)} and ${trackCellName(grid, other)}. Connecting them directly would close a loop before the route reaches both edge ends, so these two cells cannot connect to each other.`
+        restrict(cell, ALL ^ ARMS[direction]!, 'loop', group, reason)
+        restrict(other, ALL ^ ARMS[back]!, 'loop', group, reason)
       }
     }
     if (steps.length === previous) break

@@ -153,10 +153,10 @@ export function RulesPage() {
         before it can join the finished route. × marks do not count.</p>
       <h3>Hints</h3>
       <p>Hint or H explains a deduction from row and column counts, matching track
-        connections or the two fixed edge ends. A solid outline marks the target;
+        connections, the two fixed edge ends or a loop that must be avoided. A solid outline marks the target;
         dashed outlines show support. Apply move crosses out one cell, places ?
         for definite track, or sets a forced shape. Undo restores the move until solved.</p>
-      <p>The explanation may include earlier deductions. Use its location link to
+      <p>Expand Supporting deductions to see any earlier reasoning. Use the location link to
         return to the target, or Escape to dismiss. Hints use your tracks, ? cells
         and crosses as assumptions; mistaken entries can mislead them. Shown hints
         count in your result even if dismissed or undone, and survive reloads.</p>

@@ -57,6 +57,8 @@ it('explains before editing, applies one undoable move, and persists shown hints
   const { board, panel, click, id } = playing(grid)
   click('Hint')
   expect(panel()).toBeDefined()
+  expect(panel()!.props['reasons']).toHaveLength(1)
+  expect((panel()!.props['supportingReasons'] as string[]).length).toBeGreaterThan(0)
   expect((board()['game'] as TracksGame).pieces[0]).toBe(0)
   expect(readTrackProgress(id, grid)?.hints).toBe(1)
   ;(panel()!.props['onApply'] as () => void)()
