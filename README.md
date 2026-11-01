@@ -117,6 +117,8 @@ not establish that guessing is necessary. Queens, Star Battle, Sudoku and Nurika
 before optionally revealing a mistaken entry. Other games report contradictions
 found by their own checks. Notes are not proof for Trio/Sudoku hints; crosses,
 grass and placed tracks can be assumptions in the games that use them.
+Train Tracks hints can combine counts and connections and avoid closing a known loop;
+they do not examine every possible route.
 
 Leaderboard results are reported by the client and are intended for casual play,
 not cheat-proof competition. Backend setup and service limits are documented in
