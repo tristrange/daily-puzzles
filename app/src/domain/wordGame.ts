@@ -48,6 +48,11 @@ export function undoWord(game: WordGame): WordGame {
   return game.words.length === 0 ? clearTrace(game) : { ...game, words: game.words.slice(0, -1), trace: [] }
 }
 
+export function removeWord(game: WordGame, length: number): WordGame {
+  const index = game.words.findIndex((path) => path.length === length)
+  return index < 0 ? game : { ...game, words: game.words.filter((_, i) => i !== index) }
+}
+
 export function resetWordGame(game: WordGame): WordGame {
   return createWordGame(game.grid)
 }
