@@ -1,11 +1,19 @@
-import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { PUZZLE_TYPES, type PuzzleType } from '../domain/board'
 import { formatPuzzleLabel, puzzleDay } from '../domain/dates'
 import { DEFAULT_PUZZLE_TYPE, DIFFICULTY_LABEL, PUZZLE_TYPE_LABEL, PUZZLE_TYPE_PUBLISHED } from '../domain/games'
 import { sudokuVariantOf, killerVariantOf } from '../domain/sudokuLevels'
 import { trackVariantOf } from '../domain/trackSizes'
-import { archiveHref, hasOlderArchive, MAX_ARCHIVE_PAGE, parseArchivePage, puzzleHref } from '../lib/archive'
+import {
+  archiveHref,
+  findSurprisePuzzle,
+  hasOlderArchive,
+  MAX_ARCHIVE_PAGE,
+  parseArchivePage,
+  puzzleHref,
+  type SurpriseOutcome,
+} from '../lib/archive'
 import {
   ARCHIVE_WINDOW_DAYS,
   groupPublishedPuzzles,
@@ -22,11 +30,32 @@ type LoadState =
   | { status: 'ready'; day: string; page: number; puzzles: readonly PublishedPuzzle[] }
   | { status: 'error'; day: string; page: number }
 
+type SurpriseState =
+  | { status: 'idle' }
+  | { status: 'searching' }
+  | { status: 'message'; text: string }
+
 const NO_SOLVES: ReadonlySet<string> = new Set()
 
 /** Puzzle ids with a solve saved on this device. */
 function storedSolvedIds(): ReadonlySet<string> {
   return new Set(typeof window === 'undefined' ? [] : readStoredStats().map((record) => record.id))
+}
+
+function surpriseMessage(
+  outcome: Extract<SurpriseOutcome, { status: 'none' }>,
+  label: string,
+): string {
+  if (outcome.checked === 0 && outcome.completed === 0) {
+    return `No ${label} puzzles are in the archive yet.`
+  }
+  if (outcome.unavailable) {
+    return 'Couldn’t reach the archive. Check your connection and try again.'
+  }
+  if (outcome.checked === 0 && outcome.completed > 0) {
+    return `No unsolved ${label} puzzle was found. The ${label} puzzles found are already completed.`
+  }
+  return `No unsolved ${label} puzzle was found. Try again or choose another game.`
 }
 
 export function ArchivePage() {
@@ -101,12 +130,62 @@ function ArchiveGame({ type, page }: { readonly type: PuzzleType; readonly page:
 
   return (
     <div>
+      <SurpriseButton key={`${todayId}:${type}:${page}`} type={type} page={page} todayId={todayId} />
       {current.status === 'loading' && <p className="status" role="status">Scanning archive…</p>}
       {current.status === 'error' && (
         <p className="status error">Could not read the archive.</p>
       )}
       {current.status === 'ready' && <ArchiveGroups groups={groups} timeZone={timeZone} page={page} solved={solved} />}
       <ArchivePager game={type} page={page} todayId={todayId} />
+    </div>
+  )
+}
+
+function SurpriseButton({ type, page, todayId }: {
+  readonly type: PuzzleType
+  readonly page: number
+  readonly todayId: string
+}) {
+  const navigate = useNavigate()
+  const [surprise, setSurprise] = useState<SurpriseState>({ status: 'idle' })
+  const request = useRef(0)
+
+  useEffect(() => () => { request.current += 1 }, [])
+
+  const surpriseMe = async () => {
+    if (surprise.status === 'searching') return
+    const currentRequest = ++request.current
+    setSurprise({ status: 'searching' })
+    const outcome = await findSurprisePuzzle({ todayId, type, solved: storedSolvedIds() })
+    if (request.current !== currentRequest) return
+    if (outcome.status === 'found') {
+      if (storedSolvedIds().has(outcome.puzzle.id)) {
+        setSurprise({ status: 'message', text: 'That puzzle was completed while searching. Try again.' })
+        return
+      }
+      navigate(puzzleHref(outcome.puzzle.id, page))
+      return
+    }
+    setSurprise({ status: 'message', text: surpriseMessage(outcome, PUZZLE_TYPE_LABEL[type]) })
+  }
+
+  return (
+    <div className="archive-surprise">
+      <button
+        type="button"
+        className="tool-button primary"
+        onClick={surpriseMe}
+        disabled={surprise.status === 'searching'}
+        aria-label={`Surprise me: open a random unsolved ${PUZZLE_TYPE_LABEL[type]} puzzle`}
+      >
+        Surprise me
+      </button>
+      {surprise.status === 'searching' && (
+        <p className="status" role="status">Finding an unsolved {PUZZLE_TYPE_LABEL[type]} puzzle…</p>
+      )}
+      {surprise.status === 'message' && (
+        <p className="status" role="status">{surprise.text}</p>
+      )}
     </div>
   )
 }

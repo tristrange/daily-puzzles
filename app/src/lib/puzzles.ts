@@ -55,6 +55,30 @@ async function parsedResponse(id: string, response: Response): Promise<Puzzle | 
   } catch { return null }
 }
 
+/** IDs already saved in this app's puzzle cache, without making network requests. */
+export async function downloadedPuzzleIds(): Promise<readonly string[]> {
+  if (typeof caches === 'undefined') return []
+  try {
+    const requests = await (await caches.open(DOWNLOAD_CACHE)).keys()
+    const prefix = `${import.meta.env.BASE_URL}puzzles/`
+    return requests.flatMap((request) => {
+      const pathname = new URL(request.url).pathname
+      if (!pathname.startsWith(prefix) || !pathname.endsWith('.json')) return []
+      const id = pathname.slice(prefix.length, -'.json'.length)
+      return isPuzzleId(id) && pathname === puzzleUrl(id) ? [id] : []
+    })
+  } catch { return [] }
+}
+
+/** Read and validate a previously downloaded puzzle without attempting a fetch. */
+export async function readDownloadedPuzzle(id: string): Promise<Puzzle | null> {
+  if (!isPuzzleId(id) || typeof caches === 'undefined') return null
+  try {
+    const response = await (await caches.open(DOWNLOAD_CACHE)).match(puzzleUrl(id))
+    return response ? await parsedResponse(id, response) : null
+  } catch { return null }
+}
+
 async function fetchPuzzle(id: string, fetcher: Fetcher): Promise<Puzzle | null> {
   if (!isPuzzleId(id)) return null
   const url = puzzleUrl(id)
