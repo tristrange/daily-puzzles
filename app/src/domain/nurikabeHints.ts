@@ -5,6 +5,7 @@ type Rule = 'completed-island' | 'separate-islands' | 'sea-square' | 'island-exp
 type Evidence = { source: NurikabeGame; cell: number; reason: string; support: readonly number[] }
 export type NurikabeHint = Evidence & ({ kind: 'deduction'; value: 1 | 2; rule: Rule } | { kind: 'correction' })
 export type NurikabeMistake = { kind: 'mistake'; cell: number; source: NurikabeGame }
+export type NurikabeEntryCheck = NurikabeMistake | { kind: 'correct' } | { kind: 'unverified' }
 export type NurikabeHintResult = { kind: 'hint'; hint: NurikabeHint } | NurikabeMistake | { kind: 'none' | 'unverified' }
 export const nurikabeCellName = (board: NurikabeBoard, cell: number) => `Row ${Math.floor(cell / board.size) + 1}, column ${cell % board.size + 1}`
 const verified = new WeakMap<NurikabeBoard, NurikabeGame>()
@@ -83,8 +84,8 @@ export function nextNurikabeDeduction(board: NurikabeBoard, game: NurikabeGame):
   return null
 }
 
-/** Verify uniqueness and check explicit mistakes before suggesting a direct rule. */
-export function findNurikabeHint(board: NurikabeBoard, game: NurikabeGame): NurikabeHintResult {
+/** Check explicit sea and land marks only against a verified unique solution. */
+export function checkNurikabeEntries(board: NurikabeBoard, game: NurikabeGame): NurikabeEntryCheck {
   let answer = verified.get(board)
   if (!answer) {
     const result = solveNurikabe(board)
@@ -93,6 +94,13 @@ export function findNurikabeHint(board: NurikabeBoard, game: NurikabeGame): Nuri
   }
   const wrong = game.findIndex((value, cell) => value !== 0 && value !== answer[cell])
   if (wrong >= 0) return { kind: 'mistake', cell: wrong, source: game }
+  return { kind: 'correct' }
+}
+
+/** Verify uniqueness and check explicit mistakes before suggesting a direct rule. */
+export function findNurikabeHint(board: NurikabeBoard, game: NurikabeGame): NurikabeHintResult {
+  const check = checkNurikabeEntries(board, game)
+  if (check.kind !== 'correct') return check
   const hint = nextNurikabeDeduction(board, game)
   return hint ? { kind: 'hint', hint } : { kind: 'none' }
 }

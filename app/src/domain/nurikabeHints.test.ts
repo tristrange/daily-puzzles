@@ -2,7 +2,7 @@ import { expect, it } from 'vitest'
 import daily from '@shared/docs/measurements/daily-nurikabe-launch.json'
 import previews from '@shared/docs/measurements/nurikabe-preview.json'
 import { createNurikabeGame, type NurikabeBoard, type NurikabeGame } from './nurikabe'
-import { applyNurikabeHint, findNurikabeHint, nextNurikabeDeduction, revealNurikabeMistake } from './nurikabeHints'
+import { applyNurikabeHint, checkNurikabeEntries, findNurikabeHint, nextNurikabeDeduction, revealNurikabeMistake } from './nurikabeHints'
 
 function completions(board: NurikabeBoard): NurikabeGame[] {
   const { size, clues } = board, answers: NurikabeGame[] = []
@@ -31,6 +31,23 @@ function completions(board: NurikabeBoard): NurikabeGame[] {
   }
   return answers
 }
+
+it('checks both sea and land marks only against a verified unique solution', () => {
+  const sample = previews.samples[0]!
+  const board = { id: sample.id, size: sample.size, clues: sample.clues }
+  const sea = sample.solution.findIndex((value, cell) => value === 0 && board.clues[cell] === 0)
+  const land = sample.solution.findIndex((value, cell) => value === 1 && board.clues[cell] === 0)
+  const game = createNurikabeGame(board).map((value, cell) => cell === sea ? 1 : cell === land ? 2 : value) satisfies NurikabeGame
+  expect(sea).toBeGreaterThanOrEqual(0)
+  expect(land).toBeGreaterThanOrEqual(0)
+  expect(checkNurikabeEntries(board, game)).toEqual({ kind: 'correct' })
+  const wrongLand = game.map((value, cell) => cell === sea ? 2 : value) satisfies NurikabeGame
+  const wrongSea = game.map((value, cell) => cell === land ? 1 : value) satisfies NurikabeGame
+  expect(checkNurikabeEntries(board, wrongLand)).toEqual({ kind: 'mistake', cell: sea, source: wrongLand })
+  expect(checkNurikabeEntries(board, wrongSea)).toEqual({ kind: 'mistake', cell: land, source: wrongSea })
+  const ambiguous = { id: 'ambiguous', size: 2, clues: [2, 0, 0, 0] }
+  expect(checkNurikabeEntries(ambiguous, createNurikabeGame(ambiguous))).toEqual({ kind: 'unverified' })
+})
 
 it('each direct rule agrees with every independent completion of compatible tiny positions', () => {
   const rules = new Set<string>()

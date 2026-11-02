@@ -115,12 +115,17 @@ separate from daily games, stats and leaderboards.
 - Optional per-puzzle leaderboards showing nickname, time and hints, accessible after solving and from navigation. Browsing requires no signup; joining uses an anonymous browser identity, without email or password.
 
 Hints may stall when their supported techniques find nothing further; that does
-not establish that guessing is necessary. Queens, Star Battle, Sudoku and Nurikabe warn
+not establish that guessing is necessary. Queens, Star Battle, Sudoku, Killer Sudoku and Nurikabe warn
 before optionally revealing a mistaken entry. Other games report contradictions
 found by their own checks. Notes are not proof for Trio/Sudoku hints; crosses,
 grass and placed tracks can be assumptions in the games that use them.
 Train Tracks hints can combine counts and connections and avoid closing a known loop;
 they do not examine every possible route.
+
+Check compares entries with the verified unique solution in Queens, Star Battle,
+Sudoku, Killer Sudoku and Nurikabe. It is free; choosing Show the mistake counts as
+a hint. Queens and Star Battle crosses and Nurikabe sea and land marks are included;
+Sudoku notes are not checked.
 
 Leaderboard results are reported by the client and are intended for casual play,
 not cheat-proof competition. Backend setup and service limits are documented in
