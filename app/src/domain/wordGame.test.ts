@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { WordGrid } from './wordPaths'
-import { createWordGame, spellPath, traceCell, clearTrace, submitWord, undoWord, resetWordGame, isWordSolved } from './wordGame'
+import { createWordGame, spellPath, traceCell, clearTrace, submitWord, removeWord, undoWord, resetWordGame, isWordSolved } from './wordGame'
 import cases from '@shared/conformance/word-paths/path-cases.json'
 
 const grid = new WordGrid(4, 2, ['C', 'A', 'T', null, 'L', 'I', 'O', 'N'], [3, 4])
@@ -51,6 +51,15 @@ describe('word path rules', () => {
     const game = submitWord(select([0, 1, 2])).game
     expect(undoWord(game).words).toEqual([])
     expect(resetWordGame(game)).toEqual(createWordGame(grid))
+  })
+  it('removes only the requested accepted word and keeps the current trace', () => {
+    const board = new WordGrid(6, 3, ['C', 'A', 'T', null, null, null, 'L', 'I', 'O', 'N', null, null, 'B', 'R', 'E', 'A', 'D', null], [3, 4, 5], 2)
+    const game = { ...createWordGame(board), words: [[0, 1, 2], [6, 7, 8, 9]], trace: [12, 13] }
+    const next = removeWord(game, 3)
+    expect(next.words).toEqual([[6, 7, 8, 9]])
+    expect(next.trace).toEqual([12, 13])
+    expect(game.words).toEqual([[0, 1, 2], [6, 7, 8, 9]])
+    expect(removeWord(next, 3)).toBe(next)
   })
 })
 

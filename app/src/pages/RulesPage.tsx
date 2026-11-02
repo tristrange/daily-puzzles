@@ -180,14 +180,15 @@ export function RulesPage() {
       <h3>Controls</h3>
       <p>Drag through letters and release to submit, or tap letters and press Submit.
         Space selects the focused letter; Enter submits. Backspace removes the last
-        selected letter; Escape clears the selection. Undo removes the last accepted word.</p>
+        selected letter; Escape clears the selection. Tap an accepted word to remove it
+        without removing the others. Undo reverses your last move.</p>
       <h3>Hints</h3>
       <p>Hint, or H while on the board, highlights a starting cell for a remaining word.
         Reveal next letter uncovers one more letter and its position. Solid outlines
         mark the start; dashed outlines and numbers show the continuation in order.
         Trace and submit the word yourself; hints leave your selection unchanged.</p>
       <p>Hints keep your accepted words and check that all remaining letters can still
-        be used. If those words leave no completion, use Undo to try another word or path.
+        be used. If those words leave no completion, use Undo or remove a word to try another path.
         A search limit is reported separately and does not prove a dead end.
         Each revealed letter counts as a hint, even after Undo, Reset or reloading.
         Dismiss or Escape closes the panel; its location link returns to the starting cell.</p>

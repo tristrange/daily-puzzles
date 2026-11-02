@@ -1,9 +1,9 @@
 import { PlayTimer } from './PlayTimer'
 import { useLeaderboard } from '../lib/useLeaderboard'
-import { useId, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useId, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import type { Puzzle } from '../domain/puzzle'
 import type { WordGrid } from '../domain/wordPaths'
-import { createWordGame, clearTrace, traceCell, submitWord, undoWord, resetWordGame, isWordSolved, spellPath, type WordGame } from '../domain/wordGame'
+import { createWordGame, clearTrace, traceCell, submitWord, removeWord, undoWord, resetWordGame, isWordSolved, spellPath, type WordGame } from '../domain/wordGame'
 import { usePlayClock } from '../lib/usePlayClock'
 import { formatTime } from '../domain/game'
 import { puzzleOfToday } from '../domain/dates'
@@ -104,6 +104,17 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
     change(next)
     setMessage('Redid the last move.')
   }
+  const remove = (event: MouseEvent<HTMLButtonElement>) => {
+    if (completed.current) return
+    const before = current.current
+    const path = before.words.find((word) => word.length === Number(event.currentTarget.value))
+    if (!path) return
+    history.remember(before)
+    setHint(null)
+    change(removeWord(before, path.length))
+    setMessage(`Removed ${spellPath(grid, path)}. Undo brings it back.`)
+    stage.current?.querySelector<HTMLButtonElement>(`[data-cell="${path[0]}"]`)?.focus({ preventScroll: true })
+  }
   const reset = () => {
     if (completed.current) return
     setHint(null)
@@ -131,7 +142,7 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
       countHint()
     } else setMessage(result.kind === 'dead-end'
       ? (current.current.words.length > 0
-        ? 'Your accepted words leave no way to finish. Use Undo to try a different word or path.'
+        ? 'Your accepted words leave no way to finish. Use Undo or remove a word to try a different path.'
         : 'No complete set of words was found in this board’s vocabulary.')
       : result.kind === 'limit' ? 'The hint search reached its limit. No dead end has been proved; keep exploring.' : '')
   }
@@ -187,8 +198,14 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
         <ol className="word-slots" aria-label="Words to find" style={{ '--word-slot-columns': grid.wordLengths.length } as CSSProperties}>
           {[...grid.wordLengths].sort((a, b) => a - b).map((length) => {
             const path = game.words.find((word) => word.length === length)
-            return <li key={length} data-length={path ? length : undefined} className={path ? 'filled' : ''}>
-              <span>{length} letters</span><strong>{path ? spellPath(grid, path) : '·'.repeat(length)}</strong>
+            const word = path ? spellPath(grid, path) : null
+            return <li key={length} data-length={path ? length : undefined} className={path ? `filled${solved ? '' : ' removable'}` : ''}>
+              {word && !solved
+                ? <button className="word-slot-remove" type="button" value={length} onClick={remove} aria-label={`Remove ${word}, ${length} letters`}>
+                  <span>{length} letters</span>
+                  <span className="word-slot-value"><strong>{word}</strong><span aria-hidden="true">×</span></span>
+                </button>
+                : <><span>{length} letters</span><strong>{word ?? '·'.repeat(length)}</strong></>}
             </li>
           })}
         </ol>
@@ -203,7 +220,7 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
         Drag adjoining letters and release to submit. Or tap letters, then Submit.
         With a keyboard: arrows move, Space selects, Enter submits; Backspace removes a letter and Escape clears selection. H asks for a hint.
       </p>
-      <p className="word-note">Use every letter once. Accepted words can lead to a dead end; Undo lets you try another path. Only words in this game&rsquo;s English list are accepted.</p>
+      <p className="word-note">Use every letter once. Tap an accepted word to remove it; Undo brings it back. Only words in this game&rsquo;s English list are accepted.</p>
       <SolvedPanel puzzleId={preview ? undefined : puzzle.id} candidate={candidate} solved={solved} firstSolve={firstSolve} streak={stats?.currentStreak ?? 0} copied={copied} shareText={shareText} onShare={share} />
     </div>
   )
