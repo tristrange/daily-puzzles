@@ -16,10 +16,20 @@ it('counts distinct first solves, game types and an archive puzzle for today', (
   expect(progress.daily.goals).toEqual([
     { id: 'puzzles', label: 'Solve 2 puzzles', progress: 2, target: 2 },
     { id: 'variety', label: 'Solve puzzles from 2 different games', progress: 2, target: 2 },
-    { id: 'archive', label: 'Solve an archive puzzle', progress: 1, target: 1 },
+    { id: 'extra', label: 'Solve an archive puzzle or 3 puzzles total', progress: 1, target: 1 },
   ])
   expect(progress.daily.completed).toBe(3)
   expect(progress.weekly.solves).toBe(2)
+})
+
+it('allows completing the daily challenge without an unsolved archive puzzle', () => {
+  const records = [
+    solve('2026-10-29', 'queens', '2026-10-29T08:00:00Z'),
+    solve('2026-10-29-trio', 'trio', '2026-10-29T09:00:00Z'),
+    solve('2026-10-29-tents', 'tents', '2026-10-29T10:00:00Z'),
+  ]
+  expect(challengeProgress(records.slice(0, 2), '2026-10-29', 'UTC').daily.completed).toBe(2)
+  expect(challengeProgress(records, '2026-10-29', 'UTC').daily.completed).toBe(3)
 })
 
 it.each([

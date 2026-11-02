@@ -108,9 +108,10 @@ separate from daily games, stats and leaderboards.
   distinct daily or archive solves per game. Hints are welcome; preview puzzles do not
   count. The passport uses the same local history and stats backup as the rest of Stats.
 - Optional daily and weekly challenges on Today use first solves in the player's
-  time zone. Hints and archive puzzles count; replays do not. Daily goals reset at
-  midnight. The weekly challenge has milestones at 15, 30 and 50 solves and resets
-  on Monday. Missing a day or week has no penalty.
+  time zone. Hints and archive puzzles count; replays do not. Daily goals include
+  solving an archive puzzle or a third puzzle and reset at midnight. The weekly
+  challenge has milestones at 15, 30 and 50 solves and resets on Monday. Missing a
+  day or week has no penalty.
 - Optional per-puzzle leaderboards showing nickname, time and hints, accessible after solving and from navigation. Browsing requires no signup; joining uses an anonymous browser identity, without email or password.
 
 Hints may stall when their supported techniques find nothing further; that does

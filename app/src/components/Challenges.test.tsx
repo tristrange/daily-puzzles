@@ -10,7 +10,7 @@ it('shows daily and weekly progress with clear rules and an archive link', () =>
   expect(html).toContain('Weekly challenge')
   expect(html).toContain('0 / 3 goals')
   expect(html).toContain('0 / 50 puzzles')
-  expect(html).toContain('Solve an archive puzzle')
+  expect(html).toContain('Solve an archive puzzle or 3 puzzles total')
   expect(html).toContain('Replays don')
   expect(html).toContain('href="/archive"')
 })

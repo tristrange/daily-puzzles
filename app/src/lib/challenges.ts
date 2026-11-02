@@ -45,7 +45,7 @@ export function challengeProgress(records: readonly SolveRecord[], today: string
   const dailyGoals: readonly ChallengeGoal[] = [
     { id: 'puzzles', label: 'Solve 2 puzzles', progress: Math.min(dailySolves, 2), target: 2 },
     { id: 'variety', label: 'Solve puzzles from 2 different games', progress: Math.min(families.size, 2), target: 2 },
-    { id: 'archive', label: 'Solve an archive puzzle', progress: Math.min(archiveSolves, 1), target: 1 },
+    { id: 'extra', label: 'Solve an archive puzzle or 3 puzzles total', progress: archiveSolves > 0 || dailySolves >= 3 ? 1 : 0, target: 1 },
   ]
   const weeklyGoals: readonly ChallengeGoal[] = WEEKLY_MILESTONES.map(target => ({
     id: String(target), label: `Solve ${target} puzzles`, progress: Math.min(weeklySolves, target), target,
