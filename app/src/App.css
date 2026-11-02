@@ -308,6 +308,23 @@
   box-shadow: 0 3px 12px var(--shadow);
 }
 
+/* The marks games' free progress check shares the wrapping toolbar, so its
+   result takes a row of its own instead of squeezing the buttons. */
+.marks-check-result {
+  flex-basis: 100%;
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: .3rem .4rem;
+  font-size: .8125rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.marks-check-result.sr-only { padding: 0; }
+.marks-check-result p { margin: 0; }
+.marks-check-result .tool-button { margin-top: .4rem; min-width: min(100%, 14rem); }
+.marks-check-result span { display: block; margin-top: .25rem; font-size: .75rem; }
+
 .timer {
   font-variant-numeric: tabular-nums;
   color: var(--text-h);

@@ -23,7 +23,7 @@ import {
 } from '../domain/game'
 import { DIFFICULTY_LABEL, PUZZLE_PIECE, PUZZLE_TYPE_HAS_HINTS, PUZZLE_TYPE_LABEL } from '../domain/games'
 import { hintCellName } from '../domain/hints'
-import { checkedHint, type CheckedHint } from '../domain/checkedHints'
+import { checkedHint, checkMarksEntries, type CheckedHint, type MarksEntryCheck } from '../domain/checkedHints'
 import { marksHintLesson } from '../domain/hintLessons'
 import type { Board, PuzzleType } from '../domain/board'
 import { isMarksPuzzle, isTracksPuzzle, isTrioPuzzle, isTentsPuzzle, isSudokuPuzzle, isNurikabePuzzle, type Puzzle } from '../domain/puzzle'
@@ -98,6 +98,7 @@ export function PuzzleStage({
   const history = useMoveHistory<GameState>()
   const stage = useRef<HTMLDivElement>(null)
   const hintButton = useRef<HTMLButtonElement>(null)
+  const checkButton = useRef<HTMLButtonElement>(null)
   const hintId = useId()
   const hintState = JSON.stringify([board.size, board.regions, board.regionCapacity,
     [...game.queens].sort((a, b) => a - b), [...game.marks].sort((a, b) => a - b)])
@@ -107,6 +108,8 @@ export function PuzzleStage({
   })
   const [hint, setHint] = useState<CheckedHint | null>(returnedHint)
   const [mistakeWarning, setMistakeWarning] = useState(false)
+  const [progressCheck, setProgressCheck] = useState<MarksEntryCheck | { kind: 'empty' } | null>(null)
+  const [hintSource, setHintSource] = useState<'hint' | 'check'>('hint')
   const hintReasons = useMemo(() => hint ? [hint.reason] : [], [hint])
   const [announcement, setAnnouncement] = useState('')
   const [autoMark, setAutoMark] = useState(readStoredAutoMark)
@@ -162,6 +165,7 @@ export function PuzzleStage({
   const resetHint = () => {
     setHint(null)
     setMistakeWarning(false)
+    setProgressCheck(null)
   }
 
   const recordSolve = (when: number) => {
@@ -283,6 +287,7 @@ export function PuzzleStage({
 
   const showHint = (next: CheckedHint) => {
     setMistakeWarning(false)
+    setProgressCheck(null)
     setHint(next)
     hintsUsed.current += 1
     setSavingAvailable(storeMarksProgress(
@@ -298,8 +303,18 @@ export function PuzzleStage({
     )
   }
 
+  const checkProgress = () => {
+    if (!hintsAvailable || solved || strokeStart.current !== null) return
+    resetHint()
+    setHintSource('check')
+    setAnnouncement('')
+    setProgressCheck(isEmpty(currentGame.current) ? { kind: 'empty' } : checkMarksEntries(currentGame.current))
+  }
+
   const requestHint = () => {
     if (!hintsAvailable || solved || strokeStart.current !== null) return
+    resetHint()
+    setHintSource('hint')
     const result = checkedHint(game)
     if (result.kind === 'unverified') {
       announce('Could not verify a unique solution within the hint check. No correction or deduction was made.')
@@ -330,7 +345,12 @@ export function PuzzleStage({
     showHint(result.hint)
   }
 
-  const dismissHint = () => { resetHint(); hintButton.current?.focus({ preventScroll: true }) }
+  const revealCheckedMistake = () => {
+    setHintSource('check')
+    revealMistake()
+  }
+  const focusHintSource = () => (hintSource === 'check' ? checkButton : hintButton).current?.focus({ preventScroll: true })
+  const dismissHint = () => { resetHint(); focusHintSource() }
   const showHintCell = () => {
     const cell = stage.current?.querySelector<HTMLElement>('[data-hint="target"]')
     cell?.focus({ preventScroll: true })
@@ -402,6 +422,11 @@ export function PuzzleStage({
     setAnnouncement('Could not reach the clipboard — the share text is shown below, ready to copy.')
   }
 
+  const progressMessage = progressCheck === null ? ''
+    : progressCheck.kind === 'empty' ? `Add a ${piece} or cross before checking your progress.`
+      : progressCheck.kind === 'unverified' ? 'We could not verify a unique solution for this puzzle, so progress cannot be checked.'
+        : progressCheck.kind === 'correct' ? `Your ${piecePlural} and crosses agree with the verified unique solution.`
+          : `At least one ${piece} or cross disagrees with the verified unique solution.`
   const statusText = solved
     ? `Solved in ${formatTime(shownTime)}`
     : conflictList.length > 0
@@ -433,10 +458,21 @@ export function PuzzleStage({
         </button>
         <ResetButton onReset={reset} disabled={isEmpty(game) || solved} />
         {hintsAvailable && (
-          <button ref={hintButton} type="button" className="tool-button" onClick={requestHint} disabled={solved}
-            aria-label="Get an explained hint" aria-expanded={hint !== null || mistakeWarning} aria-controls={hint || mistakeWarning ? hintId : undefined}>
-            Hint
-          </button>
+          <>
+            <button ref={hintButton} type="button" className="tool-button" onClick={requestHint} disabled={solved}
+              aria-label="Get an explained hint" aria-expanded={hint !== null || mistakeWarning} aria-controls={hint || mistakeWarning ? hintId : undefined}>
+              Hint
+            </button>
+            <button ref={checkButton} type="button" className="tool-button marks-check-button" onClick={checkProgress}
+              disabled={solved} aria-label="Check progress">Check</button>
+            <div className={`marks-check-result${progressCheck ? '' : ' sr-only'}`}>
+              <p role="status" aria-live="polite">{progressMessage}</p>
+              {progressCheck?.kind === 'mistake' && <>
+                <button type="button" className="tool-button" onClick={revealCheckedMistake}>Show the mistake</button>
+                <span>Revealing the mistake counts as one hint.</span>
+              </>}
+            </div>
+          </>
         )}
       </div>
       {!savingAvailable && !solved && (
