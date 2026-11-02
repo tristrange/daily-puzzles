@@ -1,6 +1,6 @@
 import { hasTentsMatching, isTentsSolved, tentsConflicts, tentsLines, tentsNeighbours, type TentsBoard, type TentsGame } from './tents'
 
-export interface TentsHint { readonly cell: number; readonly value: 1 | 2; readonly reason: string; readonly support: readonly number[] }
+export interface TentsHint { readonly cell: number; readonly value: 1 | 2; readonly reason: string; readonly support: readonly number[]; readonly rule?: 'line-arrangements' }
 export type TentsHintResult = { kind: 'hint'; hint: TentsHint } | { kind: 'none' | 'contradiction' }
 export const tentsCellName = (board: TentsBoard, cell: number) => `Row ${Math.floor(cell / board.size) + 1}, column ${cell % board.size + 1}`
 
@@ -98,7 +98,7 @@ function lineArrangementHint(board: TentsBoard, game: TentsGame, candidates: rea
     const positions = patterns.length <= 4
       ? `Possible tent ${axis}s: ${patterns.map(pattern => pattern.map(cell => line.cells.indexOf(cell) + 1).join(', ')).join('; ')}.`
       : ''
-    hint = { cell: target, value, support: [...support].sort((a, b) => a - b),
+    hint = { cell: target, value, rule: 'line-arrangements', support: [...support].sort((a, b) => a - b),
       reason: `${line.name} needs ${line.count} tent${line.count === 1 ? '' : 's'}. Keep tents apart, allow each placed tent its own tree and leave every tree a possible tent.\n${patterns.length} possible arrangement${patterns.length === 1 ? ' remains' : 's remain'}.${positions ? ` ${positions}` : ''}\n${axis === 'column' ? 'Column' : 'Row'} ${line.cells.indexOf(target) + 1} is used in ${value === 1 ? 'every' : 'no'} arrangement, so ${value === 1 ? 'place a tent' : 'mark grass'}.`,
     }
   }

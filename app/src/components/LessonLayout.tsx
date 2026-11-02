@@ -3,11 +3,12 @@ import { Link, Outlet, useLocation } from 'react-router-dom'
 import { isPuzzleId } from '../domain/dates'
 
 const RETURN_KEY = 'daily-puzzles:lesson-return'
+const PREVIEW_PATHS = new Set(['/preview/sudoku', '/preview/killer-sudoku', '/preview/trio', '/preview/tents', '/preview/nurikabe'])
 
 function puzzleReturn(value: unknown): string | null {
   if (typeof value !== 'string') return null
   const pathname = value.split('?')[0]!
-  return pathname.startsWith('/archive/') && isPuzzleId(pathname.slice('/archive/'.length)) ? value : null
+  return (pathname.startsWith('/archive/') && isPuzzleId(pathname.slice('/archive/'.length))) || PREVIEW_PATHS.has(pathname) ? value : null
 }
 
 function initialReturn(state: unknown): string | null {

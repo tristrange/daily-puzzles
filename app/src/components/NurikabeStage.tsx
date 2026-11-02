@@ -11,10 +11,12 @@ import { formatTime } from '../domain/game'
 import { readNurikabeProgress, storeNurikabeProgress } from '../lib/nurikabeProgress'
 import { useMoveHistory } from '../lib/useMoveHistory'
 import { usePlayClock } from '../lib/usePlayClock'
+import { hintSignature, useReturnedHint } from '../lib/hintReturn'
 import { ResetButton } from './ResetButton'
 import { NurikabeBoard } from './NurikabeBoard'
 import { applyNurikabeHint, findNurikabeHint, nurikabeCellName, revealNurikabeMistake, type NurikabeHint, type NurikabeMistake } from '../domain/nurikabeHints'
 import { HintPanel, MistakeWarning } from './HintPanel'
+import { nurikabeHintLesson } from '../domain/hintLessons'
 import './Nurikabe.css'
 
 type HintState = { kind: 'closed' } | { kind: 'warning'; mistake: NurikabeMistake } | { kind: 'explanation'; hint: NurikabeHint }
@@ -29,11 +31,16 @@ export function NurikabeStage({ board, puzzle }: { board: Board; puzzle?: Puzzle
   const [shareText, setShareText] = useState<string | null>(null)
   const [initial] = useState(() => readNurikabeProgress(board, daily))
   const hints = useRef(initial?.hints ?? 0), [shownHints, setShownHints] = useState(initial?.hints ?? 0)
-  const [panel, setPanel] = useState<HintState>({ kind: 'closed' })
+  const [game, setGame] = useState(() => initial?.game ?? createNurikabeGame(board))
+  const hintState = JSON.stringify([board.size, board.clues, game])
+  const returnedHint = useReturnedHint(board.id, hintState, () => {
+    const result = findNurikabeHint(board, game)
+    return result.kind === 'hint' ? result.hint : null
+  })
+  const [panel, setPanel] = useState<HintState>(returnedHint ? { kind: 'explanation', hint: returnedHint } : { kind: 'closed' })
   const hint = panel.kind === 'explanation' ? panel.hint : null
   const reasons = useMemo(() => hint ? [hint.reason] : [], [hint])
   const stage = useRef<HTMLDivElement>(null), hintButton = useRef<HTMLButtonElement>(null)
-  const [game, setGame] = useState(() => initial?.game ?? createNurikabeGame(board))
   const current = useRef(game), before = useRef<NurikabeGame | null>(null), completed = useRef(false)
   const [solved, setSolved] = useState(false), [saving, setSaving] = useState(true), [message, setMessage] = useState('')
   const [brush, setBrush] = useState<NurikabeMark>(1)
@@ -171,6 +178,8 @@ export function NurikabeStage({ board, puzzle }: { board: Board; puzzle?: Puzzle
       onReveal={revealMistake} onDismiss={dismissHint} />}
     {hint && <HintPanel id={hintId} title={hint.kind === 'correction' ? 'Clear this mark' : hint.value === 1 ? 'Shade sea' : 'Mark land'}
       location={nurikabeCellName(board, hint.cell)} reasons={reasons} onApply={acceptHint} onDismiss={dismissHint} onShowCell={showHintCell}
+      lesson={saving ? nurikabeHintLesson(hint) : undefined} puzzleId={puzzle?.id}
+      resume={{ id: board.id, state: hintState, signature: hintSignature(hint) }}
       effect={hint.kind === 'correction' ? 'Apply clears only this mark. It leaves the cell undecided.' : hint.value === 2 ? 'Apply adds a land dot. Land dots are optional working marks.' : 'Apply shades this cell as sea.'} />}
     {!saving && <p className="status error" role="status">Progress can&rsquo;t be saved. Keep this page open to retain your attempt.</p>}
     <p className="word-note" id={instructionsId}>Shade the connected sea. Unshaded cells form islands, each with one number matching its area. No 2×2 sea squares. Land dots are optional.</p>

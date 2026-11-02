@@ -8,7 +8,9 @@ import { SolvedPanel } from './SolvedPanel'
 import { useId, useMemo, useRef, useState } from 'react'
 import { createTentsGame, editTent, isTentsSolved, tentsConflicts, type TentsBoard as Board, type TentsGame, type TentsMark } from '../domain/tents'
 import { findTentsHint, tentsCellName, type TentsHint } from '../domain/tentsHints'
+import { tentsHintLesson } from '../domain/hintLessons'
 import { usePlayClock } from '../lib/usePlayClock'
+import { hintSignature, useReturnedHint } from '../lib/hintReturn'
 import { formatTime } from '../domain/game'
 import { readTentsProgress, storeTentsProgress } from '../lib/tentsProgress'
 import { useMoveHistory } from '../lib/useMoveHistory'
@@ -35,7 +37,12 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
   const solved = result !== null
   const hintsUsed = useRef(initial?.hints ?? 0)
   const [saving, setSaving] = useState(true), [message, setMessage] = useState('')
-  const [hint, setHint] = useState<TentsHint | null>(null)
+  const hintState = JSON.stringify([board.size, board.trees, board.rowClues, board.colClues, game])
+  const returnedHint = useReturnedHint(board.id, hintState, () => {
+    const result = findTentsHint(board, game)
+    return result.kind === 'hint' ? result.hint : null
+  })
+  const [hint, setHint] = useState<TentsHint | null>(returnedHint)
   const stage = useRef<HTMLDivElement>(null), hintButton = useRef<HTMLButtonElement>(null)
   const instructionsId = useId(), pickerId = useId(), hintId = useId()
   const conflicts = tentsConflicts(board, game)
@@ -157,6 +164,8 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
       : conflicts.size ? 'Check the highlighted tents: some touch, exceed a line count or cannot each be paired with a different tree.' : message || '\u00a0'}</p>
     {daily && <SolvedPanel puzzleId={puzzle?.id} candidate={candidate} solved={solved} firstSolve={firstSolve} streak={stats?.currentStreak ?? 0} copied={copied} shareText={shareText} onShare={share} />}
     {hint && <HintPanel id={hintId} title={hint.value === 1 ? 'Place a tent' : 'Mark grass'} location={tentsCellName(board, hint.cell)}
+      lesson={saving ? tentsHintLesson(hint) : undefined} puzzleId={puzzle?.id}
+      resume={{ id: board.id, state: hintState, signature: hintSignature(hint) }}
       reasons={reasons} effect="Uses your tents and grass as assumptions. A mistaken grass mark can mislead hints."
       onApply={acceptHint} onDismiss={dismissHint} onShowCell={showHintCell} />}
     {!saving && !solved && <p className="status error" role="status">Progress can&rsquo;t be saved. Keep this page open to retain your attempt.</p>}

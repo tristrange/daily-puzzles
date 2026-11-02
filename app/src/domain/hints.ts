@@ -52,6 +52,8 @@ export interface Hint {
   /** Evidence captured where the rule fires, before changing its candidate state. */
   reason: string
   support: readonly number[]
+  sources: readonly Group[]
+  homes: readonly Group[]
 }
 
 type GroupKind = 'region' | 'row' | 'column'
@@ -231,7 +233,7 @@ function explainedHint(state: CandidateState, cell: number, action: Hint['action
   } else {
     reason = `${demand} Its only available cell is ${hintCellName(board, cell)}, so place a ${piece.noun} there.`
   }
-  return { cell, action, rule, reason, support: [...support] }
+  return { cell, action, rule, reason, support: [...support], sources, homes }
 }
 
 function deadHint(state: CandidateState, rule: HintRule, victims: readonly number[],

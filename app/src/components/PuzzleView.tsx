@@ -24,6 +24,7 @@ import {
 import { DIFFICULTY_LABEL, PUZZLE_PIECE, PUZZLE_TYPE_HAS_HINTS, PUZZLE_TYPE_LABEL } from '../domain/games'
 import { hintCellName } from '../domain/hints'
 import { checkedHint, type CheckedHint } from '../domain/checkedHints'
+import { marksHintLesson } from '../domain/hintLessons'
 import type { Board, PuzzleType } from '../domain/board'
 import { isMarksPuzzle, isTracksPuzzle, isTrioPuzzle, isTentsPuzzle, isSudokuPuzzle, isNurikabePuzzle, type Puzzle } from '../domain/puzzle'
 import { sudokuVariantOf, killerVariantOf } from '../domain/sudokuLevels'
@@ -42,6 +43,7 @@ import { HintPanel, MistakeWarning } from './HintPanel'
 import { ResetButton } from './ResetButton'
 import { useMoveHistory } from '../lib/useMoveHistory'
 import { usePlayClock } from '../lib/usePlayClock'
+import { hintSignature, useReturnedHint } from '../lib/hintReturn'
 
 const NurikabeStage = lazy(() => import('./NurikabeStage').then(module => ({ default: module.NurikabeStage })))
 
@@ -97,7 +99,13 @@ export function PuzzleStage({
   const stage = useRef<HTMLDivElement>(null)
   const hintButton = useRef<HTMLButtonElement>(null)
   const hintId = useId()
-  const [hint, setHint] = useState<CheckedHint | null>(null)
+  const hintState = JSON.stringify([board.size, board.regions, board.regionCapacity,
+    [...game.queens].sort((a, b) => a - b), [...game.marks].sort((a, b) => a - b)])
+  const returnedHint = useReturnedHint(puzzle.id, hintState, () => {
+    const result = checkedHint(game)
+    return result.kind === 'hint' ? result.hint : null
+  })
+  const [hint, setHint] = useState<CheckedHint | null>(returnedHint)
   const [mistakeWarning, setMistakeWarning] = useState(false)
   const hintReasons = useMemo(() => hint ? [hint.reason] : [], [hint])
   const [announcement, setAnnouncement] = useState('')
@@ -458,6 +466,8 @@ export function PuzzleStage({
       <p className="hint-text">{statusText}</p>
       {mistakeWarning && <MistakeWarning id={hintId} onReveal={revealMistake} onDismiss={dismissHint} />}
       {hint && <HintPanel id={hintId} location={hintCellName(board, hint.cell)}
+        lesson={savingAvailable && (puzzle.puzzleType === 'queens' || puzzle.puzzleType === 'star-battle') ? marksHintLesson(puzzle.puzzleType, hint) : undefined} puzzleId={puzzle.id}
+        resume={{ id: puzzle.id, state: hintState, signature: hintSignature(hint) }}
         title={hint.action === 'clear' ? hint.rule === 'wrong-piece' ? `Remove this ${piece}` : 'Clear this cross'
           : hint.action === 'queen' ? `Place a ${piece}` : `Rule out a ${piece}`}
         reasons={hintReasons} effect={hint.action === 'clear'

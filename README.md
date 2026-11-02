@@ -82,6 +82,7 @@ separate from daily games, stats and leaderboards.
 - Responsive boards, keyboard controls, Light/Dark themes and Auto following the system.
 - Saved unfinished attempts and timers that pause while the page is hidden or unfocused. Today offers Resume; Undo/Redo history belongs to the current visit. Reset asks for confirmation and restarts a separate Since reset timer. Total focused time and shown hints are kept, including through Undo and reload. Leaderboards rank by hints then total time; a parenthetical duration shows the latest attempt when known.
 - Explained logic hints with target/support highlights and optional, undoable moves. Word Paths reveals a starting cell, then additional letters on request.
+- When a hint matches a lesson, it can link directly to a guided exercise. Returning restores the saved puzzle and, if it has not changed, the same hint without charging another; the timer pauses during the lesson and Undo/Redo history starts fresh.
 - Notes and Clear notes in Trio and Sudoku. Double-tap a cell with one note to place it. Trio removes notes directly ruled out by a placement; Undo restores them. Shown hint counts survive Undo, Reset and reload.
 - Tents has a Highlight tool for selecting cells without changing marks. Drag, Shift-click or Shift-arrow to highlight several cells; highlights can be cleared separately.
 - [Learn to solve](https://tristrange.github.io/daily-puzzles/#/learn) groups lessons by
