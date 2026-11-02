@@ -114,7 +114,7 @@ it.each([['Queens', queen], ['Star Battle', star]] as const)(
     expect(render().find(element => element.props['aria-label'] === 'Get an explained hint')!.props).toMatchObject({
       'aria-expanded': true, 'aria-controls': 'hint-id',
     })
-    expect(render().find(element => element.props['aria-live'] === 'polite')!.props['children']).not.toContain('row ')
+    expect(render().find(element => element.props['className'] === 'sr-only' && element.props['aria-live'] === 'polite')!.props['children']).not.toContain('row ')
     ;(warning()!.props['onDismiss'] as () => void)()
     expect(warning()).toBeUndefined()
     expect(board()['game']).toMatchObject({ queens: new Set([0]), marks: new Set() })
@@ -136,7 +136,7 @@ it('does not count or display a hint when the solution cannot be verified', () =
   click('Hint')
   expect(panel()).toBeUndefined()
   expect(readMarksProgress(puzzle.id, markBoard)?.hints ?? 0).toBe(0)
-  expect(render().find(element => element.props['aria-live'] === 'polite')!.props['children']).toContain('Could not verify')
+  expect(render().find(element => element.props['className'] === 'sr-only' && element.props['aria-live'] === 'polite')!.props['children']).toContain('Could not verify')
 })
 
 it.each([['Queens', queen, 'queens', 5], ['Star Battle', star, 'marks', 0]] as const)(
