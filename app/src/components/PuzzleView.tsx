@@ -372,7 +372,7 @@ export function PuzzleStage({
       stage.current?.querySelector<HTMLElement>(`[data-cell="${hint.cell}"]`)?.focus({ preventScroll: true })
     } else {
       setAnnouncement('Hint applied. Undo brings back the previous board.')
-      hintButton.current?.focus({ preventScroll: true })
+      focusHintSource()
     }
   }
 
@@ -460,7 +460,8 @@ export function PuzzleStage({
         {hintsAvailable && (
           <>
             <button ref={hintButton} type="button" className="tool-button" onClick={requestHint} disabled={solved}
-              aria-label="Get an explained hint" aria-expanded={hint !== null || mistakeWarning} aria-controls={hint || mistakeWarning ? hintId : undefined}>
+              aria-label="Get an explained hint" aria-expanded={(hint !== null || mistakeWarning) && hintSource === 'hint'}
+              aria-controls={(hint !== null || mistakeWarning) && hintSource === 'hint' ? hintId : undefined}>
               Hint
             </button>
             <button ref={checkButton} type="button" className="tool-button marks-check-button" onClick={checkProgress}

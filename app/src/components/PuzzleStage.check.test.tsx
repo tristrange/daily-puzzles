@@ -110,6 +110,25 @@ it('offers a wrong cross as a counted correction and returns focus to Check', as
   expect(readMarksProgress(queenPuzzle.id, queenBoard)?.game.marks).toEqual(new Set([0, 19]))
 })
 
+it('does not announce a Check correction as an expanded Hint', async () => {
+  await mount(queenPuzzle, queenBoard, { queens: new Set([0]), marks: new Set() })
+  await click('Check progress')
+  await click('Show the mistake')
+
+  const hintButton = container.querySelector<HTMLButtonElement>('[aria-label="Get an explained hint"]')!
+  expect(hintButton.getAttribute('aria-expanded')).toBe('false')
+  expect(hintButton.hasAttribute('aria-controls')).toBe(false)
+})
+
+it('returns focus to Check after applying its correction', async () => {
+  await mount(queenPuzzle, queenBoard, { queens: new Set([0]), marks: new Set() })
+  await click('Check progress')
+  await click('Show the mistake')
+
+  await click('Apply move')
+  expect(document.activeElement?.getAttribute('aria-label')).toBe('Check progress')
+})
+
 it('does not call an unverified or non-unique board correct', async () => {
   const raw = { ...queen, board: { size: 4, regions: Array.from({ length: 16 }, (_, i) => Math.floor(i / 4)) } }
   const puzzle = parsePuzzle(raw)
