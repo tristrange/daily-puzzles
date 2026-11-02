@@ -32,6 +32,7 @@ const NurikabePreviewPage = lazy(() => import('./pages/NurikabePreviewPage').the
 const TentsPreviewPage = lazy(() => import('./pages/TentsPreviewPage').then((module) => ({ default: module.TentsPreviewPage })))
 const KillerSudokuPreviewPage = lazy(() => import('./pages/KillerSudokuPreviewPage').then((module) => ({ default: module.KillerSudokuPreviewPage })))
 const SudokuPreviewPage = lazy(() => import('./pages/SudokuPreviewPage').then((module) => ({ default: module.SudokuPreviewPage })))
+const DeductionPreviewPage = lazy(() => import('./pages/DeductionPreviewPage').then((module) => ({ default: module.DeductionPreviewPage })))
 const WordPathsPreviewPage = lazy(() => import('./pages/WordPathsPreviewPage').then((module) => ({ default: module.WordPathsPreviewPage })))
 
 const loading = <p className="status" role="status">Loading…</p>
@@ -54,6 +55,7 @@ function App() {
             <Route path="preview/nurikabe" element={<NurikabePreviewPage />} />
             <Route path="preview/tents" element={<TentsPreviewPage />} />
             <Route path="preview/sudoku" element={<SudokuPreviewPage />} />
+            <Route path="preview/deduction" element={<DeductionPreviewPage />} />
             <Route path="preview/killer-sudoku" element={<KillerSudokuPreviewPage />} />
             <Route path="stats" element={<StatsPage />} />
             <Route path="stats/passport" element={<PassportPage />} />
