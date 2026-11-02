@@ -190,7 +190,8 @@ it('refreshes saved attempts and solved results when a page is restored or anoth
   })
   expect(link('Play Queens again')).not.toBeNull()
   expect(container.querySelector('.today-progress')?.textContent).toContain('1 of ')
-  expect(container.querySelector('.weekly-challenge')?.textContent).toContain('1 / 3')
+  expect(container.querySelector('.daily-challenge')?.textContent).toContain('1 / 2')
+  expect(container.querySelector('.weekly-challenge')?.textContent).toContain('1 / 50')
   expect(fetchSpy).not.toHaveBeenCalled()
 })
 
@@ -220,14 +221,20 @@ it('updates availability after reconnecting, without counting unavailable puzzle
     const raw = data.find(puzzle => url.endsWith(`/${puzzle.id}.json`))
     return new Response(JSON.stringify(raw ?? null), { status: raw ? 200 : 404 })
   })
+  localStorage.setItem(STATS_STORAGE_KEY, JSON.stringify([{
+    id: puzzles[0]!.id, puzzleType: puzzles[0]!.puzzleType, size: puzzles[0]!.board.width,
+    elapsedMs: 90000, hints: 1, solvedAt: Date.now(),
+  }]))
   await render()
   expect(container.querySelector('.today-progress')?.textContent).toBe('No puzzles available right now.')
   expect(container.querySelector('progress')).toBeNull()
+  expect(container.querySelector('.daily-challenge')?.textContent).toContain('1 / 2')
+  expect(container.querySelector('.weekly-challenge')?.textContent).toContain('1 / 50')
   offline = false
   await act(async () => {
     window.dispatchEvent(new Event('online'))
     await vi.dynamicImportSettled()
   })
-  expect(container.querySelector('.today-progress')?.textContent).toContain('0 of 15 available puzzles completed')
-  expect(link('Play Queens')).not.toBeNull()
+  expect(container.querySelector('.today-progress')?.textContent).toContain('1 of 15 available puzzles completed')
+  expect(link('Play Queens again')).not.toBeNull()
 })
