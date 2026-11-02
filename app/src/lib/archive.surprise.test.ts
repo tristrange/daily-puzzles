@@ -1,15 +1,23 @@
-import { expect, it } from 'vitest'
+import { afterEach, expect, it, vi } from 'vitest'
 import sudokuEasy from '../../public/puzzles/2026-10-21-sudoku-easy.json'
 import sudokuMedium from '../../public/puzzles/2026-10-21-sudoku-medium.json'
 import sudokuHard from '../../public/puzzles/2026-10-21-sudoku-hard.json'
 import futureSudoku from '../../public/puzzles/2026-10-22-sudoku-easy.json'
+import cachedQueens from '../../public/puzzles/2026-10-19.json'
+import tracksSmall from '../../public/puzzles/2026-10-23-tracks-small.json'
+import legacyTracks from '../../public/puzzles/2026-10-16-tracks.json'
 import { findSurprisePuzzle, type SurpriseOutcome } from './archive'
 
 const today = '2026-10-21'
 const sudoku = [sudokuEasy, sudokuMedium, sudokuHard]
+afterEach(() => vi.unstubAllGlobals())
 
 function jsonResponse(body: unknown): Response {
   return new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } })
+}
+
+function savedUrl(id: string): string {
+  return `https://example.test${import.meta.env.BASE_URL}puzzles/${id}.json`
 }
 
 function spaShellResponse(): Response {
@@ -117,4 +125,48 @@ it('reports unavailable when candidates cannot be reached', async () => {
   })
 
   expect(outcome).toEqual({ status: 'none', checked: 2, completed: 0, unavailable: true })
+})
+
+it('finds an older unsolved Train Tracks board after recent sizes are completed', async () => {
+  const solved = new Set(Array.from({ length: 8 }, (_, index) =>
+    ['small', 'medium', 'large'].map(size => `2026-10-${31 - index}-tracks-${size}`)).flat())
+  const { fetcher } = fetcherFor([tracksSmall])
+  const outcome = await findSurprisePuzzle({ todayId: '2026-10-31', type: 'train-tracks', solved, fetcher, random: () => 0 })
+  expect(foundId(outcome)).toBe(tracksSmall.id)
+})
+
+it('keeps a queued original Train Tracks board available alongside the sizes', async () => {
+  const { fetcher } = fetcherFor([legacyTracks])
+  const solved = new Set(['small', 'medium', 'large'].map(size => `2026-10-16-tracks-${size}`))
+  const outcome = await findSurprisePuzzle({ todayId: '2026-10-16', type: 'train-tracks', solved, fetcher, random: () => 0, maxDays: 1 })
+  expect(foundId(outcome)).toBe(legacyTracks.id)
+})
+
+it('finds an unsolved downloaded puzzle outside the random sample while offline', async () => {
+  vi.stubGlobal('caches', { open: async () => ({
+    keys: async () => [new Request(savedUrl(cachedQueens.id))],
+    match: async (url: string) => url.endsWith(`/${cachedQueens.id}.json`) ? jsonResponse(cachedQueens) : undefined,
+    put: async () => {},
+  }) })
+  const outcome = await findSurprisePuzzle({
+    todayId: '2026-10-31', type: 'queens', solved: new Set(), random: () => 0,
+    fetcher: async () => { throw new TypeError('offline') },
+  })
+  expect(foundId(outcome)).toBe(cachedQueens.id)
+})
+
+it('only offers a valid, unsolved downloaded puzzle of the selected game and date', async () => {
+  const saved = [futureSudoku, sudokuEasy, cachedQueens, sudokuMedium, sudokuHard]
+  vi.stubGlobal('caches', { open: async () => ({
+    keys: async () => saved.map(file => new Request(savedUrl(file.id))),
+    match: async (url: string) => {
+      const file = saved.find(candidate => url.endsWith(`/${candidate.id}.json`))
+      return file && jsonResponse(file.id === sudokuMedium.id ? {} : file)
+    },
+  }) })
+  const outcome = await findSurprisePuzzle({
+    todayId: today, type: 'sudoku', solved: new Set([sudokuEasy.id]), random: () => 0, maxDays: 0,
+    fetcher: async () => { throw new TypeError('offline') },
+  })
+  expect(foundId(outcome)).toBe(sudokuHard.id)
 })

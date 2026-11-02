@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { Link, MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import queens from '../../public/puzzles/2026-10-19.json'
+import { previousPuzzleIds } from '../domain/dates'
 import { parsePuzzle } from '../domain/puzzle'
 import type { PublishedPuzzle } from '../lib/puzzles'
 import { STATS_STORAGE_KEY } from '../lib/stats'
@@ -56,9 +57,11 @@ async function render() {
   await act(async () => {
     root.render(
       <MemoryRouter initialEntries={['/archive?game=queens&page=2']}>
+        <Link to="/">Today</Link>
         <Routes>
           <Route path="/archive" element={<ArchivePage />} />
           <Route path="/archive/:id" element={<PuzzlePage />} />
+          <Route path="/" element={<h1>Today page</h1>} />
         </Routes>
       </MemoryRouter>,
     )
@@ -95,9 +98,9 @@ it('explains when the archive cannot be reached', async () => {
 })
 
 it('explains when the puzzles it found are already completed', async () => {
-  localStorage.setItem(STATS_STORAGE_KEY, JSON.stringify([{
-    id: '2026-10-20', puzzleType: 'queens', size: 9, elapsedMs: 60000, hints: 0, solvedAt: 1,
-  }]))
+  localStorage.setItem(STATS_STORAGE_KEY, JSON.stringify(previousPuzzleIds('2026-10-20', 25).map(id => ({
+    id, puzzleType: 'queens', size: 9, elapsedMs: 60000, hints: 0, solvedAt: 1,
+  }))))
   await render()
 
   await click('Surprise me')
@@ -105,4 +108,54 @@ it('explains when the puzzles it found are already completed', async () => {
   expect(container.textContent).toContain(
     'No unsolved Queens puzzle was found. The Queens puzzles found are already completed.',
   )
+})
+
+it('suggests trying again when a limited search cannot find an unsolved puzzle', async () => {
+  localStorage.setItem(STATS_STORAGE_KEY, JSON.stringify([{
+    id: '2026-10-20', puzzleType: 'queens', size: 9, elapsedMs: 60000, hints: 0, solvedAt: 1,
+  }]))
+  await render()
+  await click('Surprise me')
+  expect(container.textContent).toContain('Try again or choose another game.')
+})
+
+it('does not open a result after leaving the archive', async () => {
+  let finish: (value: { id: string; puzzle: typeof todayPuzzle }[]) => void = () => {}
+  archive.probe.mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+  await render()
+  await click('Surprise me')
+  await click('Today')
+  await act(async () => { finish([{ id: todayPuzzle.id, puzzle: todayPuzzle }]); await new Promise(resolve => setTimeout(resolve, 0)) })
+  expect(container.querySelector('h1')?.textContent).toBe('Today page')
+  expect(container.querySelector('[data-testid="puzzle-view"]')).toBeNull()
+})
+
+it('does not open a puzzle completed in another tab while searching', async () => {
+  let finish: (value: { id: string; puzzle: typeof todayPuzzle }[]) => void = () => {}
+  archive.probe.mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+  await render()
+  await click('Surprise me')
+  await act(async () => {
+    localStorage.setItem(STATS_STORAGE_KEY, JSON.stringify([{
+      id: todayPuzzle.id, puzzleType: 'queens', size: 9, elapsedMs: 60000, hints: 0, solvedAt: 1,
+    }]))
+    window.dispatchEvent(new StorageEvent('storage', { key: STATS_STORAGE_KEY }))
+  })
+  await act(async () => { finish([{ id: todayPuzzle.id, puzzle: todayPuzzle }]); await new Promise(resolve => setTimeout(resolve, 0)) })
+  expect(container.querySelector('[data-testid="puzzle-view"]')).toBeNull()
+  expect(container.textContent).toMatch(/completed|try again/i)
+})
+
+it('discards an old search and allows a new one after switching games and back', async () => {
+  let finish: (value: { id: string; puzzle: typeof todayPuzzle }[]) => void = () => {}
+  archive.probe.mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+  await render()
+  await click('Surprise me')
+  await click('Sudoku')
+  await click('Queens')
+  await act(async () => { finish([{ id: todayPuzzle.id, puzzle: todayPuzzle }]); await new Promise(resolve => setTimeout(resolve, 0)) })
+  expect(container.querySelector('[data-testid="puzzle-view"]')).toBeNull()
+  expect(container.querySelector<HTMLButtonElement>('.archive-surprise button')?.disabled).toBe(false)
+  await click('Surprise me')
+  expect(container.querySelector('[data-testid="puzzle-view"]')?.textContent).toBe(todayPuzzle.id)
 })

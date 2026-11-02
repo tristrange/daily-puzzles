@@ -1,7 +1,9 @@
 import { archiveStart as ARCHIVE_START } from '../../../conformance/id-cases/manifest.json'
 import type { PuzzleType } from '../domain/board'
-import { parsePuzzleDate, previousPuzzleIds, puzzleIdFor, puzzleIdsForDay, puzzleTypeOf } from '../domain/dates'
-import { ARCHIVE_WINDOW_DAYS, probePuzzles, type Fetcher, type PublishedPuzzle } from './puzzles'
+import { parsePuzzleDate, previousPuzzleIds, puzzleDay, puzzleIdFor, puzzleIdsForDay, puzzleTypeOf } from '../domain/dates'
+import { TRACK_LEGACY_END } from '../domain/trackSizes'
+import type { Puzzle } from '../domain/puzzle'
+import { ARCHIVE_WINDOW_DAYS, downloadedPuzzleIds, probePuzzles, readDownloadedPuzzle, type Fetcher, type PublishedPuzzle } from './puzzles'
 
 /**
  * One archive page is a seven-day window. The cap keeps a hand-edited page query
@@ -86,9 +88,10 @@ function archiveDaysFor(todayId: string, type: PuzzleType): readonly DayCandidat
     Math.min(dayCount, MAX_ARCHIVE_PAGE * ARCHIVE_WINDOW_DAYS),
   )
   return days.flatMap((day) => {
-    // Match `listPublishedPuzzles`: a queued legacy Train Tracks board stays
-    // discoverable beside the three daily sizes.
-    const ids = [...new Set([...puzzleIdsForDay(day), puzzleIdFor(day, 'train-tracks')])]
+    // The catalog's last original date includes the queued legacy boards that
+    // overlap the three sizes, without inventing an original on every later day.
+    const legacy = day <= TRACK_LEGACY_END ? [puzzleIdFor(day, 'train-tracks')] : []
+    const ids = [...new Set([...puzzleIdsForDay(day), ...legacy])]
       .filter((id) => puzzleTypeOf(id) === type)
     return ids.length === 0 ? [] : [{ day, ids }]
   })
@@ -102,7 +105,8 @@ function archiveDaysFor(todayId: string, type: PuzzleType): readonly DayCandidat
  * all solved cost no request. At most `maxDays` days with unsolved candidates
  * are probed, which keeps one click bounded even when the archive is large or
  * offline. A missing file is skipped; an unreachable one is reported so the
- * caller can distinguish "nothing left" from "could not check".
+ * caller can distinguish "nothing left" from "could not check". If sampling
+ * finds nothing, also check downloaded puzzles without making network requests.
  */
 export async function findSurprisePuzzle({
   todayId,
@@ -133,13 +137,7 @@ export async function findSurprisePuzzle({
       if (probe.unavailable) unavailable = true
       const puzzle = probe.puzzle
       if (puzzle === null || puzzle.puzzleType !== type) continue
-      unsolved.push({
-        id: probe.id,
-        type: puzzle.puzzleType,
-        difficulty: puzzle.difficulty,
-        width: puzzle.board.width,
-        height: puzzle.board.height,
-      })
+      unsolved.push(publishedPuzzle(puzzle))
     }
     if (unsolved.length > 0) {
       const puzzle = unsolved[randomIndex(unsolved.length, random)]
@@ -147,5 +145,23 @@ export async function findSurprisePuzzle({
     }
   }
 
+  const downloaded = (await downloadedPuzzleIds()).filter((id) =>
+    puzzleTypeOf(id) === type && puzzleDay(id) >= ARCHIVE_START && puzzleDay(id) <= todayId && !solved.has(id))
+  while (downloaded.length) {
+    const [id] = downloaded.splice(randomIndex(downloaded.length, random), 1)
+    if (id === undefined) break
+    const puzzle = await readDownloadedPuzzle(id)
+    if (puzzle?.puzzleType === type) return { status: 'found', puzzle: publishedPuzzle(puzzle) }
+  }
   return { status: 'none', checked, completed, unavailable }
+}
+
+function publishedPuzzle(puzzle: Puzzle): PublishedPuzzle {
+  return {
+    id: puzzle.id,
+    type: puzzle.puzzleType,
+    difficulty: puzzle.difficulty,
+    width: puzzle.board.width,
+    height: puzzle.board.height,
+  }
 }
