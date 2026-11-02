@@ -115,6 +115,7 @@ export function HomePage() {
       )}
       <div className="today-more">
         <Link to="/learn">Learn to solve <span aria-hidden="true">→</span></Link>
+        <Link to="/preview/deduction">Try today&rsquo;s deduction preview <span aria-hidden="true">→</span></Link>
         <p>Another round?</p>
         <Link to="/archive">Explore the archive <span aria-hidden="true">→</span></Link>
         <Link to="/stats">Your progress <span aria-hidden="true">→</span></Link>

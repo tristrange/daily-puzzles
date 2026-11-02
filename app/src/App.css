@@ -1206,9 +1206,17 @@
 .star-chain-mobile-prompt { display: none; }
 .grid-lesson-mobile-prompt { display: none; }
 .lesson-page .tool-button:focus-visible, .lesson-cards .tool-button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.deduction-preview .lesson-task fieldset { margin-top: .5rem; }
+.deduction-preview .lesson-task fieldset p { margin: .35rem 0 .6rem; }
 @media (min-width: 56rem) {
   .lesson-workspace { grid-template-columns: minmax(0, 1.3fr) minmax(19rem, 1fr); gap: 2rem; }
   .lesson-board { max-width: min(36rem, max(24rem, 100svh - 17rem)); }
+}
+@media (max-width: 55.999rem) {
+  .deduction-preview .lesson-heading { margin-bottom: .75rem; }
+  .deduction-preview .lesson-workspace { gap: .75rem; }
+  .deduction-preview .lesson-task { padding: .625rem; }
+  .deduction-preview .lesson-actions { margin-top: .375rem; }
 }
 @media (max-width: 360px) {
   .site-header nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
