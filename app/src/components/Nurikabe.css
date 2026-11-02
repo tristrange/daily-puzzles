@@ -1,6 +1,11 @@
 .nurikabe-workspace { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
 .nurikabe-controls { width: min(100%, 38rem); min-width: 0; }
 .nurikabe-controls .puzzle-tools { display: flex; justify-content: center; flex-wrap: wrap; gap: .4rem; margin: 0 auto .75rem; }
+.nurikabe-check-result { flex-basis: 100%; padding: .3rem .4rem; font-size: .8125rem; line-height: 1.4; text-align: center; }
+.nurikabe-check-result.sr-only { padding: 0; }
+.nurikabe-check-result p { margin: 0; }
+.nurikabe-check-result .tool-button { margin-top: .4rem; }
+.nurikabe-check-result span { display: block; margin-top: .25rem; font-size: .75rem; }
 .nurikabe-picker { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; width: min(100%, 21rem); margin: auto; }
 .nurikabe-pick { min-width: 0; cursor: pointer; }
 .nurikabe-pick-face { display: flex; align-items: center; justify-content: center; gap: .5rem; padding: .6rem .35rem; min-height: 2.75rem; border: 1px solid var(--border); border-radius: .75rem; background: var(--surface); color: var(--text-h); font-size: .875rem; }
@@ -28,6 +33,8 @@
   .nurikabe-controls .puzzle-tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .nurikabe-controls .timer { grid-column: 1 / -1; text-align: center; padding-block: .25rem; }
   .nurikabe-controls .puzzle-tools .tool-button:last-child { grid-column: 1 / -1; }
+  .nurikabe-controls .puzzle-tools .nurikabe-check-button, .nurikabe-check-result { grid-column: 1 / -1; }
+  .nurikabe-check-result .tool-button { width: 100%; }
   .nurikabe-picker { grid-template-columns: 1fr; }
   .nurikabe-board { width: min(100% - 13rem, 40rem, max(24rem, 100svh - 18rem)); }
 }

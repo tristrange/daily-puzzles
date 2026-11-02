@@ -23,12 +23,89 @@ beforeEach(() => {
 })
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks() })
 const cell = (index: number) => container.querySelector<HTMLButtonElement>(`[data-cell="${index}"]`)!
-const button = (text: string) => [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === text)!
+const button = (text: string) => [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === text || button.getAttribute('aria-label') === text)!
 const click = async (text: string) => { await act(async () => button(text).click()) }
 const key = async (index: number, value: string, ctrlKey = false) => {
   await act(async () => cell(index).focus())
   await act(async () => cell(index).dispatchEvent(new KeyboardEvent('keydown', { key: value, ctrlKey, bubbles: true })))
 }
+
+it('checks sea and land marks without revealing a cell or using a hint', async () => {
+  await act(async () => root.render(<NurikabeStage board={board} />))
+  await click('Check')
+  expect(container.textContent).toContain('Add a sea or land mark before checking')
+  await key(1, 's')
+  await key(4, 'l')
+  const saved = readNurikabeProgress(board)
+  await click('Check')
+  expect(container.textContent).toContain('Your sea and land marks agree')
+  expect(container.querySelector('[data-hint="target"]')).toBeNull()
+  expect(container.querySelector('.hint-panel')).toBeNull()
+  expect(readNurikabeProgress(board)?.game).toEqual(saved?.game)
+  expect(readNurikabeProgress(board)?.hints).toBe(0)
+})
+
+it.each([{ cell: 1, key: 'l', mark: '2' }, { cell: 4, key: 's', mark: '1' }])(
+  'offers a wrong mark at $cell as an optional, counted correction', async ({ cell: index, key: value, mark }) => {
+    await act(async () => root.render(<NurikabeStage board={board} />))
+    await key(index, value)
+    await click('Check')
+    expect(container.textContent).toContain('At least one sea or land mark')
+    expect(container.querySelector('[data-hint="target"]')).toBeNull()
+    expect(readNurikabeProgress(board)?.hints).toBe(0)
+    await click('Hint')
+    expect(button('Hint').getAttribute('aria-expanded')).toBe('true')
+    expect(container.textContent).toContain('Check your entries')
+    expect(readNurikabeProgress(board)?.hints).toBe(0)
+    await click('Check')
+    await click('Show the mistake')
+    expect(cell(index).dataset['hint']).toBe('target')
+    expect(readNurikabeProgress(board)?.hints).toBe(1)
+    expect(button('Hint').getAttribute('aria-expanded')).toBe('false')
+    expect(button('Hint').hasAttribute('aria-controls')).toBe(false)
+    await click('Apply move')
+    expect(cell(index).dataset['mark']).toBe('0')
+    expect(document.activeElement).toBe(button('Check'))
+    await click('Undo')
+    expect(cell(index).dataset['mark']).toBe(mark)
+    expect(readNurikabeProgress(board)?.hints).toBe(1)
+  },
+)
+
+it('returns focus to Check when a revealed correction is dismissed', async () => {
+  await act(async () => root.render(<NurikabeStage board={board} />))
+  await key(1, 'l'); await click('Check'); await click('Show the mistake'); await click('Dismiss hint')
+  expect(container.querySelector('.hint-panel')).toBeNull()
+  expect(document.activeElement).toBe(button('Check'))
+  expect(readNurikabeProgress(board)?.hints).toBe(1)
+})
+
+it('clears a check after a changed mark, undo, redo or confirmed reset', async () => {
+  await act(async () => root.render(<NurikabeStage board={board} />))
+  const result = () => container.querySelector('.nurikabe-check-result')
+  await key(1, 's'); await click('Check')
+  expect(result()?.textContent).toContain('Your sea and land marks agree')
+  await key(2, 's')
+  expect(result()?.textContent).toBe('')
+  await click('Check'); await click('Undo')
+  expect(result()?.textContent).toBe('')
+  await click('Check'); await click('Redo')
+  expect(result()?.textContent).toBe('')
+  await click('Check')
+  vi.spyOn(window, 'confirm').mockReturnValue(true)
+  await click('Reset')
+  expect(result()?.textContent).toBe('')
+})
+
+it('does not claim a position is correct when its solution is not verified', async () => {
+  const ambiguous = { id: 'test', size: 2, clues: [2, 0, 0, 0] }
+  await act(async () => root.render(<NurikabeStage board={ambiguous} />))
+  await key(1, 's')
+  await click('Check')
+  expect(container.textContent).toContain('could not verify a unique solution')
+  expect(container.querySelector('[data-hint="target"]')).toBeNull()
+  expect(container.textContent).toContain('Hints used: 0')
+})
 
 it('supports keyboard and virtual clicks, immutable clues, saved Undo/Redo and confirmed Reset', async () => {
   await act(async () => root.render(<NurikabeStage board={board} />))
@@ -68,7 +145,9 @@ it('commits a painted stroke as one history entry and rolls back interrupted or 
   }
   await pointer('pointerdown', 1)
   await key(1, 'h')
+  await click('Check')
   expect(container.querySelector('.hint-panel')).toBeNull()
+  expect(container.querySelector('.nurikabe-check-result')?.textContent).toBe('')
   expect(container.textContent).toContain('Hints used: 0')
   await pointer('pointermove', 2); await pointer('pointermove', 3)
   expect(cell(3).getAttribute('aria-label')).toContain('fixed land')
@@ -95,7 +174,7 @@ it('completes from sea shading, locks the result and clears only its preview sav
   localStorage.setItem('daily-puzzles.stats', 'keep')
   await act(async () => root.render(<NurikabeStage board={board} />))
   await key(last, 's')
-  expect(container.querySelector('[role="status"]')?.textContent).toContain('Solved in 0:05')
+  expect(container.querySelector('.nurikabe-feedback[role="status"]')?.textContent).toContain('Solved in 0:05')
   expect(button('Undo').disabled).toBe(true)
   expect(button('Reset').disabled).toBe(true)
   expect(readNurikabeProgress(board)).toBeNull()

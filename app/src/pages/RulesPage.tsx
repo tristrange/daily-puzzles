@@ -96,7 +96,8 @@ export function RulesPage() {
       <p>The solid outline marks the target; dashed outlines show supporting cells.
         Apply move clears the highlighted mistake, places the queen or adds a cross as one undoable move. Use the
         location link to return to the target, or Escape to dismiss the explanation.
-        Checking against the unique solution happens only when you request Hint.</p>
+        Checking against the unique solution happens when you request Hint or Check.</p>
+      <p>Check reports whether queens and crosses agree with the solution without revealing a cell or using a hint.</p>
 
       <h2 id="star-battle" tabIndex={-1}>Star Battle</h2>
       <h3>Rules</h3>
@@ -120,10 +121,11 @@ export function RulesPage() {
       <p>Target and support highlights show the reasoning. Apply move places a star
         or crosses out one cell, or clears the highlighted mistake; Undo restores
         the previous board until solved. Mistakes are checked against the unique
-        solution only when you request Hint.</p>
+        solution when you request Hint or Check.</p>
+      <p>Check reports whether stars and crosses agree with the solution without revealing a cell or using a hint.</p>
       <h3 id="crosses" tabIndex={-1}>Crosses and auto-mark</h3>
       <p>For Queens and Star Battle, a cross marks a cell you have ruled out. The app
-        checks misplaced pieces and crosses when you request Hint. Ordinary play
+        checks misplaced pieces and crosses when you request Hint or Check. Ordinary play
         does not flag a cross just because it blocks a correct cell.</p>
       <p>Auto-mark starts off and remembers your choice. In Queens, placing a queen
         crosses the rest of its row, column and region, plus touching cells.
@@ -269,8 +271,9 @@ export function RulesPage() {
         One drag is one Undo. Right-click erases. Arrows and Home/End move between cells.
         Keys 1 or S shade sea; 2 or L marks land; 0, Delete or Backspace erases.
         Enter or Space uses the picker. H asks for a hint. The shared Undo, Redo and confirmed Reset controls apply.</p>
-      <h3>Explained hints</h3>
-      <p>Hint checks your sea and land marks against the independently verified unique solution.
+      <h3>Hints and checks</h3>
+      <p>Hint and Check compare your sea and land marks with the verified unique solution.
+        Check reports whether your marks agree without revealing a cell or counting as a hint.
         A general mistake warning is free. Show the mistake reveals one incorrect mark and counts as a hint.
         Apply move clears only that mark. Otherwise, hints explain one island or sea deduction with highlighted evidence.
         Apply move is optional and undoable. Unmarked cells stay undecided during reasoning, and land dots remain optional.</p>

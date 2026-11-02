@@ -14,7 +14,7 @@ import { usePlayClock } from '../lib/usePlayClock'
 import { hintSignature, useReturnedHint } from '../lib/hintReturn'
 import { ResetButton } from './ResetButton'
 import { NurikabeBoard } from './NurikabeBoard'
-import { applyNurikabeHint, findNurikabeHint, nurikabeCellName, revealNurikabeMistake, type NurikabeHint, type NurikabeMistake } from '../domain/nurikabeHints'
+import { applyNurikabeHint, checkNurikabeEntries, findNurikabeHint, nurikabeCellName, revealNurikabeMistake, type NurikabeEntryCheck, type NurikabeHint, type NurikabeMistake } from '../domain/nurikabeHints'
 import { HintPanel, MistakeWarning } from './HintPanel'
 import { nurikabeHintLesson } from '../domain/hintLessons'
 import './Nurikabe.css'
@@ -38,9 +38,11 @@ export function NurikabeStage({ board, puzzle }: { board: Board; puzzle?: Puzzle
     return result.kind === 'hint' ? result.hint : null
   })
   const [panel, setPanel] = useState<HintState>(returnedHint ? { kind: 'explanation', hint: returnedHint } : { kind: 'closed' })
+  const [progressCheck, setProgressCheck] = useState<NurikabeEntryCheck | { kind: 'empty' } | null>(null)
+  const [hintSource, setHintSource] = useState<'hint' | 'check'>('hint')
   const hint = panel.kind === 'explanation' ? panel.hint : null
   const reasons = useMemo(() => hint ? [hint.reason] : [], [hint])
-  const stage = useRef<HTMLDivElement>(null), hintButton = useRef<HTMLButtonElement>(null)
+  const stage = useRef<HTMLDivElement>(null), hintButton = useRef<HTMLButtonElement>(null), checkButton = useRef<HTMLButtonElement>(null)
   const current = useRef(game), before = useRef<NurikabeGame | null>(null), completed = useRef(false)
   const [solved, setSolved] = useState(false), [saving, setSaving] = useState(true), [message, setMessage] = useState('')
   const [brush, setBrush] = useState<NurikabeMark>(1)
@@ -51,8 +53,9 @@ export function NurikabeStage({ board, puzzle }: { board: Board; puzzle?: Puzzle
   })
   const elapsed = time.elapsedMs
   const save = () => setSaving(storeNurikabeProgress(board, current.current, settle(), hints.current, daily))
-  const change = (next: NurikabeGame) => { current.current = next; setGame(next); setPanel({ kind: 'closed' }) }
-  const begin = () => { if (!completed.current) { before.current = current.current; setPanel({ kind: 'closed' }) } }
+  const clearReview = () => { setPanel({ kind: 'closed' }); setProgressCheck(null) }
+  const change = (next: NurikabeGame) => { current.current = next; setGame(next); clearReview() }
+  const begin = () => { if (!completed.current) { before.current = current.current; clearReview() } }
   const apply = (cell: number, value: NurikabeMark) => {
     if (!completed.current) { change(editNurikabeCell(board, current.current, cell, value)); setMessage('') }
   }
@@ -103,8 +106,15 @@ export function NurikabeStage({ board, puzzle }: { board: Board; puzzle?: Puzzle
   const show = (next: NurikabeHint) => {
     setPanel({ kind: 'explanation', hint: next }); hints.current++; setShownHints(hints.current); setMessage(''); save()
   }
+  const checkProgress = () => {
+    if (completed.current || before.current) return
+    clearReview(); setHintSource('check'); setMessage('')
+    const marked = current.current.some((mark, cell) => board.clues[cell] === 0 && mark !== 0)
+    setProgressCheck(marked ? checkNurikabeEntries(board, current.current) : { kind: 'empty' })
+  }
   const requestHint = () => {
     if (completed.current || before.current) return
+    setProgressCheck(null); setHintSource('hint')
     const result = findNurikabeHint(board, current.current)
     if (result.kind === 'hint') show(result.hint)
     else if (result.kind === 'mistake') { setPanel({ kind: 'warning', mistake: result }); setMessage('') }
@@ -119,7 +129,14 @@ export function NurikabeStage({ board, puzzle }: { board: Board; puzzle?: Puzzle
     const correction = revealNurikabeMistake(board, current.current, panel.mistake)
     if (correction) show(correction)
   }
-  const dismissHint = () => { setPanel({ kind: 'closed' }); hintButton.current?.focus({ preventScroll: true }) }
+  const revealCheckedMistake = () => {
+    if (completed.current || before.current || progressCheck?.kind !== 'mistake') return
+    const correction = revealNurikabeMistake(board, current.current, progressCheck)
+    if (!correction) { setProgressCheck(null); return }
+    setHintSource('check'); setProgressCheck(null); show(correction)
+  }
+  const focusHintSource = () => (hintSource === 'check' ? checkButton : hintButton).current?.focus({ preventScroll: true })
+  const dismissHint = () => { setPanel({ kind: 'closed' }); focusHintSource() }
   const showHintCell = () => {
     const target = stage.current?.querySelector<HTMLElement>('[data-hint="target"]')
     target?.focus({ preventScroll: true }); target?.scrollIntoView({ block: 'center' })
@@ -130,7 +147,7 @@ export function NurikabeStage({ board, puzzle }: { board: Board; puzzle?: Puzzle
     if (next === current.current) return
     begin(); change(next); end(false)
     if (!completed.current) setMessage('Hint applied. Undo restores your previous mark.')
-    hintButton.current?.focus({ preventScroll: true })
+    focusHintSource()
   }
   const share = async (variant: 'result' | 'solution') => {
     if (!puzzle) return
@@ -145,6 +162,11 @@ export function NurikabeStage({ board, puzzle }: { board: Board; puzzle?: Puzzle
     setMessage(ok ? (variant === 'solution' ? 'Solution share copied. It includes the finished board.' : 'Share text copied to the clipboard.')
       : 'Could not reach the clipboard. The share text is shown below, ready to copy.')
   }
+  const progressMessage = progressCheck === null ? ''
+    : progressCheck.kind === 'empty' ? 'Add a sea or land mark before checking your progress.'
+      : progressCheck.kind === 'unverified' ? 'We could not verify a unique solution for this puzzle, so progress cannot be checked.'
+        : progressCheck.kind === 'correct' ? 'Your sea and land marks agree with the verified unique solution.'
+          : 'At least one sea or land mark disagrees with the verified unique solution.'
   return <div className="nurikabe-game" ref={stage} onKeyDown={event => {
     if (event.key === 'Escape' && panel.kind !== 'closed') { event.preventDefault(); dismissHint() }
   }}>
@@ -156,7 +178,16 @@ export function NurikabeStage({ board, puzzle }: { board: Board; puzzle?: Puzzle
           <button type="button" className="tool-button" disabled={solved || !history.canRedo} onClick={redo}>Redo</button>
           <ResetButton disabled={solved || !dirty} onReset={reset} />
           <button type="button" className="tool-button" ref={hintButton} disabled={solved} onClick={requestHint}
-            aria-label="Get an explained hint" aria-expanded={panel.kind !== 'closed'} aria-controls={panel.kind !== 'closed' ? hintId : undefined}>Hint</button>
+            aria-label="Get an explained hint" aria-expanded={panel.kind !== 'closed' && hintSource === 'hint'}
+            aria-controls={panel.kind !== 'closed' && hintSource === 'hint' ? hintId : undefined}>Hint</button>
+          <button type="button" className="tool-button nurikabe-check-button" ref={checkButton} disabled={solved} onClick={checkProgress} aria-label="Check progress">Check</button>
+          <div className={`nurikabe-check-result${progressCheck ? '' : ' sr-only'}`}>
+            <p role="status" aria-live="polite">{progressMessage}</p>
+            {progressCheck?.kind === 'mistake' && <>
+              <button type="button" className="tool-button" onClick={revealCheckedMistake}>Show the mistake</button>
+              <span>Revealing the mistake counts as one hint.</span>
+            </>}
+          </div>
         </div>
         <p className="nurikabe-mode">Hints used: {shownHints}</p>
         <div className="nurikabe-picker" role="radiogroup" aria-label="Mark to place">
