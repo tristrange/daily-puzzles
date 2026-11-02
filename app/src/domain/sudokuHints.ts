@@ -3,7 +3,7 @@ import { editSudoku, isSudokuSolved, solveSudoku, SUDOKU_COLUMNS, SUDOKU_PEERS, 
   sudokuDigits, sudokuSingle, type SudokuBoard, type SudokuGame, type SudokuLevel, type SudokuSolution } from './sudoku'
 
 export interface SudokuStep { cell: number; before: number; after: number; rule: string; group: readonly number[]; dependencies: readonly number[]; reason: string }
-export interface SudokuHint { cell: number; candidates: number; source: SudokuGame; reasons: readonly string[]; supportingReasons?: readonly string[]; support: readonly number[]; correction?: boolean }
+export interface SudokuHint { cell: number; candidates: number; source: SudokuGame; reasons: readonly string[]; supportingReasons?: readonly string[]; support: readonly number[]; correction?: boolean; rule?: string }
 export type SudokuHintResult = { kind: 'hint'; hint: SudokuHint } | { kind: 'mistake'; cell: number } | { kind: 'none' | 'unverified' | 'contradiction' }
 export type SudokuEntryCheck = { kind: 'correct' } | { kind: 'unverified' } | { kind: 'mistake'; cell: number }
 export class SudokuContradictionError extends Error {}
@@ -140,7 +140,7 @@ export function findSudokuHint(board: SudokuBoard, game: SudokuGame): SudokuHint
       else { flushPeers(); supportingReasons.push(step.reason) }
     }
     flushPeers()
-    return { kind: 'hint', hint: { cell: steps[index]!.cell, candidates: steps[index]!.after, source: game,
+    return { kind: 'hint', hint: { cell: steps[index]!.cell, candidates: steps[index]!.after, rule: steps[index]!.rule, source: game,
       reasons: [steps[index]!.reason], supportingReasons, support: [...new Set(chain.flatMap(step => [...step.group, step.cell]))] } }
   } catch (error) { if (error instanceof SudokuContradictionError) return { kind: 'contradiction' }; throw error }
 }

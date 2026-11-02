@@ -1,6 +1,7 @@
 import { PlayTimer } from './PlayTimer'
 import { useLeaderboard } from '../lib/useLeaderboard'
 import { usePlayClock } from '../lib/usePlayClock'
+import { hintSignature, useReturnedHint } from '../lib/hintReturn'
 /** Track pieces and directional rules need their own stage; controls and hint presentation are shared. */
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
@@ -39,6 +40,7 @@ import { TracksBoard } from './TracksBoard'
 import { SolvedPanel } from './SolvedPanel'
 import { HintPanel } from './HintPanel'
 import { applyTrackHint, findTrackHint, trackCellName, type TrackHint } from '../domain/trackHints'
+import { trackHintLesson } from '../domain/hintLessons'
 import { ResetButton } from './ResetButton'
 import { useMoveHistory } from '../lib/useMoveHistory'
 
@@ -56,7 +58,12 @@ export function TracksStage({
   const stage = useRef<HTMLDivElement>(null)
   const hintButton = useRef<HTMLButtonElement>(null)
   const hintId = useId()
-  const [hint, setHint] = useState<TrackHint | null>(null)
+  const hintState = JSON.stringify([grid.width, grid.height, grid.rowClues, grid.colClues, grid.givens, game.pieces])
+  const returnedHint = useReturnedHint(puzzle.id, hintState, () => {
+    const result = findTrackHint(game)
+    return result.kind === 'hint' ? result.hint : null
+  })
+  const [hint, setHint] = useState<TrackHint | null>(returnedHint)
   const [hintMessage, setHintMessage] = useState('')
   const hintReasons = useMemo(() => ({
     reasons: hint ? [hint.steps.at(-1)!.reason] : [],
@@ -330,6 +337,8 @@ export function TracksStage({
             : hintMessage || ' '}
       </p>
       {hint && <HintPanel id={hintId} location={trackCellName(grid, hint.cell)}
+        lesson={savingAvailable ? trackHintLesson(hint) : undefined} puzzleId={puzzle.id}
+        resume={{ id: puzzle.id, state: hintState, signature: hintSignature(hint) }}
         title={hint.brush === CROSS ? 'Rule out track' : hint.brush === MAYBE ? 'Mark definite track' : `Place ${TRACK_CELL_NAME[hint.brush]}`}
         reasons={hintReasons.reasons} supportingReasons={hintReasons.supportingReasons} effect={`${hint.brush === MAYBE ? 'Apply puts ? in this cell. It counts as track; choose its direction later. ' : ''}Uses your placed tracks, ? cells and crosses as starting assumptions.`}
         onApply={acceptHint} onDismiss={dismissHint} onShowCell={showHintCell} />}

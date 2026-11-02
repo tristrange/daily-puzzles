@@ -3,6 +3,7 @@ import daily from '../../public/puzzles/2026-10-21-tents.json'
 import { parsePuzzle, isTentsPuzzle } from './puzzle'
 import { createTentsGame, editTent, isTentsSolved, type TentsBoard, type TentsGame } from './tents'
 import { findTentsHint } from './tentsHints'
+import { tentsHintLesson } from './hintLessons'
 
 const lineBoard: TentsBoard = { id: 'tents-preview-1', size: 8, trees: [8, 9, 10],
   rowClues: [2, 0, 1, 0, 0, 0, 0, 0], colClues: [1, 1, 1, 0, 0, 0, 0, 0] }
@@ -20,6 +21,7 @@ it.each([['row', false], ['column', true]] as const)('compares all non-touching 
   if (result.kind !== 'hint') throw Error('Expected an explained line deduction')
   expect(result.hint.reason).toContain(transpose ? 'Column 1' : 'Row 1')
   expect(result.hint.reason).toContain('arrangement')
+  expect(tentsHintLesson(result.hint)?.path).toBe('/learn/tents/tents-line-arrangements-1')
   expect(result.hint.support).toContain(transpose ? 16 : 2)
   expect(game).toEqual(before)
 })

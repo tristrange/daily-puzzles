@@ -2,6 +2,7 @@ import { expect, it } from 'vitest'
 import { TrackGrid } from './tracks'
 import { applyBrush, createTracksGame, CROSS, MAYBE, isFault, isTracksSolved, trackConflicts, type TracksGame } from './tracksGame'
 import { applyTrackHint, findTrackHint } from './trackHints'
+import { trackHintLesson } from './hintLessons'
 import october31 from '../../public/puzzles/2026-10-31-tracks-small.json'
 
 const middle = () => new TrackGrid(3, 3, [0, 3, 0], [1, 1, 1], [0, 0, 0, 1, 0, 1, 0, 0, 0])
@@ -80,6 +81,7 @@ it('finds another explained, sound move when the October 31 puzzle needs stronge
   const hint = hintFor(game)
   expect(agreesWith(hint.brush, october31Solution[hint.cell]!)).toBe(true)
   expect(hint.steps.at(-1)?.reason).toMatch(/empty.*connect|connect.*empty/i)
+  expect(trackHintLesson(hint)?.path).toBe('/learn/train-tracks/tracks-edges-1')
   expect(applyTrackHint(game, hint).pieces[hint.cell]).toBe(hint.brush)
 })
 
@@ -111,6 +113,7 @@ it('avoids a loop without choosing between two valid routes', () => {
   const first = hintFor(game)
   expect(first).toMatchObject({ cell: 11, brush: 2 })
   expect(first.steps.at(-1)?.reason).toContain('close a loop')
+  expect(trackHintLesson(first)?.path).toBe('/learn/train-tracks/tracks-loop-1')
   while (count < 40) {
     const result = findTrackHint(game)
     if (result.kind === 'none') break

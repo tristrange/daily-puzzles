@@ -123,7 +123,8 @@ export function findKillerSudokuHint(board: KillerSudokuBoard, game: SudokuGame)
   const reason = open === 1
     ? filled.length ? `The ${cage.sum} cage already contains ${filled.map(i => game.cells[i]).join(' + ')} = ${total}, so its last cell must be ${remaining}.` : `This cage has one cell and totals ${cage.sum}, so that cell must be ${remaining}.`
     : `${premise} Digits cannot repeat in a cage, row, column or box. With the placed digits, ${sudokuCellName(cell).toLowerCase()} can only be ${sudokuDigits(mask).join(', ')}.`
-  return { kind: 'hint', hint: { cell, candidates: mask, source: game, support, reasons: [reason] } }
+  return { kind: 'hint', hint: { cell, candidates: mask, source: game, support, reasons: [reason],
+    ...(open > 1 ? { rule: 'cage-combinations' } : {}) } }
 }
 
 export function applyKillerSudokuHint(board: KillerSudokuBoard, game: SudokuGame, hint: SudokuHint): SudokuGame {

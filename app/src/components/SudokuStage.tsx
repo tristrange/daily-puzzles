@@ -8,7 +8,9 @@ import { SolvedPanel } from './SolvedPanel'
 import { useId, useRef, useState, type KeyboardEvent } from 'react'
 import { createSudokuGame, editSudoku, isSudokuSolved, sudokuCellName, sudokuConflicts, sudokuDigits, sudokuSingle, type SudokuBoard as Board, type SudokuGame } from '../domain/sudoku'
 import { applySudokuHint, checkSudokuEntries, findSudokuHint, type SudokuEntryCheck, type SudokuHint } from '../domain/sudokuHints'
+import { sudokuHintLesson } from '../domain/hintLessons'
 import { usePlayClock } from '../lib/usePlayClock'
+import { hintSignature, useReturnedHint } from '../lib/hintReturn'
 import { formatTime } from '../domain/game'
 import { historyCommand, useMoveHistory } from '../lib/useMoveHistory'
 import { readSudokuProgress, storeSudokuProgress } from '../lib/sudokuProgress'
@@ -37,7 +39,12 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
   const [selection, setSelection] = useState<readonly number[]>([selected])
   const [showCombinations, setShowCombinations] = useState(false)
   const [pencil, setPencil] = useState(false), [solved, setSolved] = useState(false), [saving, setSaving] = useState(true)
-  const [message, setMessage] = useState(''), [hint, setHint] = useState<SudokuHint | null>(null), [mistake, setMistake] = useState<number | null>(null)
+  const hintState = JSON.stringify([board.level, board.givens, killer?.cages ?? null, game.cells, game.notes, game.excludedCageCombinations ?? null])
+  const returnedHint = useReturnedHint(board.id, hintState, () => {
+    const result = killer ? findKillerSudokuHint(killer, game) : findSudokuHint(board, game)
+    return result.kind === 'hint' ? result.hint : null
+  })
+  const [message, setMessage] = useState(''), [hint, setHint] = useState<SudokuHint | null>(returnedHint), [mistake, setMistake] = useState<number | null>(null)
   const [progressCheck, setProgressCheck] = useState<SudokuEntryCheck | { kind: 'empty' } | null>(null)
   const [hintSource, setHintSource] = useState<'hint' | 'check'>('hint')
   const stage = useRef<HTMLDivElement>(null), hintButton = useRef<HTMLButtonElement>(null), checkButton = useRef<HTMLButtonElement>(null)
@@ -218,6 +225,8 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
     {mistake !== null && <MistakeWarning id={hintId} message="Your numbers lead to a contradiction. Check your entries, or try Undo." onReveal={() => revealMistake(mistake, 'hint')} onDismiss={dismiss} />}
     {hint && <HintPanel id={hintId} location={sudokuCellName(hint.cell)} title={hint.correction ? 'Clear this entry' : sudokuSingle(hint.candidates) ? `Place ${sudokuDigits(hint.candidates)[0]}` : 'Narrow the possibilities'}
       reasons={hint.reasons} supportingReasons={hint.supportingReasons} effect={hint.correction || sudokuSingle(hint.candidates) ? '' : `Apply updates this cell's notes to ${sudokuDigits(hint.candidates).join(', ')}. The cell stays empty.`}
+      lesson={saving ? sudokuHintLesson(hint, !!killer) : undefined} puzzleId={puzzle?.id}
+      resume={{ id: board.id, state: hintState, signature: hintSignature(hint) }}
       onApply={acceptHint} onDismiss={dismiss} onShowCell={showCell} />}
     {!saving && !solved && <p className="status error" role="status">Progress can&rsquo;t be saved. Keep this page open to retain your attempt.</p>}
     <p className="word-note" id={instructionsId}>Digits 1–9 once in every row, column and 3×3 box. Given numbers are fixed.
