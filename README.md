@@ -99,8 +99,6 @@ separate from daily games, stats and leaderboards.
   named row or column and remove a candidate. Valid alternative cells count;
   highlighting is an optional clue. Explanations are available without a timer.
   Only a correctly checked answer records completion, separately from daily games.
-  The [lesson roadmap](docs/learn-roadmap.md) prioritizes advanced coverage across
-  the existing logic games before another puzzle family.
 - Learning achievements recognize completing every exercise in a technique. They use
   the existing browser-local lesson progress, which is separate from Stats backups.
 - Per-game archives and personal stats, with Sudoku level and Train Tracks size filters.
