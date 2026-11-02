@@ -24,6 +24,8 @@ function DeductionExercise({ lesson, day, timeZone }: {
   const [result, setResult] = useState<'idle' | 'incorrect' | 'correct' | 'revealed'>('idle')
   const [showClue, setShowClue] = useState(false)
   const explained = result === 'correct' || result === 'revealed'
+  const remaining = sudokuDigits(step.after)
+  const candidateLabel = remaining.length === 1 ? 'a candidate' : 'candidates'
   const game = { cells: lesson.game.cells,
     notes: lesson.game.notes.map((mask, cell) => cell === step.cell ? (explained ? step.after : answer) : mask) }
   const hint = { cell: step.cell, candidates: step.after, source: game, reasons: [step.reason],
@@ -62,8 +64,8 @@ function DeductionExercise({ lesson, day, timeZone }: {
         {showClue && !explained && <p className="lesson-cue">{lesson.cue} Dashed outlines mark the pattern.</p>}
         <p className="lesson-feedback" role="status" aria-live="polite">
           {result === 'incorrect' && 'That does not match the deduction this preview checks. Another valid deduction may exist. Try again or show a clue.'}
-          {result === 'correct' && `Correct! This deduction leaves ${sudokuDigits(step.after).join(', ')} as candidates for ${sudokuCellName(step.cell).toLowerCase()}.`}
-          {result === 'revealed' && `This deduction leaves ${sudokuDigits(step.after).join(', ')} as candidates.`}
+          {result === 'correct' && `Correct! This deduction leaves ${remaining.join(', ')} as ${candidateLabel} for ${sudokuCellName(step.cell).toLowerCase()}.`}
+          {result === 'revealed' && `This deduction leaves ${remaining.join(', ')} as ${candidateLabel}.`}
         </p>
         {explained && <section className="lesson-explanation" aria-labelledby="deduction-why">
           <h2 id="deduction-why">Why it works · {lesson.title}</h2>
