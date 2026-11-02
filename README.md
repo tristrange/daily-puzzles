@@ -259,4 +259,5 @@ by the maintainer. Repository workflow guidance is in [AGENTS.md](AGENTS.md).
 - [Puzzle model and file format](docs/puzzle-model.md)
 - [Publishing, CI and deployment](docs/pipeline.md)
 - [Leaderboard setup](docs/leaderboard-setup.md)
+- [Product roadmap and ideas](docs/roadmap.md)
 - [Build journal](docs/journal.md)

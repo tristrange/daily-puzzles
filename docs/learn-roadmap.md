@@ -1,5 +1,8 @@
 # Advanced lessons roadmap
 
+The [product roadmap](roadmap.md) tracks current follow-ups and new ideas. This
+document records the teaching direction and quality criteria for lessons.
+
 Prioritize useful advanced lessons across the existing logic games before adding
 another puzzle family. Rules pages explain how to play. Learn should teach players
 to combine constraints, recognize patterns and solve harder positions.
