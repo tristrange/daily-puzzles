@@ -11,7 +11,7 @@ import { isMarksPuzzle, isTracksPuzzle, isTrioPuzzle, isTentsPuzzle, isSudokuPuz
 import { WordGrid } from '../domain/wordPaths'
 import { readStoredStats, type SolveRecord } from '../lib/stats'
 import { useToday } from '../lib/useToday'
-import { WeeklyChallenge } from '../components/WeeklyChallenge'
+import { Challenges } from '../components/Challenges'
 
 type LoadState =
   | { status: 'loading' }
@@ -109,7 +109,7 @@ export function HomePage() {
       {ready !== null && (
         <>
           <TodayProgress probes={ready.probes} solved={ready.solved} />
-          <WeeklyChallenge records={ready.records} today={todayId} timeZone={timeZone} />
+          <Challenges records={ready.records} today={todayId} timeZone={timeZone} />
           <TodayCards probes={ready.probes} solved={ready.solved} />
         </>
       )}
