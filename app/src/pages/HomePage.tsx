@@ -103,7 +103,6 @@ export function HomePage() {
       <div className="today-heading">
         <p className="eyebrow">{formatPuzzleLabel(todayId, timeZone)}</p>
         <h1 className="page-title">Today&rsquo;s puzzles</h1>
-        <p className="page-intro">Fresh logic puzzles, every day. Pick your challenge.</p>
       </div>
       {ready === null && <p className="status">Checking what&rsquo;s out…</p>}
       {ready !== null && (
@@ -190,7 +189,7 @@ export function TodayCards({ probes, solved }: {
                             <span>{label}</span><span className="game-card-state">{entry.unavailable ? 'Not saved — connect to load.' : 'Not published yet.'}</span>
                           </div>
                         ) : (
-                          <Link className="tool-button track-choice" to={`/archive/${entry.id}`}
+                          <Link className="tool-button track-choice" to={`/archive/${entry.id}`} state={{ fromToday: true }}
                             aria-description={progressLabel(again, elapsed)}
                             aria-label={`${elapsed === null ? 'Play' : 'Resume'} ${PUZZLE_TYPE_LABEL[family]} ${variant.label}${again ? ' again' : elapsed !== null ? ` at ${formatTime(elapsed)}` : ''}`}>
                             <span className="track-choice-info"><span>{label}</span><span className={`choice-state ${progressClass(again, elapsed)}`}>{progressLabel(again, elapsed)}</span></span>
@@ -210,7 +209,7 @@ export function TodayCards({ probes, solved }: {
                   {probe.puzzle === null ? <p className="game-card-state">{probe.unavailable ? 'Not saved — connect to load.' : 'Not published yet.'}</p> : (
                     <>
                       <p className={`game-card-state ${progressClass(again, elapsed)}`}>{progressLabel(again, elapsed)}</p>
-                      <Link className="tool-button primary" to={`/archive/${probe.id}`}
+                      <Link className="tool-button primary" to={`/archive/${probe.id}`} state={{ fromToday: true }}
                         aria-label={`${elapsed === null ? 'Play' : 'Resume'} ${PUZZLE_TYPE_LABEL[family]}${again ? ' again' : elapsed !== null ? ` at ${formatTime(elapsed)}` : ''}`}>
                         {again ? 'Play again' : elapsed !== null ? 'Resume' : 'Play'} <span aria-hidden="true">↗</span>
                       </Link>

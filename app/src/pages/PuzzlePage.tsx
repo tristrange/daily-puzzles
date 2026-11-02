@@ -1,12 +1,14 @@
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { isPuzzleId, puzzleTypeOf } from '../domain/dates'
 import { PUZZLE_TYPE_PUBLISHED, PUZZLE_TYPE_LABEL } from '../domain/games'
 import { PuzzleView } from '../components/PuzzleView'
 import { archiveHref, parseArchivePage } from '../lib/archive'
+import { cameFromToday } from '../lib/puzzleNavigation'
 
 export function PuzzlePage() {
   const params = useParams<'id'>()
   const [search] = useSearchParams()
+  const location = useLocation()
   const page = parseArchivePage(search.get('page'))
   const id = params.id
   if (id === undefined || !isPuzzleId(id)) {
@@ -18,6 +20,7 @@ export function PuzzlePage() {
     )
   }
   const type = puzzleTypeOf(id)!
+  const fromToday = cameFromToday(location.state)
   if (!PUZZLE_TYPE_PUBLISHED[type]) {
     return (
       <section>
@@ -29,8 +32,8 @@ export function PuzzlePage() {
   }
   return (
     <section className="puzzle-page">
-      <Link to={archiveHref(type, page)} className="back-link" aria-label="All puzzles">
-        <span aria-hidden="true">←</span> <span className="back-label">All puzzles</span>
+      <Link to={fromToday ? '/' : archiveHref(type, page)} className="back-link" aria-label={fromToday ? 'Today’s puzzles' : 'All puzzles'}>
+        <span aria-hidden="true">←</span> <span className="back-label">{fromToday ? 'Today' : 'All puzzles'}</span>
       </Link>
       <PuzzleView key={id} id={id} />
     </section>

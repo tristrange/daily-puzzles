@@ -194,8 +194,9 @@ export function StatsPage() {
       )}
       <div className="stats-footer">
         <p className="status">
-          Export a backup before clearing this browser, or import one from another
-          device.
+          {stats.solved > 0
+            ? 'Export a backup before clearing this browser, or import one from another device.'
+            : 'Import stats from another device.'}
         </p>
         <div className="stats-clear">
           {stats.solved > 0 && (

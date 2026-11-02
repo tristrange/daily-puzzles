@@ -46,6 +46,17 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+it('offers the relevant backup action for empty and populated stats', () => {
+  const empty = renderHistory([])
+  expect(empty).toContain('Import stats from another device.')
+  expect(empty).not.toContain('Export a backup before clearing this browser')
+  expect(empty).toContain('These stay in this browser.')
+
+  const withSolves = renderHistory([solve('2026-10-05', 'queens', 1)])
+  expect(withSolves).toContain('Export a backup before clearing this browser')
+  expect(withSolves).toContain('Export stats')
+})
+
 describe('the family counts', () => {
   it('distinguishes all three sizes in recent solves', () => {
     const html = renderHistory([
