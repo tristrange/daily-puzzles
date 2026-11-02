@@ -6,7 +6,7 @@ import { conflicts, createGame } from './game'
 import { marksBoard } from './helpers'
 import { firstHint } from './hints'
 import { parsePuzzle } from './puzzle'
-import { checkedHint, solveMarks } from './checkedHints'
+import { checkMarksEntries, checkedHint, solveMarks } from './checkedHints'
 
 const queenBoard = marksBoard(parsePuzzle(queen))
 const starBoard = marksBoard(parsePuzzle(star))
@@ -30,6 +30,21 @@ it('corrects a locally legal wrong star before a crossed-out solution cell', () 
   expect(checkedHint(touching)).toMatchObject({ kind: 'hint', hint: { cell: 0, action: 'clear' } })
 })
 
+it.each([
+  { name: 'Queens', board: queenBoard, pieces: [3, 5], wrongPiece: 0, wrongCross: 12 },
+  { name: 'Star Battle', board: starBoard, pieces: [1, 3], wrongPiece: 0, wrongCross: 13 },
+])('$name checks placed pieces and crosses without returning a hint', ({ board, pieces, wrongPiece, wrongCross }) => {
+  const game = { ...createGame(board), queens: new Set(pieces), marks: new Set([wrongPiece]) }
+  expect(checkMarksEntries(game)).toEqual({ kind: 'correct' })
+  expect(checkMarksEntries(createGame(board))).toEqual({ kind: 'correct' })
+  expect(game.queens).toEqual(new Set(pieces))
+  expect(game.marks).toEqual(new Set([wrongPiece]))
+  expect(checkMarksEntries({ ...game, queens: new Set([...pieces, wrongPiece]), marks: new Set() }))
+    .toEqual({ kind: 'mistake', cell: wrongPiece, rule: 'wrong-piece' })
+  expect(checkMarksEntries({ ...game, marks: new Set([wrongPiece, wrongCross]) }))
+    .toEqual({ kind: 'mistake', cell: wrongCross, rule: 'wrong-cross' })
+})
+
 it('preserves explained deductions once placements and crosses are verified', () => {
   const game = { ...createGame(queenBoard), queens: new Set([3]), marks: new Set([0]) }
   expect(checkedHint(game)).toEqual({ kind: 'hint', hint: firstHint(queenBoard, game.queens, game.marks) })
@@ -43,5 +58,7 @@ it('never accuses a cell on ambiguous, impossible or unfinished searches', () =>
   expect(solveMarks(queenBoard, 8)).toEqual({ kind: 'limit' })
   expect(checkedHint({ ...createGame(stripes(4)), queens: new Set([0]) })).toEqual({ kind: 'unverified' })
   expect(checkedHint(createGame(stripes(2)))).toEqual({ kind: 'unverified' })
+  expect(checkMarksEntries({ ...createGame(stripes(4)), queens: new Set([0]) })).toEqual({ kind: 'unverified' })
+  expect(checkMarksEntries(createGame(stripes(2)))).toEqual({ kind: 'unverified' })
   expect(() => solveMarks(queenBoard, -1)).toThrow()
 })

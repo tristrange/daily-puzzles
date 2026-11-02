@@ -11,6 +11,10 @@ export type CheckedHint = Hint | {
   reason: string
   support: readonly number[]
 }
+export type MarksEntryCheck =
+  | { kind: 'correct' }
+  | { kind: 'unverified' }
+  | { kind: 'mistake'; cell: number; rule: 'wrong-piece' | 'wrong-cross' }
 type Result = { kind: 'hint'; hint: CheckedHint } | { kind: 'none' } | { kind: 'unverified' }
 const solutions = new WeakMap<Board, Solution>()
 
@@ -65,27 +69,41 @@ export function solveMarks(board: Board, maxStates = 100_000): Solution {
   return count === 1 ? { kind: 'unique', cells: answer } : { kind: count === 0 ? 'none' : 'multiple' }
 }
 
-/** Correction first, then the existing explained rules. Only called by Hint. */
-export function checkedHint(game: GameState): Result {
-  const { board, queens, marks } = game
+function solutionFor(board: Board): Solution {
   let solution = solutions.get(board)
   if (!solution) {
-    // shortcut: bounded synchronous search on first Hint; use a worker if larger boards make this slow.
+    // shortcut: bounded synchronous search on first check or Hint; use a worker if larger boards make this slow.
     solution = solveMarks(board)
     solutions.set(board, solution)
   }
+  return solution
+}
+
+/** Compare placed pieces and crosses with the verified solution, without revealing a cell. */
+export function checkMarksEntries(game: GameState): MarksEntryCheck {
+  const solution = solutionFor(game.board)
   if (solution.kind !== 'unique') return { kind: 'unverified' }
-  const piece = PUZZLE_PIECE[board.puzzleType].noun
-  for (const cell of queens) {
-    if (!solution.cells.has(cell)) return { kind: 'hint', hint: {
-      cell, action: 'clear', rule: 'wrong-piece', support: [],
-      reason: `This ${piece} cannot be part of the puzzle’s unique solution. Try removing it.`,
-    } }
+  for (const cell of game.queens) {
+    if (!solution.cells.has(cell)) return { kind: 'mistake', cell, rule: 'wrong-piece' }
   }
-  for (const cell of marks) {
-    if (solution.cells.has(cell)) return { kind: 'hint', hint: {
-      cell, action: 'clear', rule: 'wrong-cross', support: [],
-      reason: `The unique solution needs a ${piece} in this cell, so this cross rules out a required ${piece}.`,
+  for (const cell of game.marks) {
+    if (solution.cells.has(cell)) return { kind: 'mistake', cell, rule: 'wrong-cross' }
+  }
+  return { kind: 'correct' }
+}
+
+/** Correction first, then the existing explained rules. Only called by Hint. */
+export function checkedHint(game: GameState): Result {
+  const { board, queens, marks } = game
+  const check = checkMarksEntries(game)
+  if (check.kind === 'unverified') return { kind: 'unverified' }
+  if (check.kind === 'mistake') {
+    const piece = PUZZLE_PIECE[board.puzzleType].noun
+    return { kind: 'hint', hint: {
+      cell: check.cell, action: 'clear', rule: check.rule, support: [],
+      reason: check.rule === 'wrong-piece'
+        ? `This ${piece} cannot be part of the puzzle’s unique solution. Try removing it.`
+        : `The unique solution needs a ${piece} in this cell, so this cross rules out a required ${piece}.`,
     } }
   }
   const hint = firstHint(board, queens, marks)
