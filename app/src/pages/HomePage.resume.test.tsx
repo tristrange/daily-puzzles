@@ -97,6 +97,13 @@ it('groups games with multiple daily puzzles after single-puzzle games', async (
   ])
 })
 
+it('offers Play on each unstarted size and level', async () => {
+  await render()
+  for (const name of ['Train Tracks Small', 'Sudoku Easy', 'Killer Sudoku Easy']) {
+    expect(link(`Play ${name}`)?.textContent).toContain('Play')
+  }
+})
+
 it('offers each saved daily game with its validated time and original destination', async () => {
   saveAttempts()
   await render()
@@ -122,7 +129,8 @@ it('keeps sizes independent and completed results take priority over saved repla
   await render()
   expect(link('Resume Train Tracks Small at 1:00')).not.toBeNull()
   expect(link('Play Train Tracks Medium')).not.toBeNull()
-  expect(link('Play Train Tracks Large again')?.textContent).toContain('Completed')
+  expect(link('Play Train Tracks Large again')?.textContent).toContain('Play again')
+  expect(link('Play Train Tracks Large again')?.getAttribute('aria-description')).toContain('Completed')
   expect(link('Play Queens again')?.textContent).toContain('Play again')
   expect(link('Resume Queens at 4:32')).toBeNull()
 })

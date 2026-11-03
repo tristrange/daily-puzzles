@@ -64,10 +64,12 @@
 .today-collection-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .25rem 1rem; margin-bottom: .75rem; }
 .today-collection-heading h2 { margin: 0; font-size: 1.3rem; letter-spacing: -.025em; }
 .today-collection-heading a { display: inline-flex; align-items: center; gap: .25rem; min-height: 2.75rem; font-size: .875rem; text-decoration: none; }
-.today-collection-heading a:hover, .game-card-play:hover { text-decoration: underline; }
+.today-collection-heading a:hover, .game-card-link:hover .game-card-play { text-decoration: underline; }
 .game-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: .875rem; margin: 0 0 1.5rem; padding: 0; list-style: none; }
 .game-card-item { display: flex; min-width: 0; }
 .game-card { display: flex; flex: 1; flex-direction: column; min-width: 0; gap: .7rem; padding: 1rem; border: 1px solid var(--desk-border); border-radius: 1.125rem; background: var(--desk-surface); }
+.game-card-link { position: relative; transition: border-color 140ms ease-out; }
+.game-card-link:hover { border-color: var(--accent); }
 .game-card-heading { display: flex; align-items: center; gap: .85rem; min-width: 0; }
 .game-card-heading-copy { min-width: 0; }
 .game-motif { display: grid; place-items: center; flex: none; width: 3.5rem; height: 3.5rem; border-radius: 1rem; background: var(--motif-wash); color: var(--motif-color); transition: transform 140ms ease-out; }
@@ -80,15 +82,17 @@
 .game-train-tracks .choice-size { display: none; }
 .game-card-footer { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin: auto 0 0 4.35rem; }
 .game-card-detail, .game-card-state { margin: 0; font-size: .75rem; line-height: 1.4; }
-.game-card-state.solved, .choice-state.solved { color: var(--hint); }
-.game-card-state.in-progress, .choice-state.in-progress { color: var(--accent); }
-.game-card-play { display: inline-flex; align-items: center; justify-content: flex-end; gap: .2rem; flex: none; min-width: 2.75rem; min-height: 2.75rem; color: var(--accent); font-size: .8125rem; font-weight: 650; text-decoration: none; white-space: nowrap; }
-.game-card:has(.game-card-play:active) .game-motif { transform: scale(.95); }
+.game-card-state.solved { color: var(--hint); }
+.game-card-state.in-progress { color: var(--accent); }
+.game-card-play { display: inline-flex; align-items: center; justify-content: center; gap: .2rem; flex: none; min-height: 2.75rem; padding: .5rem .75rem; border: 1px solid var(--desk-border); border-radius: .65rem; background: light-dark(#f6f8fc, #232a38); color: var(--accent); font-size: .8125rem; font-weight: 650; text-decoration: none; white-space: nowrap; }
+/* Expand the link without nesting the game heading inside its accessible name. */
+.game-card-play::after { position: absolute; inset: 0; border-radius: 1.125rem; content: ''; }
+.game-card-link:active .game-motif { transform: scale(.95); }
 .track-variants { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .4rem; margin: auto 0 0; padding: 0; list-style: none; }
 .track-variants li { display: flex; min-width: 0; }
 .track-choice, .track-unpublished { display: flex; flex: 1; justify-content: flex-start; min-width: 0; min-height: 3.6rem; padding: .5rem .4rem; border: 1px solid var(--desk-border); border-radius: .65rem; background: light-dark(#f6f8fc, #232a38); text-align: left; }
 .track-choice-info { display: grid; gap: .2rem; min-width: 0; font-size: .75rem; font-weight: 650; line-height: 1.25; }
-.choice-state { overflow: hidden; color: var(--text); font-size: .6875rem; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
+.choice-state { overflow: hidden; color: var(--accent); font-size: .6875rem; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
 .track-unpublished { display: grid; align-content: center; gap: .2rem; font-size: .75rem; line-height: 1.25; }
 .today-more { display: flex; flex-wrap: wrap; gap: .25rem 1.5rem; font-size: .875rem; }
 .today-more a { display: inline-flex; align-items: center; gap: .25rem; min-height: 2.75rem; }
@@ -123,14 +127,16 @@
   .challenge-chevron { align-self: flex-start; }
 }
 @media (max-width: 22.5rem) {
+  .game-card:not(:has(.track-variants)) { column-gap: .5rem; }
+  .game-card-play { padding-inline: .5rem; font-size: .75rem; }
   .track-variants { grid-template-columns: 1fr; }
   .game-train-tracks .choice-size { display: inline; }
   .track-choice, .track-unpublished { min-height: 2.75rem; }
   .track-choice-info { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: .5rem; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .challenge-bar > span, .game-motif, .today-progress progress::-webkit-progress-value { transition: none; }
+  .challenge-bar > span, .game-card-link, .game-motif, .today-progress progress::-webkit-progress-value { transition: none; }
   .today-progress progress::-moz-progress-bar { transition: none; }
-  .game-card:has(.game-card-play:active) .game-motif { transform: none; }
+  .game-card-link:active .game-motif { transform: none; }
 }
 @media (prefers-contrast: more) { .challenge-card, .track-choice { border-color: var(--text-h); } }

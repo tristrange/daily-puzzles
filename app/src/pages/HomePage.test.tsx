@@ -36,8 +36,8 @@ describe('daily Train Tracks choices', () => {
     const html = render(probes, new Set([small.id]))
     expect(html).toContain('aria-label="Play Train Tracks Small again"')
     expect(html).toContain('aria-label="Play Train Tracks Medium"')
-    expect(html.match(/>Completed</g)).toHaveLength(1)
-    expect(html).toContain('Not started')
+    expect(html).toContain('aria-description="Completed, 8×8 grid"')
+    expect(html).toContain('aria-description="Not started, 10×10 grid"')
   })
 
   it('keeps the other choices when Medium is unpublished', () => {
