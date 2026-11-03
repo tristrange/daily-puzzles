@@ -313,11 +313,12 @@ export function RulesPage() {
         Today saves its available boards; browsing the archive saves the boards it loads.
         These boards can reopen without a connection. New or unsaved boards need internet;
         if a download warning appears, keep a connection to play them.</p>
-      <p>Train Tracks and Word Paths keep unfinished progress. Queens and Star Battle
-        restart unfinished attempts on reload. Clearing site data or browser cache eviction
-        can remove downloads. Saved data belongs to this browser or Home Screen app.</p>
-      <p>Updates wait until all Daily Puzzles windows are closed. Finish your game,
-        then close and reopen them to use an update.</p>
+      <p>Every puzzle keeps unfinished progress between visits. Clearing site data can
+        remove saved progress; browser cache eviction can remove downloads. Saved data
+        belongs to this browser or Home Screen app.</p>
+      <p>Updates do not require closing other windows. When a new version is ready,
+        choose Update now in the notice; the page reloads and clears undo and redo
+        history. Today applies updates automatically.</p>
       <p className="status">Ready? <Link to="/">Pick today&rsquo;s puzzles</Link>.</p>
     </section>
   )
