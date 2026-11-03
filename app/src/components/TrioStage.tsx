@@ -9,6 +9,7 @@ import { readTrioProgress, storeTrioProgress } from '../lib/trioProgress'
 import { applyTrioHint, findTrioHint, type TrioHint } from '../domain/trioHints'
 import { TRIO_NOTE_TAP_MS, TrioBoard, type TrioNoteGesture, type TrioNoteTap } from './TrioBoard'
 import { TrioSymbol } from './TrioSymbol'
+import { EraseIcon } from './EraseIcon'
 import { TrioHintPanel } from './TrioHintPanel'
 import type { Puzzle } from '../domain/puzzle'
 import { puzzleOfToday } from '../domain/dates'
@@ -231,7 +232,7 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
         <div className="trio-picker" role="radiogroup" aria-label="Symbol to place">
           {([1, 2, 3, 0] as const).map((value) => <label key={value} className="trio-pick">
             <input className="sr-only" type="radio" name={pickerId} checked={brush === value} disabled={solved} onChange={() => setBrush(value)} aria-label={value ? TRIO_NAMES[value] : 'Eraser'} />
-            <span className="trio-pick-face">{value ? <TrioSymbol value={value} /> : <span aria-hidden="true">⌫</span>}<span>{value ? TRIO_NAMES[value] : 'Erase'}</span></span>
+            <span className="trio-pick-face">{value ? <TrioSymbol value={value} /> : <EraseIcon className="trio-symbol" />}<span>{value ? TRIO_NAMES[value] : 'Erase'}</span></span>
           </label>)}
         </div>
         <div className="trio-mode-actions">

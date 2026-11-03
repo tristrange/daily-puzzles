@@ -14,6 +14,7 @@ import { usePlayClock } from '../lib/usePlayClock'
 import { hintSignature, useReturnedHint } from '../lib/hintReturn'
 import { ResetButton } from './ResetButton'
 import { NurikabeBoard } from './NurikabeBoard'
+import { EraseIcon } from './EraseIcon'
 import { applyNurikabeHint, checkNurikabeEntries, findNurikabeHint, nurikabeCellName, revealNurikabeMistake, type NurikabeEntryCheck, type NurikabeHint, type NurikabeMistake } from '../domain/nurikabeHints'
 import { HintPanel, MistakeWarning } from './HintPanel'
 import { nurikabeHintLesson } from '../domain/hintLessons'
@@ -193,7 +194,7 @@ export function NurikabeStage({ board, puzzle }: { board: Board; puzzle?: Puzzle
         <div className="nurikabe-picker" role="radiogroup" aria-label="Mark to place">
           {([1, 2, 0] satisfies NurikabeMark[]).map(value => <label className="nurikabe-pick" key={value}>
             <input className="sr-only" type="radio" name={pickerId} checked={brush === value} disabled={solved} onChange={() => setBrush(value)} aria-label={value === 1 ? 'Sea' : value === 2 ? 'Land' : 'Erase'} />
-            <span className="nurikabe-pick-face"><span className="nurikabe-swatch" data-mark={value} aria-hidden="true">{value === 2 ? '•' : value === 0 ? '⌫' : ''}</span>{value === 1 ? 'Sea' : value === 2 ? 'Land' : 'Erase'}</span>
+            <span className="nurikabe-pick-face"><span className="nurikabe-swatch" data-mark={value} aria-hidden="true">{value === 2 ? '•' : value === 0 ? <EraseIcon size={16} /> : ''}</span>{value === 1 ? 'Sea' : value === 2 ? 'Land' : 'Erase'}</span>
           </label>)}
         </div>
         <p className="nurikabe-mode">{solved ? 'Islands complete.' : brush === 1 ? 'Shade sea · tap again to clear' : brush === 2 ? 'Mark land · optional working dots' : 'Erase your marks'}</p>

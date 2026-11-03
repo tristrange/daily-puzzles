@@ -18,11 +18,12 @@
  */
 
 import { TRACK_BRUSHES, TRACK_CELL_NAME, type TrackBrush } from '../domain/tracksGame'
+import { EraseIcon } from './EraseIcon'
 import { TrackPiece } from './TrackPiece'
 
 /** What the picker draws for each entry, in `TRACK_BRUSHES` order. */
 function face(brush: TrackBrush): { glyph: string; label: string } {
-  if (brush === 0) return { glyph: '⌫', label: 'eraser' }
+  if (brush === 0) return { glyph: '', label: 'eraser' }
   if (brush > 6) return { glyph: brush === 7 ? '×' : '?', label: TRACK_CELL_NAME[brush] ?? '' }
   return { glyph: '', label: TRACK_CELL_NAME[brush] ?? '' }
 }
@@ -54,7 +55,7 @@ export function TrackPicker({
               aria-label={title(label)}
             />
             <span className="track-pick-face">
-              {glyph !== '' ? <span className="track-pick-glyph">{glyph}</span> : <TrackPiece piece={entry} />}
+              {entry === 0 ? <EraseIcon /> : glyph !== '' ? <span className="track-pick-glyph">{glyph}</span> : <TrackPiece piece={entry} />}
             </span>
           </label>
         )

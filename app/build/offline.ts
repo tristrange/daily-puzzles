@@ -4,7 +4,7 @@ import { resolve } from 'node:path'
 import type { Plugin } from 'vite'
 
 const PUBLIC_SHELL = [
-  'favicon.svg', 'manifest.webmanifest', 'word-paths-vocabulary-notice.txt',
+  'favicon.svg', 'manifest.webmanifest', 'word-paths-vocabulary-notice.txt', 'lucide-license.txt',
   'icons/apple-touch-icon.png', 'icons/puzzle-192.png', 'icons/puzzle-512.png',
 ]
 
