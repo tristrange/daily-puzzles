@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Link, useInRouterContext, useLocation } from 'react-router-dom'
 import type { HintLesson } from '../domain/hintLessons'
 import { rememberHint, type HintReturn } from '../lib/hintReturn'
+import { cameFromToday } from '../lib/puzzleNavigation'
 
 function HintLessonLink({ lesson, puzzleId, resume }: { lesson: HintLesson; puzzleId?: string | undefined; resume: HintReturn }) {
   const location = useLocation()
@@ -9,7 +10,7 @@ function HintLessonLink({ lesson, puzzleId, resume }: { lesson: HintLesson; puzz
     ? `/archive/${puzzleId}`
     : `${location.pathname}${location.search}`
   return <p className="hint-lesson">
-    <Link className="tool-button" to={lesson.path} state={{ returnTo }} onClick={() => rememberHint(resume)}>Practice {lesson.title} <span aria-hidden="true">→</span></Link>
+    <Link className="tool-button" to={lesson.path} state={{ returnTo, fromToday: cameFromToday(location.state) }} onClick={() => rememberHint(resume)}>Practice {lesson.title} <span aria-hidden="true">→</span></Link>
     <span>Return to this hint; your board is saved. Undo and Redo history resets when you leave.</span>
   </p>
 }

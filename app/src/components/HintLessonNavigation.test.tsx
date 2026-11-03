@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import raw from '../data/sudoku-previews.json'
 import playtest from '../domain/fixtures/sudoku-hard-playtest.json'
@@ -114,4 +114,21 @@ it('restores a daily Star Battle hint and its archive page without counting it a
   await act(async () => [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Apply move')!.click())
   expect(readMarksProgress(puzzle.id, starBoard)?.game.marks.has(51)).toBe(true)
   expect(readMarksProgress(puzzle.id, starBoard)?.hints).toBe(3)
+})
+
+it('keeps the Today return context when a hint opens a lesson', async () => {
+  const puzzle = parsePuzzle(starRaw), starBoard = marksBoard(puzzle)
+  storeMarksProgress(puzzle.id, createGame(starBoard), { elapsedMs: 5000 }, 2)
+  function Origin() {
+    const location = useLocation()
+    return <output data-testid="origin">{location.state?.fromToday ? 'Today' : 'Archive'}</output>
+  }
+  await act(async () => root.render(<MemoryRouter initialEntries={[{ pathname: `/archive/${puzzle.id}`, state: { fromToday: true } }]}><Routes>
+    <Route path="/archive/:id" element={<><PuzzleStage puzzle={puzzle} board={starBoard} timeZone="UTC" /><Origin /></>} />
+    <Route element={<LessonLayout />}><Route path="/learn/star-battle/:lessonId" element={<StarBattleLessonPage />} /></Route>
+  </Routes></MemoryRouter>))
+  await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="Get an explained hint"]')!.click())
+  await act(async () => container.querySelector<HTMLAnchorElement>('.hint-lesson a')!.click())
+  await act(async () => container.querySelector<HTMLAnchorElement>('.lesson-return a')!.click())
+  expect(container.querySelector('[data-testid="origin"]')?.textContent).toBe('Today')
 })

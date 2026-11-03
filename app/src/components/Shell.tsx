@@ -1,7 +1,8 @@
 import { useRef } from 'react'
-import { Link, NavLink, Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { ThemePicker } from './ThemePicker'
 import { OfflineStatus } from './OfflineStatus'
+import { cameFromToday } from '../lib/puzzleNavigation'
 
 function navClass({ isActive }: { isActive: boolean }): string {
   return isActive ? 'nav-link active' : 'nav-link'
@@ -9,6 +10,9 @@ function navClass({ isActive }: { isActive: boolean }): string {
 
 export function Shell() {
   const content = useRef<HTMLElement>(null)
+  const location = useLocation()
+  const archivePage = location.pathname === '/archive' || location.pathname.startsWith('/archive/')
+  const today = location.pathname === '/' || (location.pathname.startsWith('/archive/') && cameFromToday(location.state))
   return (
     <div className="shell">
       <a className="skip-link" href="#main-content" onClick={(event) => {
@@ -22,12 +26,12 @@ export function Shell() {
           Daily&nbsp;Puzzles
         </Link>
         <nav aria-label="Main">
-          <NavLink to="/" end className={navClass}>
+          <Link to="/" className={navClass({ isActive: today })} aria-current={today ? 'page' : undefined}>
             Today
-          </NavLink>
-          <NavLink to="/archive" className={navClass}>
+          </Link>
+          <Link to="/archive" className={navClass({ isActive: archivePage && !today })} aria-current={archivePage && !today ? 'page' : undefined}>
             Archive
-          </NavLink>
+          </Link>
           <NavLink to="/stats" className={navClass}>
             Stats
           </NavLink>

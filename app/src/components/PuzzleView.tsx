@@ -38,6 +38,7 @@ import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } 
 import { readStoredAutoMark, storeAutoMark } from '../lib/autoMark'
 import { clearMarksProgress, readMarksProgress, storeMarksProgress } from '../lib/marksProgress'
 import { buildShareText, buildSolutionShareText, copyText, puzzleShareLink } from '../lib/share'
+import { cameFromToday } from '../lib/puzzleNavigation'
 import { InteractiveBoard } from './InteractiveBoard'
 import { HintPanel, MistakeWarning } from './HintPanel'
 import { ResetButton } from './ResetButton'
@@ -580,28 +581,30 @@ export function PuzzleView({
   }
   return (
     <article className="puzzle">
-      <div className="puzzle-heading">
-        <Link
-          className="puzzle-rules"
-          to={{ pathname: '/how-to-play', hash: `#${state.puzzle.puzzleType}` }}
-          target="_blank"
-          rel="noopener"
-          aria-label={`${PUZZLE_TYPE_LABEL[state.puzzle.puzzleType]} rules (opens in a new tab)`}
-        >Rules <span aria-hidden="true">↗</span></Link>
-        {lessonPath && <Link className="puzzle-learn" to={lessonPath} state={{ returnTo: puzzlePath }}
-          aria-label={`Learn ${PUZZLE_TYPE_LABEL[state.puzzle.puzzleType]} techniques`}>Learn <span aria-hidden="true">→</span></Link>}
-        <p className="eyebrow">{formatPuzzleLabel(id, timeZone)}</p>
-        <h1>{PUZZLE_TYPE_LABEL[state.puzzle.puzzleType]}</h1>
-        <p className="puzzle-detail">
+      <div className="puzzle-heading published-heading">
+        <p className="eyebrow puzzle-meta">
+          {formatPuzzleLabel(id, timeZone)} · {' '}
           {isSudokuPuzzle(state.puzzle) && <>{(killerVariantOf(id) ?? sudokuVariantOf(id))!.label} · </>}
           {isTracksPuzzle(state.puzzle) && trackVariantOf(id) && <>{trackVariantOf(id)!.label} · </>}
-          {state.puzzle.board.width}&times;{state.puzzle.board.height} grid
+          {state.puzzle.board.width}&times;{state.puzzle.board.height}<span className="sr-only"> grid</span>
           {state.puzzle.difficulty != null && <> · {DIFFICULTY_LABEL[state.puzzle.difficulty]}</>}
         </p>
-        <div className="puzzle-link-share">
+        <h1>{PUZZLE_TYPE_LABEL[state.puzzle.puzzleType]}</h1>
+        <div className="puzzle-actions">
+          <Link
+            className="puzzle-rules"
+            to={{ pathname: '/how-to-play', hash: `#${state.puzzle.puzzleType}` }}
+            target="_blank"
+            rel="noopener"
+            aria-label={`${PUZZLE_TYPE_LABEL[state.puzzle.puzzleType]} rules (opens in a new tab)`}
+          >Rules <span aria-hidden="true">↗</span></Link>
+          {lessonPath && <Link className="puzzle-learn" to={lessonPath} state={{ returnTo: puzzlePath, fromToday: cameFromToday(location.state) }}
+            aria-label={`Learn ${PUZZLE_TYPE_LABEL[state.puzzle.puzzleType]} techniques`}>Learn <span aria-hidden="true">→</span></Link>}
           <button type="button" className="tool-button puzzle-link-copy" onClick={copyPuzzleLink}>
             {linkCopied === true ? 'Link copied' : 'Copy puzzle link'}
           </button>
+        </div>
+        <div className="puzzle-link-share">
           <p className={linkFallback === null ? 'sr-only' : 'puzzle-link-message'} role="status" aria-live="polite">{linkAnnouncement}</p>
           {linkFallback !== null && (
             <input

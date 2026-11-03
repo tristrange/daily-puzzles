@@ -110,3 +110,18 @@ it('keeps older available when an offline page is empty before the final window'
   expect(container.textContent).toContain('No puzzles in this archive window.')
   expect(container.querySelector('a[aria-label="Show older puzzles"]')).not.toBeNull()
 })
+
+it('switches games in the compact selector without losing the archive window', async () => {
+  await renderArchive('/archive?game=queens&page=1')
+  const selector = container.querySelector<HTMLSelectElement>('.archive-game-select select')!
+  expect(selector.value).toBe('queens')
+  await act(async () => {
+    selector.value = 'sudoku'
+    selector.dispatchEvent(new Event('change', { bubbles: true }))
+    await Promise.resolve()
+  })
+  expect(selector.value).toBe('sudoku')
+  expect(container.querySelector('a[aria-label="Show newer puzzles"]')?.getAttribute('href')).toBe('/archive?game=sudoku')
+  expect(container.querySelector('a[aria-label="Show older puzzles"]')?.getAttribute('href')).toBe('/archive?game=sudoku&page=2')
+  expect(container.querySelector('.archive-surprise button')?.getAttribute('aria-label')).toContain('Sudoku')
+})

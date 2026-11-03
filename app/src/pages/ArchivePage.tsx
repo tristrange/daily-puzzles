@@ -60,12 +60,24 @@ function surpriseMessage(
 
 export function ArchivePage() {
   const [params] = useSearchParams()
+  const navigate = useNavigate()
   const type = PUZZLE_TYPES.find(type => type === params.get('game') && PUZZLE_TYPE_PUBLISHED[type]) ?? DEFAULT_PUZZLE_TYPE
   const page = parseArchivePage(params.get('page'))
   return (
     <section className="archive-page">
       <h1 className="page-title">Archive</h1>
       <p className="archive-note">Completed marks reflect solve history saved in this browser.</p>
+      <label className="archive-game-select">
+        Game
+        <select value={type} onChange={event => {
+          const game = PUZZLE_TYPES.find(item => item === event.currentTarget.value && PUZZLE_TYPE_PUBLISHED[item])
+          if (game) navigate(archiveHref(game, page))
+        }}>
+          {PUZZLE_TYPES.filter(game => PUZZLE_TYPE_PUBLISHED[game]).map(game => (
+            <option key={game} value={game}>{PUZZLE_TYPE_LABEL[game]}</option>
+          ))}
+        </select>
+      </label>
       <nav className="game-picker" aria-label="Archive game">
         {PUZZLE_TYPES.filter(type => PUZZLE_TYPE_PUBLISHED[type]).map(game => (
           <Link key={game} to={archiveHref(game, page)} aria-current={game === type ? 'page' : undefined}>
