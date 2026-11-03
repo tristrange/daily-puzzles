@@ -66,6 +66,21 @@ it.each([0, 6])('plays preview %s with keyboard, saved Undo/Redo and confirmed R
   expect(button('Undo').disabled).toBe(true)
 })
 
+it('selects the eraser by its icon and clears a mark as an undoable move', async () => {
+  await act(async () => root.render(<TentsStage board={board} />))
+  await key(0, '2')
+  expect(cell(0).getAttribute('aria-label')).toContain('Grass')
+  const eraser = container.querySelector<HTMLInputElement>('input[aria-label="Eraser"]')!
+  const icon = eraser.parentElement!.querySelector('svg')!
+  expect(icon.getAttribute('aria-hidden')).toBe('true')
+  await act(async () => icon.dispatchEvent(new MouseEvent('click', { bubbles: true })))
+  expect(eraser.checked).toBe(true)
+  await act(async () => cell(0).click())
+  expect(readTentsProgress(board)?.game[0]).toBe(0)
+  await click('Undo')
+  expect(readTentsProgress(board)?.game[0]).toBe(2)
+})
+
 it('explains and highlights a hint, applying it as one saved undoable move', async () => {
   await act(async () => root.render(<TentsStage board={board} />))
   await click('Hint')
