@@ -15,13 +15,3 @@ export function GameIcon({ type }: { readonly type: PuzzleType }) {
     {type === 'nurikabe' && <><path d="M4 4h9v9H4zm11.5 0h9v9h-9zm0 11.5h9v9h-9zM27 27h9v9h-9z" fill="currentColor" /><path d="M27 4h9v9h-9zM4 15.5h9v9H4zm23 0h9v9h-9zM4 27h9v9H4zm11.5 0h9v9h-9z" fill="currentColor" opacity=".5" /></>}
   </svg>
 }
-
-export function FeaturedArtwork({ type }: { readonly type: PuzzleType }) {
-  return <div className={`featured-art game-${type}`} aria-hidden="true">
-    <span className="featured-tile featured-tile-left">{type === 'trio'
-      ? <svg viewBox="0 0 40 40" fill="currentColor"><path d="M30 26A14 14 0 0 1 15 5a15 15 0 1 0 15 21Z" /></svg>
-      : <GameIcon type={type} />}</span>
-    <span className="featured-tile featured-tile-center"><GameIcon type={type} /></span>
-    <span className="featured-tile featured-tile-right"><GameIcon type={type === 'trio' ? 'star-battle' : type} /></span>
-  </div>
-}

@@ -12,7 +12,7 @@ import { WordGrid } from '../domain/wordPaths'
 import { currentStreak, readStoredStats, type SolveRecord } from '../lib/stats'
 import { useToday } from '../lib/useToday'
 import { Challenges } from '../components/Challenges'
-import { FeaturedArtwork, GameIcon } from '../components/GameArtwork'
+import { GameIcon } from '../components/GameArtwork'
 import './HomePage.css'
 
 type LoadState =
@@ -103,17 +103,14 @@ export function HomePage() {
   return (
     <section className="today">
       <div className="today-heading">
-        <div>
-          <p className="eyebrow">{formatPuzzleLabel(todayId, timeZone)}</p>
-          <h1 className="page-title">Today&rsquo;s puzzles<span className="today-title-dot" aria-hidden="true">.</span></h1>
-        </div>
-        {ready !== null && <TodayProgress probes={ready.probes} solved={ready.solved} records={ready.records} today={todayId} />}
+        <p className="eyebrow">{formatPuzzleLabel(todayId, timeZone)}</p>
+        <h1 className="page-title">Today&rsquo;s puzzles<span className="today-title-dot" aria-hidden="true">.</span></h1>
       </div>
       {ready === null && <p className="status">Checking what&rsquo;s out…</p>}
       {ready !== null && (
         <>
-          <div className="today-feature-area">
-            <FeaturedPuzzle probes={ready.probes} solved={ready.solved} />
+          <div className="today-overview">
+            <TodayProgress probes={ready.probes} solved={ready.solved} records={ready.records} today={todayId} />
             <Challenges records={ready.records} today={todayId} timeZone={timeZone} />
           </div>
           <div className="today-collection-heading">
@@ -146,37 +143,6 @@ function TodayProgress({ probes, solved, records, today }: {
     <p><strong>{completed} of {available.length}</strong> available puzzles completed</p>
     <progress aria-label="Today's completed puzzles" value={completed} max={available.length} />
     {inProgress > 0 && <p>{inProgress} in progress</p>}
-  </div>
-}
-
-function FeaturedPuzzle({ probes, solved }: { readonly probes: readonly TodayPuzzle[]; readonly solved: ReadonlySet<string> }) {
-  const available = probes.filter(probe => probe.puzzle !== null)
-  if (available.length === 0) return null
-  const selected = available.find(probe => !solved.has(probe.id) && probe.elapsedMs != null)
-    ?? available.find(probe => !solved.has(probe.id))
-  if (!selected?.puzzle) return <div className="featured-puzzle featured-complete">
-    <div><p className="featured-eyebrow">Today&rsquo;s puzzles</p><h2>Available puzzles complete</h2>
-      <Link className="tool-button primary featured-action" to="/archive">Explore archive <span aria-hidden="true">↗</span></Link></div>
-    <FeaturedArtwork type="star-battle" />
-  </div>
-
-  const puzzle = selected.puzzle
-  const variant = puzzle.puzzleType === 'train-tracks' ? trackVariantOf(selected.id)
-    : puzzle.puzzleType === 'sudoku' ? sudokuVariantOf(selected.id)
-      : puzzle.puzzleType === 'killer-sudoku' ? killerVariantOf(selected.id) : null
-  const name = `${PUZZLE_TYPE_LABEL[puzzle.puzzleType]}${variant ? ` ${variant.label}` : ''}`
-  const inProgress = selected.elapsedMs != null
-  return <div className="featured-puzzle">
-    <div className="featured-copy">
-      <p className="featured-eyebrow">{inProgress ? 'Continue a puzzle' : 'Today’s pick'}</p>
-      <h2>{PUZZLE_TYPE_LABEL[puzzle.puzzleType]}</h2>
-      <p className="featured-detail">{variant && <>{variant.label} · </>}{puzzle.board.width}×{puzzle.board.height} · {inProgress ? 'In progress' : 'Not started'}</p>
-      <Link className="tool-button primary featured-action" to={`/archive/${selected.id}`} state={{ fromToday: true }}
-        aria-label={`${inProgress ? 'Continue' : 'Start'} ${name}`}>
-        {inProgress ? 'Resume' : 'Play'} <span aria-hidden="true">↗</span>
-      </Link>
-    </div>
-    <FeaturedArtwork type={puzzle.puzzleType} />
   </div>
 }
 
@@ -240,7 +206,7 @@ export function TodayCards({ probes, solved }: {
                           <Link className="tool-button track-choice" to={`/archive/${entry.id}`} state={{ fromToday: true }}
                             aria-description={`${progressLabel(again, elapsed)}${size ? `, ${size} grid` : ''}`}
                             aria-label={`${elapsed === null ? 'Play' : 'Resume'} ${PUZZLE_TYPE_LABEL[family]} ${variant.label}${again ? ' again' : elapsed !== null ? ` at ${formatTime(elapsed)}` : ''}`}>
-                            <span className="track-choice-info"><span>{label}</span><span className={`choice-state ${progressClass(again, elapsed)}`}><span>{progressLabel(again, elapsed)}</span> <span aria-hidden="true">↗</span></span></span>
+                            <span className="track-choice-info"><span>{label}</span><span className={`choice-state ${progressClass(again, elapsed)}`}><span>{elapsed !== null ? `Resume · ${formatTime(elapsed)}` : progressLabel(again, elapsed)}</span>{elapsed === null && <> <span aria-hidden="true">↗</span></>}</span></span>
                           </Link>
                         )}
                       </li>
