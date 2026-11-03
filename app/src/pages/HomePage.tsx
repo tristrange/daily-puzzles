@@ -2,16 +2,18 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { PuzzleType } from '../domain/board'
 import { formatPuzzleLabel, puzzleIdsForDay, puzzleTypeOf } from '../domain/dates'
-import { DEFAULT_PUZZLE_TYPE, DIFFICULTY_LABEL, PUZZLE_TYPE_LABEL, PUZZLE_PIECE } from '../domain/games'
+import { DEFAULT_PUZZLE_TYPE, DIFFICULTY_LABEL, PUZZLE_TYPE_LABEL } from '../domain/games'
 import { probePuzzles, type ProbedPuzzle } from '../lib/puzzles'
 import { sudokuVariantOf, killerVariantOf } from '../domain/sudokuLevels'
 import { trackVariantOf } from '../domain/trackSizes'
 import { formatTime } from '../domain/game'
 import { isMarksPuzzle, isTracksPuzzle, isTrioPuzzle, isTentsPuzzle, isSudokuPuzzle, isNurikabePuzzle, type Puzzle } from '../domain/puzzle'
 import { WordGrid } from '../domain/wordPaths'
-import { readStoredStats, type SolveRecord } from '../lib/stats'
+import { currentStreak, readStoredStats, type SolveRecord } from '../lib/stats'
 import { useToday } from '../lib/useToday'
 import { Challenges } from '../components/Challenges'
+import { FeaturedArtwork, GameIcon } from '../components/GameArtwork'
+import './HomePage.css'
 
 type LoadState =
   | { status: 'loading' }
@@ -22,7 +24,7 @@ type TodayPuzzle = ProbedPuzzle & { readonly elapsedMs?: number | null }
 const DESCRIPTION: Record<PuzzleType, string> = {
   queens: 'One queen in each row, column and region. No touching.',
   'star-battle': 'Place stars to satisfy each row, column and region. Keep them apart.',
-  'train-tracks': 'Connect the ends with one track. Match every row and column count.',
+  'train-tracks': 'Connect the ends with one track.',
   'word-paths': 'Find words along adjoining letters. Use every letter once.',
   trio: 'Balance sun, moon and star. Three of each in every row and column.',
   tents: 'Pair every tree with a tent. Match the counts and keep tents apart.',
@@ -101,35 +103,80 @@ export function HomePage() {
   return (
     <section className="today">
       <div className="today-heading">
-        <p className="eyebrow">{formatPuzzleLabel(todayId, timeZone)}</p>
-        <h1 className="page-title">Today&rsquo;s puzzles</h1>
+        <div>
+          <p className="eyebrow">{formatPuzzleLabel(todayId, timeZone)}</p>
+          <h1 className="page-title">Today&rsquo;s puzzles<span className="today-title-dot" aria-hidden="true">.</span></h1>
+        </div>
+        {ready !== null && <TodayProgress probes={ready.probes} solved={ready.solved} records={ready.records} today={todayId} />}
       </div>
       {ready === null && <p className="status">Checking what&rsquo;s out…</p>}
       {ready !== null && (
         <>
-          <TodayProgress probes={ready.probes} solved={ready.solved} />
-          <Challenges records={ready.records} today={todayId} timeZone={timeZone} />
+          <div className="today-feature-area">
+            <FeaturedPuzzle probes={ready.probes} solved={ready.solved} />
+            <Challenges records={ready.records} today={todayId} timeZone={timeZone} />
+          </div>
+          <div className="today-collection-heading">
+            <h2>Choose a game</h2>
+            <Link to="/archive">Explore the archive <span aria-hidden="true">→</span></Link>
+          </div>
           <TodayCards probes={ready.probes} solved={ready.solved} />
         </>
       )}
       <div className="today-more">
         <Link to="/learn">Learn to solve <span aria-hidden="true">→</span></Link>
         <Link to="/preview/deduction">Try today&rsquo;s deduction preview <span aria-hidden="true">→</span></Link>
-        <p>Another round?</p>
-        <Link to="/archive">Explore the archive <span aria-hidden="true">→</span></Link>
         <Link to="/stats">Your progress <span aria-hidden="true">→</span></Link>
       </div>
     </section>
   )
 }
 
-function TodayProgress({ probes, solved }: { readonly probes: readonly TodayPuzzle[]; readonly solved: ReadonlySet<string> }) {
+function TodayProgress({ probes, solved, records, today }: {
+  readonly probes: readonly TodayPuzzle[]; readonly solved: ReadonlySet<string>
+  readonly records: readonly SolveRecord[]; readonly today: string
+}) {
   const available = probes.filter(probe => probe.puzzle !== null)
   const completed = available.filter(probe => solved.has(probe.id)).length
+  const inProgress = available.filter(probe => !solved.has(probe.id) && probe.elapsedMs != null).length
+  const streak = currentStreak(records, today)
   if (available.length === 0) return <p className="today-progress">No puzzles available right now.</p>
   return <div className="today-progress">
+    <p className="today-progress-title">Today&rsquo;s progress {streak > 0 && <span className="today-streak">{streak} day{streak === 1 ? '' : 's'} streak</span>}</p>
     <p><strong>{completed} of {available.length}</strong> available puzzles completed</p>
     <progress aria-label="Today's completed puzzles" value={completed} max={available.length} />
+    {inProgress > 0 && <p>{inProgress} in progress</p>}
+  </div>
+}
+
+function FeaturedPuzzle({ probes, solved }: { readonly probes: readonly TodayPuzzle[]; readonly solved: ReadonlySet<string> }) {
+  const available = probes.filter(probe => probe.puzzle !== null)
+  if (available.length === 0) return null
+  const selected = available.find(probe => !solved.has(probe.id) && probe.elapsedMs != null)
+    ?? available.find(probe => !solved.has(probe.id))
+  if (!selected?.puzzle) return <div className="featured-puzzle featured-complete">
+    <div><p className="featured-eyebrow">Today&rsquo;s puzzles</p><h2>Available puzzles complete</h2>
+      <Link className="tool-button primary featured-action" to="/archive">Explore archive <span aria-hidden="true">↗</span></Link></div>
+    <FeaturedArtwork type="star-battle" />
+  </div>
+
+  const puzzle = selected.puzzle
+  const variant = puzzle.puzzleType === 'train-tracks' ? trackVariantOf(selected.id)
+    : puzzle.puzzleType === 'sudoku' ? sudokuVariantOf(selected.id)
+      : puzzle.puzzleType === 'killer-sudoku' ? killerVariantOf(selected.id) : null
+  const name = `${PUZZLE_TYPE_LABEL[puzzle.puzzleType]}${variant ? ` ${variant.label}` : ''}`
+  const inProgress = selected.elapsedMs != null
+  return <div className="featured-puzzle">
+    <div className="featured-copy">
+      <p className="featured-eyebrow">{inProgress ? 'Continue a puzzle' : 'Today’s pick'}</p>
+      <h2>{PUZZLE_TYPE_LABEL[puzzle.puzzleType]}</h2>
+      <p className="featured-detail">{variant && <>{variant.label} · </>}{puzzle.board.width}×{puzzle.board.height} · {inProgress ? 'In progress' : 'Not started'}</p>
+      <Link className="tool-button primary featured-action" to={`/archive/${selected.id}`} state={{ fromToday: true }}
+        aria-label={`${inProgress ? 'Continue' : 'Start'} ${name}`}>
+        {inProgress ? 'Resume' : 'Play'} <span aria-hidden="true">↗</span>
+      </Link>
+    </div>
+    <FeaturedArtwork type={puzzle.puzzleType} />
   </div>
 }
 
@@ -159,27 +206,28 @@ export function TodayCards({ probes, solved }: {
       {orderedGroups.map(([family, entries]) => {
         const probe = entries[0]!
         const sized = family === 'sudoku' || family === 'killer-sudoku' || family === 'train-tracks' && trackVariantOf(probe.id) !== null
+        const trackSizes = family === 'train-tracks'
+          ? entries.flatMap(entry => { const size = trackVariantOf(entry.id); return size ? [`${size.side}×${size.side}`] : [] }).join(' · ')
+          : ''
         const again = solved.has(probe.id)
         const elapsed = !again ? probe.elapsedMs ?? null : null
         return (
           <li key={family} className="game-card-item">
             <div className={`game-card game-${family}`}>
-              <div className="game-motif" aria-hidden="true">
-                <div className="motif-grid">
-                  {Array.from({ length: 9 }, (_, cell) => (
-                    <span key={cell} className={cell === 4 ? 'motif-piece' : ''}>
-                      {cell === 4 && PUZZLE_PIECE[family].glyph}
-                    </span>
-                  ))}
+              <div className="game-card-heading">
+                <div className="game-motif"><GameIcon type={family} /></div>
+                <div className="game-card-heading-copy">
+                  <h3 className="game-card-title">{PUZZLE_TYPE_LABEL[family]}</h3>
+                  <p className="game-card-description">{DESCRIPTION[family]}</p>
+                  {sized && <p className="game-card-variant-count">{trackSizes || `${entries.length} daily puzzles`}</p>}
                 </div>
               </div>
-              <h2 className="game-card-title">{PUZZLE_TYPE_LABEL[family]}</h2>
-              <p className="game-card-description">{DESCRIPTION[family]}</p>
               {sized ? (
                 <ul className="track-variants">
                   {entries.map((entry) => {
                     const variant = family === 'sudoku' ? sudokuVariantOf(entry.id)! : family === 'killer-sudoku' ? killerVariantOf(entry.id)! : trackVariantOf(entry.id)!
-                    const label = 'side' in variant ? `${variant.label} · ${variant.side}×${variant.side}` : variant.label
+                    const size = 'side' in variant ? `${variant.side}×${variant.side}` : null
+                    const label = <>{variant.label}{size && <span className="choice-size"> {size}</span>}</>
                     const again = solved.has(entry.id)
                     const elapsed = !again ? entry.elapsedMs ?? null : null
                     return (
@@ -190,10 +238,9 @@ export function TodayCards({ probes, solved }: {
                           </div>
                         ) : (
                           <Link className="tool-button track-choice" to={`/archive/${entry.id}`} state={{ fromToday: true }}
-                            aria-description={progressLabel(again, elapsed)}
+                            aria-description={`${progressLabel(again, elapsed)}${size ? `, ${size} grid` : ''}`}
                             aria-label={`${elapsed === null ? 'Play' : 'Resume'} ${PUZZLE_TYPE_LABEL[family]} ${variant.label}${again ? ' again' : elapsed !== null ? ` at ${formatTime(elapsed)}` : ''}`}>
-                            <span className="track-choice-info"><span>{label}</span><span className={`choice-state ${progressClass(again, elapsed)}`}>{progressLabel(again, elapsed)}</span></span>
-                            <span className="track-choice-action">{again ? 'Play again' : elapsed !== null ? 'Resume' : 'Play'} <span aria-hidden="true">↗</span></span>
+                            <span className="track-choice-info"><span>{label}</span><span className={`choice-state ${progressClass(again, elapsed)}`}><span>{progressLabel(again, elapsed)}</span> <span aria-hidden="true">↗</span></span></span>
                           </Link>
                         )}
                       </li>
@@ -202,18 +249,16 @@ export function TodayCards({ probes, solved }: {
                 </ul>
               ) : (
                 <>
-                  {probe.puzzle !== null && <p className="game-card-detail">
-                    {probe.puzzle.board.width}&times;{probe.puzzle.board.height} grid
-                    {probe.puzzle.difficulty != null && <> · {DIFFICULTY_LABEL[probe.puzzle.difficulty]}</>}
-                  </p>}
                   {probe.puzzle === null ? <p className="game-card-state">{probe.unavailable ? 'Not saved — connect to load.' : 'Not published yet.'}</p> : (
-                    <>
-                      <p className={`game-card-state ${progressClass(again, elapsed)}`}>{progressLabel(again, elapsed)}</p>
-                      <Link className="tool-button primary" to={`/archive/${probe.id}`} state={{ fromToday: true }}
+                    <div className="game-card-footer">
+                      <div><p className="game-card-detail">{probe.puzzle.board.width}&times;{probe.puzzle.board.height} grid
+                        {probe.puzzle.difficulty != null && <> · {DIFFICULTY_LABEL[probe.puzzle.difficulty]}</>}</p>
+                        <p className={`game-card-state ${progressClass(again, elapsed)}`}>{progressLabel(again, elapsed)}</p></div>
+                      <Link className="game-card-play" to={`/archive/${probe.id}`} state={{ fromToday: true }}
                         aria-label={`${elapsed === null ? 'Play' : 'Resume'} ${PUZZLE_TYPE_LABEL[family]}${again ? ' again' : elapsed !== null ? ` at ${formatTime(elapsed)}` : ''}`}>
                         {again ? 'Play again' : elapsed !== null ? 'Resume' : 'Play'} <span aria-hidden="true">↗</span>
                       </Link>
-                    </>
+                    </div>
                   )}
                 </>
               )}

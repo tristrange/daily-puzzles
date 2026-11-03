@@ -21,9 +21,13 @@ export function Challenges({ records, today, timeZone }: {
   return <div className="challenge-cards">
     <details className="challenge-card daily-challenge">
       <summary>
-        <span className="challenge-title">Daily challenge</span>
-        <span className={dailyDone ? 'challenge-summary complete' : 'challenge-summary'}>
-          {dailyDone ? 'Complete!' : <>{daily.completed} / {daily.goals.length} goals<span className="sr-only"> complete</span></>}
+        <span className="challenge-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.8" /><path d="m8.7 12 2.2 2.2 4.4-4.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
+        <span className="challenge-summary-content">
+          <span className="challenge-title">Daily challenge</span>
+          <span className={dailyDone ? 'challenge-summary complete' : 'challenge-summary'}>
+            {dailyDone ? 'Complete!' : <>{daily.completed} / {daily.goals.length} goals<span className="sr-only"> complete</span></>}
+          </span>
+          <span className="challenge-bar" aria-hidden="true"><span style={{ width: `${100 * daily.completed / daily.goals.length}%` }} /></span>
         </span>
         <span className="challenge-chevron" aria-hidden="true">⌄</span>
       </summary>
@@ -35,9 +39,13 @@ export function Challenges({ records, today, timeZone }: {
     </details>
     <details className="challenge-card weekly-challenge">
       <summary>
-        <span className="challenge-title">Weekly challenge</span>
-        <span className={weeklyDone ? 'challenge-summary complete' : 'challenge-summary'}>
-          {weeklyDone ? 'Complete!' : `${weekly.solves} / ${weekly.target} puzzles`}
+        <span className="challenge-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M5 5h14v15H5zM8 3v4M16 3v4M5 9h14M9 14l2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
+        <span className="challenge-summary-content">
+          <span className="challenge-title">Weekly challenge</span>
+          <span className={weeklyDone ? 'challenge-summary complete' : 'challenge-summary'}>
+            {weeklyDone ? 'Complete!' : `${weekly.solves} / ${weekly.target} puzzles`}
+          </span>
+          <span className="challenge-bar" aria-hidden="true"><span style={{ width: `${100 * Math.min(weekly.solves, weekly.target) / weekly.target}%` }} /></span>
         </span>
         <span className="challenge-chevron" aria-hidden="true">⌄</span>
       </summary>

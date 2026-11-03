@@ -151,6 +151,35 @@ it('offers a valid zero-time save without confusing it with a missing attempt', 
   expect(link('Play Star Battle')).not.toBeNull()
 })
 
+it('features an available unfinished variant and stops offering it when solved', async () => {
+  const puzzle = puzzles[3]!
+  storeTrackProgress(puzzle.id, createTracksGame(puzzle.board as TrackGrid), { elapsedMs: 0 })
+  await render()
+  expect(link('Continue Train Tracks Medium')?.getAttribute('href')).toBe(`/archive/${puzzle.id}`)
+  expect(container.querySelector('.featured-puzzle')?.textContent).toContain('In progress')
+
+  localStorage.setItem(STATS_STORAGE_KEY, JSON.stringify([{
+    id: puzzle.id, puzzleType: puzzle.puzzleType, size: puzzle.board.width,
+    elapsedMs: 1000, hints: 0, solvedAt: Date.now(),
+  }]))
+  await act(async () => {
+    window.dispatchEvent(new Event('storage'))
+    await vi.dynamicImportSettled()
+  })
+  expect(link('Continue Train Tracks Medium')).toBeNull()
+  expect(link('Start Queens')?.getAttribute('href')).toBe('/archive/2026-10-21')
+})
+
+it('offers the archive when every available daily puzzle is complete', async () => {
+  localStorage.setItem(STATS_STORAGE_KEY, JSON.stringify(puzzles.map(puzzle => ({
+    id: puzzle.id, puzzleType: puzzle.puzzleType, size: puzzle.board.width,
+    elapsedMs: 1000, hints: 0, solvedAt: Date.now(),
+  }))))
+  await render()
+  expect(container.querySelector('.featured-puzzle')?.textContent).toContain('Available puzzles complete')
+  expect(container.querySelector('.featured-puzzle a')?.getAttribute('href')).toBe('/archive')
+})
+
 it('counts individual available puzzles and excludes unavailable variants even if they were solved', async () => {
   const unavailable = puzzles[3]!
   vi.stubGlobal('fetch', async (url: string) => {

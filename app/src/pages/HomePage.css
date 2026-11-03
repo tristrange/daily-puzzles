@@ -1,0 +1,189 @@
+/* The wider desk is limited to Today; puzzle boards keep their existing layout. */
+#root:has(.today) { max-width: 1380px; }
+.content:has(.today) { padding-top: 1.25rem; }
+
+.today {
+  --desk-surface: light-dark(#fff, #1a1f2b);
+  --desk-border: light-dark(#dce1e9, #343c4d);
+  --desk-hero: light-dark(#e7f0ff, #24314a);
+  --desk-hero-border: light-dark(#cadcf5, #40516b);
+  --desk-progress: light-dark(#dce5f2, #394253);
+}
+
+.today-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem 2rem;
+  margin-bottom: 1.5rem;
+}
+.today-heading .page-title { margin: 0; font-size: clamp(2rem, 3.5vw, 2.75rem); }
+.today-heading .eyebrow { margin-bottom: .4rem; }
+.today-title-dot { color: var(--accent); }
+.today-progress {
+  width: min(100%, 21rem);
+  padding: .8rem 1rem;
+  margin: 0;
+  border: 1px solid var(--desk-border);
+  border-radius: 1rem;
+  background: var(--desk-surface);
+  font-size: .8125rem;
+}
+.today-progress p { margin: 0; }
+.today-progress p + p { margin-top: .3rem; }
+.today-progress strong { color: var(--text-h); }
+.today-progress-title { display: flex; align-items: center; justify-content: space-between; gap: .75rem; color: var(--text-h); font-weight: 650; }
+.today-streak { color: light-dark(#835911, #f4d894); font-size: .75rem; white-space: nowrap; }
+.today-progress progress { display: block; appearance: none; width: 100%; height: .4rem; margin: .5rem 0 .1rem; border: 0; border-radius: 1rem; background: var(--desk-progress); color: var(--accent); }
+.today-progress progress::-webkit-progress-bar { border-radius: 1rem; background: var(--desk-progress); }
+.today-progress progress::-webkit-progress-value { border-radius: 1rem; background: var(--accent); transition: width 250ms ease-out; }
+.today-progress progress::-moz-progress-bar { border-radius: 1rem; background: var(--accent); transition: width 250ms ease-out; }
+
+.today-feature-area { display: grid; grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr); align-items: stretch; gap: 1rem; margin-bottom: 1.5rem; }
+.today-feature-area:not(:has(.featured-puzzle)) { grid-template-columns: 1fr; }
+.today-feature-area:not(:has(.featured-puzzle)) .challenge-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.today-feature-area:not(:has(.featured-puzzle)) .challenge-card[open] { grid-column: 1 / -1; }
+.featured-puzzle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  min-height: 12rem;
+  overflow: hidden;
+  gap: 1rem;
+  padding: 1.5rem 1.75rem;
+  border: 1px solid var(--desk-hero-border);
+  border-radius: 1.35rem;
+  background: var(--desk-hero);
+}
+.featured-copy { position: relative; z-index: 1; min-width: 0; }
+.featured-eyebrow { margin: 0 0 .45rem; color: light-dark(#405d88, #bed5f7); font-size: .75rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.featured-puzzle h2 { margin: 0; font-size: clamp(1.6rem, 2.5vw, 2rem); line-height: 1.1; letter-spacing: -.035em; }
+.featured-detail { margin: .35rem 0 .7rem; font-size: .875rem; color: light-dark(#465d79, #cdd9ea); }
+.featured-action { min-height: 2.75rem; padding: .5rem .9rem; gap: .5rem; font-size: .875rem; }
+.featured-complete h2 { max-width: 18ch; font-size: 1.6rem; }
+.featured-complete .featured-action { margin-top: .8rem; }
+.featured-art { position: relative; flex: 0 1 19rem; width: min(19rem, 44%); height: 10rem; pointer-events: none; }
+.featured-tile {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / .22);
+  box-shadow: inset 0 0 0 5px rgb(255 255 255 / .1);
+  transition: transform 140ms ease-out;
+}
+.featured-tile svg { width: 48%; height: 48%; }
+.featured-tile-left { width: 7rem; height: 7rem; left: 3%; bottom: .6rem; transform: rotate(-10deg); border-radius: 1.4rem; background: #4d5688; color: #b8d7ff; }
+.featured-tile-center { width: 8.5rem; height: 8.5rem; left: 33%; top: .35rem; transform: rotate(4deg); border-radius: 1.7rem; background: var(--motif-color); color: var(--surface); }
+.featured-art.game-trio .featured-tile-center { background: #f4c96b; color: #433720; }
+.featured-puzzle:has(.featured-action:active) .featured-tile-center { transform: translateY(2px) rotate(4deg) scale(.98); }
+.featured-tile-right { width: 6rem; height: 6rem; right: 1%; bottom: .65rem; transform: rotate(12deg); border-radius: 1.3rem; background: #9c79bb; color: #f1e0ff; }
+
+.challenge-cards { display: grid; gap: .75rem; align-content: stretch; min-width: 0; }
+.challenge-card { min-width: 0; border: 1px solid var(--desk-border); border-radius: 1rem; background: var(--desk-surface); }
+.challenge-card summary { display: flex; align-items: center; gap: .75rem; min-height: 5.55rem; padding: .8rem 1rem; cursor: pointer; list-style: none; }
+.challenge-card summary::-webkit-details-marker { display: none; }
+.challenge-icon { display: grid; place-items: center; flex: none; width: 2.75rem; height: 2.75rem; border-radius: .8rem; color: light-dark(#805600, #f4c96b); background: light-dark(#fff1d1, #443a29); }
+.weekly-challenge .challenge-icon { color: light-dark(#326486, #a5d1f5); background: light-dark(#e5f1f8, #2c3c4b); }
+.challenge-icon svg { width: 1.4rem; height: 1.4rem; }
+.challenge-summary-content { display: grid; grid-template-columns: minmax(0, 1fr) auto; flex: 1; min-width: 0; gap: .35rem .5rem; align-items: center; }
+.challenge-title { color: var(--text-h); font-size: .875rem; font-weight: 650; }
+.challenge-summary { color: var(--text); font-size: .75rem; text-align: right; }
+.challenge-summary.complete { color: var(--hint); font-weight: 650; }
+.challenge-bar { grid-column: 1 / -1; display: block; height: .3rem; overflow: hidden; border-radius: 1rem; background: var(--desk-progress); }
+.challenge-bar > span { display: block; height: 100%; border-radius: inherit; background: light-dark(#aa7000, #f4c96b); transition: width 250ms ease-out; }
+.weekly-challenge .challenge-bar > span { background: var(--accent); }
+.challenge-chevron { flex: none; color: var(--text); font-size: 1.25rem; line-height: 1; }
+.challenge-card[open] .challenge-chevron { transform: rotate(180deg); }
+.challenge-content { padding: 0 1rem .75rem; }
+.challenge-content ul { margin: 0; padding: 0; list-style: none; }
+.challenge-content li { display: flex; align-items: center; gap: .65rem; padding: .45rem 0; font-size: .875rem; }
+.challenge-check { color: var(--text); font-size: 1rem; }
+.challenge-check.complete { color: var(--hint); font-weight: 700; }
+.challenge-count { margin-left: auto; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+.challenge-content p { margin: .6rem 0 0; font-size: .8125rem; }
+.challenge-content a { display: inline-flex; align-items: center; gap: .35rem; min-height: 2.75rem; font-size: .875rem; }
+
+.today-collection-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .25rem 1rem; margin-bottom: .75rem; }
+.today-collection-heading h2 { margin: 0; font-size: 1.3rem; letter-spacing: -.025em; }
+.today-collection-heading a { display: inline-flex; align-items: center; gap: .25rem; min-height: 2.75rem; font-size: .875rem; text-decoration: none; }
+.today-collection-heading a:hover, .game-card-play:hover { text-decoration: underline; }
+.game-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: .875rem; margin: 0 0 1.5rem; padding: 0; list-style: none; }
+.game-card-item { display: flex; min-width: 0; }
+.game-card { display: flex; flex: 1; flex-direction: column; min-width: 0; gap: .7rem; padding: 1rem; border: 1px solid var(--desk-border); border-radius: 1.125rem; background: var(--desk-surface); }
+.game-card-heading { display: flex; align-items: center; gap: .85rem; min-width: 0; }
+.game-card-heading-copy { min-width: 0; }
+.game-motif { display: grid; place-items: center; flex: none; width: 3.5rem; height: 3.5rem; border-radius: 1rem; background: var(--motif-wash); color: var(--motif-color); transition: transform 140ms ease-out; }
+.game-motif svg { width: 2rem; height: 2rem; }
+.game-card-title { margin: 0; font-size: 1.13rem; line-height: 1.2; letter-spacing: -.025em; }
+.game-card-description { margin: .3rem 0 0; min-height: 2.6em; font-size: .8125rem; line-height: 1.3; }
+.game-card-variant-count { display: none; }
+.game-train-tracks .game-card-description { min-height: 0; }
+.game-train-tracks .game-card-variant-count { display: block; margin: .2rem 0 0; font-size: .75rem; }
+.game-train-tracks .choice-size { display: none; }
+.game-card-footer { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin: auto 0 0 4.35rem; }
+.game-card-detail, .game-card-state { margin: 0; font-size: .75rem; line-height: 1.4; }
+.game-card-state.solved, .choice-state.solved { color: var(--hint); }
+.game-card-state.in-progress, .choice-state.in-progress { color: var(--accent); }
+.game-card-play { display: inline-flex; align-items: center; justify-content: flex-end; gap: .2rem; flex: none; min-width: 2.75rem; min-height: 2.75rem; color: var(--accent); font-size: .8125rem; font-weight: 650; text-decoration: none; white-space: nowrap; }
+.game-card:has(.game-card-play:active) .game-motif { transform: scale(.95); }
+.track-variants { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .4rem; margin: auto 0 0; padding: 0; list-style: none; }
+.track-variants li { display: flex; min-width: 0; }
+.track-choice, .track-unpublished { display: flex; flex: 1; justify-content: flex-start; min-width: 0; min-height: 3.6rem; padding: .5rem .4rem; border: 1px solid var(--desk-border); border-radius: .65rem; background: light-dark(#f6f8fc, #232a38); text-align: left; }
+.track-choice-info { display: grid; gap: .2rem; min-width: 0; font-size: .75rem; font-weight: 650; line-height: 1.25; }
+.choice-state { color: var(--text); font-size: .6875rem; font-weight: 400; }
+.track-unpublished { display: grid; align-content: center; gap: .2rem; font-size: .75rem; line-height: 1.25; }
+.today-more { display: flex; flex-wrap: wrap; gap: .25rem 1.5rem; font-size: .875rem; }
+.today-more a { display: inline-flex; align-items: center; gap: .25rem; min-height: 2.75rem; }
+
+@media (max-width: 65rem) {
+  .game-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .today-feature-area { grid-template-columns: minmax(0, 1.4fr) minmax(16rem, 1fr); }
+}
+@media (max-width: 48rem) {
+  .today-heading { align-items: start; flex-direction: column; }
+  .today-progress { width: 100%; }
+  .today-feature-area { grid-template-columns: 1fr; }
+  .challenge-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .challenge-card[open] { grid-column: 1 / -1; }
+}
+@media (max-width: 40rem) {
+  .game-cards { grid-template-columns: 1fr; gap: .625rem; }
+  .game-card { padding: .75rem; }
+  .game-card:not(:has(.track-variants)) { display: grid; grid-template-columns: 3rem minmax(0, 1fr) auto; gap: .15rem .75rem; align-items: center; }
+  .game-card:not(:has(.track-variants)) .game-card-heading, .game-card:not(:has(.track-variants)) .game-card-footer { display: contents; }
+  .game-card:not(:has(.track-variants)) .game-motif { grid-column: 1; grid-row: 1 / 3; }
+  .game-card:not(:has(.track-variants)) .game-card-heading-copy { grid-column: 2; grid-row: 1; align-self: end; }
+  .game-card:not(:has(.track-variants)) .game-card-footer > div, .game-card:not(:has(.track-variants)) > .game-card-state { grid-column: 2; grid-row: 2; align-self: start; }
+  .game-card:not(:has(.track-variants)) .game-card-play { grid-column: 3; grid-row: 1 / 3; }
+  .game-card-description, .game-card-detail { display: none; }
+  .game-card-variant-count { display: block; margin: .2rem 0 0; font-size: .75rem; }
+  .game-motif { width: 3rem; height: 3rem; border-radius: .85rem; }
+  .game-motif svg { width: 1.7rem; height: 1.7rem; }
+  .game-card-title { font-size: 1rem; }
+  .featured-puzzle { min-height: 10.5rem; padding: 1rem; }
+  .featured-art { flex-basis: 9rem; height: 7rem; }
+  .featured-tile-left { width: 4rem; height: 4rem; border-radius: .9rem; }
+  .featured-tile-center { width: 5.2rem; height: 5.2rem; border-radius: 1.1rem; }
+  .featured-tile-right { width: 3.5rem; height: 3.5rem; border-radius: .8rem; }
+  .challenge-card summary { min-height: 5rem; padding: .7rem; gap: .4rem; }
+  .challenge-icon { display: none; }
+  .challenge-summary-content { grid-template-columns: 1fr; }
+  .challenge-summary { text-align: left; }
+  .challenge-bar { grid-column: 1; }
+  .challenge-title { font-size: .8125rem; }
+  .challenge-chevron { align-self: flex-start; }
+}
+@media (max-width: 22.5rem) {
+  .track-variants { grid-template-columns: 1fr; }
+  .game-train-tracks .choice-size { display: inline; }
+  .track-choice, .track-unpublished { min-height: 2.75rem; }
+  .track-choice-info { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: .5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .challenge-bar > span, .featured-tile, .game-motif, .today-progress progress::-webkit-progress-value { transition: none; }
+  .today-progress progress::-moz-progress-bar { transition: none; }
+  .featured-puzzle:has(.featured-action:active) .featured-tile-center { transform: rotate(4deg); }
+  .game-card:has(.game-card-play:active) .game-motif { transform: none; }
+}
+@media (prefers-contrast: more) { .featured-puzzle, .challenge-card, .track-choice { border-color: var(--text-h); } }

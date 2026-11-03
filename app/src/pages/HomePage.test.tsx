@@ -38,7 +38,6 @@ describe('daily Train Tracks choices', () => {
     expect(html).toContain('aria-label="Play Train Tracks Medium"')
     expect(html.match(/>Completed</g)).toHaveLength(1)
     expect(html).toContain('Not started')
-    expect(html).toContain('Play again')
   })
 
   it('keeps the other choices when Medium is unpublished', () => {
