@@ -1,7 +1,7 @@
 /**
  * Region colours, assigned so that regions which touch can never be confused.
  *
- * The palette is hand-picked and stays as it was, but which region gets which
+ * The original palette is hand-picked, but which region gets which
  * colour is no longer `regionId % palette.length`. That expression had no idea
  * where the regions were, so two near-identical swatches could end up sharing
  * an edge: `#219ebc` and `#2a9d8f` are 0.068 apart in OKLab, `#f4a261` and
@@ -36,21 +36,20 @@
  * player identifies a region by the cells around them, and reuse keeps the
  * colours in play few enough to hold in the head.
  *
- * The floor is a target rather than a hard guarantee. Every board this app
- * ships clears it with room to spare — the climb gets the busiest of them to
- * 0.2 with 11 of the 16 colours in use — but a hypothetical dense board could
- * not, and then the widest assignment available is returned rather than none.
- * `regionColours.test.ts` asserts the floor against every shipped puzzle, so
- * that day would fail a test instead of quietly shipping.
+ * The floor is a target rather than a hard guarantee. A bounded fallback can
+ * use an additional swatch when the original palette cannot separate a board
+ * or distinguish all its regions. If the search cannot do so within its budget,
+ * the best assignment found so far is returned. `colours.test.ts` checks every
+ * shipped board, so an unsuitable assignment is caught before deployment.
  */
 
 import type { Board } from '../domain/board'
 
 /**
- * Sixteen region colours. Unchanged from the palette this shipped with; only
- * the assignment strategy is new.
+ * Keep the original palette as the first choice so already-distinct, readable
+ * boards do not change when a new fallback colour is added.
  */
-export const REGION_COLOURS = [
+const ORIGINAL_COLOURS = [
   '#e76f51',
   '#f4a261',
   '#e9c46a',
@@ -68,6 +67,9 @@ export const REGION_COLOURS = [
   '#cc8b86',
   '#7f9cf5',
 ] as const
+
+/** An extra colour for boards the original palette cannot distinguish. */
+export const REGION_COLOURS = [...ORIGINAL_COLOURS, '#d7aeea'] as const
 
 /**
  * The smallest OKLab distance two colours may have and still be told apart when
@@ -158,8 +160,8 @@ function narrowestBorder(pairs: readonly [number, number][], colours: readonly s
 
 /** A greedy pass: regions in id order, taking the first colour that clears the floor. */
 function greedyPass(board: Board, offset: number): string[] {
-  const rotated = REGION_COLOURS.map(
-    (_, index) => REGION_COLOURS[(index + offset) % REGION_COLOURS.length] as string,
+  const rotated = ORIGINAL_COLOURS.map(
+    (_, index) => ORIGINAL_COLOURS[(index + offset) % ORIGINAL_COLOURS.length] as string,
   )
   const assigned: string[] = []
   for (let regionId = 0; regionId < board.regionCount; regionId += 1) {
@@ -221,7 +223,7 @@ function climb(pairs: readonly [number, number][], seed: readonly string[]): str
   for (let sweep = 0; sweep < SWEEPS; sweep += 1) {
     let improved = false
     for (let regionId = 0; regionId < best.length; regionId += 1) {
-      for (const candidate of REGION_COLOURS) {
+      for (const candidate of ORIGINAL_COLOURS) {
         if (candidate === best[regionId]) continue
         const trial = [...best]
         trial[regionId] = candidate
@@ -291,8 +293,8 @@ function searchAssignment(
       .map((neighbour) => assigned[neighbour])
       .filter((hex): hex is string => hex !== null)
     const palette = [
-      ...REGION_COLOURS.filter((hex) => !usage.has(hex)),
-      ...REGION_COLOURS.filter((hex) => usage.has(hex)),
+      ...ORIGINAL_COLOURS.filter((hex) => !usage.has(hex)),
+      ...ORIGINAL_COLOURS.filter((hex) => usage.has(hex)),
     ]
     for (const colour of palette) {
       if (budget <= 0) return false
@@ -312,6 +314,50 @@ function searchAssignment(
   return place(0) ? (assigned as string[]) : null
 }
 
+/** Find distinct, well-separated colours when earlier attempts fall short. */
+function searchDistinct(pairs: readonly [number, number][], regionCount: number): string[] | null {
+  const neighbours: number[][] = Array.from({ length: regionCount }, () => [])
+  for (const [low, high] of pairs) {
+    neighbours[low]?.push(high)
+    neighbours[high]?.push(low)
+  }
+  const assigned: (string | null)[] = Array.from({ length: regionCount }, () => null)
+  const used = new Set<string>()
+  let budget = SEARCH_BUDGET
+
+  const place = (remaining: number): boolean => {
+    if (remaining === 0) return true
+    let next = -1
+    let choices: readonly string[] = []
+    for (let region = 0; region < regionCount; region += 1) {
+      if (assigned[region] !== null) continue
+      const possible = REGION_COLOURS.filter(colour => !used.has(colour)
+        && (neighbours[region] ?? []).every(neighbour => {
+          const other = assigned[neighbour]
+          return other == null || colourDistance(colour, other) >= MIN_NEIGHBOUR_DISTANCE
+        }))
+      if (possible.length === 0) return false
+      if (next === -1 || possible.length < choices.length
+        || (possible.length === choices.length && (neighbours[region]?.length ?? 0) > (neighbours[next]?.length ?? 0))) {
+        next = region
+        choices = possible
+      }
+    }
+    for (const colour of choices) {
+      if (budget <= 0) return false
+      budget -= 1
+      assigned[next] = colour
+      used.add(colour)
+      if (place(remaining - 1)) return true
+      used.delete(colour)
+      assigned[next] = null
+    }
+    return false
+  }
+
+  return place(regionCount) ? assigned.filter((colour): colour is string => colour !== null) : null
+}
+
 /**
  * The colour for every region id on `board`, in region order. Pure and
  * deterministic: the same board always paints the same regions the same way.
@@ -322,9 +368,9 @@ export function regionColours(board: Board): readonly string[] {
   // keeps its colours if nothing better turns up.
   const seeds = [
     Array.from({ length: board.regionCount }, (_, regionId) => {
-      return REGION_COLOURS[regionId % REGION_COLOURS.length] as string
+      return ORIGINAL_COLOURS[regionId % ORIGINAL_COLOURS.length] as string
     }),
-    ...Array.from({ length: REGION_COLOURS.length }, (_, offset) => greedyPass(board, offset)),
+    ...Array.from({ length: ORIGINAL_COLOURS.length }, (_, offset) => greedyPass(board, offset)),
   ]
   let best: string[] = []
   let bestScore: number[] = []
@@ -344,8 +390,15 @@ export function regionColours(board: Board): readonly string[] {
     const exact = searchAssignment(pairs, board.regionCount)
     if (exact !== null) {
       const exactScore = score(pairs, exact)
-      if (beats(exactScore, bestScore)) best = exact
+      if (beats(exactScore, bestScore)) { best = exact; bestScore = exactScore }
     }
+  }
+  // The larger fallback is for genuinely problematic boards. In particular,
+  // don't spend time permuting the full palette on very large boards where
+  // non-touching regions can safely share a colour.
+  if (bestScore[0] === 0 || ((bestScore[1] ?? 0) < board.regionCount && board.regionCount < ORIGINAL_COLOURS.length)) {
+    const distinct = searchDistinct(pairs, board.regionCount)
+    if (distinct !== null && beats(score(pairs, distinct), bestScore)) best = distinct
   }
   return best
 }
