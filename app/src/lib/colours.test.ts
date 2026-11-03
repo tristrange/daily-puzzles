@@ -69,9 +69,8 @@ function touchingPairs(board: Board): [number, number][] {
 
 const BLOCKS = new Board(4, [0, 0, 1, 1, 0, 0, 1, 1, 2, 2, 3, 3, 2, 2, 3, 3], [1, 1, 1, 1], 'queens')
 /**
- * 16x16 in 4x4 blocks: 16 regions, the most the palette can colour at all, and
- * the widest board the app allows. Queens needs `size` regions, so a 16-region
- * board has to be 16x16.
+ * 16x16 in 4x4 blocks: the widest board the app allows. Queens needs `size`
+ * regions, so a 16-region board has to be 16x16.
  */
 const MANY_REGIONS = new Board(
   16,
@@ -133,8 +132,8 @@ describe('regionColours', () => {
     // The look that shipped: eight regions, eight colours, in palette order.
     // Worth pinning, because dropping to a handful of swatches would be a
     // visible regression even with every border technically clear.
-    for (const { board } of shippedPuzzles()) {
-      expect(new Set(regionColours(board)).size).toBe(board.regionCount)
+    for (const { id, board } of shippedPuzzles()) {
+      expect(new Set(regionColours(board)).size, `${id}: each region needs a distinct colour`).toBe(board.regionCount)
     }
   })
 
@@ -194,15 +193,9 @@ describe('regionColours', () => {
     expect(elapsed).toBeLessThan(1000)
   })
 
-  it('counts a colour once per holder, so reuse does not shrink the palette', () => {
-    // Found by growing connected 8-region boards and keeping the ones the climb
-    // cannot colour. The search first tracked reuse with a Set, so a colour
-    // shared by two regions that do not touch was dropped from it when the inner
-    // one backtracked — the outer one still held it. Nothing invalid came out:
-    // the floor held either way, because it is checked against the neighbours
-    // directly. But the search then preferred colours already in use and settled
-    // for six distinct swatches here instead of seven, and a board that looks
-    // flatter than it needs to is the whole thing this module is for.
+  it('finds distinct colours on a board that previously required reuse', () => {
+    // This board exposed an earlier search problem: the first valid assignment
+    // reused colours even though a distinct assignment exists.
     const board = new Board(
       8,
       [
@@ -215,7 +208,7 @@ describe('regionColours', () => {
       'queens',
     )
     const colours = regionColours(board)
-    expect(new Set(colours).size).toBe(7)
+    expect(new Set(colours).size).toBe(8)
     for (const [a, b] of touchingPairs(board)) {
       expect(
         colourDistance(colours[a] as string, colours[b] as string),
@@ -234,9 +227,8 @@ describe('regionColours', () => {
   })
 
   it('reuses colours only between regions that never touch', () => {
-    // Reuse is a feature, not a compromise, and the shipped puzzles no longer
-    // need it: eight regions get eight colours. A 16-region board cannot, so
-    // that is where reuse shows up — and the guarantee has to hold there.
+    // Reuse is useful on larger boards. This dense 16-region board shares some
+    // colours, so verify that the regions sharing a colour never touch.
     const colours = regionColours(MANY_REGIONS)
     const shared = new Map<string, number[]>()
     colours.forEach((colour, regionId) => {
