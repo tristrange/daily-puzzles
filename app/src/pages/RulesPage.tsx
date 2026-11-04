@@ -40,7 +40,7 @@ export function RulesPage() {
           <tr><th scope="row">Ctrl / Cmd + Shift + Z<br />Ctrl + Y</th><td>Redo an undone move. Making a new move clears Redo.</td></tr>
         </tbody>
       </table>
-      <p>Timers count only while the puzzle page is visible and focused. Switching tabs, minimizing the window or using another app pauses the clock. Reset asks for confirmation before clearing your moves. Total time and shown hints are kept, and a separate Since reset timer restarts. Undo restores the board without changing either timer.
+      <p>Timers pause while the puzzle page is hidden and, on most devices, when it loses focus. Switching tabs, minimizing the window or using another app pauses the clock. On iPhone, the timer follows page visibility and may keep running in Safari&rsquo;s tab overview. Reset asks for confirmation before clearing your moves. Total time and shown hints are kept, and a separate Since reset timer restarts. Undo restores the board without changing either timer.
         Undo and Redo history lasts while the puzzle is open and is cleared by reloading or leaving it.
         Rules links inside a game open a new tab so you can consult them without leaving your board.</p>
 
@@ -219,7 +219,7 @@ export function RulesPage() {
         Nothing changes until you apply; Undo restores the previous move. Hints ignore your notes as evidence.
         Hints actually shown count in your daily result, even if you dismiss or Undo them.</p>
       <p><Link to="/preview/trio">Play the five-board Trio preview</Link>. Attempts save
-        separately in this browser. The timer pauses while the page is hidden, unfocused or closed.
+        separately in this browser. The timer pauses while the page is hidden or closed, and when it is unfocused outside iPhone.
         Preview solves do not affect daily stats or streaks. No difficulty rating yet.</p>
 
       <h2 id="sudoku" tabIndex={-1}>Sudoku</h2>
