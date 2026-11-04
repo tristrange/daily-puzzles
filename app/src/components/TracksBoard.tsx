@@ -61,6 +61,7 @@ export interface TracksBoardProps {
   grid: TrackGrid
   game: TracksGame
   hint?: TrackHint | null
+  correctionCell?: number | null
   hintId?: string | undefined
   onRequestHint: () => void
   /** What is wrong, if anything. A cell can break several rules at once. */
@@ -121,6 +122,7 @@ export function TracksBoard({
   grid,
   game,
   hint = null,
+  correctionCell,
   hintId,
   onRequestHint,
   conflicts,
@@ -325,6 +327,7 @@ export function TracksBoard({
   }, [conflicts, grid])
 
   const support = new Set(hint?.steps.flatMap((step) => [...step.group]) ?? [])
+  const target = hint?.cell ?? correctionCell
   const labelFor = (cell: number): string => {
     const { row, col } = grid.coords(cell)
     const what =
@@ -332,7 +335,7 @@ export function TracksBoard({
         ? `given ${TRACK_CELL_NAME[pieceAt(cell)] ?? 'track'}`
         : TRACK_CELL_NAME[pieceAt(cell)] ?? 'empty'
     const clue = `, row needs ${grid.rowClues[row] ?? 0}, column needs ${grid.colClues[col] ?? 0}`
-    return `Row ${row + 1}, column ${col + 1}, ${what}${clue}${faults.get(cell) ?? ''}${hint?.cell === cell ? ', hint target' : support.has(cell) ? ', hint support' : ''}`
+    return `Row ${row + 1}, column ${col + 1}, ${what}${clue}${faults.get(cell) ?? ''}${target === cell ? ', hint target' : support.has(cell) ? ', hint support' : ''}`
   }
 
   const classNameFor = (cell: number): string => {
@@ -352,7 +355,7 @@ export function TracksBoard({
         key={cell}
         role="gridcell"
         data-cell={cell}
-        data-hint={hint?.cell === cell ? 'target' : support.has(cell) ? 'support' : undefined}
+        data-hint={target === cell ? 'target' : support.has(cell) ? 'support' : undefined}
         data-selected={inspection?.selected === cell ? true : undefined}
         aria-selected={inspection ? inspection.selected === cell : undefined}
         aria-label={labelFor(cell)}

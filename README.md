@@ -28,7 +28,9 @@ Supabase backend.
 
 Train Tracks sizes describe dimensions, not difficulty. New boards use every row
 and column; older 7×7 boards remain playable with their original rules. The `?`
-marker means definite track with an undecided shape and counts toward clues.
+marker means definite track with an undecided shape and counts toward clues. Check
+compares tracks and marks with the verified unique route; revealing a mistake counts
+as a hint.
 Every game has archive puzzles from September 26, 2026, including all daily
 variants; original Train Tracks boards remain available alongside the three sizes.
 
@@ -122,10 +124,9 @@ grass and placed tracks can be assumptions in the games that use them.
 Train Tracks hints can combine counts and connections and avoid closing a known loop;
 they do not examine every possible route.
 
-Check compares entries with the verified unique solution in Queens, Star Battle,
-Sudoku, Killer Sudoku, Nurikabe and Trio. It is free; choosing Show the mistake counts as
-a hint. Queens and Star Battle crosses and Nurikabe sea and land marks are included;
-Trio and Sudoku notes are not checked.
+Where available, Check compares entries with the verified unique solution. It is free;
+choosing Show the mistake counts as a hint. Marks such as crosses and Nurikabe sea and
+land are included; Trio and Sudoku notes are not checked.
 
 Leaderboard results are reported by the client and are intended for casual play,
 not cheat-proof competition. Backend setup and service limits are documented in

@@ -154,6 +154,8 @@ export function RulesPage() {
       </ul>
       <p>Each ? counts as a track towards row and column limits, but needs a direction
         before it can join the finished route. × marks do not count.</p>
+      <p>Check compares your tracks, ? marks and crosses with the verified unique route.
+        Checking is free; choosing to show a mistake counts as one hint.</p>
       <h3>Hints</h3>
       <p>Hint or H explains a deduction from row and column counts, matching track
         connections, the two fixed edge ends or a loop that must be avoided. A solid outline marks the target;

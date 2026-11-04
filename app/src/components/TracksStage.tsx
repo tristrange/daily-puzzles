@@ -40,6 +40,7 @@ import { TracksBoard } from './TracksBoard'
 import { SolvedPanel } from './SolvedPanel'
 import { HintPanel } from './HintPanel'
 import { applyTrackHint, findTrackHint, trackCellName, type TrackHint } from '../domain/trackHints'
+import { checkTracksEntries, type TracksEntryCheck } from '../domain/tracksCheck'
 import { trackHintLesson } from '../domain/hintLessons'
 import { ResetButton } from './ResetButton'
 import { useMoveHistory } from '../lib/useMoveHistory'
@@ -57,6 +58,7 @@ export function TracksStage({
   const [game, setGame] = useState<TracksGame>(() => initialProgress?.game ?? createTracksGame(grid))
   const stage = useRef<HTMLDivElement>(null)
   const hintButton = useRef<HTMLButtonElement>(null)
+  const checkButton = useRef<HTMLButtonElement>(null)
   const hintId = useId()
   const hintState = JSON.stringify([grid.width, grid.height, grid.rowClues, grid.colClues, grid.givens, game.pieces])
   const returnedHint = useReturnedHint(puzzle.id, hintState, () => {
@@ -65,12 +67,15 @@ export function TracksStage({
   })
   const [hint, setHint] = useState<TrackHint | null>(returnedHint)
   const [hintMessage, setHintMessage] = useState('')
+  const [progressCheck, setProgressCheck] = useState<TracksEntryCheck | { kind: 'empty' } | null>(null)
+  const [correction, setCorrection] = useState<{ cell: number; reasons: readonly string[] } | null>(null)
   const hintReasons = useMemo(() => ({
     reasons: hint ? [hint.steps.at(-1)!.reason] : [],
     supportingReasons: hint?.steps.slice(0, -1).map((step) => step.reason) ?? [],
   }), [hint])
   const hintsUsed = useRef(initialProgress?.hints ?? 0)
   const clearHint = () => { setHint(null); setHintMessage('') }
+  const clearReview = () => { clearHint(); setProgressCheck(null); setCorrection(null) }
   const history = useMoveHistory<TracksGame>()
   const [announcement, setAnnouncement] = useState('')
   const [solvedAt, setSolvedAt] = useState<number | null>(null)
@@ -142,7 +147,7 @@ export function TracksStage({
     // move from the bounded history — and an Undo that appears to do nothing is
     // worse than no Undo at all. The marks board has the same rule in `endStroke`.
     if (next === before) return
-    clearHint()
+    clearReview()
     history.remember(before)
     currentGame.current = next
     setGame(next)
@@ -153,7 +158,7 @@ export function TracksStage({
 
   /** A press landed. The whole stroke, drag or click, is one move from here. */
   const beginStroke = () => {
-    clearHint()
+    clearReview()
     strokeStart.current = game
   }
 
@@ -185,7 +190,7 @@ export function TracksStage({
     if (solved || strokeStart.current !== null) return
     const previous = history.undo(game)
     if (previous === undefined) return
-    clearHint()
+    clearReview()
     currentGame.current = previous
     setGame(previous)
     setSavingAvailable(storeTrackProgress(puzzle.id, previous, settle(), hintsUsed.current))
@@ -196,7 +201,7 @@ export function TracksStage({
     if (solved || strokeStart.current !== null) return
     const next = history.redo(game)
     if (next === undefined) return
-    clearHint()
+    clearReview()
     currentGame.current = next
     setGame(next)
     setSavingAvailable(storeTrackProgress(puzzle.id, next, settle(), hintsUsed.current))
@@ -212,6 +217,7 @@ export function TracksStage({
 
   const requestHint = () => {
     if (completed.current || solved || strokeStart.current !== null) return
+    setProgressCheck(null); setCorrection(null)
     const result = findTrackHint(currentGame.current)
     setHint(result.kind === 'hint' ? result.hint : null)
     const message = result.kind === 'contradiction'
@@ -224,7 +230,32 @@ export function TracksStage({
       setSavingAvailable(storeTrackProgress(puzzle.id, currentGame.current, settle(), hintsUsed.current))
     }
   }
-  const dismissHint = () => { clearHint(); hintButton.current?.focus({ preventScroll: true }) }
+  const checkProgress = () => {
+    if (completed.current || solved || strokeStart.current !== null) return
+    clearReview(); setAnnouncement('')
+    setProgressCheck(isEmpty(currentGame.current) ? { kind: 'empty' } : checkTracksEntries(currentGame.current))
+  }
+  const revealCheckedMistake = () => {
+    if (completed.current || solved || strokeStart.current !== null || progressCheck?.kind !== 'mistake') return
+    const check = checkTracksEntries(currentGame.current)
+    if (check.kind !== 'mistake' || check.cell !== progressCheck.cell) { setProgressCheck(null); return }
+    setProgressCheck(null)
+    setCorrection({ cell: check.cell, reasons: [`The mark at ${trackCellName(grid, check.cell).toLowerCase()} disagrees with the verified unique solution. Clear it before continuing.`] })
+    hintsUsed.current += 1
+    setSavingAvailable(storeTrackProgress(puzzle.id, currentGame.current, settle(), hintsUsed.current))
+  }
+  const dismissHint = () => {
+    const source = correction ? checkButton : hintButton
+    clearReview(); source.current?.focus({ preventScroll: true })
+  }
+  const acceptCorrection = () => {
+    if (!correction || completed.current || solved || strokeStart.current !== null) return
+    const before = currentGame.current, check = checkTracksEntries(before)
+    if (check.kind !== 'mistake' || check.cell !== correction.cell) { dismissHint(); return }
+    applyGame(clearCell(before, correction.cell), before)
+    setAnnouncement('Mark cleared. Undo brings it back.')
+    checkButton.current?.focus({ preventScroll: true })
+  }
   const showHintCell = () => {
     const target = stage.current?.querySelector<HTMLElement>('[data-hint="target"]')
     target?.focus({ preventScroll: true })
@@ -282,6 +313,12 @@ export function TracksStage({
     return 'Too many track ends run off the grid.'
   }
 
+  const progressMessage = progressCheck === null ? ''
+    : progressCheck.kind === 'empty' ? 'Add a track or mark before checking your progress.'
+      : progressCheck.kind === 'unverified' ? 'We could not verify a unique solution for this puzzle, so progress cannot be checked.'
+        : progressCheck.kind === 'correct' ? 'Your tracks and marks are correct so far.'
+          : 'At least one track or mark is incorrect.'
+
   return (
     <div className="tracks-game" ref={stage}>
       <div className="tracks-workspace">
@@ -303,6 +340,15 @@ export function TracksStage({
             <button ref={hintButton} type="button" className="tool-button" onClick={requestHint}
               disabled={solved} aria-label="Get an explained hint" aria-expanded={hint !== null}
               aria-controls={hint ? hintId : undefined}>Hint</button>
+            <button ref={checkButton} type="button" className="tool-button" onClick={checkProgress}
+              disabled={solved} aria-label="Check progress">Check</button>
+            <div className={`marks-check-result${progressCheck ? '' : ' sr-only'}`}>
+              <p role="status" aria-live="polite">{progressMessage}</p>
+              {progressCheck?.kind === 'mistake' && <>
+                <button type="button" className="tool-button" onClick={revealCheckedMistake}>Show the mistake</button>
+                <span>Revealing the mistake counts as one hint.</span>
+              </>}
+            </div>
           </div>
           {!savingAvailable && !solved && (
             <p className="status error" role="status">
@@ -315,7 +361,8 @@ export function TracksStage({
           grid={grid}
           game={game}
           hint={hint}
-          hintId={hint ? hintId : undefined}
+          correctionCell={correction?.cell ?? null}
+          hintId={hint || correction ? hintId : undefined}
           onRequestHint={requestHint}
           conflicts={conflictList}
           locked={solved}
@@ -342,6 +389,10 @@ export function TracksStage({
         title={hint.brush === CROSS ? 'Rule out track' : hint.brush === MAYBE ? 'Mark definite track' : `Place ${TRACK_CELL_NAME[hint.brush]}`}
         reasons={hintReasons.reasons} supportingReasons={hintReasons.supportingReasons} effect={`${hint.brush === MAYBE ? 'Apply puts ? in this cell. It counts as track; choose its direction later. ' : ''}Uses your placed tracks, ? cells and crosses as starting assumptions.`}
         onApply={acceptHint} onDismiss={dismissHint} onShowCell={showHintCell} />}
+      {correction && <HintPanel id={hintId} location={trackCellName(grid, correction.cell)}
+        title="Clear this mark" reasons={correction.reasons}
+        effect="Apply clears only this mark. The cell stays empty."
+        onApply={acceptCorrection} onDismiss={dismissHint} onShowCell={showHintCell} />}
       <SolvedPanel
         puzzleId={puzzle.id} candidate={candidate}
         solved={solved}
