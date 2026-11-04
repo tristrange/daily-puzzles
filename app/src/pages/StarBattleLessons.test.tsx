@@ -43,8 +43,8 @@ it('shows only available games and preserves context through both course links',
   expect(container.querySelectorAll('.lesson-cards li')).toHaveLength(8)
   expect([...container.querySelectorAll('.lesson-cards h2')].map(el => el.textContent)).toEqual(['Queens', 'Sudoku', 'Killer Sudoku', 'Star Battle', 'Trio', 'Nurikabe', 'Tents', 'Train Tracks'])
   const cards = [...container.querySelectorAll('.lesson-cards > li')]
-  expect(cards.find(card => card.querySelector('h2')?.textContent === 'Sudoku')?.textContent).toContain('1 of 21 completed')
-  expect(cards.find(card => card.querySelector('h2')?.textContent === 'Star Battle')?.textContent).toContain('1 of 15 completed')
+  expect(cards.find(card => card.querySelector('h2')?.textContent === 'Sudoku')?.textContent).toContain('1/21 completed')
+  expect(cards.find(card => card.querySelector('h2')?.textContent === 'Star Battle')?.textContent).toContain('1/15 completed')
   await click('Learn Sudoku →')
   expect(container.querySelectorAll('.lesson-cards li')).toHaveLength(7)
   expect(container.textContent).toContain('from locked candidates through XY-Wing and Swordfish')

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { PUZZLE_PIECE, PUZZLE_TYPE_LABEL } from '../domain/games'
+import { PUZZLE_TYPE_LABEL } from '../domain/games'
+import { GameIcon } from '../components/GameArtwork'
 import { PASSPORT_MILESTONES, passportProgress } from '../lib/passport'
 import { readStoredStats } from '../lib/stats'
 
@@ -38,7 +39,7 @@ export function PassportPage() {
     <ul className="passport-stamps" aria-label="Game stamps">
       {stamps.map(({ type, count }) => <li key={type} className={`passport-stamp game-${type}`}>
         <div className="passport-stamp-heading">
-          <span className={`passport-symbol${count === 0 ? ' locked' : ''}`} aria-hidden="true">{PUZZLE_PIECE[type].glyph}</span>
+          <span className={`passport-symbol${count === 0 ? ' locked' : ''}`} aria-hidden="true"><GameIcon type={type} /></span>
           <div>
             <h2>{PUZZLE_TYPE_LABEL[type]}</h2>
             <p>{count > 0 ? 'Stamp earned' : 'Not collected yet'} · {count} puzzle{count === 1 ? '' : 's'} solved</p>

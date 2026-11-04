@@ -69,33 +69,35 @@ export function LearnPage() {
       <p>Complete every exercise in a technique to earn it.</p>
     </div>
     <ul className="lesson-cards">
-      <li><h2>Queens</h2><p>Combine region reservations, lines and the no-touch rule.</p>
-        <p className="lesson-progress">{completed.queens.length} of {QUEENS_LESSONS.length} completed · {counts.queens.practiced} of {counts.queens.total} techniques practiced</p>
+      <li className="lesson-card-featured">
+        <p className="eyebrow">Start here</p>
+        <h2>Queens</h2><p>Combine region reservations, lines and the no-touch rule.</p>
+        <p className="lesson-meta">{completed.queens.length}/{QUEENS_LESSONS.length} completed · {counts.queens.practiced}/{counts.queens.total} techniques</p>
         <Link className="tool-button primary" to="/learn/queens">Learn Queens →</Link></li>
       <li><h2>Sudoku</h2>
         <p>{SUDOKU_TECHNIQUES.length} techniques · {SUDOKU_LESSONS.length} exercises. Start with locked candidates, then work through pairs, triples, X-Wing and beyond.</p>
-        <p className="lesson-progress">{completed.sudoku.length} of {SUDOKU_LESSONS.length} completed · {counts.sudoku.practiced} of {counts.sudoku.total} techniques practiced</p>
-        <Link className="tool-button primary" to="/learn/sudoku">Learn Sudoku →</Link></li>
+        <p className="lesson-meta">{completed.sudoku.length}/{SUDOKU_LESSONS.length} completed · {counts.sudoku.practiced}/{counts.sudoku.total} techniques</p>
+        <Link className="lesson-link" to="/learn/sudoku">Learn Sudoku →</Link></li>
       <li><h2>Killer Sudoku</h2><p>Use cage combinations and the 45 rule to narrow down possibilities.</p>
-        <p className="lesson-progress">{completed.killer.length} of {KILLER_LESSONS.length + KILLER_FORTY_FIVE_LESSONS.length} completed · {counts.killer.practiced} of {counts.killer.total} techniques practiced</p>
-        <Link className="tool-button primary" to="/learn/killer-sudoku">Learn Killer Sudoku →</Link></li>
+        <p className="lesson-meta">{completed.killer.length}/{KILLER_LESSONS.length + KILLER_FORTY_FIVE_LESSONS.length} completed · {counts.killer.practiced}/{counts.killer.total} techniques</p>
+        <Link className="lesson-link" to="/learn/killer-sudoku">Learn Killer Sudoku →</Link></li>
       <li><h2>Star Battle</h2>
         <p>{STAR_BATTLE_TECHNIQUES.length + 1} techniques · {STAR_BATTLE_LESSONS.length + STAR_BATTLE_CHAINS.length} exercises. Begin with counting spaces, then combine reservations with other deductions.</p>
-        <p className="lesson-progress">{completed.star.length} of {STAR_BATTLE_LESSONS.length + STAR_BATTLE_CHAINS.length} completed · {counts.star.practiced} of {counts.star.total} techniques practiced</p>
-        <Link className="tool-button primary" to="/learn/star-battle">Learn Star Battle →</Link></li>
+        <p className="lesson-meta">{completed.star.length}/{STAR_BATTLE_LESSONS.length + STAR_BATTLE_CHAINS.length} completed · {counts.star.practiced}/{counts.star.total} techniques</p>
+        <Link className="lesson-link" to="/learn/star-battle">Learn Star Battle →</Link></li>
       <li><h2>Trio</h2>
         <p>{TRIO_TECHNIQUES.length} techniques · {TRIO_LESSONS.length} exercises. Combine quotas and no-three, propagate linked restrictions, then follow candidate chains.</p>
-        <p className="lesson-progress">{completed.trio.length} of {TRIO_LESSONS.length} completed · {counts.trio.practiced} of {counts.trio.total} techniques practiced</p>
-        <Link className="tool-button primary" to="/learn/trio">Learn Trio →</Link></li>
+        <p className="lesson-meta">{completed.trio.length}/{TRIO_LESSONS.length} completed · {counts.trio.practiced}/{counts.trio.total} techniques</p>
+        <Link className="lesson-link" to="/learn/trio">Learn Trio →</Link></li>
       <li><h2>Nurikabe</h2><p>Connect the sea, compare island shapes and find routes to isolated land.</p>
-        <p className="lesson-progress">{completed.nurikabe.length} of {GRID_LESSONS.filter(lesson => lesson.kind === 'nurikabe').length} completed · {counts.nurikabe.practiced} of {counts.nurikabe.total} techniques practiced</p>
-        <Link className="tool-button primary" to="/learn/nurikabe">Learn Nurikabe →</Link></li>
+        <p className="lesson-meta">{completed.nurikabe.length}/{GRID_LESSONS.filter(lesson => lesson.kind === 'nurikabe').length} completed · {counts.nurikabe.practiced}/{counts.nurikabe.total} techniques</p>
+        <Link className="lesson-link" to="/learn/nurikabe">Learn Nurikabe →</Link></li>
       <li><h2>Tents</h2><p>Compare tree pairings, line counts and possible arrangements.</p>
-        <p className="lesson-progress">{completed.tents.length} of {GRID_LESSONS.filter(lesson => lesson.kind === 'tents').length} completed · {counts.tents.practiced} of {counts.tents.total} techniques practiced</p>
-        <Link className="tool-button primary" to="/learn/tents">Learn Tents →</Link></li>
+        <p className="lesson-meta">{completed.tents.length}/{GRID_LESSONS.filter(lesson => lesson.kind === 'tents').length} completed · {counts.tents.practiced}/{counts.tents.total} techniques</p>
+        <Link className="lesson-link" to="/learn/tents">Learn Tents →</Link></li>
       <li><h2>Train Tracks</h2><p>Connect separated track, combine line counts and avoid closing loops.</p>
-        <p className="lesson-progress">{completed.tracks.length} of {GRID_LESSONS.filter(lesson => lesson.kind === 'train-tracks').length} completed · {counts.tracks.practiced} of {counts.tracks.total} techniques practiced</p>
-        <Link className="tool-button primary" to="/learn/train-tracks">Learn Train Tracks →</Link></li>
+        <p className="lesson-meta">{completed.tracks.length}/{GRID_LESSONS.filter(lesson => lesson.kind === 'train-tracks').length} completed · {counts.tracks.practiced}/{counts.tracks.total} techniques</p>
+        <Link className="lesson-link" to="/learn/train-tracks">Learn Train Tracks →</Link></li>
     </ul>
     <p className="status">Learning progress and achievements stay in this browser and are not included in Stats backups.</p>
   </section>

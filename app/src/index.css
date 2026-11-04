@@ -13,8 +13,8 @@
   --surface: light-dark(#fff, #202329);
   --glass: light-dark(rgba(247, 247, 244, 0.88), rgba(20, 22, 26, 0.88));
   --shadow: light-dark(rgba(29, 34, 41, 0.06), rgba(0, 0, 0, 0.2));
-  --primary-bg: light-dark(#005fc7, #adcfff);
-  --primary-ink: light-dark(#fff, #101b2b);
+  --primary-bg: light-dark(#005fc7, #f3f5f7);
+  --primary-ink: light-dark(#fff, #14161a);
   /* The page behind the board. A cell that is set into the page rather than
      raised off it reads as fixed rather than placed — the tracks board's givens. */
   --bg-sunken: light-dark(#e9ecf0, #111318);
@@ -71,7 +71,7 @@ body {
 h1,
 h2,
 h3 {
-  font-weight: 650;
+  font-weight: 550;
   color: var(--text-h);
   font-optical-sizing: auto;
 }
