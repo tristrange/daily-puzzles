@@ -1,0 +1,7 @@
+{
+  "id": "2026-11-07-trio",
+  "type": "trio",
+  "seed": 959051422,
+  "generatorVersion": 1,
+  "board": {"size": 9, "givens": [1, 0, 0, 0, 0, 0, 0, 0, 3, 0, 1, 0, 0, 0, 0, 0, 2, 0, 3, 0, 0, 0, 0, 0, 3, 0, 3, 0, 0, 2, 0, 0, 2, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 2, 0, 0, 0, 3, 2, 0, 0, 0, 0, 3, 3, 0, 0, 0, 3, 0, 0, 0, 0, 1, 0, 2, 0, 0, 0, 3, 0, 0, 1, 1, 0, 1, 0, 0], "relations": [{"first": 16, "second": 25, "kind": "same"}, {"first": 20, "second": 21, "kind": "same"}, {"first": 20, "second": 29, "kind": "different"}, {"first": 24, "second": 33, "kind": "different"}, {"first": 32, "second": 33, "kind": "different"}, {"first": 45, "second": 46, "kind": "different"}, {"first": 54, "second": 55, "kind": "same"}, {"first": 56, "second": 65, "kind": "different"}, {"first": 65, "second": 74, "kind": "different"}, {"first": 69, "second": 70, "kind": "same"}]}
+}
