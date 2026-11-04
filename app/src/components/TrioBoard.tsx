@@ -14,7 +14,7 @@ type PreviousTap = TrioNoteTap & { at: number; pointerType: string; brush: TrioV
 interface Props {
   board: Board; game: TrioGame; brush: TrioValue; pencil: boolean; locked: boolean
   conflicts: ReadonlySet<number>; instructionsId: string
-  hint?: TrioHint | null
+  hint?: TrioHint | null; correctionCell?: number | null
   inspection?: { selected: number | null; onSelect: (cell: number) => void }
   noteShortcut?: boolean; onInterrupt?: () => void
   onApply: (cell: number, action: TrioAction) => void
@@ -22,13 +22,14 @@ interface Props {
   onUndo: () => void; onRedo: () => void; onPencil: () => void
 }
 
-export function TrioBoard({ board, game, brush, pencil, locked, conflicts, instructionsId, hint, inspection, noteShortcut = false, onInterrupt, onApply, onBegin, onEnd, onUndo, onRedo, onPencil }: Props) {
+export function TrioBoard({ board, game, brush, pencil, locked, conflicts, instructionsId, hint, correctionCell, inspection, noteShortcut = false, onInterrupt, onApply, onBegin, onEnd, onUndo, onRedo, onPencil }: Props) {
   const grid = useRef<HTMLDivElement>(null)
   const [focus, setFocus] = useState(() => Math.max(0, board.givens.indexOf(0)))
   const stroke = useRef<{ id: number; action: TrioAction; visited: Set<number>; cell: number; before: TrioGame; symbol: SymbolValue | null
     repeat: PreviousTap | null; brush: TrioValue; pencil: boolean; x: number; y: number; started: number; pointerType: string; tap: boolean } | null>(null)
   const previousTap = useRef<PreviousTap | null>(null)
   const support = new Set(hint?.steps.flatMap((step) => [...step.group]))
+  const target = hint?.cell ?? correctionCell
   const interruptOutside = useEffectEvent(() => onInterrupt?.())
   useEffect(() => {
     if (grid.current?.contains(document.activeElement)) grid.current.querySelector<HTMLElement>(`[data-cell="${focus}"]`)?.focus()
@@ -142,10 +143,10 @@ export function TrioBoard({ board, game, brush, pencil, locked, conflicts, instr
         const noteLabel = [1, 2, 3].filter((v) => notes & (1 << (v - 1))).map((v) => TRIO_NAMES[v as SymbolValue]).join(', ')
         return <div role="presentation" className="trio-cell-wrap" key={cell}>
           <button role="gridcell" type="button" className="trio-cell" data-cell={cell} data-given={given} data-conflict={conflicts.has(cell)}
-            data-hint={hint?.cell === cell ? 'target' : support.has(cell) ? 'support' : undefined}
+            data-hint={target === cell ? 'target' : support.has(cell) ? 'support' : undefined}
             data-selected={inspection?.selected === cell ? true : undefined} aria-selected={inspection ? inspection.selected === cell : undefined}
             tabIndex={focus === cell ? 0 : -1} aria-readonly={given || locked}
-            aria-label={`Row ${row + 1}, column ${col + 1}, ${TRIO_NAMES[value]}${given ? ', given' : ''}${noteLabel ? `, notes ${noteLabel}` : ''}${conflicts.has(cell) ? ', conflict' : ''}${hint?.cell === cell ? ', hint target' : support.has(cell) ? ', supports hint' : ''}${neighbours.length ? `; ${neighbours.join('; ')}` : ''}`}
+            aria-label={`Row ${row + 1}, column ${col + 1}, ${TRIO_NAMES[value]}${given ? ', given' : ''}${noteLabel ? `, notes ${noteLabel}` : ''}${conflicts.has(cell) ? ', conflict' : ''}${target === cell ? ', hint target' : support.has(cell) ? ', supports hint' : ''}${neighbours.length ? `; ${neighbours.join('; ')}` : ''}`}
             onFocus={() => { setFocus(cell); if (!locked) inspection?.onSelect(cell) }} onClick={(event) => { if (event.detail === 0) { if (inspection) { setFocus(cell); inspection.onSelect(cell) } if (!locked) one(cell, brush) } }}
             onContextMenu={(event) => { event.preventDefault(); one(cell, 0) }}>
             {value !== 0 ? <TrioSymbol value={value} /> : <span className="trio-notes" aria-hidden="true">{([1, 2, 3] as const).map((v) => <span key={v}>{notes & (1 << (v - 1)) ? <TrioSymbol value={v} /> : null}</span>)}</span>}

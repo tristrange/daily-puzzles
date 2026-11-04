@@ -123,9 +123,9 @@ Train Tracks hints can combine counts and connections and avoid closing a known 
 they do not examine every possible route.
 
 Check compares entries with the verified unique solution in Queens, Star Battle,
-Sudoku, Killer Sudoku and Nurikabe. It is free; choosing Show the mistake counts as
+Sudoku, Killer Sudoku, Nurikabe and Trio. It is free; choosing Show the mistake counts as
 a hint. Queens and Star Battle crosses and Nurikabe sea and land marks are included;
-Sudoku notes are not checked.
+Trio and Sudoku notes are not checked.
 
 Leaderboard results are reported by the client and are intended for casual play,
 not cheat-proof competition. Backend setup and service limits are documented in
