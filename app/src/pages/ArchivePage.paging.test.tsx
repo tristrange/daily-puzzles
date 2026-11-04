@@ -59,20 +59,31 @@ async function click(label: string) {
   })
 }
 
+async function select(label: string, value: string) {
+  const control = [...container.querySelectorAll<HTMLLabelElement>('label')]
+    .find(element => element.textContent?.startsWith(label))?.querySelector('select')
+  if (!control) throw Error(`missing select ${label}`)
+  await act(async () => {
+    control.value = value
+    control.dispatchEvent(new Event('change', { bubbles: true }))
+    await Promise.resolve()
+  })
+}
+
 it('loads older seven-day windows on demand and can return to the latest', async () => {
   await renderArchive()
   expect(container.querySelector('a[href="/archive/2026-10-19"]')).not.toBeNull()
   expect(container.querySelector('a[href="/archive?game=queens&page=1"]')).not.toBeNull()
-  expect(archive.list).toHaveBeenNthCalledWith(1, '2026-10-20', expect.any(Function), 0)
+  expect(archive.list).toHaveBeenNthCalledWith(1, '2026-10-20', expect.any(Function), 0, 7)
 
   await click('Older')
-  expect(archive.list).toHaveBeenLastCalledWith('2026-10-20', expect.any(Function), 7)
+  expect(archive.list).toHaveBeenLastCalledWith('2026-10-20', expect.any(Function), 7, 7)
   expect(container.querySelector('a[href="/archive/2026-10-13?page=1"]')).not.toBeNull()
   expect(container.querySelector('a[href="/archive/2026-10-19"]')).toBeNull()
   expect(container.querySelector('a[aria-label="Show newer puzzles"]')).not.toBeNull()
 
   await click('Newer')
-  expect(archive.list).toHaveBeenLastCalledWith('2026-10-20', expect.any(Function), 0)
+  expect(archive.list).toHaveBeenLastCalledWith('2026-10-20', expect.any(Function), 0, 7)
   expect(container.querySelector('a[href="/archive/2026-10-19"]')).not.toBeNull()
   expect(container.querySelector('a[aria-label="Show newer puzzles"]')).toBeNull()
 })
@@ -81,7 +92,7 @@ it('stops offering older when the window includes the first archive date', async
   archive.today = '2026-09-26'
   archive.list.mockResolvedValue([first])
   await renderArchive()
-  expect(archive.list).toHaveBeenCalledWith('2026-09-26', expect.any(Function), 0)
+  expect(archive.list).toHaveBeenCalledWith('2026-09-26', expect.any(Function), 0, 1)
   expect(container.querySelector('a[href="/archive/2026-09-26"]')).not.toBeNull()
   expect(container.querySelector('a[aria-label="Show older puzzles"]')).toBeNull()
   expect(container.querySelector('a[aria-label="Show newer puzzles"]')).toBeNull()
@@ -89,7 +100,7 @@ it('stops offering older when the window includes the first archive date', async
 
 it('hides older on the partial final week while keeping newer navigation', async () => {
   await renderArchive('/archive?page=3')
-  expect(archive.list).toHaveBeenCalledWith('2026-10-20', expect.any(Function), 21)
+  expect(archive.list).toHaveBeenCalledWith('2026-10-20', expect.any(Function), 21, 4)
   expect(container.querySelector('a[href="/archive/2026-09-26?page=3"]')).not.toBeNull()
   expect(container.querySelector('a[aria-label="Show older puzzles"]')).toBeNull()
   expect(container.querySelector('a[aria-label="Show newer puzzles"]')).not.toBeNull()
@@ -98,7 +109,7 @@ it('hides older on the partial final week while keeping newer navigation', async
 it('offers older again after navigating back to a newer page', async () => {
   await renderArchive('/archive?page=3')
   await click('Newer')
-  expect(archive.list).toHaveBeenLastCalledWith('2026-10-20', expect.any(Function), 14)
+  expect(archive.list).toHaveBeenLastCalledWith('2026-10-20', expect.any(Function), 14, 7)
   expect(container.querySelector('a[href="/archive?game=queens&page=3"]')).not.toBeNull()
   expect(container.querySelector('a[href="/archive?game=queens&page=1"]')).not.toBeNull()
   expect(container.querySelector('a[aria-label="Show older puzzles"]')).not.toBeNull()
@@ -124,4 +135,25 @@ it('switches games in the compact selector without losing the archive window', a
   expect(container.querySelector('a[aria-label="Show newer puzzles"]')?.getAttribute('href')).toBe('/archive?game=sudoku')
   expect(container.querySelector('a[aria-label="Show older puzzles"]')?.getAttribute('href')).toBe('/archive?game=sudoku&page=2')
   expect(container.querySelector('.archive-surprise button')?.getAttribute('aria-label')).toContain('Sudoku')
+  expect(archive.list).toHaveBeenCalledTimes(1)
+})
+
+it('changes date count, ordering, and range while keeping the chosen view in links', async () => {
+  archive.list.mockImplementation(async (_today: string, _fetcher: unknown, olderDays = 0) => {
+    if (olderDays === 0) return [latest]
+    if (olderDays === 11) return [first]
+    return [older]
+  })
+  await renderArchive('/archive?page=1')
+  await select('Dates per page', '14')
+  expect(archive.list).toHaveBeenLastCalledWith('2026-10-20', expect.any(Function), 0, 14)
+  expect(container.querySelector('a[href="/archive/2026-10-19?days=14"]')).not.toBeNull()
+
+  await select('Order', 'oldest')
+  await select('Date range', '30')
+  expect(archive.list).toHaveBeenLastCalledWith('2026-10-20', expect.any(Function), 11, 14)
+  expect(container.querySelector('a[href="/archive/2026-09-26?days=14&order=oldest&range=30"]')).not.toBeNull()
+  expect(container.querySelector('a[aria-label="Show newer puzzles"]')?.getAttribute('href'))
+    .toBe('/archive?game=queens&page=1&days=14&order=oldest&range=30')
+  expect(container.querySelector('a[aria-label="Show older puzzles"]')).toBeNull()
 })

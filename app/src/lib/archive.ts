@@ -6,8 +6,8 @@ import type { Puzzle } from '../domain/puzzle'
 import { ARCHIVE_WINDOW_DAYS, downloadedPuzzleIds, probePuzzles, readDownloadedPuzzle, type Fetcher, type PublishedPuzzle } from './puzzles'
 
 /**
- * One archive page is a seven-day window. The cap keeps a hand-edited page query
- * from walking the calendar into absurd ranges before the loader can reject it.
+ * The cap keeps a hand-edited page query from walking the calendar into absurd
+ * ranges before the loader can reject it.
  */
 export const MAX_ARCHIVE_PAGE = 1000
 
@@ -16,16 +16,40 @@ const SURPRISE_DAY_LIMIT = 8
 
 const DAY_MS = 86_400_000
 
-/**
- * Whether `page`'s seven-day window can be followed by another one.
- *
- * The answer comes from the window's dates rather than from the puzzles that
- * loaded: an offline page may be empty while the archive still continues behind
- * it. Older is hidden once the current window contains the first archive date.
- */
-export function hasOlderArchive(todayId: string, page: number): boolean {
-  const oldest = previousPuzzleIds(todayId, ARCHIVE_WINDOW_DAYS, page * ARCHIVE_WINDOW_DAYS).at(-1)
-  return oldest !== undefined && oldest > ARCHIVE_START
+export type ArchiveView = {
+  readonly days: 7 | 14 | 30
+  readonly order: 'newest' | 'oldest'
+  readonly range: 'all' | '30' | '90' | '365'
+}
+export const DEFAULT_ARCHIVE_VIEW: ArchiveView = { days: 7, order: 'newest', range: 'all' }
+
+export function parseArchiveView(params: URLSearchParams): ArchiveView {
+  const days = params.get('days'), order = params.get('order'), range = params.get('range')
+  return {
+    days: days === '14' ? 14 : days === '30' ? 30 : 7,
+    order: order === 'oldest' ? 'oldest' : 'newest',
+    range: range === '30' || range === '90' || range === '365' ? range : 'all',
+  }
+}
+
+/** Calendar windows keep every variant for a date on the same page. */
+export function archiveWindow(todayId: string, page: number, view: ArchiveView) {
+  const today = parsePuzzleDate(todayId).getTime(), start = parsePuzzleDate(ARCHIVE_START).getTime()
+  const available = Math.max(0, Math.floor((today - start) / DAY_MS) + 1)
+  const total = view.range === 'all' ? available : Math.min(available, Number(view.range))
+  const skip = page * view.days, count = Math.max(0, Math.min(view.days, total - skip))
+  const offset = view.order === 'newest' ? skip : Math.max(0, total - skip - count)
+  const days = previousPuzzleIds(todayId, count, offset)
+  return { days: view.order === 'oldest' ? days.reverse() : days, hasPrevious: page > 0, hasNext: skip + count < total }
+}
+
+function viewParams(page: number, view: ArchiveView): URLSearchParams {
+  const params = new URLSearchParams()
+  if (page > 0) params.set('page', String(page))
+  if (view.days !== 7) params.set('days', String(view.days))
+  if (view.order !== 'newest') params.set('order', view.order)
+  if (view.range !== 'all') params.set('range', view.range)
+  return params
 }
 
 /** Parse a `?page=` value, falling back to the newest window. */
@@ -36,13 +60,15 @@ export function parseArchivePage(value: string | null): number {
 }
 
 /** URL for a game's archive page, omitting the query for the newest window. */
-export function archiveHref(game: PuzzleType, page: number): string {
-  return `/archive?game=${game}${page > 0 ? `&page=${page}` : ''}`
+export function archiveHref(game: PuzzleType, page: number, view: ArchiveView = DEFAULT_ARCHIVE_VIEW): string {
+  const params = viewParams(page, view).toString()
+  return `/archive?game=${game}${params ? `&${params}` : ''}`
 }
 
 /** URL for one puzzle, carrying the archive page it was opened from. */
-export function puzzleHref(id: string, page: number): string {
-  return `/archive/${id}${page > 0 ? `?page=${page}` : ''}`
+export function puzzleHref(id: string, page: number, view: ArchiveView = DEFAULT_ARCHIVE_VIEW): string {
+  const params = viewParams(page, view).toString()
+  return `/archive/${id}${params ? `?${params}` : ''}`
 }
 
 export type SurpriseOutcome =
@@ -61,6 +87,7 @@ type SurpriseOptions = {
   readonly fetcher?: Fetcher
   readonly random?: () => number
   readonly maxDays?: number
+  readonly range?: ArchiveView['range']
 }
 
 type DayCandidates = {
@@ -100,8 +127,8 @@ function archiveDaysFor(todayId: string, type: PuzzleType): readonly DayCandidat
 /**
  * Pick a random unsolved, published puzzle of `type` from the archive.
  *
- * There is no index to pick from, so this samples archive days in random order
- * and probes only the ids that are not already solved. Days whose variants are
+ * This samples days in the chosen range in random order and probes only ids
+ * that are not already solved. Days whose variants are
  * all solved cost no request. At most `maxDays` days with unsolved candidates
  * are probed, which keeps one click bounded even when the archive is large or
  * offline. A missing file is skipped; an unreachable one is reported so the
@@ -115,8 +142,10 @@ export async function findSurprisePuzzle({
   fetcher = fetch,
   random = Math.random,
   maxDays = SURPRISE_DAY_LIMIT,
+  range = 'all',
 }: SurpriseOptions): Promise<SurpriseOutcome> {
-  const remaining = [...archiveDaysFor(todayId, type)]
+  const firstDay = archiveWindow(todayId, 0, { days: 7, order: 'oldest', range }).days[0]
+  const remaining = archiveDaysFor(todayId, type).filter(entry => firstDay !== undefined && entry.day >= firstDay)
   const probeLimit = Math.max(0, Math.floor(maxDays))
   let checked = 0
   let completed = 0
@@ -146,7 +175,7 @@ export async function findSurprisePuzzle({
   }
 
   const downloaded = (await downloadedPuzzleIds()).filter((id) =>
-    puzzleTypeOf(id) === type && puzzleDay(id) >= ARCHIVE_START && puzzleDay(id) <= todayId && !solved.has(id))
+    puzzleTypeOf(id) === type && firstDay !== undefined && puzzleDay(id) >= firstDay && puzzleDay(id) <= todayId && !solved.has(id))
   while (downloaded.length) {
     const [id] = downloaded.splice(randomIndex(downloaded.length, random), 1)
     if (id === undefined) break

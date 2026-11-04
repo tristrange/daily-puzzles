@@ -2,9 +2,8 @@
  * Loading and archive discovery for committed puzzle files.
  *
  * The app is a static site: every puzzle is a JSON file under `public/puzzles/`
- * that the daily pipeline (M8) commits. There is deliberately no index
- * manifest — the archive is whatever files exist, so the list is discovered by
- * probing the recent window and keeping whatever comes back as a puzzle.
+ * that the daily pipeline (M8) commits. The archive uses a generated metadata
+ * index when available and probes the requested window as a fallback.
  */
 
 import { PUZZLE_TYPES } from '../domain/board'
@@ -179,10 +178,12 @@ export async function listPublishedPuzzles(
   todayId: string,
   fetcher: Fetcher = fetch,
   olderDays = 0,
+  windowDays = ARCHIVE_WINDOW_DAYS,
 ): Promise<readonly PublishedPuzzle[]> {
   const offset = Number.isSafeInteger(olderDays) && olderDays > 0 ? olderDays : 0
+  const count = Number.isSafeInteger(windowDays) && windowDays > 0 && windowDays <= 30 ? windowDays : ARCHIVE_WINDOW_DAYS
   // Queued legacy boards remain accessible even after the daily slots change.
-  const candidates = previousPuzzleIds(todayId, ARCHIVE_WINDOW_DAYS, offset)
+  const candidates = previousPuzzleIds(todayId, count, offset)
     .flatMap((day) =>
       [...new Set([...puzzleIdsForDay(day), puzzleIdFor(day, 'train-tracks')])],
     )

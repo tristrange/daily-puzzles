@@ -1,34 +1,37 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { PUZZLE_TYPES, type PuzzleType } from '../domain/board'
-import { formatPuzzleLabel, puzzleDay } from '../domain/dates'
+import { formatPuzzleLabel, parsePuzzleDate, puzzleDay } from '../domain/dates'
 import { DEFAULT_PUZZLE_TYPE, DIFFICULTY_LABEL, PUZZLE_TYPE_LABEL, PUZZLE_TYPE_PUBLISHED } from '../domain/games'
 import { sudokuVariantOf, killerVariantOf } from '../domain/sudokuLevels'
 import { trackVariantOf } from '../domain/trackSizes'
 import {
   archiveHref,
+  archiveWindow,
+  DEFAULT_ARCHIVE_VIEW,
   findSurprisePuzzle,
-  hasOlderArchive,
   MAX_ARCHIVE_PAGE,
   parseArchivePage,
+  parseArchiveView,
   puzzleHref,
+  type ArchiveView,
   type SurpriseOutcome,
 } from '../lib/archive'
 import {
-  ARCHIVE_WINDOW_DAYS,
   groupPublishedPuzzles,
   listPublishedPuzzles,
   type PublishedGroup,
   type PublishedPuzzle,
 } from '../lib/puzzles'
+import { loadArchiveIndex, loadIndexedWindow } from '../lib/archiveIndex'
 import { readStoredStats } from '../lib/stats'
 import { useToday } from '../lib/useToday'
 
 
 type LoadState =
   | { status: 'loading' }
-  | { status: 'ready'; day: string; page: number; puzzles: readonly PublishedPuzzle[] }
-  | { status: 'error'; day: string; page: number }
+  | { status: 'ready'; key: string; puzzles: readonly PublishedPuzzle[] }
+  | { status: 'error'; key: string }
 
 type SurpriseState =
   | { status: 'idle' }
@@ -63,6 +66,7 @@ export function ArchivePage() {
   const navigate = useNavigate()
   const type = PUZZLE_TYPES.find(type => type === params.get('game') && PUZZLE_TYPE_PUBLISHED[type]) ?? DEFAULT_PUZZLE_TYPE
   const page = parseArchivePage(params.get('page'))
+  const view = parseArchiveView(params)
   return (
     <section className="archive-page">
       <h1 className="page-title">Archive</h1>
@@ -71,7 +75,7 @@ export function ArchivePage() {
         Game
         <select value={type} onChange={event => {
           const game = PUZZLE_TYPES.find(item => item === event.currentTarget.value && PUZZLE_TYPE_PUBLISHED[item])
-          if (game) navigate(archiveHref(game, page))
+          if (game) navigate(archiveHref(game, page, view))
         }}>
           {PUZZLE_TYPES.filter(game => PUZZLE_TYPE_PUBLISHED[game]).map(game => (
             <option key={game} value={game}>{PUZZLE_TYPE_LABEL[game]}</option>
@@ -80,21 +84,26 @@ export function ArchivePage() {
       </label>
       <nav className="game-picker" aria-label="Archive game">
         {PUZZLE_TYPES.filter(type => PUZZLE_TYPE_PUBLISHED[type]).map(game => (
-          <Link key={game} to={archiveHref(game, page)} aria-current={game === type ? 'page' : undefined}>
+          <Link key={game} to={archiveHref(game, page, view)} aria-current={game === type ? 'page' : undefined}>
             {PUZZLE_TYPE_LABEL[game]}
           </Link>
         ))}
       </nav>
-      <ArchiveGame type={type} page={page} />
+      <ArchiveGame type={type} page={page} view={view} />
     </section>
   )
 }
 
-function ArchiveGame({ type, page }: { readonly type: PuzzleType; readonly page: number }) {
+function ArchiveGame({ type, page, view }: { readonly type: PuzzleType; readonly page: number; readonly view: ArchiveView }) {
+  const navigate = useNavigate()
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
   const todayId = useToday(timeZone)
   const [state, setState] = useState<LoadState>({ status: 'loading' })
+  const [index, setIndex] = useState<{ day: string; puzzles: readonly PublishedPuzzle[] | null } | null>(null)
   const [solved, setSolved] = useState(storedSolvedIds)
+  const { days, order, range } = view
+  const pageWindow = archiveWindow(todayId, page, view)
+  const requestKey = `${todayId}:${page}:${days}:${order}:${range}`
 
   useEffect(() => {
     // Returning from a puzzle remounts this page, but a restored page or another
@@ -116,23 +125,38 @@ function ArchiveGame({ type, page }: { readonly type: PuzzleType; readonly page:
 
   useEffect(() => {
     let cancelled = false
-    listPublishedPuzzles(todayId, fetch, page * ARCHIVE_WINDOW_DAYS).then(
+    loadArchiveIndex().then(puzzles => { if (!cancelled) setIndex({ day: todayId, puzzles }) })
+    return () => { cancelled = true }
+  }, [todayId])
+
+  useEffect(() => {
+    if (!index || index.day !== todayId) return
+    let cancelled = false
+    const requested = archiveWindow(todayId, page, { days, order, range }).days
+    const latest = order === 'oldest' ? requested.at(-1) : requested[0]
+    const offset = latest ? Math.round((parsePuzzleDate(todayId).getTime() - parsePuzzleDate(latest).getTime()) / 86_400_000) : 0
+    const loading = index.puzzles ? loadIndexedWindow(requested, index.puzzles)
+      : requested.length ? listPublishedPuzzles(todayId, fetch, offset, requested.length)
+        : Promise.resolve([])
+    loading.then(
       (puzzles) => {
-        if (!cancelled) setState({ status: 'ready', day: todayId, page, puzzles })
+        const sorted = [...puzzles].sort((a, b) => order === 'oldest'
+          ? puzzleDay(a.id).localeCompare(puzzleDay(b.id)) : puzzleDay(b.id).localeCompare(puzzleDay(a.id)))
+        if (!cancelled) setState({ status: 'ready', key: requestKey, puzzles: sorted })
       },
       () => {
-        if (!cancelled) setState({ status: 'error', day: todayId, page })
+        if (!cancelled) setState({ status: 'error', key: requestKey })
       },
     )
     return () => {
       cancelled = true
     }
-  }, [todayId, page])
+  }, [todayId, page, days, order, range, index, requestKey])
 
   // A result for a previous day or page is not the current archive window.
   // Keeping both beside the result lets a rollover or page change show loading
   // until the requested window lands, without an effect writing loading.
-  const current = state.status !== 'loading' && state.day === todayId && state.page === page
+  const current = state.status !== 'loading' && state.key === requestKey
     ? state
     : { status: 'loading' as const }
   // Grouped while rendering rather than stored: it is a pure reshape of whatever
@@ -142,21 +166,56 @@ function ArchiveGame({ type, page }: { readonly type: PuzzleType; readonly page:
 
   return (
     <div className="archive-content">
-      <SurpriseButton key={`${todayId}:${type}:${page}`} type={type} page={page} todayId={todayId} />
+      <div className="archive-controls">
+        <label>
+          Dates per page
+          <select value={days} onChange={event => {
+            const value = event.currentTarget.value
+            navigate(archiveHref(type, 0, { ...view, days: value === '14' ? 14 : value === '30' ? 30 : 7 }))
+          }}>
+            <option value="7">7 dates</option>
+            <option value="14">14 dates</option>
+            <option value="30">30 dates</option>
+          </select>
+        </label>
+        <label>
+          Order
+          <select value={order} onChange={event => navigate(archiveHref(type, 0, {
+            ...view, order: event.currentTarget.value === 'oldest' ? 'oldest' : 'newest',
+          }))}>
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+          </select>
+        </label>
+        <label>
+          Date range
+          <select value={range} onChange={event => {
+            const value = event.currentTarget.value
+            navigate(archiveHref(type, 0, { ...view, range: value === '30' || value === '90' || value === '365' ? value : 'all' }))
+          }}>
+            <option value="all">All dates</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
+            <option value="365">Last 365 days</option>
+          </select>
+        </label>
+      </div>
+      <SurpriseButton key={`${requestKey}:${type}`} type={type} page={page} todayId={todayId} view={view} />
       {current.status === 'loading' && <p className="status" role="status">Scanning archive…</p>}
       {current.status === 'error' && (
         <p className="status error">Could not read the archive.</p>
       )}
-      {current.status === 'ready' && <ArchiveGroups groups={groups} timeZone={timeZone} page={page} solved={solved} />}
-      <ArchivePager game={type} page={page} todayId={todayId} />
+      {current.status === 'ready' && <ArchiveGroups groups={groups} timeZone={timeZone} page={page} view={view} solved={solved} />}
+      <ArchivePager game={type} page={page} view={view} hasPrevious={pageWindow.hasPrevious} hasNext={pageWindow.hasNext} />
     </div>
   )
 }
 
-function SurpriseButton({ type, page, todayId }: {
+function SurpriseButton({ type, page, todayId, view }: {
   readonly type: PuzzleType
   readonly page: number
   readonly todayId: string
+  readonly view: ArchiveView
 }) {
   const navigate = useNavigate()
   const [surprise, setSurprise] = useState<SurpriseState>({ status: 'idle' })
@@ -168,14 +227,14 @@ function SurpriseButton({ type, page, todayId }: {
     if (surprise.status === 'searching') return
     const currentRequest = ++request.current
     setSurprise({ status: 'searching' })
-    const outcome = await findSurprisePuzzle({ todayId, type, solved: storedSolvedIds() })
+    const outcome = await findSurprisePuzzle({ todayId, type, solved: storedSolvedIds(), range: view.range })
     if (request.current !== currentRequest) return
     if (outcome.status === 'found') {
       if (storedSolvedIds().has(outcome.puzzle.id)) {
         setSurprise({ status: 'message', text: 'That puzzle was completed while searching. Try again.' })
         return
       }
-      navigate(puzzleHref(outcome.puzzle.id, page))
+      navigate(puzzleHref(outcome.puzzle.id, page, view))
       return
     }
     setSurprise({ status: 'message', text: surpriseMessage(outcome, PUZZLE_TYPE_LABEL[type]) })
@@ -202,21 +261,25 @@ function SurpriseButton({ type, page, todayId }: {
   )
 }
 
-function ArchivePager({ game, page, todayId }: {
+function ArchivePager({ game, page, view, hasPrevious, hasNext }: {
   readonly game: PuzzleType
   readonly page: number
-  readonly todayId: string
+  readonly view: ArchiveView
+  readonly hasPrevious: boolean
+  readonly hasNext: boolean
 }) {
+  const previous = view.order === 'newest' ? 'Newer' : 'Older'
+  const next = view.order === 'newest' ? 'Older' : 'Newer'
   return (
     <nav className="archive-pager" aria-label="Archive pages">
-      {page > 0 && (
-        <Link className="tool-button" aria-label="Show newer puzzles" to={archiveHref(game, page - 1)}>
-          ← Newer
+      {hasPrevious && (
+        <Link className="tool-button" aria-label={`Show ${previous.toLowerCase()} puzzles`} to={archiveHref(game, page - 1, view)}>
+          ← {previous}
         </Link>
       )}
-      {page < MAX_ARCHIVE_PAGE && hasOlderArchive(todayId, page) && (
-        <Link className="tool-button" aria-label="Show older puzzles" to={archiveHref(game, page + 1)}>
-          Older →
+      {page < MAX_ARCHIVE_PAGE && hasNext && (
+        <Link className="tool-button" aria-label={`Show ${next.toLowerCase()} puzzles`} to={archiveHref(game, page + 1, view)}>
+          {next} →
         </Link>
       )}
     </nav>
@@ -232,11 +295,13 @@ export function ArchiveGroups({
   groups,
   timeZone,
   page,
+  view = DEFAULT_ARCHIVE_VIEW,
   solved = NO_SOLVES,
 }: {
   readonly groups: readonly PublishedGroup[]
   readonly timeZone: string
   readonly page: number
+  readonly view?: ArchiveView
   readonly solved?: ReadonlySet<string>
 }) {
   if (groups.length === 0) {
@@ -266,14 +331,14 @@ export function ArchiveGroups({
                         const dimensions = puzzle.width != null && puzzle.height != null ? `${puzzle.width}×${puzzle.height}` : ''
                         const label = variant ? `${variant.label}${dimensions ? ` · ${dimensions}` : ''}` : dimensions || 'Original'
                         const completed = solved.has(puzzle.id)
-                        return <Link key={puzzle.id} to={puzzleHref(puzzle.id, page)} aria-label={`${formatPuzzleLabel(day, timeZone)}, ${PUZZLE_TYPE_LABEL[group.type]} ${label}${completed ? ', Completed' : ''}`}>
+                        return <Link key={puzzle.id} to={puzzleHref(puzzle.id, page, view)} aria-label={`${formatPuzzleLabel(day, timeZone)}, ${PUZZLE_TYPE_LABEL[group.type]} ${label}${completed ? ', Completed' : ''}`}>
                           {variant ? <>{variant.label}<span className="archive-dimensions">{dimensions && ` · ${dimensions}`}</span></> : label}
                           {completed && <CompletedMark />}
                         </Link>
                       })}
                     </div>
                   </> : puzzles.map(puzzle => (
-                    <Link key={puzzle.id} to={puzzleHref(puzzle.id, page)}>
+                    <Link key={puzzle.id} to={puzzleHref(puzzle.id, page, view)}>
                       <time dateTime={day}>{formatPuzzleLabel(day, timeZone)}</time>
                       {puzzle.difficulty != null && <span className="stat-detail">{DIFFICULTY_LABEL[puzzle.difficulty]}</span>}
                       {solved.has(puzzle.id) && <CompletedMark />}

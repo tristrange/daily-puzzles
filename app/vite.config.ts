@@ -2,6 +2,7 @@ import { fileURLToPath, URL } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 import { offlineShell } from './build/offline.ts'
+import { archiveIndex } from './build/archiveIndex.ts'
 
 // https://vite.dev/config/
 const repoRoot = fileURLToPath(new URL('..', import.meta.url))
@@ -18,7 +19,7 @@ const repoRoot = fileURLToPath(new URL('..', import.meta.url))
 const base = process.env['BASE_PATH'] ?? '/'
 
 export default defineConfig({
-  plugins: [react(), offlineShell()],
+  plugins: [react(), archiveIndex(), offlineShell()],
   base: base.endsWith('/') ? base : `${base}/`,
   resolve: {
     // `schema/` and `conformance/` are shared with the Python engine and live above this

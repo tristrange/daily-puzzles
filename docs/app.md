@@ -11,12 +11,11 @@ The app is a static React SPA with no server, so it routes with `HashRouter` —
 route:
 
 - `/` — today's puzzles, where "today" is the *player's* calendar day.
-- `/archive` — the list of published puzzles, discovered by probing a 30-day window of
-  files (`public/puzzles/<date>.json`) rather than an index manifest that could rot.
-  **Older** and **Newer** move the window back and forward in 30-day steps, so the whole
-  committed archive stays reachable while each request probes only its own window. The
-  selected page is in the URL (`?game=queens&page=2`), so refresh, Back and the puzzle
-  page's All puzzles link keep it.
+- `/archive` — the list of published puzzles, using a metadata index generated from
+  `public/puzzles/` at build time. It defaults to seven dates, newest first; players can
+  change the count, order and date range. The chosen view is in the URL, so refresh,
+  Back and the puzzle page's All puzzles link keep it. The shown window's puzzles are
+  still downloaded for offline play. If the index is unavailable, the app probes files.
 - `/archive/:id` — a specific puzzle by id.
 
 Route pages are lazy chunks; the landing page stays in the entry chunk so the first

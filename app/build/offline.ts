@@ -32,6 +32,8 @@ export function offlineShell(): Plugin {
     generateBundle(_options, bundle) {
       const files: Record<string, string | Uint8Array> = {}
       for (const [name, output] of Object.entries(bundle)) {
+        // The archive index changes independently of the installed app shell.
+        if (name === 'archive-index.json') continue
         files[name] = output.type === 'chunk' ? output.code : output.source
       }
       for (const name of PUBLIC_SHELL) files[name] = readFileSync(resolve(publicDir, name))

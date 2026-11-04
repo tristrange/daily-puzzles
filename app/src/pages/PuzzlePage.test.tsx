@@ -22,3 +22,12 @@ it('returns to the archive window the puzzle was opened from', () => {
   )
   expect(html).toContain('href="/archive?game=word-paths&amp;page=2"')
 })
+
+it('preserves archive view choices in the return link', () => {
+  const html = renderToStaticMarkup(
+    <MemoryRouter initialEntries={['/puzzle/2026-10-15-words?page=2&days=14&order=oldest&range=90']}>
+      <Routes><Route path="/puzzle/:id" element={<PuzzlePage />} /></Routes>
+    </MemoryRouter>,
+  )
+  expect(html).toContain('href="/archive?game=word-paths&amp;page=2&amp;days=14&amp;order=oldest&amp;range=90"')
+})

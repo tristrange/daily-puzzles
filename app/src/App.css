@@ -913,6 +913,10 @@
 
 .archive-page { margin: 0; }
 .archive-note { margin: 0 0 1.5rem; font-size: 0.8125rem; color: var(--text); }
+.archive-controls { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; }
+.archive-controls label { display: grid; flex: 1 1 8rem; gap: 0.3rem; min-width: 0; color: var(--text); font-size: 0.8125rem; }
+.archive-controls select { width: 100%; min-height: 2.75rem; padding: 0.55rem 0.75rem; border: 1px solid var(--border); border-radius: 0.625rem; background: var(--surface); color: var(--text-h); font: inherit; font-size: 1rem; }
+.archive-controls select:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .archive-surprise { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
 .archive-surprise .status { padding: 0; }
 .archive-completed { display: inline-flex; align-items: center; gap: 0.2rem; color: var(--hint); font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
