@@ -17,6 +17,8 @@ it('shows a local passport with earned and future stamps and links to it from St
   expect(passport).toContain('Stamp earned')
   expect(passport).toContain('Not collected yet')
   expect(passport).toContain('Explorer')
+  // Every stamp uses the same artwork as the Today cards, not a separate glyph set.
+  expect(passport.match(/viewBox="0 0 40 40"/g)).toHaveLength(9)
   const stats = renderToStaticMarkup(<MemoryRouter><StatsPage /></MemoryRouter>)
   expect(stats).toContain('href="/stats/passport"')
   expect(stats).toContain('1 of 9')
