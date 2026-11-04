@@ -449,6 +449,21 @@
   margin: 0.5rem 0 0;
 }
 
+/* A new solve settles in, once. The banner lands first, the actions follow a
+   beat later. Transform and opacity only, so the layout never moves. */
+.solved-panel.just-solved .solved-banner {
+  animation: solved-arrive 240ms cubic-bezier(.2, .7, .3, 1) both;
+}
+.solved-panel.just-solved :is(.share-buttons, .passport-celebration, .leaderboard-panel) {
+  animation: solved-actions-in 260ms 60ms cubic-bezier(.2, .7, .3, 1) both;
+}
+@keyframes solved-arrive {
+  from { opacity: 0; transform: translateY(0.35rem) scale(0.985); }
+}
+@keyframes solved-actions-in {
+  from { opacity: 0; transform: translateY(0.4rem); }
+}
+
 .share-buttons {
   display: flex;
   flex-wrap: wrap;
@@ -1326,6 +1341,10 @@
   .nav-link:active,
   .theme-option:active,
   .tool-button:active:not(:disabled) { transform: none; }
+
+  .solved-panel.just-solved :is(.solved-banner, .share-buttons, .passport-celebration, .leaderboard-panel) {
+    animation: none;
+  }
 }
 
 @media (prefers-reduced-transparency: reduce) {

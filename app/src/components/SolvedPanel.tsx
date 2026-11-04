@@ -10,7 +10,7 @@
  * tracks-specific, so it is written once.
  */
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatTime } from '../domain/game'
 import { PUZZLE_TYPE_LABEL } from '../domain/games'
@@ -45,9 +45,12 @@ export function SolvedPanel({
     if (!solved || firstSolve !== null || !candidate || puzzleId !== candidate.id) return []
     return passportUnlocksForSolve(readStoredStats(), candidate)
   }, [solved, firstSolve, candidate, puzzleId])
+  // A page that opens already solved is a restore, not a completion: only a
+  // change from unsolved while this panel was on screen earns the arrival.
+  const [startedSolved] = useState(solved)
   if (!solved) return null
   return (
-    <div className="solved-panel">
+    <div className={`solved-panel${startedSolved ? '' : ' just-solved'}`}>
       <p className="solved-banner">
         {firstSolve === null ? (
           <>
