@@ -65,7 +65,7 @@ export function LeaderboardsPage() {
       </select></label>}
     </div>
     {notice?.id === requested && <p className="status" role="status">{notice.message}</p>}
-    {valid ? <><p><Link to={`/archive/${requested}`}>Play this puzzle ↗</Link></p><LeaderboardPanel key={requested} puzzleId={requested} /></> : <p className="status">Choose a published puzzle dated today or earlier.</p>}
+    {valid ? <><p><Link to={`/archive/${requested}`}>Play this puzzle →</Link></p><LeaderboardPanel key={requested} puzzleId={requested} /></> : <p className="status">Choose a published puzzle dated today or earlier.</p>}
     <p className="leaderboard-note">Timers count only while the puzzle page is visible and focused. Older results keep their recorded times. Times are compared only within the same puzzle.</p>
   </section>
 }

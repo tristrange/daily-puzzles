@@ -48,7 +48,7 @@ export function LeaderboardPanel({ puzzleId, candidate }: { puzzleId: string; ca
   }, [client, puzzleId, requestKey, offline])
   const active = loaded?.key === requestKey ? loaded : null
   return <section className="leaderboard-panel" aria-label="Puzzle leaderboard">
-    <div className="leaderboard-heading"><h2>Leaderboard</h2><Link to={`/leaderboards?id=${puzzleId}`}>View all ↗</Link></div>
+    <div className="leaderboard-heading"><h2>Leaderboard</h2><Link to={`/leaderboards?id=${puzzleId}`}>View all →</Link></div>
     {status === 'disabled' ? <p className="status">Leaderboards are not configured. You can keep playing and saving local Stats.</p>
       : <>
         {offline ? <p className="status" role="status">You’re offline. Connect to view rankings; you can keep playing saved puzzles.</p>

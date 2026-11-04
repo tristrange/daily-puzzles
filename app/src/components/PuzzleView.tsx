@@ -436,72 +436,78 @@ export function PuzzleStage({
 
   return (
     <div className="marks-game" ref={stage}>
-      <div className="puzzle-tools">
-        <PlayTimer time={time} />
-        <button
-          type="button"
-          className="tool-button"
-          onClick={undo}
-          disabled={!history.canUndo || solved}
-          aria-label="Undo last move"
-        >
-          Undo
-        </button>
-        <button type="button" className="tool-button" onClick={redo}
-          disabled={!history.canRedo || solved} aria-label="Redo last move">Redo</button>
-        <button
-          type="button"
-          className="tool-button auto-mark"
-          aria-pressed={autoMark}
-          onClick={toggleAutoMark}
-        >
-          Auto-mark {autoMark ? 'on' : 'off'}
-        </button>
-        <ResetButton onReset={reset} disabled={isEmpty(game) || solved} />
-        {hintsAvailable && (
-          <>
-            <button ref={hintButton} type="button" className="tool-button" onClick={requestHint} disabled={solved}
-              aria-label="Get an explained hint" aria-expanded={(hint !== null || mistakeWarning) && hintSource === 'hint'}
-              aria-controls={(hint !== null || mistakeWarning) && hintSource === 'hint' ? hintId : undefined}>
-              Hint
+      <div className="marks-workspace">
+        <div className="marks-controls">
+          <div className="puzzle-tools">
+            <PlayTimer time={time} />
+            <button
+              type="button"
+              className="tool-button"
+              onClick={undo}
+              disabled={!history.canUndo || solved}
+              aria-label="Undo last move"
+            >
+              Undo
             </button>
-            <button ref={checkButton} type="button" className="tool-button marks-check-button" onClick={checkProgress}
-              disabled={solved} aria-label="Check progress">Check</button>
-            <div className={`marks-check-result${progressCheck ? '' : ' sr-only'}`}>
-              <p role="status" aria-live="polite">{progressMessage}</p>
-              {progressCheck?.kind === 'mistake' && <>
-                <button type="button" className="tool-button" onClick={revealCheckedMistake}>Show the mistake</button>
-                <span>Revealing the mistake counts as one hint.</span>
-              </>}
-            </div>
-          </>
-        )}
+            <button type="button" className="tool-button" onClick={redo}
+              disabled={!history.canRedo || solved} aria-label="Redo last move">Redo</button>
+            <button
+              type="button"
+              className="tool-button auto-mark"
+              aria-pressed={autoMark}
+              onClick={toggleAutoMark}
+            >
+              Auto-mark {autoMark ? 'on' : 'off'}
+            </button>
+            <ResetButton onReset={reset} disabled={isEmpty(game) || solved} />
+            {hintsAvailable && (
+              <>
+                <button ref={hintButton} type="button" className="tool-button" onClick={requestHint} disabled={solved}
+                  aria-label="Get an explained hint" aria-expanded={(hint !== null || mistakeWarning) && hintSource === 'hint'}
+                  aria-controls={(hint !== null || mistakeWarning) && hintSource === 'hint' ? hintId : undefined}>
+                  Hint
+                </button>
+                <button ref={checkButton} type="button" className="tool-button marks-check-button" onClick={checkProgress}
+                  disabled={solved} aria-label="Check progress">Check</button>
+                <div className={`marks-check-result${progressCheck ? '' : ' sr-only'}`}>
+                  <p role="status" aria-live="polite">{progressMessage}</p>
+                  {progressCheck?.kind === 'mistake' && <>
+                    <button type="button" className="tool-button" onClick={revealCheckedMistake}>Show the mistake</button>
+                    <span>Revealing the mistake counts as one hint.</span>
+                  </>}
+                </div>
+              </>
+            )}
+          </div>
+          {!savingAvailable && !solved && (
+            <p className="status error" role="status">
+              Progress can&rsquo;t be saved in this browser. Keep this page open to retain it.
+            </p>
+          )}
+        </div>
+        <div className="marks-board">
+          <InteractiveBoard
+            board={board}
+            game={game}
+            hint={hint}
+            hintId={hint ? hintId : undefined}
+            conflictCells={conflictCells}
+            locked={solved}
+            onToggleQueen={(cell) => {
+              applyGame(autoMark ? placeQueenAutoMark(game, cell) : toggleQueen(game, cell))
+            }}
+            onToggleMark={(cell) => applyGame(toggleMark(game, cell))}
+            onClear={(cell) => applyGame(clearCell(game, cell))}
+            onRequestHint={requestHint}
+            onUndo={undo}
+            onRedo={redo}
+            onGestureStart={beginStroke}
+            onPaintCell={paintCell}
+            onGestureEnd={endStroke}
+          />
+          <p className="hint-text">{statusText}</p>
+        </div>
       </div>
-      {!savingAvailable && !solved && (
-        <p className="status error" role="status">
-          Progress can&rsquo;t be saved in this browser. Keep this page open to retain it.
-        </p>
-      )}
-      <InteractiveBoard
-        board={board}
-        game={game}
-        hint={hint}
-        hintId={hint ? hintId : undefined}
-        conflictCells={conflictCells}
-        locked={solved}
-        onToggleQueen={(cell) => {
-          applyGame(autoMark ? placeQueenAutoMark(game, cell) : toggleQueen(game, cell))
-        }}
-        onToggleMark={(cell) => applyGame(toggleMark(game, cell))}
-        onClear={(cell) => applyGame(clearCell(game, cell))}
-        onRequestHint={requestHint}
-        onUndo={undo}
-        onRedo={redo}
-        onGestureStart={beginStroke}
-        onPaintCell={paintCell}
-        onGestureEnd={endStroke}
-      />
-      <p className="hint-text">{statusText}</p>
       {mistakeWarning && <MistakeWarning id={hintId} onReveal={revealMistake} onDismiss={dismissHint} />}
       {hint && <HintPanel id={hintId} location={hintCellName(board, hint.cell)}
         lesson={savingAvailable && (puzzle.puzzleType === 'queens' || puzzle.puzzleType === 'star-battle') ? marksHintLesson(puzzle.puzzleType, hint) : undefined} puzzleId={puzzle.id}

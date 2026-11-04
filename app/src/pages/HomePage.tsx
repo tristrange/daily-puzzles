@@ -206,7 +206,7 @@ export function TodayCards({ probes, solved }: {
                           <Link className="tool-button track-choice" to={`/archive/${entry.id}`} state={{ fromToday: true }}
                             aria-description={`${progressLabel(again, elapsed)}${size ? `, ${size} grid` : ''}`}
                             aria-label={`${elapsed === null ? 'Play' : 'Resume'} ${PUZZLE_TYPE_LABEL[family]} ${variant.label}${again ? ' again' : elapsed !== null ? ` at ${formatTime(elapsed)}` : ''}`}>
-                            <span className="track-choice-info"><span>{label}</span><span className="choice-state"><span>{again ? 'Play again' : elapsed !== null ? `Resume · ${formatTime(elapsed)}` : 'Play'}</span>{elapsed === null && <> <span aria-hidden="true">↗</span></>}</span></span>
+                            <span className="track-choice-info"><span>{label}</span><span className="choice-state"><span>{again ? 'Play again' : elapsed !== null ? `Resume · ${formatTime(elapsed)}` : 'Play'}</span>{elapsed === null && <> <span aria-hidden="true">→</span></>}</span></span>
                           </Link>
                         )}
                       </li>
@@ -223,7 +223,7 @@ export function TodayCards({ probes, solved }: {
                       <Link className="game-card-play" to={`/archive/${probe.id}`} state={{ fromToday: true }}
                         aria-label={`${elapsed === null ? 'Play' : 'Resume'} ${PUZZLE_TYPE_LABEL[family]}${again ? ' again' : elapsed !== null ? ` at ${formatTime(elapsed)}` : ''}`}
                         aria-description={progressLabel(again, elapsed)}>
-                        {again ? 'Play again' : elapsed !== null ? 'Resume' : 'Play'} <span aria-hidden="true">↗</span>
+                        {again ? 'Play again' : elapsed !== null ? 'Resume' : 'Play'} <span aria-hidden="true">→</span>
                       </Link>
                     </div>
                   )}

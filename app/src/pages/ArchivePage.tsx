@@ -141,7 +141,7 @@ function ArchiveGame({ type, page }: { readonly type: PuzzleType; readonly page:
   const groups = current.status === 'ready' ? groupPublishedPuzzles(current.puzzles).filter(group => group.type === type) : []
 
   return (
-    <div>
+    <div className="archive-content">
       <SurpriseButton key={`${todayId}:${type}:${page}`} type={type} page={page} todayId={todayId} />
       {current.status === 'loading' && <p className="status" role="status">Scanning archive…</p>}
       {current.status === 'error' && (
