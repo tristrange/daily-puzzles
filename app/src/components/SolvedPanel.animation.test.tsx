@@ -16,9 +16,14 @@ const base: SolvedPanelProps = {
 
 let container: HTMLDivElement
 let root: Root
+let scrollIntoView: ReturnType<typeof vi.fn<Element['scrollIntoView']>>
 
 beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  scrollIntoView = vi.fn<Element['scrollIntoView']>()
+  // jsdom has no scrolling, and the banner's arrival is only visible if the
+  // page brings it on screen, so the call itself is the behaviour under test.
+  Element.prototype.scrollIntoView = scrollIntoView
   container = document.createElement('div')
   document.body.append(container)
   root = createRoot(container)
@@ -49,8 +54,21 @@ it('plays on a new solve and again on a replay', async () => {
   expect(panel()?.classList.contains('just-solved')).toBe(true)
 })
 
+it('brings a new solve into view, once per solve', async () => {
+  await render(false)
+  expect(scrollIntoView).not.toHaveBeenCalled()
+  await render(true)
+  expect(scrollIntoView).toHaveBeenCalledTimes(1)
+  expect(scrollIntoView.mock.instances[0]).toBe(panel()?.querySelector('.solved-banner'))
+  expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' })
+  await render(false)
+  await render(true)
+  expect(scrollIntoView).toHaveBeenCalledTimes(2)
+})
+
 it('does not play when an already-solved page is restored', async () => {
   await render(true)
   expect(panel()).not.toBeNull()
   expect(panel()?.classList.contains('just-solved')).toBe(false)
+  expect(scrollIntoView).not.toHaveBeenCalled()
 })

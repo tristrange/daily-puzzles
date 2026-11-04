@@ -10,7 +10,7 @@
  * tracks-specific, so it is written once.
  */
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatTime } from '../domain/game'
 import { PUZZLE_TYPE_LABEL } from '../domain/games'
@@ -48,10 +48,19 @@ export function SolvedPanel({
   // A page that opens already solved is a restore, not a completion: only a
   // change from unsolved while this panel was on screen earns the arrival.
   const [startedSolved] = useState(solved)
+  // A board that fills the viewport puts the banner just below the fold, so the
+  // arrival plays where nobody is looking. Bring it into view instead. `nearest`
+  // moves the page only as far as it must, and an instant scroll stays safe
+  // under reduced motion.
+  const banner = useRef<HTMLParagraphElement>(null)
+  useEffect(() => {
+    if (startedSolved) return
+    banner.current?.scrollIntoView({ block: 'nearest' })
+  }, [solved, startedSolved])
   if (!solved) return null
   return (
     <div className={`solved-panel${startedSolved ? '' : ' just-solved'}`}>
-      <p className="solved-banner">
+      <p className="solved-banner" ref={banner}>
         {firstSolve === null ? (
           <>
             Solved — nice!
