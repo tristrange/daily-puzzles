@@ -8,6 +8,7 @@ import { SolvedPanel } from './SolvedPanel'
 import { useId, useMemo, useRef, useState } from 'react'
 import { createTentsGame, editTent, isTentsSolved, tentsConflicts, type TentsBoard as Board, type TentsGame, type TentsMark } from '../domain/tents'
 import { findTentsHint, tentsCellName, type TentsHint } from '../domain/tentsHints'
+import { checkTentsEntries, type TentsEntryCheck } from '../domain/tentsCheck'
 import { tentsHintLesson } from '../domain/hintLessons'
 import { usePlayClock } from '../lib/usePlayClock'
 import { hintSignature, useReturnedHint } from '../lib/hintReturn'
@@ -43,7 +44,10 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
     return result.kind === 'hint' ? result.hint : null
   })
   const [hint, setHint] = useState<TentsHint | null>(returnedHint)
+  const [progressCheck, setProgressCheck] = useState<TentsEntryCheck | { kind: 'empty' } | null>(null)
+  const [correction, setCorrection] = useState<{ cell: number; reasons: readonly string[] } | null>(null)
   const stage = useRef<HTMLDivElement>(null), hintButton = useRef<HTMLButtonElement>(null)
+  const checkButton = useRef<HTMLButtonElement>(null)
   const instructionsId = useId(), pickerId = useId(), hintId = useId()
   const conflicts = tentsConflicts(board, game)
   const reasons = useMemo(() => hint ? hint.reason.split('\n') : [], [hint])
@@ -54,7 +58,8 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
   const elapsed = time.elapsedMs
   const save = () => { setSaving(storeTentsProgress(board, current.current, settle(), hintsUsed.current, daily)) }
   const change = (next: TentsGame) => { current.current = next; setGame(next) }
-  const begin = () => { if (!completed.current) { before.current = current.current; setHint(null) } }
+  const clearReview = () => { setHint(null); setProgressCheck(null); setCorrection(null) }
+  const begin = () => { if (!completed.current) { before.current = current.current; clearReview() } }
   const apply = (cell: number, value: TentsMark) => {
     if (!completed.current) { change(editTent(board, current.current, cell, value)); setMessage('') }
   }
@@ -84,30 +89,55 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
     if (completed.current || before.current) return
     const previous = history.undo(current.current)
     if (!previous) return
-    setHint(null); change(previous); setMessage('Undid the last move.'); save()
+    clearReview(); change(previous); setMessage('Undid the last move.'); save()
   }
   const redo = () => {
     if (completed.current || before.current) return
     const next = history.redo(current.current)
     if (!next) return
-    setHint(null); change(next); setMessage('Redid the last move.'); save()
+    clearReview(); change(next); setMessage('Redid the last move.'); save()
   }
   const reset = () => {
     if (completed.current || before.current || !current.current.some(Boolean)) return
     restartAttempt()
     setSelection([])
-    setHint(null); history.remember(current.current); change(createTentsGame(board))
+    clearReview(); history.remember(current.current); change(createTentsGame(board))
     setMessage('Board cleared. Undo brings it back; total time and hints are kept.'); save()
   }
   const requestHint = () => {
     if (completed.current || before.current) return
+    setProgressCheck(null); setCorrection(null)
     const result = findTentsHint(board, current.current)
     setHint(result.kind === 'hint' ? result.hint : null)
     if (result.kind === 'hint') { hintsUsed.current += 1; save() }
     setMessage(result.kind === 'contradiction' ? 'Your tents or grass lead to a contradiction. Check your entries or Undo.'
       : result.kind === 'none' ? 'These rules found no further deduction. This does not prove guessing is necessary.' : '')
   }
-  const dismissHint = () => { setHint(null); hintButton.current?.focus({ preventScroll: true }) }
+  const checkProgress = () => {
+    if (completed.current || before.current) return
+    clearReview(); setMessage('')
+    setProgressCheck(current.current.some(Boolean) ? checkTentsEntries(board, current.current) : { kind: 'empty' })
+  }
+  const revealCheckedMistake = () => {
+    if (completed.current || before.current || progressCheck?.kind !== 'mistake') return
+    const check = checkTentsEntries(board, current.current)
+    if (check.kind !== 'mistake' || check.cell !== progressCheck.cell) { setProgressCheck(null); return }
+    setProgressCheck(null)
+    setCorrection({ cell: check.cell, reasons: [`The mark at ${tentsCellName(board, check.cell).toLowerCase()} disagrees with the verified unique solution. Clear it before continuing.`] })
+    hintsUsed.current += 1; save()
+  }
+  const dismissHint = () => {
+    const source = correction ? checkButton : hintButton
+    clearReview(); source.current?.focus({ preventScroll: true })
+  }
+  const acceptCorrection = () => {
+    if (!correction || completed.current || before.current) return
+    const check = checkTentsEntries(board, current.current)
+    if (check.kind !== 'mistake' || check.cell !== correction.cell) { dismissHint(); return }
+    begin(); apply(correction.cell, 0); end(false)
+    if (!completed.current) setMessage('Mark cleared. Undo brings it back.')
+    checkButton.current?.focus({ preventScroll: true })
+  }
   const showHintCell = () => {
     const cell = stage.current?.querySelector<HTMLButtonElement>('[data-hint="target"]')
     cell?.focus({ preventScroll: true }); cell?.scrollIntoView({ block: 'center' })
@@ -133,6 +163,12 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
       : 'Could not reach the clipboard — the share text is shown below, ready to copy.')
   }
 
+  const progressMessage = progressCheck === null ? ''
+    : progressCheck.kind === 'empty' ? 'Place a tent or mark grass before checking your progress.'
+      : progressCheck.kind === 'unverified' ? 'We could not verify a unique solution for this puzzle, so progress cannot be checked.'
+        : progressCheck.kind === 'correct' ? 'Your tents and grass are correct so far.'
+          : 'At least one tent or grass mark is incorrect.'
+
   return <div className="tents-game" ref={stage}>
     <div className="tents-workspace">
       <div className="tents-controls">
@@ -143,6 +179,14 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
           <ResetButton onReset={reset} disabled={solved || !game.some(Boolean)} />
           <button ref={hintButton} className="tool-button" type="button" onClick={requestHint} disabled={solved}
             aria-label="Get an explained hint" aria-expanded={hint !== null} aria-controls={hint ? hintId : undefined}>Hint</button>
+          <button ref={checkButton} className="tool-button" type="button" aria-label="Check progress" disabled={solved} onClick={checkProgress}>Check</button>
+          <div className={`marks-check-result tents-check-result${progressCheck ? '' : ' sr-only'}`}>
+            <p role="status" aria-live="polite">{progressMessage}</p>
+            {progressCheck?.kind === 'mistake' && <>
+              <button type="button" className="tool-button" onClick={revealCheckedMistake}>Show the mistake</button>
+              <span>Revealing the mistake counts as one hint.</span>
+            </>}
+          </div>
         </div>
         <div className="tents-picker" role="radiogroup" aria-label="Board tool">
           {([1, 2, 0, 'highlight'] as const).map(value => <label key={value} className="trio-pick">
@@ -153,11 +197,11 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
         <p className="trio-mode">{solved ? 'All trees have a tent.' : brush === 1 ? 'Place a tent · tap again to clear' : brush === 2 ? 'Mark grass · no tent here' : brush === 0 ? 'Erase your marks' : 'Tap to toggle · drag to highlight'}</p>
         {selection.length > 0 && <button className="tool-button tents-clear-selection" type="button" onClick={() => setSelection([])}>Clear highlights</button>}
       </div>
-      <TentsBoard board={board} game={game} brush={brush} locked={solved} conflicts={conflicts} hint={hint}
+      <TentsBoard board={board} game={game} brush={brush} locked={solved} conflicts={conflicts} hint={hint} correctionCell={correction?.cell ?? null}
         selection={{ cells: selection, onSelect: (cell, mode) => setSelection(previous => mode === 'add'
           ? previous.includes(cell) ? previous : [...previous, cell]
           : previous.includes(cell) ? previous.filter(selected => selected !== cell) : [...previous, cell]) }}
-        instructionsId={hint ? `${instructionsId} ${hintId}` : instructionsId} onBegin={begin} onApply={apply} onEnd={end} onUndo={undo} onRedo={redo} onHint={requestHint} />
+        instructionsId={hint || correction ? `${instructionsId} ${hintId}` : instructionsId} onBegin={begin} onApply={apply} onEnd={end} onUndo={undo} onRedo={redo} onHint={requestHint} />
     </div>
     <p className={`trio-feedback${conflicts.size ? ' error' : ''}`} role="status">{solved
       ? message || `Solved in ${formatTime(elapsed)} with ${result.hints} hint${result.hints === 1 ? '' : 's'}!${daily ? '' : ' Choose another board to keep playing.'}`
@@ -168,6 +212,9 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
       resume={{ id: board.id, state: hintState, signature: hintSignature(hint) }}
       reasons={reasons} effect="Uses your tents and grass as assumptions. A mistaken grass mark can mislead hints."
       onApply={acceptHint} onDismiss={dismissHint} onShowCell={showHintCell} />}
+    {correction && <HintPanel id={hintId} title="Clear this mark" location={tentsCellName(board, correction.cell)}
+      reasons={correction.reasons} effect="Apply clears only this mark. The cell stays empty."
+      onApply={acceptCorrection} onDismiss={dismissHint} onShowCell={showHintCell} />}
     {!saving && !solved && <p className="status error" role="status">Progress can&rsquo;t be saved. Keep this page open to retain your attempt.</p>}
     <p className="word-note" id={instructionsId}>Pair every tree with one tent directly above, below, left or right. Match the line counts. Tents cannot touch, even diagonally. Grass marks are optional.</p>
     <p className="word-note">Pick a mark, then tap or drag. Choose Highlight to select cells without changing marks; drag, Shift-click or Shift-arrow to highlight multiple cells, and Space or Enter to toggle the focused cell. Arrows move; 1 or T places a tent; 2 or G marks grass; Delete erases; H explains a hint. Ctrl/Cmd+Z undoes; Ctrl/Cmd+Shift+Z redoes.</p>

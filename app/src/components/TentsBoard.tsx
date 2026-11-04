@@ -6,16 +6,17 @@ import { TentsSymbol } from './TentsSymbol'
 
 interface Props {
   board: Board; game: TentsGame; brush: TentsMark | 'highlight'; locked: boolean; conflicts: ReadonlySet<number>
-  hint: TentsHint | null; instructionsId: string
+  hint: TentsHint | null; correctionCell?: number | null; instructionsId: string
   onBegin: () => void; onApply: (cell: number, value: TentsMark) => void; onEnd: (cancel: boolean) => void
   onUndo: () => void; onRedo: () => void; onHint: () => void
   inspection?: { selected: number | null; onSelect: (cell: number) => void }
   selection?: { cells: readonly number[]; onSelect: (cell: number, mode: 'toggle' | 'add') => void }
 }
 
-export function TentsBoard({ board, game, brush, locked, conflicts, hint, instructionsId, onBegin, onApply, onEnd, onUndo, onRedo, onHint, inspection, selection }: Props) {
+export function TentsBoard({ board, game, brush, locked, conflicts, hint, correctionCell, instructionsId, onBegin, onApply, onEnd, onUndo, onRedo, onHint, inspection, selection }: Props) {
   const grid = useRef<HTMLDivElement>(null)
   const [focus, setFocus] = useState(0)
+  const target = hint?.cell ?? correctionCell
   const stroke = useRef<({ id: number; visited: Set<number> } & (
     | { kind: 'mark'; value: TentsMark }
     | { kind: 'highlight'; start: number; restoreStart: boolean }
@@ -125,10 +126,10 @@ export function TentsBoard({ board, game, brush, locked, conflicts, hint, instru
             const tree = board.trees.includes(cell), mark = game[cell]!, support = hint?.support.includes(cell)
             return <button className="tents-cell" role="gridcell" type="button" key={cell} data-cell={cell}
               data-tree={tree} data-mark={mark} data-conflict={conflicts.has(cell)}
-              data-hint={hint?.cell === cell ? 'target' : support ? 'support' : undefined}
+              data-hint={target === cell ? 'target' : support ? 'support' : undefined}
               data-selected={inspection?.selected === cell || selection?.cells.includes(cell) ? true : undefined} aria-selected={inspection ? inspection.selected === cell : selection ? selection.cells.includes(cell) : undefined}
               tabIndex={cell === focus ? 0 : -1} aria-readonly={tree || locked} onFocus={() => setFocus(cell)}
-              aria-label={`Row ${row + 1}, column ${cell % board.size + 1}, ${tree ? 'Tree, fixed' : TENTS_NAMES[mark]}, row needs ${clue}, column needs ${board.colClues[cell % board.size]}${conflicts.has(cell) ? ', conflict' : ''}${hint?.cell === cell ? ', hint target' : support ? ', supports hint' : ''}`}
+              aria-label={`Row ${row + 1}, column ${cell % board.size + 1}, ${tree ? 'Tree, fixed' : TENTS_NAMES[mark]}, row needs ${clue}, column needs ${board.colClues[cell % board.size]}${conflicts.has(cell) ? ', conflict' : ''}${target === cell ? ', hint target' : support ? ', supports hint' : ''}`}
               onClick={event => { if (event.detail === 0) { if (inspection) inspection.onSelect(cell); else if (selection && (brush === 'highlight' || event.shiftKey)) selection.onSelect(cell, event.shiftKey ? 'add' : 'toggle'); else if (brush !== 'highlight') one(cell, brush) } }} onContextMenu={event => { event.preventDefault(); if (brush !== 'highlight' && !event.shiftKey) one(cell, 0) }}>
               {(tree || mark !== 0) && <TentsSymbol kind={tree ? 'tree' : mark === 1 ? 'tent' : 'grass'} />}
             </button>
