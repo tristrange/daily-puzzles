@@ -347,7 +347,9 @@ describe('the piece colour', () => {
     // deleting the stroke in App.css would leave every test green and put a
     // flat white glyph on the pale regions at 1.37:1.
     const css = readFileSync(new URL('../App.css', import.meta.url).pathname, 'utf8')
-    const marker = /\.marker\s*\{([^}]*)\}/.exec(css)?.[1]
+    // Anchored to the start of a line: the base rule is the bare selector, and
+    // descendant rules ending in `.marker` come first in the file.
+    const marker = /^\.marker\s*\{([^}]*)\}/m.exec(css)?.[1]
     expect(marker, 'App.css no longer styles .marker').toBeDefined()
     expect(marker).toMatch(/-webkit-text-stroke:[^;]*var\(--piece-outline\)/)
     expect(marker).toMatch(/color:\s*var\(--piece\)/)
