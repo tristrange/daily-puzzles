@@ -153,7 +153,7 @@ it.each([0, 6])('completes preview %s without adding daily stats', async index =
   await key(last, 'End')
   expect(document.activeElement).toBe(cell(board.size ** 2 - 1))
   await key(last, '1')
-  expect(container.querySelector('[role="status"]')?.textContent).toContain('Solved')
+  expect(container.querySelector('.trio-feedback[role="status"]')?.textContent).toContain('Solved')
   expect(button('Hint').disabled).toBe(true)
   expect(button('Undo').disabled).toBe(true)
   expect(readTentsProgress(board)).toBeNull()
