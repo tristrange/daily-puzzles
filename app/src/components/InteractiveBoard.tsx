@@ -369,7 +369,7 @@ export function InteractiveBoard({
       onPointerMove={continueStroke}
     >
       {Array.from({ length: board.size }, (_, row) => (
-        <div key={row} role="row" style={{ display: 'contents' }}>
+        <div key={row} role="row" style={{ display: 'contents', '--row': row } as CSSProperties}>
           {Array.from({ length: board.size }, (_, col) => {
             const cell = board.index(row, col)
             return renderCell(cell, board.regionAt(cell))

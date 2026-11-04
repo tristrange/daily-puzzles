@@ -48,3 +48,26 @@ it('lets a locked board inspect cells while refusing keyboard, pointer, history 
     container.remove(); vi.unstubAllGlobals()
   }
 })
+
+it('numbers each row so the finished board can sweep down it', async () => {
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  const lesson = STAR_BATTLE_LESSONS[0]
+  if (!lesson) throw Error('Missing lesson')
+  const container = document.createElement('div')
+  const root = createRoot(container)
+  const noop = () => {}
+  try {
+    await act(async () => root.render(<InteractiveBoard board={lesson.board} game={lesson.game} hint={null}
+      conflictCells={new Set()} onToggleQueen={noop} onToggleMark={noop} onClear={noop} onUndo={noop}
+      onRedo={noop} onRequestHint={noop} onGestureStart={noop} onPaintCell={noop} onGestureEnd={noop} />))
+    const rows = [...container.querySelectorAll<HTMLElement>('[role="row"]')]
+    expect(rows).toHaveLength(lesson.board.size)
+    // The completion wave delays each row by this, so a missing number turns it
+    // from a sweep into one flat flash.
+    expect(rows.map(row => row.style.getPropertyValue('--row')))
+      .toEqual(rows.map((_, row) => String(row)))
+  } finally {
+    await act(async () => root.unmount())
+    container.remove(); vi.unstubAllGlobals()
+  }
+})
