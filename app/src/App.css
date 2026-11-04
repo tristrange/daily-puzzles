@@ -1686,6 +1686,7 @@
   .trio-controls { flex: 0 0 12rem; }
   .trio-controls .puzzle-tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
   .trio-controls .timer { grid-column: 1 / -1; text-align: center; padding-block: 0.35rem; }
+  .trio-controls .trio-check-result { grid-column: 1 / -1; }
   .trio-controls .trio-picker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .trio-controls .trio-mode-actions { flex-direction: column; gap: 0; }
   .trio-controls .trio-mode-actions .tool-button { width: 100%; }

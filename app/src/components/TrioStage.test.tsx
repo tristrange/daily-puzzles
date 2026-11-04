@@ -223,7 +223,7 @@ it('leaves daily stats untouched when completing a preview', () => {
   }
   expect(render().find((element) => element.type === TrioBoard)!.props['locked']).toBe(true)
   expect(render().find((element) => element.type === 'button' && element.props['children'] === 'Clear notes')!.props['disabled']).toBe(true)
-  expect(render().find((element) => element.props['role'] === 'status')!.props['children']).toContain('Solved in')
+  expect(render().find((element) => typeof element.props['className'] === 'string' && element.props['className'].startsWith('trio-feedback'))!.props['children']).toContain('Solved in')
   expect(values.get(STATS_STORAGE_KEY)).toBe('existing daily history')
   expect(publication.offerSolve).not.toHaveBeenCalled()
   expect(readTrioProgress(board)).toBeNull()

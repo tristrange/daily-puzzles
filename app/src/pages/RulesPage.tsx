@@ -218,6 +218,7 @@ export function RulesPage() {
         Apply move places a forced symbol or updates one cell&rsquo;s notes to the remaining possibilities.
         Nothing changes until you apply; Undo restores the previous move. Hints ignore your notes as evidence.
         Hints actually shown count in your daily result, even if you dismiss or Undo them.</p>
+      <p>Check reports whether your placed symbols match the verified unique solution; it ignores notes. The check is free, and choosing to show a mistake counts as one hint.</p>
       <p><Link to="/preview/trio">Play the five-board Trio preview</Link>. Attempts save
         separately in this browser. The timer pauses while the page is hidden or closed, and when it is unfocused outside iPhone.
         Preview solves do not affect daily stats or streaks. No difficulty rating yet.</p>
