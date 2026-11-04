@@ -489,6 +489,35 @@
   100% { transform: scale(1); }
 }
 
+/* A finished puzzle earns a shower of paper: the board wave alone is a wash of
+   colour, and a wash is easy to miss when the board is only part of what is on
+   screen. Fixed to the viewport so it needs no measuring, inert so nothing is
+   blocked, and unmounted by the component once it has fallen. */
+.confetti {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  overflow: hidden;
+  pointer-events: none;
+}
+.confetti i {
+  position: absolute;
+  top: -6vh;
+  width: 8px;
+  height: 14px;
+  border-radius: 1px;
+  animation-name: confetti-fall;
+  animation-timing-function: cubic-bezier(.22, .61, .36, 1);
+  animation-fill-mode: both;
+}
+.confetti i:nth-child(4n) { width: 10px; height: 10px; border-radius: 50%; }
+.confetti i:nth-child(7n) { width: 13px; height: 7px; }
+@keyframes confetti-fall {
+  0% { opacity: 0; transform: translate3d(0, -12vh, 0) rotate(0deg); }
+  6% { opacity: 1; }
+  100% { opacity: 1; transform: translate3d(var(--drift, 0), 110vh, 0) rotate(var(--spin, 360deg)); }
+}
+
 .share-buttons {
   display: flex;
   flex-wrap: wrap;
@@ -1374,6 +1403,8 @@
   .marks-game:has(.solved-panel.just-solved) :is(.board.playable .cell, .board.playable .marker) {
     animation: none;
   }
+
+  .confetti { display: none; }
 }
 
 @media (prefers-reduced-transparency: reduce) {

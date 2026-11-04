@@ -10,13 +10,55 @@
  * tracks-specific, so it is written once.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { formatTime } from '../domain/game'
 import { PUZZLE_TYPE_LABEL } from '../domain/games'
 import { passportUnlocksForSolve } from '../lib/passport'
+import { REGION_COLOURS } from '../lib/colours'
 import { readStoredStats, type SolveRecord } from '../lib/stats'
 import { LeaderboardPanel } from './LeaderboardPanel'
+
+// The board's own palette, minus the two navies that would vanish on dark paper.
+const CONFETTI_COLOURS = REGION_COLOURS.filter(colour => colour !== '#264653' && colour !== '#023047')
+
+/** Deterministic, so a re-render does not re-roll the shower mid-fall. */
+function scatter(n: number): number {
+  const value = Math.sin(n * 12.9898) * 43758.5453
+  return value - Math.floor(value)
+}
+
+/**
+ * One shower of paper over the whole page when a puzzle is finished. A fixed
+ * layer rather than a board-local burst: the board is not always the part of the
+ * screen the player is looking at, and this way it needs no measuring. Every
+ * piece is a single transform/opacity animation, and the layer is inert.
+ */
+function Confetti() {
+  const [finished, setFinished] = useState(false)
+  useEffect(() => {
+    const timer = setTimeout(() => setFinished(true), 2600)
+    return () => clearTimeout(timer)
+  }, [])
+  if (finished) return null
+  return (
+    <div className="confetti" aria-hidden="true">
+      {Array.from({ length: 90 }, (_, index) => (
+        <i
+          key={index}
+          style={{
+            left: `${scatter(index + 1) * 100}%`,
+            background: CONFETTI_COLOURS[index % CONFETTI_COLOURS.length],
+            '--drift': `${(scatter(index + 2) - 0.5) * 150}px`,
+            '--spin': `${(scatter(index + 3) - 0.5) * 900}deg`,
+            animationDelay: `${scatter(index + 4) * 260}ms`,
+            animationDuration: `${1200 + scatter(index + 5) * 700}ms`,
+          } as CSSProperties}
+        />
+      ))}
+    </div>
+  )
+}
 
 export interface SolvedPanelProps {
   solved: boolean
@@ -60,6 +102,7 @@ export function SolvedPanel({
   if (!solved) return null
   return (
     <div className={`solved-panel${startedSolved ? '' : ' just-solved'}`}>
+      {!startedSolved && <Confetti />}
       <p className="solved-banner" ref={banner}>
         {firstSolve === null ? (
           <>

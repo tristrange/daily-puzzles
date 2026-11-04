@@ -57,10 +57,12 @@ it('plays on a new solve and again on a replay', async () => {
 it('brings a new solve into view, once per solve', async () => {
   await render(false)
   expect(scrollIntoView).not.toHaveBeenCalled()
+  expect(container.querySelector('.confetti')).toBeNull()
   await render(true)
   expect(scrollIntoView).toHaveBeenCalledTimes(1)
   expect(scrollIntoView.mock.instances[0]).toBe(panel()?.querySelector('.solved-banner'))
   expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' })
+  expect(container.querySelector('.confetti')?.children).toHaveLength(90)
   await render(false)
   await render(true)
   expect(scrollIntoView).toHaveBeenCalledTimes(2)
@@ -71,4 +73,5 @@ it('does not play when an already-solved page is restored', async () => {
   expect(panel()).not.toBeNull()
   expect(panel()?.classList.contains('just-solved')).toBe(false)
   expect(scrollIntoView).not.toHaveBeenCalled()
+  expect(container.querySelector('.confetti')).toBeNull()
 })
