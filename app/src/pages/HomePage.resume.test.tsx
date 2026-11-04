@@ -97,6 +97,13 @@ it('groups games with multiple daily puzzles after single-puzzle games', async (
   ])
 })
 
+it('offers Play on each unstarted size and level', async () => {
+  await render()
+  for (const name of ['Train Tracks Small', 'Sudoku Easy', 'Killer Sudoku Easy']) {
+    expect(link(`Play ${name}`)?.textContent).toContain('Play')
+  }
+})
+
 it('offers each saved daily game with its validated time and original destination', async () => {
   saveAttempts()
   await render()
@@ -107,8 +114,9 @@ it('offers each saved daily game with its validated time and original destinatio
     ...['Easy', 'Medium', 'Hard'].map(level => [`Sudoku ${level}`, '4:05', `2026-10-21-sudoku-${level.toLowerCase()}`]),
     ...['Easy', 'Medium', 'Hard'].map(level => [`Killer Sudoku ${level}`, '4:05', `2026-10-21-killer-sudoku-${level.toLowerCase()}`])]) {
     expect(link(`Resume ${name} at ${time}`)?.getAttribute('href')).toBe(`/archive/${id}`)
-    const card = link(`Resume ${name} at ${time}`)?.closest('.game-card')
-    expect(card?.textContent).toContain(`In progress · ${time}`)
+    const resume = link(`Resume ${name} at ${time}`)
+    const card = resume?.closest('.game-card')
+    expect(resume?.getAttribute('aria-description') ?? card?.textContent).toContain(`In progress · ${time}`)
   }
 })
 
@@ -121,7 +129,8 @@ it('keeps sizes independent and completed results take priority over saved repla
   await render()
   expect(link('Resume Train Tracks Small at 1:00')).not.toBeNull()
   expect(link('Play Train Tracks Medium')).not.toBeNull()
-  expect(link('Play Train Tracks Large again')?.textContent).toContain('Completed')
+  expect(link('Play Train Tracks Large again')?.textContent).toContain('Play again')
+  expect(link('Play Train Tracks Large again')?.getAttribute('aria-description')).toContain('Completed')
   expect(link('Play Queens again')?.textContent).toContain('Play again')
   expect(link('Resume Queens at 4:32')).toBeNull()
 })
@@ -149,6 +158,29 @@ it('offers a valid zero-time save without confusing it with a missing attempt', 
   await render()
   expect(link('Resume Queens at 0:00')).not.toBeNull()
   expect(link('Play Star Battle')).not.toBeNull()
+})
+
+it('offers a saved variant only from its own game card', async () => {
+  const puzzle = puzzles[3]!
+  storeTrackProgress(puzzle.id, createTracksGame(puzzle.board as TrackGrid), { elapsedMs: 0 })
+  await render()
+  const resume = link('Resume Train Tracks Medium at 0:00')
+  expect(resume?.getAttribute('href')).toBe(`/archive/${puzzle.id}`)
+  expect(resume?.closest('.game-card')?.querySelector('.game-card-title')?.textContent).toBe('Train Tracks')
+  expect(resume?.textContent).toContain('Resume')
+  expect(container.querySelectorAll(`a[href="/archive/${puzzle.id}"]`)).toHaveLength(1)
+
+  localStorage.setItem(STATS_STORAGE_KEY, JSON.stringify([{
+    id: puzzle.id, puzzleType: puzzle.puzzleType, size: puzzle.board.width,
+    elapsedMs: 1000, hints: 0, solvedAt: Date.now(),
+  }]))
+  await act(async () => {
+    window.dispatchEvent(new Event('storage'))
+    await vi.dynamicImportSettled()
+  })
+  expect(link('Resume Train Tracks Medium at 0:00')).toBeNull()
+  expect(link('Play Train Tracks Medium again')?.closest('.game-card')?.querySelector('.game-card-title')?.textContent).toBe('Train Tracks')
+  expect(container.querySelectorAll(`a[href="/archive/${puzzle.id}"]`)).toHaveLength(1)
 })
 
 it('counts individual available puzzles and excludes unavailable variants even if they were solved', async () => {
