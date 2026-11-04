@@ -28,7 +28,7 @@ Routing uses `HashRouter` (the site has no server to rewrite paths for a
 `BrowserRouter`):
 
 - `/` renders today's puzzles in the player's time zone and refreshes at local midnight (`useToday`).
-- `/archive` lists published puzzles in seven-day windows, newest first; **Older** and **Newer** move between windows, and `?page=` keeps the window across refresh and Back.
+- `/archive` defaults to seven dates, newest first; players can choose 14 or 30 dates, a rolling date range, and oldest-first order. The URL keeps the view across refresh and Back.
 - `/archive/:id` renders one puzzle, e.g. `#/archive/2026-09-30`. Puzzles opened from Today return there; archive and direct links return to the game’s archive.
 
 Routes are lazy chunks around a static landing page. The optional Supabase

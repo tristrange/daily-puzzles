@@ -2,7 +2,7 @@ import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { isPuzzleId, puzzleTypeOf } from '../domain/dates'
 import { PUZZLE_TYPE_PUBLISHED, PUZZLE_TYPE_LABEL } from '../domain/games'
 import { PuzzleView } from '../components/PuzzleView'
-import { archiveHref, parseArchivePage } from '../lib/archive'
+import { archiveHref, parseArchivePage, parseArchiveView } from '../lib/archive'
 import { cameFromToday } from '../lib/puzzleNavigation'
 
 export function PuzzlePage() {
@@ -32,7 +32,7 @@ export function PuzzlePage() {
   }
   return (
     <section className="puzzle-page">
-      <Link to={fromToday ? '/' : archiveHref(type, page)} className="back-link" aria-label={fromToday ? 'Today’s puzzles' : 'All puzzles'}>
+      <Link to={fromToday ? '/' : archiveHref(type, page, parseArchiveView(search))} className="back-link" aria-label={fromToday ? 'Today’s puzzles' : 'All puzzles'}>
         <span aria-hidden="true">←</span> <span className="back-label">{fromToday ? 'Today' : 'All puzzles'}</span>
       </Link>
       <PuzzleView key={id} id={id} />

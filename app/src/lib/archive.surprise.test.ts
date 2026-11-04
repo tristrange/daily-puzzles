@@ -75,6 +75,21 @@ it('never probes a date after today', async () => {
   expect(requested).not.toContain(futureSudoku.id)
 })
 
+it('keeps random searches and downloaded fallbacks within the selected date range', async () => {
+  const { fetcher, requested } = fetcherFor([])
+  vi.stubGlobal('caches', { open: async () => ({
+    keys: async () => [new Request(savedUrl(cachedQueens.id))],
+    match: async () => jsonResponse(cachedQueens),
+  }) })
+  const outcome = await findSurprisePuzzle({
+    todayId: '2026-11-20', type: 'queens', solved: new Set(), range: '30',
+    fetcher, random: () => 0.999, maxDays: 40,
+  })
+  expect(outcome.status).toBe('none')
+  expect(requested).toHaveLength(30)
+  expect(requested.every(id => id >= '2026-10-22' && id <= '2026-11-20')).toBe(true)
+})
+
 it('skips a missing day and keeps looking', async () => {
   const fetcher = async (url: string) => {
     const id = url.split('/').at(-1)?.replace('.json', '') ?? ''
