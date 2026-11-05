@@ -121,8 +121,9 @@ not establish that guessing is necessary. Queens, Star Battle, Sudoku, Killer Su
 before optionally revealing a mistaken entry. Other games report contradictions
 found by their own checks. Notes are not proof for Trio/Sudoku hints; crosses,
 grass and placed tracks can be assumptions in the games that use them.
-Train Tracks hints can combine counts and connections and avoid closing a known loop;
-they do not examine every possible route.
+Train Tracks hints combine counts, connections and line arrangements. When needed,
+they can explain why a possible placement would lead to a contradiction; they do
+not search through complete routes.
 
 Where available, Check compares entries with the verified unique solution. It is free;
 choosing Show the mistake counts as a hint. Marks such as crosses and Nurikabe sea and
@@ -157,8 +158,9 @@ means one complete cover within that board's frozen vocabulary, not every word
 in the English language. A valid individual word can still lead to a dead end.
 
 Queens, Trio and Sudoku daily generation also require logical completion. Tents uses an
-offline line-pattern completion check. Star Battle and Train Tracks guarantee
-uniqueness without claiming that the live hint engines can finish every board.
+offline line-pattern completion check. New Train Tracks boards must be completed from
+their starting clues by the app's explained hints before publication. Star Battle
+guarantees uniqueness without claiming its live hint engine can finish every board.
 Sudoku levels have independent exact-solver and deduction certificates: Easy uses
 singles; Medium adds locked candidates and pairs; Hard adds triples and X-wing.
 Medium must require more than Easy techniques, and Hard more than Medium.

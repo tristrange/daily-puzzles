@@ -186,9 +186,11 @@ only local conflicts, and the shared engine/app deduction contract is unchanged.
 Train Tracks uses `trackHints.ts` instead of the marks deduction port. A cell's
 domain contains empty or one of six track shapes: a cross fixes empty, ? excludes
 empty, and a shaped track fixes its ends. Only the two given endpoints may leave
-the board. Row/column minimum and maximum occupancy and reciprocal connection
-constraints narrow domains to a fixed point. A contradiction anywhere in that
-pass suppresses all hints. No search or global loop/path deductions are included.
+the board. Row/column counts, reciprocal connections, line arrangements and
+avoiding closed loops narrow domains to a fixed point. If these stall, a single
+hypothetical occupancy or shape may be ruled out by an explained contradiction.
+It does not search complete routes. A contradiction detected in the player's
+entries suppresses hints.
 
 Each restriction records its reason and earlier evidence. The first restriction
 representable by a cross, ? or forced shape becomes a hint with its prerequisite
@@ -196,7 +198,9 @@ steps. Apply checks the original game identity and records one move. The panel
 discloses that player tracks and crosses are assumptions. Shown hints persist
 in the existing v1 progress object; absent counts from older saves mean zero.
 They are retained through Undo/Redo and Reset and included in the first solve and
-its share text. This client-side assistance does not change generator guarantees.
+its share text. New Train Tracks publication and manual generation require the
+actual app hints to finish the initial board; the low-level versioned generator
+and replay still verify uniqueness independently.
 
 ## The game loop
 

@@ -518,11 +518,9 @@ class TrackRulebook(Rulebook):
     """Train Tracks: a continuous line across a grid that need not be square.
 
     A companion, on Star Battle's reasoning rather than by omission. The generator
-    proves exactly one solution, which is the guarantee worth publishing; it cannot
-    promise a board solvable without a hypothesis, because there is no deduction
-    engine for this genre yet and `deduce` returns `None`. So no band is recorded
-    and the ramp does not apply — the same position Star Battle is in, for the same
-    reason.
+    proves exactly one solution; `deduce` returns `None` because the explained
+    Train Tracks hint engine lives in the app. The publishing tools separately
+    require a complete run of those hints. No difficulty band is recorded.
 
     Not a `MarkRulebook`, and not a marks board with a different subject. A cell
     here holds one of six pieces or nothing, the line obeys reciprocity rather than

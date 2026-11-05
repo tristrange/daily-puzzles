@@ -9,11 +9,9 @@ always produces the same puzzle. `--logic-only` accepts only boards the
 deduction engine can solve without guessing, walking the seed upward until it
 finds one (or gives up).
 
-`--logic-only` and the reported difficulty are the rulebook's call, not this
-script's: a type that cannot honour the gate, or is not rated, says so through
-`Rulebook.logic_only` / `Rulebook.rated`, and the reason is written down in
-`rulebook.py` rather than left as "not implemented yet". See ../README.md for the
-venv hidden-flag note that motivates the explicit sys.path bootstrap here.
+`--logic-only` and the reported difficulty normally come from the rulebook.
+Train Tracks also checks the app's hint engine on every generated board, so it
+requires Node and installed app dependencies even without `--logic-only`.
 """
 
 from __future__ import annotations
@@ -24,6 +22,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from tools.track_hints import tracks_hints_solve
 
 from queens_engine import (
     GenerationError,
@@ -82,7 +82,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--logic-only",
         action="store_true",
-        help="keep bumping the seed until the board needs no guessing (queens only)",
+        help="keep bumping the seed until the board passes its logic-only check",
     )
     parser.add_argument(
         "--type",
@@ -100,7 +100,7 @@ def main(argv: list[str] | None = None) -> int:
     except ValueError as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
-    if args.logic_only and not book.logic_only:
+    if args.logic_only and not book.logic_only and puzzle_type is not PuzzleType.TRAIN_TRACKS:
         print(
             f"--logic-only is not offered for {puzzle_type.value}: the rules do run on a "
             "multi-star board, but 0.1% of generated 8x8 boards finish without guessing, "
@@ -111,7 +111,8 @@ def main(argv: list[str] | None = None) -> int:
 
     base = args.seed if args.seed is not None else seed_from_date(puzzle_id)
     seed = base
-    for _attempt in range(LOGIC_ONLY_TRIES if args.logic_only else 1):
+    check_tracks = puzzle_type is PuzzleType.TRAIN_TRACKS
+    for _attempt in range(LOGIC_ONLY_TRIES if args.logic_only or check_tracks else 1):
         try:
             puzzle = book.generate(
                 seed=seed,
@@ -122,13 +123,22 @@ def main(argv: list[str] | None = None) -> int:
         except GenerationError as error:
             print(f"generation failed: {error}", file=sys.stderr)
             return 1
+        if check_tracks:
+            try:
+                supported = tracks_hints_solve(puzzle)
+            except RuntimeError as error:
+                print(f"generation failed: {error}", file=sys.stderr)
+                return 1
+            if not supported:
+                seed = (seed + 1) % (2**32)
+                continue
         deduced = book.deduce(puzzle.board, allow_guesses=False)
-        if not args.logic_only or (deduced is not None and deduced.solved):
+        if not args.logic_only or check_tracks or (deduced is not None and deduced.solved):
             break
         seed = (seed + 1) % (2**32)
     else:
         print(
-            f"no board for {puzzle_id} solved without guessing in "
+            f"no board for {puzzle_id} solved by the required hints or deductions in "
             f"{LOGIC_ONLY_TRIES} seed increments",
             file=sys.stderr,
         )
