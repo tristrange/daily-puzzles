@@ -170,6 +170,7 @@ The publishing and manual generation commands also replay the app's actual hints
 from the initial clues; if they stall, the command tries another seed. These
 commands need Node and installed app dependencies (`(cd ../app && npm ci)`).
 The low-level versioned generator and archive replay retain their original behavior.
+To rerun the full archive's hint audit, use `(cd ../app && npm run check:tracks-hints)`.
 
 Versions 1 and 2 retain their original prefix givens and unbounded replay.
 Version 1 permits zero clues; version 2 requires every row and column to be used.
