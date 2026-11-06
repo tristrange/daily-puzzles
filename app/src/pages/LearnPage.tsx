@@ -95,7 +95,7 @@ export function LearnPage() {
       <li><h2>Tents</h2><p>Compare tree pairings, line counts and possible arrangements.</p>
         <p className="lesson-meta">{completed.tents.length}/{GRID_LESSONS.filter(lesson => lesson.kind === 'tents').length} completed · {counts.tents.practiced}/{counts.tents.total} techniques</p>
         <Link className="lesson-link" to="/learn/tents">Learn Tents →</Link></li>
-      <li><h2>Train Tracks</h2><p>Connect separated track, combine line counts and avoid closing loops.</p>
+      <li><h2>Train Tracks</h2><p>Connect tracks, compare line arrangements and rule out impossible routes.</p>
         <p className="lesson-meta">{completed.tracks.length}/{GRID_LESSONS.filter(lesson => lesson.kind === 'train-tracks').length} completed · {counts.tracks.practiced}/{counts.tracks.total} techniques</p>
         <Link className="lesson-link" to="/learn/train-tracks">Learn Train Tracks →</Link></li>
     </ul>
