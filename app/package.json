@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test": "vitest run",
+    "check:tracks-hints": "node scripts/verify-track-hints.mjs --archive",
     "test:watch": "vitest",
     "typecheck": "tsc -b",
     "preview": "vite preview"

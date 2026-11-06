@@ -610,7 +610,12 @@ def _run_publish(
         def today(cls) -> Self:
             return cls(clock.year, clock.month, clock.day)
 
-    with cheap_publish(), redirect_stdout(buffer), patch.object(publish, "date", FrozenDate):
+    with (
+        cheap_publish(),
+        redirect_stdout(buffer),
+        patch.object(publish, "date", FrozenDate),
+        patch.object(publish, "tracks_hints_solve", return_value=True),
+    ):
         exit_code = publish.main(args)
     assert exit_code == expected_exit
     return buffer.getvalue().splitlines()

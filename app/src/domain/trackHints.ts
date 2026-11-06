@@ -2,7 +2,7 @@
 import { DIRECTIONS, EAST, OPPOSITE, PIECE_COUNT, PIECE_ENDS, SOUTH, type TrackGrid } from './tracks'
 import { CROSS, MAYBE, TRACK_CELL_NAME, isTracksSolved, paintBrush, type TracksGame } from './tracksGame'
 
-type Rule = 'edge' | 'row-count' | 'column-count' | 'connection' | 'line-connection' | 'line-capacity' | 'loop'
+type Rule = 'edge' | 'row-count' | 'column-count' | 'connection' | 'line-connection' | 'line-capacity' | 'line-pattern' | 'loop' | 'contradiction'
 export interface TrackHintStep {
   cell: number; before: number; after: number; rule: Rule; group: readonly number[]
   reason: string; dependencies: readonly number[]
@@ -24,18 +24,66 @@ function brushFor(mask: number): number | null {
   return single(mask) ? Math.log2(mask) : MAYBE
 }
 
-export function findTrackHint(game: TracksGame): TrackHintResult {
+/** Shapes supported by a line arrangement with the right count and matching neighbours. */
+export function supportedLineCandidates(cells: readonly number[], candidates: readonly number[], clue: number, direction: number): number[] {
+  const length = cells.length, back = (direction + OPPOSITE) % DIRECTIONS
+  const forward = Array.from({ length }, () => Array<number>(clue + 1).fill(0))
+  const backward = Array.from({ length }, () => Array<number>(clue + 1).fill(0))
+  const build = (table: number[][], reverse: boolean) => {
+    for (let position = 0; position < length; position++) {
+      const i = reverse ? length - 1 - position : position
+      const neighbour = reverse ? i + 1 : i - 1
+      for (let piece = 0; piece <= PIECE_COUNT; piece++) {
+        const bit = 1 << piece, occupied = Number(piece !== 0)
+        if (!(candidates[cells[i]!]! & bit)) continue
+        const towards = reverse ? direction : back, away = reverse ? back : direction
+        const compatible = ARMS[towards]! & bit ? ARMS[away]! : ALL ^ ARMS[away]!
+        for (let count = occupied; count <= clue; count++) {
+          if (position === 0 ? count === occupied : (table[neighbour]![count - occupied]! & compatible) !== 0) {
+            table[i]![count]! |= bit
+          }
+        }
+      }
+    }
+  }
+  build(forward, false)
+  build(backward, true)
+  return cells.map((_, i) => {
+    let supported = 0
+    for (let piece = 0; piece <= PIECE_COUNT; piece++) {
+      const bit = 1 << piece, occupied = Number(piece !== 0)
+      for (let left = occupied; left <= clue; left++) {
+        const right = clue - left + occupied
+        if (right <= clue && (forward[i]![left]! & bit) && (backward[i]![right]! & bit)) {
+          supported |= bit
+          break
+        }
+      }
+    }
+    return supported
+  })
+}
+
+type Analysis = { valid: boolean; candidates: number[]; steps: TrackHintStep[] }
+
+function analyse(game: TracksGame): Analysis {
   const { grid, pieces } = game
-  if (pieces.length !== grid.cellCount || !pieces.every((v) => Number.isInteger(v) && v >= 0 && v <= MAYBE)
-    || pieces.some((v, cell) => grid.givens[cell] !== 0 && v !== grid.givens[cell])) return { kind: 'contradiction' }
-  if (isTracksSolved(game)) return { kind: 'none' }
   const candidates = pieces.map((v) => v === CROSS ? EMPTY : v === MAYBE ? TRACK : v ? 1 << v : ALL)
   const steps: TrackHintStep[] = [], latest = Array<number>(grid.cellCount).fill(-1)
   let valid = true
+  const fail = (cell: number, rule: Rule, group: readonly number[], reason: string) => {
+    if (!valid) return
+    const dependencies = [...new Set([...group, cell].map(i => latest[i]!).filter(i => i >= 0))]
+    steps.push({ cell, before: candidates[cell]!, after: 0, rule, group, dependencies, reason })
+    valid = false
+  }
   const restrict = (cell: number, allowed: number, rule: Rule, group: readonly number[], premise: string) => {
     if (!valid) return
     const before = candidates[cell]!, after = before & allowed
-    if (!after) { valid = false; return }
+    if (!after) {
+      fail(cell, rule, group, `${premise} This leaves no possible track or empty cell at ${trackCellName(grid, cell)}.`)
+      return
+    }
     if (after === before) return
     const dependencies = [...new Set([...group, cell].map((i) => latest[i]!).filter((i) => i >= 0))]
     const brush = brushFor(after)
@@ -66,7 +114,13 @@ export function findTrackHint(game: TracksGame): TrackHintResult {
     for (const { clue, rule, name, cells } of lines) {
       const fixed = cells.filter((cell) => !(candidates[cell]! & EMPTY))
       const possible = cells.filter((cell) => candidates[cell]! & TRACK)
-      if (fixed.length > clue || possible.length < clue) return { kind: 'contradiction' }
+      if (fixed.length > clue || possible.length < clue) {
+        const reason = fixed.length > clue
+          ? `${name} would need at least ${fixed.length} tracks, but its clue is ${clue}.`
+          : `${name} needs ${clue} tracks, but only ${possible.length} cells could hold one.`
+        fail(cells[0]!, rule, cells, reason)
+        break
+      }
       if (fixed.length === clue) {
         for (const cell of cells) if (candidates[cell]! & EMPTY) restrict(cell, EMPTY, rule, cells,
           `${name} already has its ${clue} required track ${clue === 1 ? 'cell' : 'cells'}. Every other cell in this line must be empty, including ${trackCellName(grid, cell)}.`)
@@ -75,6 +129,7 @@ export function findTrackHint(game: TracksGame): TrackHintResult {
           `${name} needs ${clue} track ${clue === 1 ? 'cell' : 'cells'}, and only ${clue} cells can still contain track. Every one must be used, including ${trackCellName(grid, cell)}.`)
       }
     }
+    if (!valid) break
     for (let cell = 0; cell < grid.cellCount; cell++) {
       for (let direction = 0; direction < DIRECTIONS; direction++) {
         const other = grid.neighbour(cell, direction)
@@ -141,7 +196,11 @@ export function findTrackHint(game: TracksGame): TrackHintResult {
         const other = grid.neighbour(cell, direction), back = (direction + OPPOSITE) % DIRECTIONS
         if (other === null || !mustConnect(cell, direction) || !mustConnect(other, back)) continue
         const a = root(cell), b = root(other)
-        if (a === b) { valid = false; break }
+        if (a === b) {
+          const group = parent.map((_, i) => i).filter(i => root(i) === a)
+          fail(cell, 'loop', group, 'These forced connections close a loop instead of forming one route between the two ends.')
+          break
+        }
         parent[a] = b
         neighbours[cell]!.push(other); neighbours[other]!.push(cell)
       }
@@ -171,20 +230,88 @@ export function findTrackHint(game: TracksGame): TrackHintResult {
         restrict(other, ALL ^ ARMS[back]!, 'loop', group, reason)
       }
     }
-    if (steps.length === previous) break
+    if (steps.length === previous) {
+      // Consider whole-line arrangements only after the simpler rules stall.
+      // Dynamic programming keeps this bounded even on a 12-cell line.
+      for (const { clue, name, cells, direction } of lines) {
+        const supported = supportedLineCandidates(cells, candidates, clue, direction)
+        for (const [i, cell] of cells.entries()) restrict(cell, supported[i]!, 'line-pattern', cells,
+          `${name} needs ${clue} tracks. Considering every arrangement that meets this count and joins neighbouring tracks, some directions or empty cells cannot fit at ${trackCellName(grid, cell)}.`)
+      }
+      if (steps.length === previous) break
+    }
   }
+  return { valid, candidates, steps }
+}
+
+function neededSteps(steps: readonly TrackHintStep[], index: number): TrackHintStep[] {
+  const needed = new Set<number>()
+  const include = (i: number) => { if (!needed.has(i)) { needed.add(i); steps[i]!.dependencies.forEach(include) } }
+  include(index)
+  return [...needed].sort((a, b) => a - b).map((i) => steps[i]!)
+}
+
+function contradictionHint(game: TracksGame, cell: number, before: number, assumption: number, brush: number,
+  trial: Analysis, previous: readonly TrackHintStep[] = []): TrackHint {
+  const failure = trial.steps.at(-1)!
+  const supporting = neededSteps(trial.steps, trial.steps.length - 1)
+  const name = trackCellName(game.grid, cell)
+  const assumed = assumption === MAYBE ? 'contained a track' : assumption === CROSS ? 'were empty' : `held ${TRACK_CELL_NAME[assumption]}`
+  const conclusion = brush === CROSS ? 'must be empty' : brush === MAYBE ? 'must contain a track' : `must hold ${TRACK_CELL_NAME[brush]}`
+  const choices = assumption <= PIECE_COUNT ? `Only ${TRACK_CELL_NAME[assumption]} or ${TRACK_CELL_NAME[brush]} can fit here. ` : ''
+  const first: TrackHintStep = { cell, before, after: assumption === MAYBE ? TRACK : assumption === CROSS ? EMPTY : 1 << assumption,
+    rule: 'contradiction', group: [cell], dependencies: [], reason: `Suppose ${name} ${assumed}.` }
+  const last: TrackHintStep = { cell, before, after: brush === CROSS ? EMPTY : brush === MAYBE ? TRACK : 1 << brush,
+    rule: 'contradiction', group: failure.group, dependencies: [],
+    reason: `${choices}If ${name} ${assumed}, the deductions below would lead to a contradiction: ${failure.reason} So ${name} ${conclusion}.` }
+  return { cell, brush, source: game, steps: [...previous, first, ...supporting, last] }
+}
+
+export function findTrackHint(game: TracksGame): TrackHintResult {
+  const { grid, pieces } = game
+  if (pieces.length !== grid.cellCount || !pieces.every((v) => Number.isInteger(v) && v >= 0 && v <= MAYBE)
+    || pieces.some((v, cell) => grid.givens[cell] !== 0 && v !== grid.givens[cell])) return { kind: 'contradiction' }
+  if (isTracksSolved(game)) return { kind: 'none' }
+  const { valid, candidates, steps } = analyse(game)
   if (!valid) return { kind: 'contradiction' }
   const index = steps.findIndex((step) => {
     const brush = brushFor(step.after)
     return brush !== null && brush !== pieces[step.cell]
   })
-  if (index < 0) return { kind: 'none' }
-  const needed = new Set<number>()
-  const include = (i: number) => { if (!needed.has(i)) { needed.add(i); steps[i]!.dependencies.forEach(include) } }
-  include(index)
-  const step = steps[index]!
-  return { kind: 'hint', hint: { cell: step.cell, brush: brushFor(step.after)!, source: game,
-    steps: [...needed].sort((a, b) => a - b).map((i) => steps[i]!) } }
+  if (index >= 0) {
+    const step = steps[index]!
+    return { kind: 'hint', hint: { cell: step.cell, brush: brushFor(step.after)!, source: game,
+      steps: neededSteps(steps, index) } }
+  }
+
+  // A short what-if is a deduction: if one possibility violates a rule, the
+  // opposite follows. Never commit the assumption or search for a solution.
+  for (let cell = 0; cell < grid.cellCount; cell++) {
+    if (pieces[cell] !== 0 || grid.givens[cell] || !(candidates[cell]! & EMPTY) || !(candidates[cell]! & TRACK)) continue
+    for (const [assumption, brush] of [[MAYBE, CROSS], [CROSS, MAYBE]] as const) {
+      const trial = analyse(paintBrush(game, cell, assumption))
+      if (trial.valid) continue
+      if (!trial.steps.length) continue
+      if (!analyse(paintBrush(game, cell, brush)).valid) return { kind: 'contradiction' }
+      return { kind: 'hint', hint: contradictionHint(game, cell, candidates[cell]!, assumption, brush, trial) }
+    }
+  }
+  // A definite track can also have two possible shapes. Eliminate either one
+  // only when its consequences contradict the clues or path rules.
+  for (let cell = 0; cell < grid.cellCount; cell++) {
+    if (pieces[cell] !== MAYBE || grid.givens[cell]) continue
+    const shapes = Array.from({ length: PIECE_COUNT }, (_, i) => i + 1).filter(piece => candidates[cell]! & (1 << piece))
+    if (shapes.length !== 2) continue
+    for (const [assumption, brush] of [[shapes[0]!, shapes[1]!], [shapes[1]!, shapes[0]!]] as const) {
+      const trial = analyse(paintBrush(game, cell, assumption))
+      if (trial.valid || !trial.steps.length) continue
+      if (!analyse(paintBrush(game, cell, brush)).valid) return { kind: 'contradiction' }
+      const last = steps.findLastIndex(step => step.cell === cell)
+      const previous = last < 0 ? [] : neededSteps(steps, last)
+      return { kind: 'hint', hint: contradictionHint(game, cell, candidates[cell]!, assumption, brush, trial, previous) }
+    }
+  }
+  return { kind: 'none' }
 }
 
 export function applyTrackHint(game: TracksGame, hint: TrackHint): TracksGame {

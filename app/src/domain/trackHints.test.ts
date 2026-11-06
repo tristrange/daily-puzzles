@@ -1,13 +1,21 @@
 import { expect, it } from 'vitest'
-import { TrackGrid } from './tracks'
+import { EAST, PIECE_ENDS, SOUTH, TrackGrid } from './tracks'
 import { applyBrush, createTracksGame, CROSS, MAYBE, isFault, isTracksSolved, trackConflicts, type TracksGame } from './tracksGame'
-import { applyTrackHint, findTrackHint } from './trackHints'
+import { applyTrackHint, findTrackHint, supportedLineCandidates } from './trackHints'
 import { trackHintLesson } from './hintLessons'
 import october31 from '../../public/puzzles/2026-10-31-tracks-small.json'
+import october29Large from '../../public/puzzles/2026-10-29-tracks-large.json'
+import november5Small from '../../public/puzzles/2026-11-05-tracks-small.json'
+import november5Medium from '../../public/puzzles/2026-11-05-tracks-medium.json'
 
 const middle = () => new TrackGrid(3, 3, [0, 3, 0], [1, 1, 1], [0, 0, 0, 1, 0, 1, 0, 0, 0])
 const bend = () => new TrackGrid(3, 3, [2, 2, 3], [3, 1, 3], [2, 0, 2, 0, 0, 0, 0, 0, 0])
 const october31Solution = '0415200052462045362020224160316224150046360200350003500200003116'.split('').map(Number)
+// Enumerated independently by the Python route solver, which proved each board unique.
+const november5Solutions = [
+  '0041164550311162350000460350002041600460241503503602416000036000',
+  '5450000000362000000000200000000020000000046000000002000000000315000000000200041500031502460000031635',
+].map(solution => solution.split('').map(Number))
 const agreesWith = (brush: number, value: number) => brush === CROSS ? value === 0 : brush === MAYBE ? value !== 0 : brush === value
 function hintFor(game: TracksGame) {
   const result = findTrackHint(game)
@@ -99,6 +107,87 @@ it('can explain the October 31 puzzle through to its solution without contradict
   expect(explanations.some((reason) => reason.includes('would also be empty'))).toBe(true)
   expect(explanations.some((reason) => reason.includes('exceeding the count'))).toBe(true)
   expect(explanations.some((reason) => reason.includes('close a loop'))).toBe(true)
+})
+
+it('solves both November 5 boards with sound, explained deductions', () => {
+  for (const [i, puzzle] of [november5Small, november5Medium].entries()) {
+    const { width, height, rowClues, colClues, givens } = puzzle.board
+    let game = createTracksGame(new TrackGrid(width, height, rowClues, colClues, givens))
+    const rules = new Set<string>()
+    for (let move = 0; move < width * height * 2 && !isTracksSolved(game); move++) {
+      const hint = hintFor(game)
+      expect(agreesWith(hint.brush, november5Solutions[i]![hint.cell]!)).toBe(true)
+      hint.steps.forEach(step => rules.add(step.rule))
+      game = applyTrackHint(game, hint)
+    }
+    expect(isTracksSolved(game)).toBe(true)
+    expect(rules.has('line-pattern')).toBe(true)
+    if (i === 0) expect(rules.has('contradiction')).toBe(true)
+  }
+})
+
+it('retains a correct next hint from varied partial solutions of the November 5 small board', () => {
+  const { width, height, rowClues, colClues, givens } = november5Small.board
+  const grid = new TrackGrid(width, height, rowClues, colClues, givens)
+  const solution = november5Solutions[0]!
+  for (let pattern = 0; pattern < 12; pattern++) {
+    let game = createTracksGame(grid)
+    for (let cell = 0; cell < grid.cellCount; cell++) {
+      if (!givens[cell] && (cell * 7 + pattern * 11) % 13 < 3) {
+        game = applyBrush(game, cell, solution[cell] ? solution[cell]! : CROSS)
+      }
+    }
+    const hint = hintFor(game)
+    expect(agreesWith(hint.brush, solution[hint.cell]!)).toBe(true)
+  }
+})
+
+it('explains a forced track shape on the October 29 large board', () => {
+  const { width, height, rowClues, colClues, givens } = october29Large.board
+  const solution = '004150000000002020000000116020000000004520000000002360041500003500024600004641163500003520000200411624150200354162460204463152311646311163111160'.split('').map(Number)
+  let game = createTracksGame(new TrackGrid(width, height, rowClues, colClues, givens))
+  let shapeProof = false
+  for (let move = 0; move < width * height * 2 && !isTracksSolved(game); move++) {
+    const hint = hintFor(game)
+    expect(agreesWith(hint.brush, solution[hint.cell]!)).toBe(true)
+    if (hint.steps.at(-1)?.rule === 'contradiction' && hint.brush <= 6) shapeProof = true
+    game = applyTrackHint(game, hint)
+  }
+  expect(isTracksSolved(game)).toBe(true)
+  expect(shapeProof).toBe(true)
+})
+
+it('matches independent exhaustive line arrangements for both directions', () => {
+  const cells = [0, 1, 2, 3]
+  let state = 1234567
+  for (const direction of [EAST, SOUTH]) for (let sample = 0; sample < 200; sample++) {
+    const candidates = cells.map(() => {
+      state = (state * 1664525 + 1013904223) >>> 0
+      return (state & 127) || 1
+    })
+    const clue = sample % 5
+    const expected = cells.map(() => 0)
+    const visit = (pieces: number[]) => {
+      const i = pieces.length
+      if (i === cells.length) {
+        if (pieces.filter(piece => piece !== 0).length === clue) {
+          pieces.forEach((piece, cell) => { expected[cell]! |= 1 << piece })
+        }
+        return
+      }
+      for (let piece = 0; piece < PIECE_ENDS.length; piece++) {
+        if (!(candidates[i]! & (1 << piece))) continue
+        if (i > 0) {
+          const connects = PIECE_ENDS[pieces[i - 1]!]!.includes(direction)
+          const connectsBack = PIECE_ENDS[piece]!.includes((direction + 2) % 4)
+          if (connects !== connectsBack) continue
+        }
+        visit([...pieces, piece])
+      }
+    }
+    visit([])
+    expect(supportedLineCandidates(cells, candidates, clue, direction)).toEqual(expected)
+  }
 })
 
 it('avoids a loop without choosing between two valid routes', () => {

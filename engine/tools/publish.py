@@ -9,8 +9,8 @@ Train Tracks provides a legacy slot before activation and three named sizes afte
 part of the puzzle's identity rather than only its filename, because a solve is
 recorded against an id and first-solve-wins would otherwise let one of the day's
 puzzles block the other. Which types exist, what they are called and how each is
-generated all come from the registry in `queens_engine.rulebook`, so this script
-holds no per-type knowledge of its own.
+generated all come from the registry in `queens_engine.rulebook`. The publisher
+also applies the family-specific checks described below.
 
 A Star Battle board also refuses to repeat a solution layout published within
 `STAR_LAYOUT_WINDOW_DAYS` days: because the generator is stars-first, two
@@ -25,10 +25,10 @@ day through (today + `--lead` days), using the same deterministic recipe as
 `tools.generate`: a seed hashed from the id and the type's published size. How
 each type is generated is its rulebook's `on_ramp` fact. A ramped type walks the
 seed upward until a logic-only board lands within its weekday's band and records
-that band; a type off the ramp takes the guarantee the generator actually
-provides for it, a unique solution, and records no band. Idempotent: existing
-files are never rewritten and a given id always maps to one puzzle, so it is safe
-to run from cron every day and to run again by hand.
+that band; types off the ramp record no band. Train Tracks candidates must also
+be completed by the app's explained hints before publication. This requires
+Node and the installed app dependencies. Idempotent: existing files are never
+rewritten, so it is safe to run from cron every day and to run again by hand.
 
 `--check` is the monitor's read-only mode: it reports the first incomplete day
 through the lead horizon and exits 1 without writing anything.
@@ -48,6 +48,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from dataclasses import replace
 
 from tools.generate import LOGIC_ONLY_TRIES, seed_from_date
+from tools.track_hints import tracks_hints_solve
 
 from queens_engine import (
     LEVEL_NAMES,
@@ -217,9 +218,8 @@ def _generate(
     lands at or below that band, so a date always reproduces the same board. The
     band is recorded on the file, because the ramp is a claim about difficulty.
 
-    A type off the ramp takes the guarantee the generator actually provides for
-    it — a unique solution, but not a promise that no guessing is needed — and
-    records no band, so nothing in the archive claims a difficulty nothing checks.
+    A type off the ramp takes its generator's guarantees and records no band.
+    Train Tracks candidates must also be completed by the app's hint engine.
     Its failure path is a seed bump instead, since there is no band to search for.
     A Star Battle board also bumps while its solution layout is in
     `avoid_layouts`, the same memory-play caveat as `STAR_BATTLE_SIZE`.
@@ -257,6 +257,9 @@ def _generate(
             and isinstance(puzzle.board, NurikabeGrid)
             and _nurikabe_layout(puzzle.board) in avoid_nurikabe_layouts
         ):
+            seed = (seed + 1) % (2**32)
+            continue
+        if puzzle_type is PuzzleType.TRAIN_TRACKS and not tracks_hints_solve(puzzle):
             seed = (seed + 1) % (2**32)
             continue
         return puzzle, None
@@ -352,6 +355,8 @@ def main(argv: list[str] | None = None) -> int:
                         if score is not None
                         else " (unique, direct deductions)"
                         if book.logic_only
+                        else " (unique, app hints verified)"
+                        if book.puzzle_type is PuzzleType.TRAIN_TRACKS
                         else " (unique, not logic-gated)"
                     )
                 )

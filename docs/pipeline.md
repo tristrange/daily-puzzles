@@ -98,7 +98,10 @@ chooser and publisher use only the required slots.
 Each slot starts with a seed hashed from its full ID. Queens follows its weekday's
 ramp and logic-only gate; Star Battle retains its unique-solution and nearby-layout
 checks. Train Tracks uses generator version 3's deterministic search budgets and
-proves uniqueness without claiming a difficulty rating. A failed off-ramp seed is
+proves uniqueness without claiming a difficulty rating. The publisher also runs
+the actual app hints to completion from the initial clues and retries if they
+stall. The hint checker needs Node and the installed app dependencies; errors and
+timeouts stop publication. A failed off-ramp seed is
 bumped at most 32 times; failure never substitutes a smaller board or drops a slot.
 
 Sudoku slots carry `-sudoku-easy`, `-sudoku-medium` and `-sudoku-hard` suffixes.

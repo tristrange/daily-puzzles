@@ -25,6 +25,13 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Install app dependencies for Train Tracks hint checks
+        run: npm ci --prefix ../app
       - name: Install dependencies
         run: uv sync --frozen
       - name: Publish any missing puzzles
