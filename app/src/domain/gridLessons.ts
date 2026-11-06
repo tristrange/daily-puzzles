@@ -3,6 +3,7 @@ import advancedTents from '../data/tents-advanced-lessons.json'
 import tentsMatching from '../data/tents-matching-lessons.json'
 import advancedNurikabe from '../data/nurikabe-advanced-lessons.json'
 import tracksLessons from '../data/tracks-lessons.json'
+import advancedTracks from '../data/tracks-advanced-lessons.json'
 import { isNurikabeGame, type NurikabeBoard, type NurikabeGame } from './nurikabe'
 import { isTentsMark, parseTentsBoard, type TentsBoard, type TentsGame } from './tents'
 import { TrackGrid } from './tracks'
@@ -34,6 +35,8 @@ export const GRID_TECHNIQUES = {
     { id: 'counts', title: 'Combine counts and connections', intro: 'A full row or column closes its remaining cells. Use that restriction to find where the route must pass.' },
     { id: 'loop', title: 'Avoid closing a loop', intro: 'Two open ends of the same track segment cannot join each other before the route reaches both edge ends.' },
     { id: 'edges', title: 'Combine edges, counts and connections', intro: 'A track cannot leave the board except at the two line ends. Use that, a row or column count, and the connections each track needs to decide a cell.' },
+    { id: 'line-pattern', title: 'Compare line arrangements', intro: 'Combine a row or column count with its track connections. A cell used in every possible arrangement must contain track; one used in none must be empty.' },
+    { id: 'contradiction', title: 'Rule out a possibility', intro: 'Temporarily consider one of two possibilities. If its consequences break a rule, the other must be correct.' },
   ],
 } as const satisfies Record<GridLesson['kind'], readonly { id: string; title: string; intro: string }[]>
 
@@ -76,7 +79,7 @@ export const GRID_LESSONS: GridLesson[] = catalog.map((exercise, index): GridLes
     technique: exercise.technique, value: 2, axis: exercise.axis, line: exercise.line,
     answers: exercise.answers, prompt: exercise.prompt, reason: exercise.reason,
     exerciseNumber: index % 3 + 1, guidance: index % 3 === 0 ? 'guided' : 'practice' }
-})).concat(tracksLessons.map((exercise, index): GridLesson => {
+})).concat([...tracksLessons, ...advancedTracks].map((exercise, index): GridLesson => {
   const raw = exercise.board
   const board = new TrackGrid(raw.width, raw.height, raw.rowClues, raw.colClues, raw.givens)
   if (exercise.pieces.length !== board.cellCount || exercise.pieces.some((piece, cell) => !Number.isInteger(piece) || piece < 0 || piece > MAYBE || (board.givens[cell] !== 0 && piece !== board.givens[cell]))) throw Error(`Invalid lesson state: ${exercise.id}`)

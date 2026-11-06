@@ -52,6 +52,8 @@ export function tentsHintLesson(hint: TentsHint): HintLesson | undefined {
 export function trackHintLesson(hint: TrackHint): HintLesson | undefined {
   const rule = hint.steps.at(-1)?.rule
   if (rule === 'loop') return { path: '/learn/train-tracks/tracks-loop-1', title: 'avoiding loops' }
+  if (rule === 'line-pattern') return { path: '/learn/train-tracks/tracks-line-pattern-1', title: 'line arrangements' }
+  if (rule === 'contradiction') return { path: '/learn/train-tracks/tracks-contradiction-1', title: 'ruling out a possibility' }
   if ((rule === 'line-connection' || rule === 'line-capacity') && hint.steps.some(step => step.rule === 'edge')) {
     return { path: '/learn/train-tracks/tracks-edges-1', title: 'edges, counts and connections' }
   }
