@@ -1927,7 +1927,7 @@
   }
 }
 
-@media (min-width: 70rem) {
+@media (min-width: 56rem) {
   :is(.tracks-game, .tents-game, .trio-game, .nurikabe-game, .word-game, .marks-game):has(> .hint-panel) {
     position: relative;
     display: grid;
@@ -1964,7 +1964,7 @@
     left: max(.75rem, env(safe-area-inset-left));
     right: max(.75rem, env(safe-area-inset-right));
     bottom: max(.75rem, env(safe-area-inset-bottom));
-    max-height: min(36svh, 22rem);
+    max-height: min(22rem, max(13rem, 36svh));
     margin: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -1988,7 +1988,7 @@
   }
 
   :is(.sudoku-game, .tracks-game, .tents-game, .trio-game, .nurikabe-game, .word-game, .marks-game):has(.hint-panel) [data-hint='target'] {
-    scroll-margin-block: 1rem 38svh;
+    scroll-margin-block: 1rem max(38svh, 14rem);
   }
 }
 
@@ -2009,13 +2009,13 @@
   .sudoku-workspace[data-hint='true'][data-killer='true'] { grid-template-areas: 'board' 'tools' 'cage-toggle' 'keys' 'mode'; }
   .sudoku-workspace[data-hint='true'][data-combinations='true'] { grid-template-areas: 'board' 'tools' 'cage-toggle' 'combinations' 'keys' 'mode'; }
   .sudoku-game:has(.hint-panel) .sudoku-board {
-    width: min(100%, 36rem, calc(100svh - 25rem));
+    width: min(100%, 36rem, max(16rem, calc(100svh - 25rem)));
   }
 }
 
 @media (min-width: 30rem) and (max-width: 47.999rem) {
   .sudoku-game:has(.hint-panel) .sudoku-board {
-    width: min(100%, 36rem, calc(100svh - 30rem));
+    width: min(100%, 36rem, max(16rem, calc(100svh - 30rem)));
   }
 }
 
