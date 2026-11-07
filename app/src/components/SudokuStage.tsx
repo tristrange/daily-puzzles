@@ -215,16 +215,16 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
       </div>
       <SudokuBoard board={board} game={game} selected={selected} selection={selection} locked={solved} conflicts={conflicts} hint={hint} instructionsId={instructionsId} onSelect={select} onConfirmNote={confirmNote} cageActive={!!cage && showCombinations} />
       <div className="sudoku-side">
-        {showCombinations && killer && <div id={combinationsId} className="killer-combinations-panel">
-          {cage ? <KillerCombinations cage={cage} excluded={game.excludedCageCombinations?.[cageIndex] ?? []} onToggle={toggleCombination} onReset={resetCombinations} disabled={solved} />
-            : <section className="killer-combinations" aria-label="Cage combinations"><div className="killer-combinations-heading"><h2>Multiple cages selected</h2></div><p role="status">Select cells from one cage to see its combinations.</p></section>}
-        </div>}
         {mistake !== null && <MistakeWarning id={hintId} message="Your numbers lead to a contradiction. Check your entries, or try Undo." onReveal={() => revealMistake(mistake, 'hint')} onDismiss={dismiss} />}
         {hint && <HintPanel id={hintId} location={sudokuCellName(hint.cell)} title={hint.correction ? 'Clear this entry' : sudokuSingle(hint.candidates) ? `Place ${sudokuDigits(hint.candidates)[0]}` : 'Narrow the possibilities'}
           reasons={hint.reasons} supportingReasons={hint.supportingReasons} effect={hint.correction || sudokuSingle(hint.candidates) ? '' : `Apply updates this cell's notes to ${sudokuDigits(hint.candidates).join(', ')}. The cell stays empty.`}
           lesson={saving ? sudokuHintLesson(hint, !!killer) : undefined} puzzleId={puzzle?.id}
           resume={{ id: board.id, state: hintState, signature: hintSignature(hint) }}
           onApply={acceptHint} onDismiss={dismiss} onShowCell={showCell} />}
+        {showCombinations && killer && <div id={combinationsId} className="killer-combinations-panel">
+          {cage ? <KillerCombinations cage={cage} excluded={game.excludedCageCombinations?.[cageIndex] ?? []} onToggle={toggleCombination} onReset={resetCombinations} disabled={solved} />
+            : <section className="killer-combinations" aria-label="Cage combinations"><div className="killer-combinations-heading"><h2>Multiple cages selected</h2></div><p role="status">Select cells from one cage to see its combinations.</p></section>}
+        </div>}
       </div>
     </div>
     <p className={`sudoku-feedback${conflicts.size ? ' error' : ''}`} role="status">{solved ? message || `Solved in ${formatTime(elapsed)} with ${shownHints} hint${shownHints === 1 ? '' : 's'}!${daily ? '' : killer ? ' Choose another board to keep playing.' : ' Choose another level to keep playing.'}`
