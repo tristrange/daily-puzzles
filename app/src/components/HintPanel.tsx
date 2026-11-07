@@ -21,7 +21,6 @@ export function MistakeWarning({ id, onReveal, onDismiss, message = 'Your entrie
   const panel = useRef<HTMLElement>(null)
   useEffect(() => {
     panel.current?.focus({ preventScroll: true })
-    panel.current?.scrollIntoView({ block: 'nearest' })
   }, [])
   return <section className="hint-panel" ref={panel} tabIndex={-1} aria-labelledby={`${id}-title`} id={id}
     onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); onDismiss() } }}>
@@ -44,7 +43,6 @@ export function HintPanel({ id, location, title, reasons, supportingReasons, eff
   const inRouter = useInRouterContext()
   useEffect(() => {
     panel.current?.focus({ preventScroll: true })
-    panel.current?.scrollIntoView({ block: 'nearest' })
   }, [reasons])
   return <section className="hint-panel" ref={panel} tabIndex={-1} aria-labelledby={`${id}-title`} id={id}
     onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); onDismiss() } }}>

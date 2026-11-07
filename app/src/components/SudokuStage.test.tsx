@@ -328,6 +328,11 @@ it.each([
   expect(readSudokuProgress(ambiguous)?.hints).toBe(0)
 })
 
+it('opens the hint without scrolling the page', async () => {
+  await mount(); await click('Get an explained hint')
+  expect(HTMLElement.prototype.scrollIntoView).not.toHaveBeenCalled()
+})
+
 it('dismisses a hint from its focused board target and returns focus to Hint', async () => {
   await mount(); await click('Get an explained hint')
   await act(async () => container.querySelector<HTMLButtonElement>('.hint-location')!.click())

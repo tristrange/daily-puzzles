@@ -132,7 +132,6 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
     if (hint) {
       const panel = stage.current?.querySelector<HTMLElement>('.hint-panel')
       panel?.focus({ preventScroll: true })
-      panel?.scrollIntoView({ block: 'nearest' })
       return
     }
     const result = findWordHint(current.current)
