@@ -93,6 +93,7 @@
 .track-choice, .track-unpublished { display: flex; flex: 1; justify-content: flex-start; min-width: 0; min-height: 3.6rem; padding: .5rem .4rem; border: 1px solid var(--desk-border); border-radius: .65rem; background: light-dark(#f6f8fc, #232a38); text-align: left; }
 .track-choice-info { display: grid; gap: .2rem; min-width: 0; font-size: .75rem; font-weight: 650; line-height: 1.25; }
 .choice-state { overflow: hidden; color: var(--accent); font-size: .6875rem; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
+.choice-state.solved { color: var(--hint); font-weight: 600; }
 .track-unpublished { display: grid; align-content: center; gap: .2rem; font-size: .75rem; line-height: 1.25; }
 .today-more { display: flex; flex-wrap: wrap; gap: .25rem 1.5rem; font-size: .875rem; }
 .today-more a { display: inline-flex; align-items: center; gap: .25rem; min-height: 2.75rem; }
