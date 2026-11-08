@@ -9,6 +9,7 @@
     "lint": "oxlint",
     "test": "vitest run",
     "check:tracks-hints": "node scripts/verify-track-hints.mjs --archive",
+    "check:star-hints": "node scripts/verify-star-hints.mjs --archive",
     "test:watch": "vitest",
     "typecheck": "tsc -b",
     "preview": "vite preview"

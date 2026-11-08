@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest'
 import queen from '@shared/conformance/hint-cases/2026-05-11.puzzle.json'
 import star from '@shared/conformance/hint-cases/2026-09-26-star.puzzle.json'
+import stalledStar from '../../public/puzzles/2026-11-08-star.json'
 import { Board } from './board'
 import { conflicts, createGame } from './game'
 import { marksBoard } from './helpers'
@@ -48,6 +49,22 @@ it.each([
 it('preserves explained deductions once placements and crosses are verified', () => {
   const game = { ...createGame(queenBoard), queens: new Set([3]), marks: new Set([0]) }
   expect(checkedHint(game)).toEqual({ kind: 'hint', hint: firstHint(queenBoard, game.queens, game.marks) })
+})
+
+it('explains a trial proof when the pure rules stall on a star board', () => {
+  const board = marksBoard(parsePuzzle(stalledStar))
+  const solution = solveMarks(board)
+  expect(solution.kind).toBe('unique')
+  // The position from the 2026-11-08 report: no stars, seven crosses, no rule fires.
+  const game = { ...createGame(board), marks: new Set([11, 36, 43, 44, 46, 47, 65]) }
+  expect(firstHint(board, game.queens, game.marks)).toBeNull()
+  const result = checkedHint(game)
+  expect(result.kind).toBe('hint')
+  if (result.kind !== 'hint') return
+  expect(result.hint).toMatchObject({ cell: 13, action: 'x', rule: 'trial' })
+  expect(solution.kind === 'unique' && solution.cells.has(result.hint.cell)).toBe(false)
+  expect(result.hint.reason).toContain('the forced moves would run out of room')
+  expect(checkedHint(game)).toEqual(result)
 })
 
 it('never accuses a cell on ambiguous, impossible or unfinished searches', () => {

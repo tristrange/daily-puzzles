@@ -48,6 +48,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from dataclasses import replace
 
 from tools.generate import LOGIC_ONLY_TRIES, seed_from_date
+from tools.star_hints import star_hints_solve
 from tools.track_hints import tracks_hints_solve
 
 from queens_engine import (
@@ -219,9 +220,9 @@ def _generate(
     band is recorded on the file, because the ramp is a claim about difficulty.
 
     A type off the ramp takes its generator's guarantees and records no band.
-    Train Tracks candidates must also be completed by the app's hint engine.
-    Its failure path is a seed bump instead, since there is no band to search for.
-    A Star Battle board also bumps while its solution layout is in
+    Train Tracks and Star Battle candidates must also be completed by the app's
+    hint engine. Their failure path is a seed bump instead, since there is no band
+    to search for. A Star Battle board also bumps while its solution layout is in
     `avoid_layouts`, the same memory-play caveat as `STAR_BATTLE_SIZE`.
     """
     book = rulebook_for(puzzle_type)
@@ -260,6 +261,9 @@ def _generate(
             seed = (seed + 1) % (2**32)
             continue
         if puzzle_type is PuzzleType.TRAIN_TRACKS and not tracks_hints_solve(puzzle):
+            seed = (seed + 1) % (2**32)
+            continue
+        if puzzle_type is PuzzleType.STAR_BATTLE and not star_hints_solve(puzzle):
             seed = (seed + 1) % (2**32)
             continue
         return puzzle, None

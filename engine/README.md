@@ -128,13 +128,15 @@ Two facts the star path depends on, both worth knowing before extending it:
   need at least 12x12. `FEASIBLE_STAR_BATTLE` in `generator.py` records the
   brute-forced result and `generate_puzzle` fails fast on anything else instead
   of burning its attempt budget on an impossible board.
-- **Uniqueness is the only fairness guarantee here.** `deduce` (and therefore
-  `--logic-only` and `score_difficulty`) still refuses non-Queens boards, so
-  Star Battle files are unique-solution but neither logic-scored nor
-  logic-gated. `tools/generate.py --type star-battle` says so out loud. The app
-  matches: it plays a star file but hides the Hint button, because
-  `firstHint` returns `null` rather than reasoning in one star about a board
-  that holds two.
+- **Hints finish every published board.** The rule engine is capacity-aware, so
+  `deduce` runs on a star board. It is not a logic gate: two-star boards usually
+  need a hypothesis, which is why `--logic-only` is not offered and star files
+  stay unrated. What publication requires instead is that the app's actual hints
+  finish the board from empty. `checkedHint` uses the pure rules while they fire,
+  then falls back to a trial proof: assume the opposite of one cell's verified
+  value, follow the forced moves (or a bounded search) to a contradiction, and
+  explain that chain. Publish and manual generation retry the next seed on a
+  stall, and `npm run check:star-hints` replays the committed archive.
 
 Every day carries a star companion: `tools.publish.py` fills it beside the
 queens board through the same windowing, and each star file replays from its
@@ -167,10 +169,11 @@ the seed rejects it for publisher retry. Only fully proven unique boards are
 returned. Other solver callers remain exhaustive unless they request a budget.
 
 The publishing and manual generation commands also replay the app's actual hints
-from the initial clues; if they stall, the command tries another seed. These
-commands need Node and installed app dependencies (`(cd ../app && npm ci)`).
-The low-level versioned generator and archive replay retain their original behavior.
-To rerun the full archive's hint audit, use `(cd ../app && npm run check:tracks-hints)`.
+from the initial clues (or the empty star board); if they stall, the command tries
+another seed. These commands need Node and installed app dependencies
+(`(cd ../app && npm ci)`). The low-level versioned generator and archive replay
+retain their original behavior. To rerun the full archive's hint audit, use
+`(cd ../app && npm run check:tracks-hints)` or `npm run check:star-hints`.
 
 Versions 1 and 2 retain their original prefix givens and unbounded replay.
 Version 1 permits zero clues; version 2 requires every row and column to be used.

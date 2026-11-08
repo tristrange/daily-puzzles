@@ -159,9 +159,10 @@ in the English language. A valid individual word can still lead to a dead end.
 
 Queens, Trio and Sudoku daily generation also require logical completion. Tents uses an
 offline line-pattern completion check. New Train Tracks boards must be completed from
-their starting clues by the app's explained hints before publication. Star Battle
-guarantees uniqueness without claiming its live hint engine can finish every board.
-Sudoku levels have independent exact-solver and deduction certificates: Easy uses
+their starting clues by the app's explained hints before publication. New Star Battle
+boards must be completed from an empty board by the app's hints; when the pure rules
+stall, a bounded trial-and-contradiction proof explains the next move instead of leaving
+Hint empty. Sudoku levels have independent exact-solver and deduction certificates: Easy uses
 singles; Medium adds locked candidates and pairs; Hard adds triples and X-wing.
 Medium must require more than Easy techniques, and Hard more than Medium.
 

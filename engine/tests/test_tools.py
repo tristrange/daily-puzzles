@@ -565,13 +565,17 @@ class TestGenerateId:
         # Generating the companion twice must give the same board, and generating
         # it must not disturb the day's Queens file.
         args = ["--date", "2026-10-04", "--type", "star-battle", "--out", str(tmp_path)]
-        assert generate_tool.main(args) == 0
+        # The ID contract is the subject here, not the hint gate; mocking it keeps
+        # this test runnable without the app's Node dependencies.
+        with patch.object(generate_tool, "star_hints_solve", return_value=True):
+            assert generate_tool.main(args) == 0
         assert (tmp_path / "2026-10-04-star.json").exists()
         assert not (tmp_path / "2026-10-04.json").exists()
         first = (tmp_path / "2026-10-04-star.json").read_text(encoding="utf-8")
         (tmp_path / "2026-10-04-star.json").unlink()
 
-        assert generate_tool.main(args) == 0
+        with patch.object(generate_tool, "star_hints_solve", return_value=True):
+            assert generate_tool.main(args) == 0
         assert (tmp_path / "2026-10-04-star.json").read_text(encoding="utf-8") == first
         assert verify.main(["--dir", str(tmp_path)]) == 0
 
@@ -814,6 +818,7 @@ class TestStarLayoutRepeat:
         seeds: list[int] = []
         with (
             patch.object(publish, "rulebook_for", return_value=self._book(seeds)),
+            patch.object(publish, "star_hints_solve", return_value=True),
             patch.object(
                 publish,
                 "star_layout",
@@ -831,6 +836,7 @@ class TestStarLayoutRepeat:
         seeds: list[int] = []
         with (
             patch.object(publish, "rulebook_for", return_value=self._book(seeds)),
+            patch.object(publish, "star_hints_solve", return_value=True),
             patch.object(publish, "star_layout", return_value=self.FRESH_LAYOUT),
         ):
             puzzle, _score = publish._generate(  # pyright: ignore[reportPrivateUsage]

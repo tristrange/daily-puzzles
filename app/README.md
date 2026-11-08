@@ -60,10 +60,12 @@ open. See the root README for why the conservative auto-mark is the honest one.
 `src/domain/hints.ts` is a port of the engine's pure deduction rules, stopping at
 the first firing; the app's hint is pinned to the Python engine by the
 `hint-cases/` conformance suite, asserted from both languages (see
-`conformance/README.md`). Those rules are single-star, so `firstHint` returns
-`null` for a Star Battle board and `PuzzleStage` does not render the Hint button:
-no hint is better than a hint derived from the wrong rules. No solution is ever
-shipped to the client.
+`conformance/README.md`). The rules are capacity-aware, so the same code reasons
+about one queen or two stars per group. When the pure rules stall on a Star
+Battle board, `checkedHint` adds a trial hint: it assumes the opposite of the
+verified unique solution for one cell, follows the forced moves (or a bounded
+search) to a contradiction, and explains that chain. The puzzle's solution is
+computed in the browser and never shipped in the file.
 
 `src/components/InteractiveBoard.tsx` renders the board as an ARIA grid with full keyboard
 support:
@@ -71,7 +73,7 @@ support:
 - Arrows / Home / End move the focused cell (roving tabindex).
 - Enter or Space place or take back the piece.
 - `X` toggles an X mark; Delete/Backspace clears the cell.
-- `H` asks for a hint (Queens only); Ctrl/Command+Z undoes.
+- `H` asks for a hint (Queens and Star Battle); Ctrl/Command+Z undoes.
 
 The piece's glyph and name follow the board's puzzle type (♛ queen, ★ star), as
 do the grid's and cells' screen-reader labels. The game loop around it lives in
