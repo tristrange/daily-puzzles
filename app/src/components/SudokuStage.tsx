@@ -182,7 +182,7 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
       : progressCheck.kind === 'correct' ? 'Your entered numbers are correct so far. Notes are not checked.'
         : 'At least one entered number is incorrect. Notes are not checked.'
   return <div className="sudoku-game" ref={stage} onKeyDown={keyboard}>
-    <div className="sudoku-workspace" data-killer={!!killer} data-combinations={!!killer && showCombinations}>
+    <div className="sudoku-workspace" data-killer={!!killer} data-combinations={!!killer && showCombinations} data-hint={hint !== null || mistake !== null}>
       <div className="sudoku-controls">
         <div className="puzzle-tools">
           <PlayTimer time={time} />
@@ -214,20 +214,22 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
         <p className="sudoku-mode" role="status">{selection.length > 1 ? `${selection.length} cells selected · digits update notes in empty cells` : pencil ? 'Notes on · tap digits to mark possibilities' : 'Select a cell, then enter a number'}</p>
       </div>
       <SudokuBoard board={board} game={game} selected={selected} selection={selection} locked={solved} conflicts={conflicts} hint={hint} instructionsId={instructionsId} onSelect={select} onConfirmNote={confirmNote} cageActive={!!cage && showCombinations} />
-      {showCombinations && killer && <div id={combinationsId} className="killer-combinations-panel">
-        {cage ? <KillerCombinations cage={cage} excluded={game.excludedCageCombinations?.[cageIndex] ?? []} onToggle={toggleCombination} onReset={resetCombinations} disabled={solved} />
-          : <section className="killer-combinations" aria-label="Cage combinations"><div className="killer-combinations-heading"><h2>Multiple cages selected</h2></div><p role="status">Select cells from one cage to see its combinations.</p></section>}
-      </div>}
+      <div className="sudoku-side">
+        {mistake !== null && <MistakeWarning id={hintId} message="Your numbers lead to a contradiction. Check your entries, or try Undo." onReveal={() => revealMistake(mistake, 'hint')} onDismiss={dismiss} />}
+        {hint && <HintPanel id={hintId} location={sudokuCellName(hint.cell)} title={hint.correction ? 'Clear this entry' : sudokuSingle(hint.candidates) ? `Place ${sudokuDigits(hint.candidates)[0]}` : 'Narrow the possibilities'}
+          reasons={hint.reasons} supportingReasons={hint.supportingReasons} effect={hint.correction || sudokuSingle(hint.candidates) ? '' : `Apply updates this cell's notes to ${sudokuDigits(hint.candidates).join(', ')}. The cell stays empty.`}
+          lesson={saving ? sudokuHintLesson(hint, !!killer) : undefined} puzzleId={puzzle?.id}
+          resume={{ id: board.id, state: hintState, signature: hintSignature(hint) }}
+          onApply={acceptHint} onDismiss={dismiss} onShowCell={showCell} />}
+        {showCombinations && killer && <div id={combinationsId} className="killer-combinations-panel">
+          {cage ? <KillerCombinations cage={cage} excluded={game.excludedCageCombinations?.[cageIndex] ?? []} onToggle={toggleCombination} onReset={resetCombinations} disabled={solved} />
+            : <section className="killer-combinations" aria-label="Cage combinations"><div className="killer-combinations-heading"><h2>Multiple cages selected</h2></div><p role="status">Select cells from one cage to see its combinations.</p></section>}
+        </div>}
+      </div>
     </div>
     <p className={`sudoku-feedback${conflicts.size ? ' error' : ''}`} role="status">{solved ? message || `Solved in ${formatTime(elapsed)} with ${shownHints} hint${shownHints === 1 ? '' : 's'}!${daily ? '' : killer ? ' Choose another board to keep playing.' : ' Choose another level to keep playing.'}`
       : message || (conflicts.size ? killer ? 'Check the highlighted cells: a number is repeated or a cage sum is incorrect.' : `${conflicts.size} cells repeat a number in a row, column or box. You can keep editing or Undo.` : '\u00a0')}</p>
     {daily && <SolvedPanel puzzleId={puzzle?.id} candidate={candidate} solved={solved} firstSolve={firstSolve} streak={stats?.currentStreak ?? 0} copied={copied} shareText={shareText} onShare={share} />}
-    {mistake !== null && <MistakeWarning id={hintId} message="Your numbers lead to a contradiction. Check your entries, or try Undo." onReveal={() => revealMistake(mistake, 'hint')} onDismiss={dismiss} />}
-    {hint && <HintPanel id={hintId} location={sudokuCellName(hint.cell)} title={hint.correction ? 'Clear this entry' : sudokuSingle(hint.candidates) ? `Place ${sudokuDigits(hint.candidates)[0]}` : 'Narrow the possibilities'}
-      reasons={hint.reasons} supportingReasons={hint.supportingReasons} effect={hint.correction || sudokuSingle(hint.candidates) ? '' : `Apply updates this cell's notes to ${sudokuDigits(hint.candidates).join(', ')}. The cell stays empty.`}
-      lesson={saving ? sudokuHintLesson(hint, !!killer) : undefined} puzzleId={puzzle?.id}
-      resume={{ id: board.id, state: hintState, signature: hintSignature(hint) }}
-      onApply={acceptHint} onDismiss={dismiss} onShowCell={showCell} />}
     {!saving && !solved && <p className="status error" role="status">Progress can&rsquo;t be saved. Keep this page open to retain your attempt.</p>}
     <p className="word-note" id={instructionsId}>Digits 1–9 once in every row, column and 3×3 box. Given numbers are fixed.
       Select a cell, then tap a number. Double-tap or double-click a cell with one note to place it. Drag, Shift-click or Shift-arrow to select multiple cells; digits then update notes in empty cells, and Erase clears their notes.

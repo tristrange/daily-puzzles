@@ -16,6 +16,7 @@ import { ResetButton } from './ResetButton'
 import { useMoveHistory } from '../lib/useMoveHistory'
 import { findWordHint } from '../domain/wordHints'
 import { HintPanel } from './HintPanel'
+import { focusHintPanel } from './hintFocus'
 
 export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
   puzzle: Puzzle; grid: WordGrid; timeZone: string; previewBoard?: number
@@ -130,9 +131,7 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
   const requestHint = () => {
     if (completed.current) return
     if (hint) {
-      const panel = stage.current?.querySelector<HTMLElement>('.hint-panel')
-      panel?.focus({ preventScroll: true })
-      panel?.scrollIntoView({ block: 'nearest' })
+      focusHintPanel(stage.current?.querySelector<HTMLElement>('.hint-panel') ?? null)
       return
     }
     const result = findWordHint(current.current)

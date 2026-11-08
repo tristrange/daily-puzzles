@@ -3,6 +3,7 @@ import { Link, useInRouterContext, useLocation } from 'react-router-dom'
 import type { HintLesson } from '../domain/hintLessons'
 import { rememberHint, type HintReturn } from '../lib/hintReturn'
 import { cameFromToday } from '../lib/puzzleNavigation'
+import { focusHintPanel } from './hintFocus'
 
 function HintLessonLink({ lesson, puzzleId, resume }: { lesson: HintLesson; puzzleId?: string | undefined; resume: HintReturn }) {
   const location = useLocation()
@@ -20,8 +21,7 @@ export function MistakeWarning({ id, onReveal, onDismiss, message = 'Your entrie
 }) {
   const panel = useRef<HTMLElement>(null)
   useEffect(() => {
-    panel.current?.focus({ preventScroll: true })
-    panel.current?.scrollIntoView({ block: 'nearest' })
+    focusHintPanel(panel.current)
   }, [])
   return <section className="hint-panel" ref={panel} tabIndex={-1} aria-labelledby={`${id}-title`} id={id}
     onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); onDismiss() } }}>
@@ -43,8 +43,7 @@ export function HintPanel({ id, location, title, reasons, supportingReasons, eff
   const panel = useRef<HTMLElement>(null)
   const inRouter = useInRouterContext()
   useEffect(() => {
-    panel.current?.focus({ preventScroll: true })
-    panel.current?.scrollIntoView({ block: 'nearest' })
+    focusHintPanel(panel.current)
   }, [reasons])
   return <section className="hint-panel" ref={panel} tabIndex={-1} aria-labelledby={`${id}-title`} id={id}
     onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); onDismiss() } }}>

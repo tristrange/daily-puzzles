@@ -1858,3 +1858,167 @@
 @media (min-width: 70rem) {
   .sudoku-workspace[data-combinations='true'] { grid-template-areas: 'controls board combinations'; grid-template-columns: 12rem minmax(0, 36rem) minmax(12rem, 16rem); gap: 1.25rem; }
 }
+
+/* Hints sit beside the board when there is room, and float over the controls
+   below that. The board stays in view either way; only the hint scrolls. */
+.sudoku-side { display: contents; }
+
+@media (min-width: 56rem) {
+  .sudoku-workspace[data-hint='true'] {
+    grid-template-areas: 'controls board side';
+    grid-template-columns: 12rem minmax(0, 36rem) 14rem;
+    gap: 1.25rem;
+  }
+
+  /* Between tablet and desktop the combinations keep their old place below
+     the board, so the hint rail only has to fit the hint. */
+  .sudoku-workspace[data-hint='true'] .sudoku-side { display: contents; }
+
+  .sudoku-workspace[data-hint='true'] .sudoku-side :is(.hint-panel, .killer-combinations-panel) {
+    width: 100%;
+    margin: 0;
+  }
+
+  .sudoku-workspace[data-hint='true'] .sudoku-side .hint-panel {
+    grid-area: side;
+    align-self: start;
+    max-height: calc(100svh - 16rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .sudoku-workspace[data-hint='true'][data-combinations='true'] {
+    grid-template-areas: 'controls board side' 'combinations combinations side';
+  }
+
+  .sudoku-workspace[data-hint='true'][data-combinations='true'] .sudoku-side .killer-combinations-panel {
+    grid-area: combinations;
+    width: min(100%, 36rem);
+  }
+}
+
+@media (min-width: 70rem) {
+  .sudoku-workspace[data-hint='true'] {
+    grid-template-areas: 'controls board side';
+    grid-template-columns: 12rem minmax(0, 36rem) 14rem;
+    gap: 1.25rem;
+  }
+
+  .sudoku-workspace[data-hint='true'] .sudoku-side {
+    grid-area: side;
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+    width: 100%;
+    min-width: 0;
+    max-height: calc(100svh - 16rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    justify-self: stretch;
+  }
+
+  .sudoku-workspace[data-hint='true'] .sudoku-side .hint-panel {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .sudoku-workspace[data-hint='true'][data-combinations='true'] {
+    grid-template-areas: 'controls board side';
+  }
+}
+
+@media (min-width: 56rem) {
+  :is(.tracks-game, .tents-game, .trio-game, .nurikabe-game, .word-game, .marks-game):has(> .hint-panel) {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 14rem;
+    align-items: start;
+    column-gap: 1.5rem;
+  }
+
+  :is(.tents-game, .trio-game):has(> .hint-panel) { max-width: none; }
+
+  :is(.tracks-game, .tents-game, .trio-game, .nurikabe-game, .word-game, .marks-game):has(> .hint-panel) > :not(.hint-panel) {
+    grid-column: 1;
+    min-width: 0;
+  }
+
+  /* The rail is out of flow so its height never stretches the row that holds
+     the board; the grid still reserves the column. */
+  :is(.tracks-game, .tents-game, .trio-game, .nurikabe-game, .word-game, .marks-game):has(> .hint-panel) > .hint-panel {
+    position: absolute;
+    top: 0;
+    inset-inline-end: 0;
+    width: 14rem;
+    max-height: calc(100svh - 16rem);
+    margin: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+@media (max-width: 55.999rem) {
+  .hint-panel {
+    position: fixed;
+    z-index: 30;
+    left: max(.75rem, env(safe-area-inset-left));
+    right: max(.75rem, env(safe-area-inset-right));
+    bottom: max(.75rem, env(safe-area-inset-bottom));
+    max-height: min(22rem, max(13rem, 36svh));
+    margin: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    box-shadow: 0 12px 36px light-dark(rgba(29, 34, 41, .18), rgba(0, 0, 0, .55));
+  }
+
+  .hint-panel .hint-heading {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding-bottom: .4rem;
+    background: var(--surface);
+  }
+
+  .hint-panel > .apply-hint {
+    position: sticky;
+    bottom: -.25rem;
+    width: 100%;
+    margin-top: .75rem;
+    box-shadow: 0 0 0 .5rem var(--surface);
+  }
+
+  :is(.sudoku-game, .tracks-game, .tents-game, .trio-game, .nurikabe-game, .word-game, .marks-game):has(.hint-panel) [data-hint='target'] {
+    scroll-margin-block: 1rem max(38svh, 14rem);
+  }
+}
+
+@media (max-width: 47.999rem) {
+  /* The phone layout opens with the board above the tools. A hint lifts the
+     board to the top and lets the sheet cover the tools instead. */
+  .puzzle:has(.sudoku-game .hint-panel) .puzzle-heading {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .puzzle:has(.sudoku-game .hint-panel) .puzzle-heading :is(.puzzle-rules, .puzzle-learn),
+  .puzzle-page:has(.sudoku-game .hint-panel) > .back-link { display: none; }
+  .sudoku-workspace[data-hint='true'] { grid-template-areas: 'board' 'tools' 'keys' 'mode'; }
+  .sudoku-workspace[data-hint='true'][data-killer='true'] { grid-template-areas: 'board' 'tools' 'cage-toggle' 'keys' 'mode'; }
+  .sudoku-workspace[data-hint='true'][data-combinations='true'] { grid-template-areas: 'board' 'tools' 'cage-toggle' 'combinations' 'keys' 'mode'; }
+  .sudoku-game:has(.hint-panel) .sudoku-board {
+    width: min(100%, 36rem, max(16rem, calc(100svh - 25rem)));
+  }
+}
+
+@media (min-width: 30rem) and (max-width: 47.999rem) {
+  .sudoku-game:has(.hint-panel) .sudoku-board {
+    width: min(100%, 36rem, max(16rem, calc(100svh - 30rem)));
+  }
+}
+
+@media (prefers-contrast: more) {
+  .hint-panel { border-color: var(--text-h); }
+}

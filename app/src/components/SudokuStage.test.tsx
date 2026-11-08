@@ -328,6 +328,22 @@ it.each([
   expect(readSudokuProgress(ambiguous)?.hints).toBe(0)
 })
 
+it('opens a visible hint without scrolling the page', async () => {
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+    x: 0, y: 100, top: 100, left: 0, right: 300, bottom: 400, width: 300, height: 300, toJSON: () => ({}),
+  })
+  await mount(); await click('Get an explained hint')
+  expect(HTMLElement.prototype.scrollIntoView).not.toHaveBeenCalled()
+})
+
+it('reveals a hint that opens off-screen', async () => {
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+    x: 0, y: 900, top: 900, left: 0, right: 300, bottom: 1200, width: 300, height: 300, toJSON: () => ({}),
+  })
+  await mount(); await click('Get an explained hint')
+  expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' })
+})
+
 it('dismisses a hint from its focused board target and returns focus to Hint', async () => {
   await mount(); await click('Get an explained hint')
   await act(async () => container.querySelector<HTMLButtonElement>('.hint-location')!.click())
