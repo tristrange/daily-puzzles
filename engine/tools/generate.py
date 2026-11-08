@@ -10,8 +10,9 @@ deduction engine can solve without guessing, walking the seed upward until it
 finds one (or gives up).
 
 `--logic-only` and the reported difficulty normally come from the rulebook.
-Train Tracks also checks the app's hint engine on every generated board, so it
-requires Node and installed app dependencies even without `--logic-only`.
+Train Tracks and Star Battle also check the app's hint engine on every generated
+board, so both require Node and installed app dependencies even without
+`--logic-only`.
 """
 
 from __future__ import annotations
@@ -23,6 +24,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from tools.star_hints import star_hints_solve
 from tools.track_hints import tracks_hints_solve
 
 from queens_engine import (
@@ -111,8 +113,11 @@ def main(argv: list[str] | None = None) -> int:
 
     base = args.seed if args.seed is not None else seed_from_date(puzzle_id)
     seed = base
-    check_tracks = puzzle_type is PuzzleType.TRAIN_TRACKS
-    for _attempt in range(LOGIC_ONLY_TRIES if args.logic_only or check_tracks else 1):
+    hint_check = {
+        PuzzleType.TRAIN_TRACKS: tracks_hints_solve,
+        PuzzleType.STAR_BATTLE: star_hints_solve,
+    }.get(puzzle_type)
+    for _attempt in range(LOGIC_ONLY_TRIES if args.logic_only or hint_check else 1):
         try:
             puzzle = book.generate(
                 seed=seed,
@@ -123,9 +128,9 @@ def main(argv: list[str] | None = None) -> int:
         except GenerationError as error:
             print(f"generation failed: {error}", file=sys.stderr)
             return 1
-        if check_tracks:
+        if hint_check:
             try:
-                supported = tracks_hints_solve(puzzle)
+                supported = hint_check(puzzle)
             except RuntimeError as error:
                 print(f"generation failed: {error}", file=sys.stderr)
                 return 1
@@ -133,7 +138,7 @@ def main(argv: list[str] | None = None) -> int:
                 seed = (seed + 1) % (2**32)
                 continue
         deduced = book.deduce(puzzle.board, allow_guesses=False)
-        if not args.logic_only or check_tracks or (deduced is not None and deduced.solved):
+        if not args.logic_only or hint_check or (deduced is not None and deduced.solved):
             break
         seed = (seed + 1) % (2**32)
     else:

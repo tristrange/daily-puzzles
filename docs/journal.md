@@ -2432,3 +2432,46 @@ not reopened during browser automation. Independent source review found no
 actionable correctness issues and separately passed 65 focused app tests and
 nine engine tests, inspected the 18 payloads and complete answers, and confirmed
 the hosted before/after evidence.
+
+## 2026-11-08 — Star Battle hints that explain themselves
+
+A player reported a Star Battle position — no stars, crosses at cells 11, 36, 43,
+44, 46, 47 and 65 — where Hint returned nothing. The position was legal and
+correct, and the pure rules genuinely had no next move. A sweep of all 46
+archived star boards from empty found that the rules solve none of them; the game
+was publishable and completable, but its hint button was dead nearly everywhere.
+Unique-solution checks had answered "is there one answer", not "can a player get
+there", and Star Battle had no equivalent of the Queens logic gate.
+
+Pure logic was not the right gate. Two-star boards need a hypothesis, so a
+publish filter that demanded rule-only completion would reject essentially every
+seed. The app already computes the unique solution in the browser to check marks,
+so the fallback starts there: assume the opposite of one cell's verified value,
+run the forced rules from that assumption, and look for a contradiction. A star
+on a cell the solution leaves empty, or no star on a solution cell, is refuted
+when a group runs out of room; the hint then reports that chain in the same
+player-facing language as the rules. When a single assumption does not refute
+itself, a bounded depth-first search proves the assumption dead by exhausting its
+continuations. `firstHint` stays the pure, conformance-pinned port; `trialHint`
+is a new Star Battle-only fallback in `checkedHint`, and the returned rule is
+`trial`. Queens is unchanged and remains logic-gated.
+
+The 2026-11-08 board now solves from the reported position in 62 hints and from
+empty in 69; the slowest single hint was 732 ms. The regression test pins the
+reported position to `{ cell: 13, action: 'x', rule: 'trial' }`, whose
+explanation is a region shortfall two rows deep. The whole committed archive
+solves under `(cd app && npm run check:star-hints)`.
+
+Publication and manual generation now require that same walk to finish a new
+board, retrying the next seed on a stall, matching the Train Tracks gate. The
+gate is a subprocess call to the app's actual hint engine, so a new rule or a
+changed explanation cannot drift away from what the player sees. Published
+boards, IDs and saves are untouched; the reported board is not rewritten.
+
+Verification: app suite 1,441 passed (with the pre-existing untracked duplicate
+puzzle files moved aside), typecheck, lint (two pre-existing warnings) and
+production build passed. Engine suite 958 passed and 90 generator sweeps
+deselected; Pyright, Ruff lint and format passed; 759 archived puzzles verified
+with replay matches and schema IDs matched the manifest. The two Star Battle
+layout-repeat tests mock the new gate, and the gate tests cover solved, stalled,
+checker-error and timeout paths.

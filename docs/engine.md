@@ -89,6 +89,12 @@ continue with a bounded hypothesis search (a trial that reaches a contradiction 
 genuine deduction, courtesy of the unique solution), which is what lets it always find the
 unique solution for the boards the generator ships.
 
+Star Battle cannot use the `--logic-only` gate: almost no two-star board finishes without
+a hypothesis, so nearly every seed would be rejected. Publication therefore gates on the
+app's hints instead. The app keeps pure rules for its ordinary explanations and takes the
+same hypothesis idea only when they stall, which is every star board eventually; that
+walk must finish the board from empty, and `npm run check:star-hints` replays the archive.
+
 `score_difficulty(board)` maps that trace to a score and a band (Easy..Nightmare). The score
 is a *soft* signal — it rates how hard this engine found the board, not a Platonic
 difficulty — and its bands are calibrated against what the generator actually produces.

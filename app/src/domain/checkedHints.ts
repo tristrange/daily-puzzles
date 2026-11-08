@@ -1,7 +1,7 @@
 import type { Board } from './board'
 import { starsPerRow, type GameState } from './game'
 import { PUZZLE_PIECE } from './games'
-import { firstHint, type Hint } from './hints'
+import { firstHint, trialHint, type Hint } from './hints'
 
 type Solution = { kind: 'unique'; cells: ReadonlySet<number> } | { kind: 'none' | 'multiple' | 'limit' }
 export type CheckedHint = Hint | {
@@ -95,8 +95,9 @@ export function checkMarksEntries(game: GameState): MarksEntryCheck {
 /** Correction first, then the existing explained rules. Only called by Hint. */
 export function checkedHint(game: GameState): Result {
   const { board, queens, marks } = game
+  const solution = solutionFor(board)
+  if (solution.kind !== 'unique') return { kind: 'unverified' }
   const check = checkMarksEntries(game)
-  if (check.kind === 'unverified') return { kind: 'unverified' }
   if (check.kind === 'mistake') {
     const piece = PUZZLE_PIECE[board.puzzleType].noun
     return { kind: 'hint', hint: {
@@ -107,5 +108,8 @@ export function checkedHint(game: GameState): Result {
     } }
   }
   const hint = firstHint(board, queens, marks)
-  return hint ? { kind: 'hint', hint } : { kind: 'none' }
+  if (hint) return { kind: 'hint', hint }
+  if (board.puzzleType !== 'star-battle') return { kind: 'none' }
+  const trial = trialHint(board, queens, marks, solution.cells)
+  return trial ? { kind: 'hint', hint: trial } : { kind: 'none' }
 }

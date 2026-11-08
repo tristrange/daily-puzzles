@@ -814,6 +814,7 @@ class TestStarLayoutRepeat:
         seeds: list[int] = []
         with (
             patch.object(publish, "rulebook_for", return_value=self._book(seeds)),
+            patch.object(publish, "star_hints_solve", return_value=True),
             patch.object(
                 publish,
                 "star_layout",
@@ -831,6 +832,7 @@ class TestStarLayoutRepeat:
         seeds: list[int] = []
         with (
             patch.object(publish, "rulebook_for", return_value=self._book(seeds)),
+            patch.object(publish, "star_hints_solve", return_value=True),
             patch.object(publish, "star_layout", return_value=self.FRESH_LAYOUT),
         ):
             puzzle, _score = publish._generate(  # pyright: ignore[reportPrivateUsage]

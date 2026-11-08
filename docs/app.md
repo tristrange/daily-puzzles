@@ -154,9 +154,18 @@ Python replays its own rules from the same player states and must agree with the
 hint. Because the fixture cases cover every rule — including a mid-game state where the
 **subset** pigeonhole is genuinely the next forced move, which no empty board can ever
 produce — the app's hint cannot contradict the engine that rated the puzzle. A hint is
-either `place a queen here` or `mark this cell dead`; when nothing is forced the app says
-so rather than guessing, and a contradictory queen set is caught by `conflicts()` *before*
-the rules run, because a poisoned candidate state would produce nonsense.
+either `place a queen here` or `mark this cell dead`; a contradictory queen set is caught
+by `conflicts()` *before* the rules run, because a poisoned candidate state would produce
+nonsense.
+
+Pure rules can still stall on a Star Battle board. `checkedHint` then calls the trial
+fallback in `hints.ts`: with the independently verified unique solution in hand, it
+assumes the opposite of one cell's true value, runs the forced rules from there, and
+looks for a contradiction. When one is found the hint reports that chain — "if a star
+were here, the region ... would run out of cells" — so the player can follow the proof.
+When no single assumption refutes itself, a bounded depth-first search proves one dead by
+exhausting its continuations. The fallback is Star Battle-only; Queens boards are
+logic-gated at publication and cannot stall.
 
 The board itself is a semantic ARIA grid: `role=grid` over `role=row`/`role=gridcell`,
 with a roving tabindex (exactly one cell in the tab order) and full keyboard play —
@@ -182,6 +191,9 @@ board in memory. A zero/multiple-solution board or exhausted budget produces no
 hint or accusation. Revealed correction copy explicitly names this solution check;
 Apply clears only that cell through normal history. Ordinary play still shows
 only local conflicts, and the shared engine/app deduction contract is unchanged.
+New Star Battle publication and manual generation require the app's hints to finish
+the initial board, and `npm run check:star-hints` replays every committed star
+board the same way.
 
 Train Tracks uses `trackHints.ts` instead of the marks deduction port. A cell's
 domain contains empty or one of six track shapes: a cross fixes empty, ? excludes
