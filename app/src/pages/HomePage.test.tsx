@@ -32,6 +32,13 @@ describe('daily Train Tracks choices', () => {
     }
   })
 
+  it('starts the size chooser closed while keeping its choices in the card', () => {
+    const html = render()
+    expect(html).toMatch(/<details[^>]* name="today-variants"[^>]*>/)
+    expect(html).toMatch(/<summary[^>]* aria-label="Train Tracks puzzle choices"/)
+    expect(html).not.toMatch(/<details[^>]* open(?:=""| |>)/)
+  })
+
   it('marks only the solved variant and names its replay action', () => {
     const html = render(probes, new Set([small.id]))
     expect(html).toContain('aria-label="Play Train Tracks Small again"')
@@ -47,6 +54,11 @@ describe('daily Train Tracks choices', () => {
     expect(html).not.toContain(`href="/archive/${medium.id}"`)
     expect(html).toContain(`href="/archive/${small.id}"`)
     expect(html).toContain(`href="/archive/${large.id}"`)
+  })
+
+  it('identifies an unavailable family on the closed card', () => {
+    const html = render(probes.map(probe => ({ ...probe, puzzle: null, unavailable: true })))
+    expect(html).toMatch(/<summary[^>]* aria-description="3 daily puzzles · Not saved — connect to load\."/)
   })
 
   it('retains an ordinary card for a legacy slot without inventing a size name', () => {
