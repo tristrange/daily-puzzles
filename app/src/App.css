@@ -626,26 +626,7 @@
   }
 }
 
-/* The two numbers the arm geometry depends on, declared once for the board and the
-   picker together: the rail is drawn relative to both, and the picker is a sibling
-   of the board rather than a descendant, so a value set on `.tracks` would not
-   reach it. They live here rather than in a component's inline style because they
-   are only ever these two values, and a custom property that is a constant is a
-   constant with extra indirection.
-
-   `--tracks-gap` is how far each arm runs past its own cell, so two joined pieces
-   overlap rather than meet. `--track-thickness` is about the weight of a border,
-   so two meeting rails read as one line rather than a blob. The picker sets the
-   gap to zero, because its pieces have no neighbour to reach. */
-.tracks,
-.track-picker {
-  --tracks-gap: 3px;
-  --track-thickness: max(2px, 0.14em);
-}
-
-.track-picker {
-  --tracks-gap: 0px;
-}
+.tracks { --tracks-gap: 3px; }
 
 /* The picker: square faces with a minimum 44px touch target; wrapping keeps every
    tool available on narrow screens. */
@@ -672,6 +653,7 @@
   display: grid;
   place-items: center;
   position: relative;
+  overflow: hidden;
   aspect-ratio: 1;
   width: 2.75rem;
   background: var(--surface);
@@ -794,66 +776,20 @@
   border: 1px solid var(--border);
 }
 
-/* A piece is two arms from the centre of its cell to the two edges it ends in,
-   drawn rather than typed. A glyph cannot be made to reach the edges reliably —
-   its width is the font's, the platform's and the size's — and any gap it leaves
-   between two cells whose pieces do meet makes a joined line look broken, which
-   is the one thing this genre cannot afford, because reciprocity is the rule.
-
-   Each arm runs from the centre right past its own edge, into the next cell. The
-   exact distance needed is half the gap plus the border, which is what it was set
-   to first and which left a visible hairline at every boundary — a rail that is
-   broken once per cell is not a rail. So it overshoots by the whole gap, the two
-   arms overlap in the middle, and the track reads as continuous. The board clips
-   the overshoot at its own edge, so nothing spills outside the grid.
-
-   `--tracks-gap` is set by the component beside the column count, so the two
-   numbers that have to agree are declared next to each other. */
+/* Extend the rails across the gap so neighbouring pieces join. */
 .track-piece {
   position: absolute;
-  inset: 0;
-  display: block;
+  inset: calc(-1 * var(--tracks-gap, 0px));
+  width: calc(100% + 2 * var(--tracks-gap, 0px));
+  height: calc(100% + 2 * var(--tracks-gap, 0px));
+  overflow: visible;
+  color: var(--text-h);
+  pointer-events: none;
 }
-
-.track-arm {
-  position: absolute;
-  display: block;
-  background: var(--text-h);
-}
-
-.track-arm.n,
-.track-arm.s {
-  left: 50%;
-  width: var(--track-thickness);
-  height: calc(50% + var(--tracks-gap));
-  margin-left: calc(var(--track-thickness) / -2);
-}
-
-.track-arm.e,
-.track-arm.w {
-  top: 50%;
-  width: calc(50% + var(--tracks-gap));
-  height: var(--track-thickness);
-  margin-top: calc(var(--track-thickness) / -2);
-}
-
-.track-arm.n { top: 0; }
-.track-arm.s { bottom: 0; }
-.track-arm.e { right: 0; }
-.track-arm.w { left: 0; }
-
-/* A given is a clue the board fixes: printed information, not work in progress.
-   Its arms carry the high-contrast colour and its cell is sunken, so the two
-   kinds of piece are told apart at a glance and by the cell's own accessible
-   name. Without the difference a fixed clue looks like anything the player
-   placed, and clicking one silently does nothing. */
-.tracks .cell.given {
-  background: var(--bg-sunken);
-}
-
-.tracks .cell.given .track-arm {
-  background: var(--accent);
-}
+.track-sleepers { fill: none; stroke: currentColor; stroke-width: 38; stroke-dasharray: 5 17; opacity: .55; }
+.track-rails { fill: none; stroke: currentColor; stroke-width: 6; }
+.tracks .cell.given { background: var(--bg-sunken); }
+.tracks .cell.given .track-piece { color: var(--accent); }
 
 /* Single-finger strokes paint cells; retain native pinch zoom for small cells. */
 .tracks .board.playable {
@@ -1437,10 +1373,10 @@
 }
 
 /* Cell-first Sudoku leaves the board's height available for nine readable rows. */
-.sudoku-workspace { display: grid; grid-template-areas: 'board' 'tools' 'keys' 'mode'; gap: .75rem; justify-items: center; }
+.sudoku-workspace { display: grid; grid-template-areas: 'tools' 'board' 'keys' 'mode'; gap: .75rem; justify-items: center; }
 .sudoku-controls { display: contents; }
 .sudoku-controls .puzzle-tools { grid-area: tools; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; width: min(100%, 36rem); gap: .35rem; padding: .35rem; }
-.sudoku-controls .puzzle-tools .tool-button { padding-inline: .4rem; }
+.sudoku-controls .puzzle-tools .tool-button { padding-inline: .25rem; font-size: .8125rem; }
 .sudoku-check-result { grid-column: 1 / -1; padding: .3rem .4rem; font-size: .8125rem; line-height: 1.4; }
 .sudoku-check-result.sr-only { padding: 0; }
 .sudoku-check-result p { margin: 0; }
@@ -1657,7 +1593,7 @@
   --motif-wash: light-dark(#fff2d2, #413621);
 }
 .trio-game { max-width: 38rem; margin: auto; }
-.trio-game .puzzle-tools { margin-bottom: 0.75rem; gap: 0.25rem; }
+.trio-game .puzzle-tools { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); width: min(100%, 36rem); margin-bottom: 0.75rem; gap: 0.35rem; padding: 0.35rem; }
 .trio-game .puzzle-tools .tool-button { padding-inline: 0.5rem; min-width: 2.75rem; }
 .trio-game .timer { min-width: 2.5em; padding-inline: 0.25rem; }
 .trio-picker { display: flex; justify-content: center; gap: 0.375rem; }
@@ -1682,8 +1618,7 @@
 .trio-pick input:focus-visible + .trio-pick-face { outline: 3px solid var(--accent); outline-offset: 3px; }
 .trio-pick input:disabled + .trio-pick-face { opacity: 0.55; cursor: default; }
 .trio-mode { text-align: center; font-size: 0.8125rem; margin: 0.625rem 0; min-height: 1.25rem; }
-.trio-mode-actions { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
-.trio-mode-actions .trio-mode { flex: 1; min-width: 0; }
+.trio-check-result { grid-column: 1 / -1; }
 .trio-symbol { display: block; width: 65%; height: 65%; pointer-events: none; flex-shrink: 0; }
 .trio-symbol-1 { color: light-dark(#946000, #f4c35b); }
 .trio-symbol-2 { color: light-dark(#00629e, #8cc4ff); }
@@ -1788,10 +1723,9 @@
   .trio-controls { flex: 0 0 12rem; }
   .trio-controls .puzzle-tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
   .trio-controls .timer { grid-column: 1 / -1; text-align: center; padding-block: 0.35rem; }
+  .trio-controls .notes-toggle { grid-column: 1 / -1; }
   .trio-controls .trio-check-result { grid-column: 1 / -1; }
   .trio-controls .trio-picker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .trio-controls .trio-mode-actions { flex-direction: column; gap: 0; }
-  .trio-controls .trio-mode-actions .tool-button { width: 100%; }
   .trio-workspace .trio-board { min-width: 0; width: min(100%, 42rem, max(24rem, 100svh - 18rem)); margin: 0; }
 }
 @media (max-width: 47.999rem) {
@@ -1853,9 +1787,7 @@
 }
 
 /* Cage combinations remain optional and follow the selected cell. */
-.sudoku-workspace[data-killer='true'] { grid-template-areas: 'board' 'tools' 'cage-toggle' 'keys' 'mode'; }
-.sudoku-workspace[data-combinations='true'] { grid-template-areas: 'board' 'tools' 'cage-toggle' 'combinations' 'keys' 'mode'; }
-.killer-combinations-toggle { grid-area: cage-toggle; width: min(100%, 36rem); }
+.sudoku-workspace[data-combinations='true'] { grid-template-areas: 'tools' 'board' 'combinations' 'keys' 'mode'; }
 .killer-combinations-toggle[aria-expanded='true'] { background: var(--accent-border); border-color: var(--accent); color: var(--accent); }
 .sudoku-cell[data-cage-selected='true'] { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
 .sudoku-cell[data-cage-selected='true'][data-selected='true'] { background: color-mix(in srgb, var(--accent) 18%, var(--surface)); }
@@ -1871,7 +1803,6 @@
 @media (min-width: 48rem) {
   .sudoku-workspace[data-killer='true'] { grid-template-areas: 'board controls'; }
   .sudoku-workspace[data-combinations='true'] { grid-template-areas: 'board controls' 'combinations combinations'; }
-  .killer-combinations-toggle { width: 100%; margin-top: .75rem; }
 }
 @media (min-width: 70rem) {
   .sudoku-workspace[data-combinations='true'] { grid-template-areas: 'board controls combinations'; grid-template-columns: minmax(0, 33rem) minmax(12rem, 17rem) minmax(12rem, 16rem); gap: 1.25rem; }
@@ -2017,8 +1948,7 @@
 }
 
 @media (max-width: 47.999rem) {
-  /* The phone layout opens with the board above the tools. A hint lifts the
-     board to the top and lets the sheet cover the tools instead. */
+  /* Keep the tools above the board while the hint sheet is open. */
   .puzzle:has(.sudoku-game .hint-panel) .puzzle-heading {
     position: absolute;
     width: 1px;
@@ -2029,9 +1959,8 @@
   }
   .puzzle:has(.sudoku-game .hint-panel) .puzzle-heading :is(.puzzle-rules, .puzzle-learn),
   .puzzle-page:has(.sudoku-game .hint-panel) > .back-link { display: none; }
-  .sudoku-workspace[data-hint='true'] { grid-template-areas: 'board' 'tools' 'keys' 'mode'; }
-  .sudoku-workspace[data-hint='true'][data-killer='true'] { grid-template-areas: 'board' 'tools' 'cage-toggle' 'keys' 'mode'; }
-  .sudoku-workspace[data-hint='true'][data-combinations='true'] { grid-template-areas: 'board' 'tools' 'cage-toggle' 'combinations' 'keys' 'mode'; }
+  .sudoku-workspace[data-hint='true'] { grid-template-areas: 'tools' 'board' 'keys' 'mode'; }
+  .sudoku-workspace[data-hint='true'][data-combinations='true'] { grid-template-areas: 'tools' 'board' 'combinations' 'keys' 'mode'; }
   .sudoku-game:has(.hint-panel) .sudoku-board {
     width: min(100%, 36rem, max(16rem, calc(100svh - 25rem)));
   }

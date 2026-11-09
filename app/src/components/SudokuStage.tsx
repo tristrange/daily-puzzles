@@ -190,7 +190,6 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
         : 'At least one entered number is incorrect. Notes are not checked.'
   return <div className="sudoku-game" ref={stage} onKeyDown={keyboard}>
     <div className="sudoku-workspace" data-killer={!!killer} data-combinations={!!killer && showCombinations} data-hint={hintOpen}>
-      <SudokuBoard board={board} game={game} selected={selected} selection={selection} locked={solved} conflicts={conflicts} hint={hint} instructionsId={instructionsId} onSelect={select} onConfirmNote={confirmNote} cageActive={!!cage && showCombinations} />
       <div className="sudoku-controls">
         <div className="puzzle-tools">
           <PlayTimer time={time} />
@@ -203,6 +202,8 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
           <button type="button" className="tool-button notes-toggle" disabled={solved} aria-pressed={pencil} onClick={() => setPencil(!pencil)}>Notes</button>
           <button type="button" className="tool-button" disabled={solved || !game.notes.some(Boolean)} onClick={() => commit({ ...game, notes: Array<number>(81).fill(0) }, 'All notes cleared. Undo brings them back.')}>Clear notes</button>
           <button type="button" className="tool-button sudoku-check-button" ref={checkButton} disabled={solved} aria-label="Check progress" onClick={checkProgress}>Check</button>
+          {killer && <button type="button" className="tool-button killer-combinations-toggle" aria-label="Cage combinations" aria-expanded={showCombinations}
+            aria-controls={showCombinations ? combinationsId : undefined} onClick={() => setShowCombinations(!showCombinations)}>Combos</button>}
           <div className={`sudoku-check-result${progressCheck ? '' : ' sr-only'}`}>
             <p role="status" aria-live="polite">{progressMessage}</p>
             {progressCheck?.kind === 'mistake' && <>
@@ -211,8 +212,6 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
             </>}
           </div>
         </div>
-        {killer && <button type="button" className="tool-button killer-combinations-toggle" aria-expanded={showCombinations}
-          aria-controls={showCombinations ? combinationsId : undefined} onClick={() => setShowCombinations(!showCombinations)}>Combinations</button>}
         <div className="sudoku-keypad" role="group" aria-label={pencil || selection.length > 1 ? 'Note digits' : 'Enter a number'}>
           {Array.from({ length: 9 }, (_, i) => i + 1).map(value => <button type="button" className="tool-button" key={value} disabled={!editable}
             data-all-placed={placedCounts[value]! >= 9} aria-description={`${placedCounts[value]} of 9 placed`}
@@ -221,6 +220,7 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
         </div>
         <p className="sudoku-mode" role="status">{selection.length > 1 ? `${selection.length} cells selected · digits update notes in empty cells` : pencil ? 'Notes on · tap digits to mark possibilities' : 'Select a cell, then enter a number'}</p>
       </div>
+      <SudokuBoard board={board} game={game} selected={selected} selection={selection} locked={solved} conflicts={conflicts} hint={hint} instructionsId={instructionsId} onSelect={select} onConfirmNote={confirmNote} cageActive={!!cage && showCombinations} />
       <div className="sudoku-side">
         {mistake !== null && <MistakeWarning id={hintId} message="Your numbers lead to a contradiction. Check your entries, or try Undo." onReveal={() => revealMistake(mistake, 'hint')} onDismiss={dismiss} />}
         {hint && <HintPanel id={hintId} location={sudokuCellName(hint.cell)} title={hint.correction ? 'Clear this entry' : sudokuSingle(hint.candidates) ? `Place ${sudokuDigits(hint.candidates)[0]}` : 'Narrow the possibilities'}

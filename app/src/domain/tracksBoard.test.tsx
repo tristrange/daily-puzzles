@@ -54,26 +54,17 @@ describe('TracksBoard', () => {
     expect(markup).toContain('columns need 1, 1, 1')
   })
 
-  it('draws a piece as arms to the edges it ends in, not as a glyph', () => {
-    // Two adjacent cells whose pieces meet have to look joined. A font character
-    // cannot be made to reach the edges, and the gap it leaves makes a connected
-    // line look broken — which is the one thing this genre cannot afford, because
-    // reciprocity is the rule.
+  it('draws the placed pieces without exposing decorative artwork to screen readers', () => {
     const solved: TracksGame = { grid: GRID, pieces: [0, 0, 0, 1, 1, 1, 0, 0, 0] }
     const markup = render(solved)
-    // Cell 3's piece ends east and west, so one arm each way.
-    expect(markup).toContain('track-arm e')
-    expect(markup).toContain('track-arm w')
     expect(markup.match(/gridcell/g)).toHaveLength(9)
-    // Exactly two arms per piece, never a glyph that might not reach the edge.
     expect(markup.match(/track-piece/g)).toHaveLength(3)
-    expect(markup).not.toContain('─')
+    expect(markup).toContain('aria-hidden="true"')
   })
 
-  it('draws a turn with one arm per direction it ends in', () => {
-    // Piece 5 ends south and west; piece 3 ends north and east.
-    expect(render({ grid: GRID, pieces: [5, 0, 0, 1, 0, 1, 0, 0, 0] })).toContain('track-arm w')
-    expect(render({ grid: GRID, pieces: [3, 0, 0, 1, 0, 1, 0, 0, 0] })).toContain('track-arm e')
+  it('names the direction of a turn', () => {
+    expect(render({ grid: GRID, pieces: [5, 0, 0, 1, 0, 1, 0, 0, 0] })).toContain('a track turning south to west')
+    expect(render({ grid: GRID, pieces: [3, 0, 0, 1, 0, 1, 0, 0, 0] })).toContain('a track turning north to east')
   })
 
   it('says what each cell holds, in words', () => {
