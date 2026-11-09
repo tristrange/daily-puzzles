@@ -195,6 +195,8 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
           <button type="button" className="tool-button" ref={hintButton} disabled={solved} aria-label="Get an explained hint" aria-expanded={(hint !== null || mistake !== null) && hintSource === 'hint'}
             aria-controls={(hint || mistake !== null) && hintSource === 'hint' ? hintId : undefined} onClick={requestHint}>Hint</button>
           <button type="button" className="tool-button sudoku-check-button" ref={checkButton} disabled={solved} aria-label="Check progress" onClick={checkProgress}>Check</button>
+          {killer && <button type="button" className="tool-button killer-combinations-toggle" aria-label="Cage combinations" aria-expanded={showCombinations}
+            aria-controls={showCombinations ? combinationsId : undefined} onClick={() => setShowCombinations(!showCombinations)}>Combos</button>}
           <div className={`sudoku-check-result${progressCheck ? '' : ' sr-only'}`}>
             <p role="status" aria-live="polite">{progressMessage}</p>
             {progressCheck?.kind === 'mistake' && <>
@@ -203,8 +205,6 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
             </>}
           </div>
         </div>
-        {killer && <button type="button" className="tool-button killer-combinations-toggle" aria-expanded={showCombinations}
-          aria-controls={showCombinations ? combinationsId : undefined} onClick={() => setShowCombinations(!showCombinations)}>Combinations</button>}
         <div className="sudoku-keypad" role="group" aria-label={pencil || selection.length > 1 ? 'Note digits' : 'Enter a number'}>
           {Array.from({ length: 9 }, (_, i) => i + 1).map(value => <button type="button" className="tool-button" key={value} disabled={!editable}
             data-all-placed={placedCounts[value]! >= 9} aria-description={`${placedCounts[value]} of 9 placed`}

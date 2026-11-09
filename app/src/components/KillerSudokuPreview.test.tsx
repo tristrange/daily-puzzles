@@ -164,7 +164,7 @@ it('saves crossed-out combinations per cage and restores them with Undo and Redo
   }
   try {
     await act(async () => root.render(<MemoryRouter><KillerSudokuPreviewPage /></MemoryRouter>))
-    await click('Combinations')
+    await click('Combos')
     expect(container.querySelector('.killer-combinations')?.textContent).toContain('13 cage')
     await click('Cross out 4 + 9')
     expect(container.querySelector('[aria-label="Cross out 4 + 9"]')?.getAttribute('aria-pressed')).toBe('true')
@@ -190,7 +190,7 @@ it('saves crossed-out combinations per cage and restores them with Undo and Redo
     await act(async () => root.unmount())
     const restored = createRoot(container)
     await act(async () => restored.render(<MemoryRouter><KillerSudokuPreviewPage /></MemoryRouter>))
-    await click('Combinations')
+    await click('Combos')
     expect(container.querySelector('[aria-label="Cross out 4 + 9"]')?.getAttribute('aria-pressed')).toBe('true')
     await act(async () => restored.unmount())
   } finally {
@@ -209,7 +209,7 @@ it('shows combinations only when every selected cell belongs to the same cage', 
   }
   try {
     await act(async () => root.render(<MemoryRouter><KillerSudokuPreviewPage /></MemoryRouter>))
-    const toggle = [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Combinations')!
+    const toggle = [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Combos')!
     await act(async () => toggle.click())
     await select(9, true) // Same 13 cage as cell 0.
     expect(container.querySelector('.killer-combinations')?.textContent).toContain('13 cage')
@@ -241,7 +241,7 @@ it('resets only the current cage combinations as one saved undoable move', async
   const select = async (index: number) => act(async () => container.querySelector<HTMLButtonElement>(`[data-cell="${index}"]`)!.click())
   try {
     await act(async () => root.render(<MemoryRouter><KillerSudokuPreviewPage /></MemoryRouter>))
-    await click('Combinations')
+    await click('Combos')
     expect([...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Reset combinations')?.disabled).toBe(true)
     await click('Cross out 4 + 9'); await click('Cross out 5 + 8')
     await select(1); await click('Cross out 1 + 2 + 5')
@@ -260,7 +260,7 @@ it('resets only the current cage combinations as one saved undoable move', async
     expect(readSudokuProgress(board)?.game.excludedCageCombinations?.[0]).toEqual([])
     await act(async () => root.unmount()); root = createRoot(container)
     await act(async () => root.render(<MemoryRouter><KillerSudokuPreviewPage /></MemoryRouter>))
-    await click('Combinations')
+    await click('Combos')
     expect(container.querySelector('[aria-label="Cross out 4 + 9"]')?.getAttribute('aria-pressed')).toBe('false')
     await select(1)
     expect(container.querySelector('[aria-label="Cross out 1 + 2 + 5"]')?.getAttribute('aria-pressed')).toBe('true')
