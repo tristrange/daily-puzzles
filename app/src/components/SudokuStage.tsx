@@ -5,7 +5,7 @@ import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } 
 import { buildShareText, buildSudokuSolutionShareText, copyText, puzzleShareLink } from '../lib/share'
 import { useLeaderboard } from '../lib/useLeaderboard'
 import { SolvedPanel } from './SolvedPanel'
-import { useId, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import { createSudokuGame, editSudoku, isSudokuSolved, sudokuCellName, sudokuConflicts, sudokuDigits, sudokuSingle, type SudokuBoard as Board, type SudokuGame } from '../domain/sudoku'
 import { applySudokuHint, checkSudokuEntries, findSudokuHint, type SudokuEntryCheck, type SudokuHint } from '../domain/sudokuHints'
 import { sudokuHintLesson } from '../domain/hintLessons'
@@ -48,6 +48,13 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
   const [progressCheck, setProgressCheck] = useState<SudokuEntryCheck | { kind: 'empty' } | null>(null)
   const [hintSource, setHintSource] = useState<'hint' | 'check'>('hint')
   const stage = useRef<HTMLDivElement>(null), hintButton = useRef<HTMLButtonElement>(null), checkButton = useRef<HTMLButtonElement>(null)
+  const hintOpen = hint !== null || mistake !== null
+  useEffect(() => {
+    // On phones the hint sheet brings the board above the controls.
+    if (hintOpen && window.scrollY > 0 && window.matchMedia('(max-width: 47.999rem)').matches) {
+      window.scrollTo({ top: 0 })
+    }
+  }, [hintOpen])
   const instructionsId = useId(), hintId = useId(), combinationsId = useId(), conflicts = killer ? killerConflicts(killer, game.cells) : sudokuConflicts(game.cells)
   const { time, settle, stop, restartAttempt } = usePlayClock(initial ?? { elapsedMs: 0 }, time => {
     setSaving(storeSudokuProgress(board, current.current, time, hints.current, daily))
@@ -182,18 +189,19 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
       : progressCheck.kind === 'correct' ? 'Your entered numbers are correct so far. Notes are not checked.'
         : 'At least one entered number is incorrect. Notes are not checked.'
   return <div className="sudoku-game" ref={stage} onKeyDown={keyboard}>
-    <div className="sudoku-workspace" data-killer={!!killer} data-combinations={!!killer && showCombinations} data-hint={hint !== null || mistake !== null}>
+    <div className="sudoku-workspace" data-killer={!!killer} data-combinations={!!killer && showCombinations} data-hint={hintOpen}>
+      <SudokuBoard board={board} game={game} selected={selected} selection={selection} locked={solved} conflicts={conflicts} hint={hint} instructionsId={instructionsId} onSelect={select} onConfirmNote={confirmNote} cageActive={!!cage && showCombinations} />
       <div className="sudoku-controls">
         <div className="puzzle-tools">
           <PlayTimer time={time} />
           <button type="button" className="tool-button" disabled={solved || !history.canUndo} onClick={undo}>Undo</button>
           <button type="button" className="tool-button" disabled={solved || !history.canRedo} onClick={redo}>Redo</button>
+          <button type="button" className="tool-button" ref={hintButton} disabled={solved} aria-label="Get an explained hint" aria-expanded={(hint !== null || mistake !== null) && hintSource === 'hint'}
+            aria-controls={(hint || mistake !== null) && hintSource === 'hint' ? hintId : undefined} onClick={requestHint}>Hint</button>
           <ResetButton disabled={solved || game.cells.every((v, i) => v === board.givens[i] && !game.notes[i]) && !game.excludedCageCombinations?.some(items => items.length)}
             onReset={() => { if (completed.current) return; restartAttempt(); commit(createSudokuGame(board), 'Board cleared. Undo restores the board. Total time and hints are kept.') }} />
           <button type="button" className="tool-button notes-toggle" disabled={solved} aria-pressed={pencil} onClick={() => setPencil(!pencil)}>Notes</button>
           <button type="button" className="tool-button" disabled={solved || !game.notes.some(Boolean)} onClick={() => commit({ ...game, notes: Array<number>(81).fill(0) }, 'All notes cleared. Undo brings them back.')}>Clear notes</button>
-          <button type="button" className="tool-button" ref={hintButton} disabled={solved} aria-label="Get an explained hint" aria-expanded={(hint !== null || mistake !== null) && hintSource === 'hint'}
-            aria-controls={(hint || mistake !== null) && hintSource === 'hint' ? hintId : undefined} onClick={requestHint}>Hint</button>
           <button type="button" className="tool-button sudoku-check-button" ref={checkButton} disabled={solved} aria-label="Check progress" onClick={checkProgress}>Check</button>
           <div className={`sudoku-check-result${progressCheck ? '' : ' sr-only'}`}>
             <p role="status" aria-live="polite">{progressMessage}</p>
@@ -213,7 +221,6 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
         </div>
         <p className="sudoku-mode" role="status">{selection.length > 1 ? `${selection.length} cells selected · digits update notes in empty cells` : pencil ? 'Notes on · tap digits to mark possibilities' : 'Select a cell, then enter a number'}</p>
       </div>
-      <SudokuBoard board={board} game={game} selected={selected} selection={selection} locked={solved} conflicts={conflicts} hint={hint} instructionsId={instructionsId} onSelect={select} onConfirmNote={confirmNote} cageActive={!!cage && showCombinations} />
       <div className="sudoku-side">
         {mistake !== null && <MistakeWarning id={hintId} message="Your numbers lead to a contradiction. Check your entries, or try Undo." onReveal={() => revealMistake(mistake, 'hint')} onDismiss={dismiss} />}
         {hint && <HintPanel id={hintId} location={sudokuCellName(hint.cell)} title={hint.correction ? 'Clear this entry' : sudokuSingle(hint.candidates) ? `Place ${sudokuDigits(hint.candidates)[0]}` : 'Narrow the possibilities'}

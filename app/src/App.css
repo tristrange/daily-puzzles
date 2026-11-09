@@ -8,9 +8,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: .65rem;
   flex-wrap: wrap;
-  padding: 1rem 0;
+  padding: .6rem 0;
+  border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -44,13 +45,13 @@
 }
 
 .brand-mark i {
-  border-radius: 3px;
-  background: var(--accent);
+  border-radius: 1px;
+  background: #567aaa;
 }
 
-.brand-mark i:nth-child(2) { background: light-dark(#5679ba, #7896ce); }
-.brand-mark i:nth-child(3) { background: light-dark(#8d5cb2, #d1aae7); }
-.brand-mark i:nth-child(4) { background: light-dark(#a46b00, #f4c96b); }
+.brand-mark i:nth-child(2) { background: #e8b66a; }
+.brand-mark i:nth-child(3) { background: #e1846d; }
+.brand-mark i:nth-child(4) { background: #7da698; }
 
 .site-header nav {
   display: flex;
@@ -81,14 +82,14 @@
   }
 
   &.active {
-    color: var(--accent);
-    background: var(--accent-border);
+    color: var(--text-h);
+    background: var(--paper-tint);
   }
 }
 
 .content {
   flex: 1;
-  padding: 2rem 0 3rem;
+  padding: 1.45rem 0 2.5rem;
   min-width: 0;
 }
 
@@ -149,19 +150,16 @@
 }
 
 .page-title {
-  font-size: clamp(1.8rem, 3.5vw, 2.5rem);
-  line-height: 1.12;
-  letter-spacing: -0.02em;
-  font-weight: 500;
+  font: 600 clamp(2.1rem, 3.6vw, 2.9rem)/1.04 var(--display);
+  letter-spacing: -0.025em;
   margin: 0 0 1rem;
 }
 
 .eyebrow {
   margin: 0 0 0.75rem;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--text);
+  font: 600 .75rem/1.4 var(--mono);
+  letter-spacing: .055em;
+  color: var(--accent);
 }
 
 .page-intro {
@@ -186,8 +184,7 @@
 }
 
 .puzzle h1 {
-  font-size: clamp(1.75rem, 3.5vw, 2.25rem);
-  line-height: 1.08;
+  font: 600 clamp(2.05rem, 3.5vw, 2.75rem)/1.04 var(--display);
   letter-spacing: -0.02em;
   margin: 0;
 }
@@ -929,11 +926,13 @@
   min-height: 2.75rem;
   padding: 0.4rem 0.65rem;
   border-radius: 0.625rem;
-  color: var(--text);
+  color: var(--text-h);
+  background: var(--surface);
+  border: 1px solid var(--border);
   text-decoration: none;
 }
 .game-picker a:hover { background: var(--surface); color: var(--text-h); }
-.game-picker a[aria-current='page'] { background: var(--accent-border); color: var(--accent); font-weight: 600; }
+.game-picker a[aria-current='page'] { background: var(--primary-bg); border-color: var(--primary-bg); color: var(--primary-ink); font-weight: 600; }
 @media (min-width: 48rem) {
   .archive-page {
     display: grid;
@@ -974,8 +973,7 @@
 }
 
 .archive-group-title {
-  font-size: 1.125rem;
-  letter-spacing: 0;
+  font: 600 1.55rem/1.15 var(--display);
   margin: 0 0 0.75rem;
 }
 
@@ -1050,8 +1048,10 @@
 }
 
 .rules h2 {
-  margin: 2.5rem 0 0.75rem;
-  font-size: 1.5rem;
+  margin: 2rem 0 0.65rem;
+  padding-top: .7rem;
+  border-top: 1px solid var(--border);
+  font: 600 1.75rem/1.12 var(--display);
   color: var(--text-h);
   scroll-margin-top: 9rem;
 }
@@ -1132,11 +1132,21 @@
   .lesson-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (min-width: 64rem) {
-  .lesson-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .lesson-cards .lesson-card-featured { grid-column: span 2; }
+  .lesson-page .lesson-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 .lesson-cards li { display: flex; flex-direction: column; align-items: start; padding: 1rem; border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); }
-.lesson-cards .lesson-card-featured { padding: 1.5rem; }
+.learn-page .lesson-cards li {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  align-items: stretch;
+  padding: 0;
+  border-radius: .65rem;
+}
+.learn-page .lesson-card-copy { display: flex; flex-direction: column; align-items: start; padding: .75rem; min-width: 0; }
+.learn-page .lesson-cards .game-plate { border-radius: .6rem 0 0 .6rem; }
+.learn-page .game-plate svg { width: 4rem; height: 4rem; }
+.learn-page .lesson-cards h2 { margin: 0; font: 600 1.55rem/1.1 var(--display); }
+.learn-page .lesson-card-featured .tool-button.primary { margin-top: auto; }
 .lesson-card-featured .eyebrow { margin: 0 0 .25rem; }
 .lesson-cards h2 { font-size: 1.125rem; margin: .5rem 0 0; letter-spacing: 0; }
 .lesson-card-featured h2 { font-size: 1.5rem; margin-top: .25rem; }
@@ -1282,8 +1292,8 @@
 
 .stat {
   border: 1px solid var(--border);
-  border-radius: 1rem;
-  padding: 1.25rem;
+  border-radius: .65rem;
+  padding: .85rem 1rem;
   background: var(--surface);
   min-width: 0;
 
@@ -1294,9 +1304,7 @@
 
   dd {
     margin: 0.25rem 0 0;
-    font-size: 1.8rem;
-    font-weight: 600;
-    letter-spacing: 0;
+    font: 600 1.9rem/1.1 var(--display);
     color: var(--text-h);
     overflow-wrap: anywhere;
   }
@@ -1366,9 +1374,10 @@
 .leaderboards-page { max-width: 48rem; margin-inline: auto; }
 .leaderboard-panel { width: 100%; min-width: 0; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border); text-align: left; }
 .leaderboard-heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: .5rem 1rem; }
-.leaderboard-heading h2 { margin: 0 0 .75rem; font-size: 1.25rem; letter-spacing: 0; }
+.leaderboard-heading h2 { margin: 0 0 .75rem; font: 600 1.55rem/1.1 var(--display); }
 .leaderboard-heading a { font-size: .875rem; }
 .leaderboard-note { font-size: .875rem; line-height: 1.5; color: var(--text); margin: .75rem 0; }
+.leaderboards-page > .leaderboard-panel { padding: 1rem; border: 1px solid var(--border); border-radius: .65rem; background: var(--surface); }
 .leaderboard-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: .875rem; }
 .leaderboard-table th, .leaderboard-table td { padding: .75rem .4rem; border-bottom: 1px solid var(--border); text-align: right; }
 .leaderboard-table th:first-child, .leaderboard-table td:first-child { text-align: left; padding-left: 0; }
@@ -1423,12 +1432,12 @@
   .nav-link.active,
   .track-pick-face,
   .tracks .cell,
-  .game-card,
+  .game-card-face,
   .stat { border: 1px solid var(--text-h); }
 }
 
 /* Cell-first Sudoku leaves the board's height available for nine readable rows. */
-.sudoku-workspace { display: grid; grid-template-areas: 'tools' 'board' 'keys' 'mode'; gap: .75rem; justify-items: center; }
+.sudoku-workspace { display: grid; grid-template-areas: 'board' 'tools' 'keys' 'mode'; gap: .75rem; justify-items: center; }
 .sudoku-controls { display: contents; }
 .sudoku-controls .puzzle-tools { grid-area: tools; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; width: min(100%, 36rem); gap: .35rem; padding: .35rem; }
 .sudoku-controls .puzzle-tools .tool-button { padding-inline: .4rem; }
@@ -1445,15 +1454,15 @@
 .sudoku-mode { grid-area: mode; margin: 0; font-size: .8125rem; text-align: center; }
 .sudoku-board { grid-area: board; display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); width: min(100%, 36rem); container-type: inline-size; border: 2px solid var(--text-h); border-radius: .3rem; overflow: hidden; background: var(--surface); touch-action: pinch-zoom; user-select: none; -webkit-user-select: none; }
 .sudoku-row { display: contents; }
-.sudoku-cell { position: relative; aspect-ratio: 1; min-width: 0; padding: 0; border: 0; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--surface); color: var(--accent); font: 500 clamp(1.25rem, 4vw, 2rem)/1 var(--sans); cursor: pointer; }
-.sudoku-cell[data-context='true'] { background: color-mix(in srgb, var(--accent) 5%, var(--surface)); }
+.sudoku-cell { position: relative; aspect-ratio: 1; min-width: 0; padding: 0; border: 0; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--surface); color: var(--primary-bg); font: 500 clamp(1.25rem, 4vw, 2rem)/1 var(--sans); cursor: pointer; }
+.sudoku-cell[data-context='true'] { background: color-mix(in srgb, var(--primary-bg) 7%, var(--surface)); }
 .sudoku-cell[data-digit-line='true'] { background: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
 .sudoku-cell[data-match='true'] { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
 .sudoku-cell[data-given='true'] { font-weight: 600; color: var(--text-h); }
 .sudoku-cell[data-given='true']::after { content: ''; position: absolute; width: 3px; height: 3px; right: 3px; bottom: 3px; border-radius: 50%; background: var(--text); }
 .sudoku-cell[data-box-right='true'] { border-right: 2px solid var(--text-h); }
 .sudoku-cell[data-box-bottom='true'] { border-bottom: 2px solid var(--text-h); }
-.sudoku-cell[data-selected='true'] { background: color-mix(in srgb, var(--accent) 18%, var(--surface)); box-shadow: inset 0 0 0 2px var(--accent); }
+.sudoku-cell[data-selected='true'] { background: color-mix(in srgb, var(--primary-bg) 20%, var(--surface)); box-shadow: inset 0 0 0 2px var(--primary-bg); }
 .sudoku-cell[data-conflict='true'] { color: var(--danger); box-shadow: inset 0 0 0 2px var(--danger); }
 .sudoku-cell[data-hint='support'] { outline: 1px dashed var(--accent); outline-offset: -4px; }
 .sudoku-cell[data-hint='target'] { outline: 3px solid var(--hint); outline-offset: -4px; }
@@ -1481,9 +1490,18 @@
 }
 .sudoku-feedback { min-height: 1.5em; text-align: center; font-size: .875rem; }
 @media (min-width: 48rem) {
-  .sudoku-workspace { grid-template-areas: 'controls board'; grid-template-columns: 12rem minmax(0, 36rem); align-items: start; justify-content: center; gap: 2rem; }
-  .sudoku-controls { display: block; grid-area: controls; }
-  .sudoku-controls .puzzle-tools { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sudoku-workspace { grid-template-areas: 'board controls'; grid-template-columns: minmax(0, 33rem) minmax(13rem, 22rem); align-items: start; justify-content: center; gap: clamp(.7rem, 2vw, 1.25rem); }
+  .sudoku-controls {
+    display: block;
+    grid-area: controls;
+    width: 100%;
+    min-width: 0;
+    padding: .8rem;
+    border: 1px solid var(--border);
+    border-radius: .65rem;
+    background: var(--paper-tint);
+  }
+  .sudoku-controls .puzzle-tools { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0; border: 0; background: transparent; }
   .sudoku-controls .timer { grid-column: 1 / -1; padding-block: .35rem; }
   .sudoku-check-button { grid-column: 1 / -1; }
   .sudoku-keypad { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-block: .75rem; }
@@ -1835,8 +1853,8 @@
 }
 
 /* Cage combinations remain optional and follow the selected cell. */
-.sudoku-workspace[data-killer='true'] { grid-template-areas: 'tools' 'board' 'cage-toggle' 'keys' 'mode'; }
-.sudoku-workspace[data-combinations='true'] { grid-template-areas: 'tools' 'board' 'cage-toggle' 'combinations' 'keys' 'mode'; }
+.sudoku-workspace[data-killer='true'] { grid-template-areas: 'board' 'tools' 'cage-toggle' 'keys' 'mode'; }
+.sudoku-workspace[data-combinations='true'] { grid-template-areas: 'board' 'tools' 'cage-toggle' 'combinations' 'keys' 'mode'; }
 .killer-combinations-toggle { grid-area: cage-toggle; width: min(100%, 36rem); }
 .killer-combinations-toggle[aria-expanded='true'] { background: var(--accent-border); border-color: var(--accent); color: var(--accent); }
 .sudoku-cell[data-cage-selected='true'] { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
@@ -1851,12 +1869,12 @@
 .killer-combination { min-height: 2.75rem; padding: .4rem .65rem; font-variant-numeric: tabular-nums; }
 .killer-combination[aria-pressed='true'] { text-decoration: line-through; color: var(--text); background: var(--bg-sunken); }
 @media (min-width: 48rem) {
-  .sudoku-workspace[data-killer='true'] { grid-template-areas: 'controls board'; }
-  .sudoku-workspace[data-combinations='true'] { grid-template-areas: 'controls board' 'combinations combinations'; }
+  .sudoku-workspace[data-killer='true'] { grid-template-areas: 'board controls'; }
+  .sudoku-workspace[data-combinations='true'] { grid-template-areas: 'board controls' 'combinations combinations'; }
   .killer-combinations-toggle { width: 100%; margin-top: .75rem; }
 }
 @media (min-width: 70rem) {
-  .sudoku-workspace[data-combinations='true'] { grid-template-areas: 'controls board combinations'; grid-template-columns: 12rem minmax(0, 36rem) minmax(12rem, 16rem); gap: 1.25rem; }
+  .sudoku-workspace[data-combinations='true'] { grid-template-areas: 'board controls combinations'; grid-template-columns: minmax(0, 33rem) minmax(12rem, 17rem) minmax(12rem, 16rem); gap: 1.25rem; }
 }
 
 /* Hints sit beside the board when there is room, and float over the controls
@@ -1865,8 +1883,8 @@
 
 @media (min-width: 56rem) {
   .sudoku-workspace[data-hint='true'] {
-    grid-template-areas: 'controls board side';
-    grid-template-columns: 12rem minmax(0, 36rem) 14rem;
+    grid-template-areas: 'board controls side';
+    grid-template-columns: minmax(0, 33rem) 12rem 14rem;
     gap: 1.25rem;
   }
 
@@ -1888,7 +1906,7 @@
   }
 
   .sudoku-workspace[data-hint='true'][data-combinations='true'] {
-    grid-template-areas: 'controls board side' 'combinations combinations side';
+    grid-template-areas: 'board controls side' 'combinations combinations side';
   }
 
   .sudoku-workspace[data-hint='true'][data-combinations='true'] .sudoku-side .killer-combinations-panel {
@@ -1899,8 +1917,8 @@
 
 @media (min-width: 70rem) {
   .sudoku-workspace[data-hint='true'] {
-    grid-template-areas: 'controls board side';
-    grid-template-columns: 12rem minmax(0, 36rem) 14rem;
+    grid-template-areas: 'board controls side';
+    grid-template-columns: minmax(0, 33rem) minmax(12rem, 17rem) 14rem;
     gap: 1.25rem;
   }
 
@@ -1923,7 +1941,7 @@
   }
 
   .sudoku-workspace[data-hint='true'][data-combinations='true'] {
-    grid-template-areas: 'controls board side';
+    grid-template-areas: 'board controls side';
   }
 }
 
@@ -1989,6 +2007,12 @@
 
   :is(.sudoku-game, .tracks-game, .tents-game, .trio-game, .nurikabe-game, .word-game, .marks-game):has(.hint-panel) [data-hint='target'] {
     scroll-margin-block: 1rem max(38svh, 14rem);
+  }
+}
+
+@media (max-width: 47.999rem) and (max-height: 43rem) {
+  .sudoku-workspace[data-hint='false'] .sudoku-board {
+    width: min(100%, max(18rem, 100svh - 21rem));
   }
 }
 

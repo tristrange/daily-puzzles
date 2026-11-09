@@ -12,7 +12,7 @@ import { WordGrid } from '../domain/wordPaths'
 import { currentStreak, readStoredStats, type SolveRecord } from '../lib/stats'
 import { useToday } from '../lib/useToday'
 import { Challenges } from '../components/Challenges'
-import { GameIcon } from '../components/GameArtwork'
+import { GamePlate } from '../components/GameArtwork'
 import './HomePage.css'
 
 type LoadState =
@@ -103,19 +103,19 @@ export function HomePage() {
   return (
     <section className="today">
       <div className="today-heading">
-        <p className="eyebrow">{formatPuzzleLabel(todayId, timeZone)}</p>
-        <h1 className="page-title">Today&rsquo;s puzzles<span className="today-title-dot" aria-hidden="true">.</span></h1>
+        <div>
+          <p className="eyebrow">{formatPuzzleLabel(todayId, timeZone)}</p>
+          <h1 className="page-title">Today</h1>
+        </div>
+        {ready !== null && <TodayProgress probes={ready.probes} solved={ready.solved} records={ready.records} today={todayId} />}
       </div>
       {ready === null && <p className="status">Checking what&rsquo;s out…</p>}
       {ready !== null && (
         <>
-          <div className="today-overview">
-            <TodayProgress probes={ready.probes} solved={ready.solved} records={ready.records} today={todayId} />
-            <Challenges records={ready.records} today={todayId} timeZone={timeZone} />
-          </div>
+          <Challenges records={ready.records} today={todayId} timeZone={timeZone} />
           <div className="today-collection-heading">
-            <h2>Choose a game</h2>
-            <Link to="/archive">Explore the archive <span aria-hidden="true">→</span></Link>
+            <h2>Puzzles</h2>
+            <Link to="/archive">Browse archive <span aria-hidden="true">→</span></Link>
           </div>
           <TodayCards probes={ready.probes} solved={ready.solved} />
         </>
@@ -172,66 +172,85 @@ export function TodayCards({ probes, solved }: {
       {orderedGroups.map(([family, entries]) => {
         const probe = entries[0]!
         const sized = family === 'sudoku' || family === 'killer-sudoku' || family === 'train-tracks' && trackVariantOf(probe.id) !== null
-        const trackSizes = family === 'train-tracks'
-          ? entries.flatMap(entry => { const size = trackVariantOf(entry.id); return size ? [`${size.side}×${size.side}`] : [] }).join(' · ')
-          : ''
+        const name = PUZZLE_TYPE_LABEL[family]
+        const art = <GamePlate type={family} />
+        if (sized) {
+          const available = entries.filter(entry => entry.puzzle !== null)
+          const complete = available.filter(entry => solved.has(entry.id)).length
+          const started = available.filter(entry => !solved.has(entry.id) && entry.elapsedMs != null).length
+          const progress = [
+            complete > 0 && `${complete} completed`,
+            started > 0 && `${started} in progress`,
+          ].filter(Boolean).join(' · ')
+          const details = `${entries.length} daily puzzles`
+          const state = available.length === 0
+            ? entries.some(entry => entry.unavailable) ? 'Not saved — connect to load.' : 'Not published yet.'
+            : progress || 'Choose a puzzle'
+          return <li key={family} className="game-card-item">
+            <details className={`game-card game-${family} game-card-disclosure`} name="today-variants">
+              <summary className="game-card-face" aria-label={`${name} puzzle choices`} aria-description={`${details} · ${state}`}>
+                {art}
+                <span className="game-card-copy">
+                  <span className="game-card-detail">{details}</span>
+                  <span className="game-card-title">{name}</span>
+                  <span className="game-card-description">{DESCRIPTION[family]}</span>
+                  <span className="game-card-state">{state}</span>
+                  <span className="game-card-arrow game-card-chevron" aria-hidden="true" />
+                </span>
+              </summary>
+              <ul className="track-variants">
+                {entries.map((entry) => {
+                  const variant = family === 'sudoku' ? sudokuVariantOf(entry.id)! : family === 'killer-sudoku' ? killerVariantOf(entry.id)! : trackVariantOf(entry.id)!
+                  const size = 'side' in variant ? `${variant.side}×${variant.side}` : null
+                  const label = <>{variant.label}{size && <span className="choice-size"> {size}</span>}</>
+                  const again = solved.has(entry.id)
+                  const elapsed = !again ? entry.elapsedMs ?? null : null
+                  return <li key={entry.id}>
+                    {entry.puzzle === null ? (
+                      <div className="track-unpublished">
+                        <span>{label}</span><span className="game-card-state">{entry.unavailable ? 'Not saved — connect to load.' : 'Not published yet.'}</span>
+                      </div>
+                    ) : (
+                      <Link className="tool-button track-choice" to={`/archive/${entry.id}`} state={{ fromToday: true }}
+                        aria-description={`${progressLabel(again, elapsed)}${size ? `, ${size} grid` : ''}`}
+                        aria-label={`${elapsed === null ? 'Play' : 'Resume'} ${name} ${variant.label}${again ? ' again' : elapsed !== null ? ` at ${formatTime(elapsed)}` : ''}`}>
+                        <span className="track-choice-info"><span>{label}</span><span className={`choice-state${again ? ' solved' : ''}`}><span>{again && <span aria-hidden="true">✓ </span>}{again ? 'Play again' : elapsed !== null ? `Resume · ${formatTime(elapsed)}` : 'Play'}</span>{elapsed === null && <> <span aria-hidden="true">→</span></>}</span></span>
+                      </Link>
+                    )}
+                  </li>
+                })}
+              </ul>
+            </details>
+          </li>
+        }
+        const puzzle = probe.puzzle
         const again = solved.has(probe.id)
         const elapsed = !again ? probe.elapsedMs ?? null : null
-        return (
-          <li key={family} className="game-card-item">
-            <div className={`game-card game-${family}${!sized && probe.puzzle !== null ? ' game-card-link' : ''}`}>
-              <div className="game-card-heading">
-                <div className="game-motif"><GameIcon type={family} /></div>
-                <div className="game-card-heading-copy">
-                  <h3 className="game-card-title">{PUZZLE_TYPE_LABEL[family]}</h3>
-                  <p className="game-card-description">{DESCRIPTION[family]}</p>
-                  {sized && <p className="game-card-variant-count">{trackSizes || `${entries.length} daily puzzles`}</p>}
-                </div>
-              </div>
-              {sized ? (
-                <ul className="track-variants">
-                  {entries.map((entry) => {
-                    const variant = family === 'sudoku' ? sudokuVariantOf(entry.id)! : family === 'killer-sudoku' ? killerVariantOf(entry.id)! : trackVariantOf(entry.id)!
-                    const size = 'side' in variant ? `${variant.side}×${variant.side}` : null
-                    const label = <>{variant.label}{size && <span className="choice-size"> {size}</span>}</>
-                    const again = solved.has(entry.id)
-                    const elapsed = !again ? entry.elapsedMs ?? null : null
-                    return (
-                      <li key={entry.id}>
-                        {entry.puzzle === null ? (
-                          <div className="track-unpublished">
-                            <span>{label}</span><span className="game-card-state">{entry.unavailable ? 'Not saved — connect to load.' : 'Not published yet.'}</span>
-                          </div>
-                        ) : (
-                          <Link className="tool-button track-choice" to={`/archive/${entry.id}`} state={{ fromToday: true }}
-                            aria-description={`${progressLabel(again, elapsed)}${size ? `, ${size} grid` : ''}`}
-                            aria-label={`${elapsed === null ? 'Play' : 'Resume'} ${PUZZLE_TYPE_LABEL[family]} ${variant.label}${again ? ' again' : elapsed !== null ? ` at ${formatTime(elapsed)}` : ''}`}>
-                            <span className="track-choice-info"><span>{label}</span><span className={`choice-state${again ? ' solved' : ''}`}><span>{again && <span aria-hidden="true">✓ </span>}{again ? 'Play again' : elapsed !== null ? `Resume · ${formatTime(elapsed)}` : 'Play'}</span>{elapsed === null && <> <span aria-hidden="true">→</span></>}</span></span>
-                          </Link>
-                        )}
-                      </li>
-                    )
-                  })}
-                </ul>
-              ) : (
-                <>
-                  {probe.puzzle === null ? <p className="game-card-state">{probe.unavailable ? 'Not saved — connect to load.' : 'Not published yet.'}</p> : (
-                    <div className="game-card-footer">
-                      <div><p className="game-card-detail">{probe.puzzle.board.width}&times;{probe.puzzle.board.height} grid
-                        {probe.puzzle.difficulty != null && <> · {DIFFICULTY_LABEL[probe.puzzle.difficulty]}</>}</p>
-                        <p className={`game-card-state ${progressClass(again, elapsed)}`}>{progressLabel(again, elapsed)}</p></div>
-                      <Link className="game-card-play" to={`/archive/${probe.id}`} state={{ fromToday: true }}
-                        aria-label={`${elapsed === null ? 'Play' : 'Resume'} ${PUZZLE_TYPE_LABEL[family]}${again ? ' again' : elapsed !== null ? ` at ${formatTime(elapsed)}` : ''}`}
-                        aria-description={progressLabel(again, elapsed)}>
-                        {again ? 'Play again' : elapsed !== null ? 'Resume' : 'Play'} <span aria-hidden="true">→</span>
-                      </Link>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </li>
-        )
+        const action = again ? 'Play again' : elapsed !== null ? 'Resume' : 'Play'
+        const content = <>
+          {art}
+          <div className="game-card-copy">
+            {puzzle !== null && <p className="game-card-detail">{puzzle.board.width}×{puzzle.board.height}
+              {puzzle.difficulty != null && <> · {DIFFICULTY_LABEL[puzzle.difficulty]}</>}</p>}
+            <h3 className="game-card-title">{name}</h3>
+            <p className="game-card-description">{DESCRIPTION[family]}</p>
+            <p className={`game-card-state ${puzzle !== null ? progressClass(again, elapsed) : ''}`}>
+              {puzzle !== null ? progressLabel(again, elapsed) : probe.unavailable ? 'Not saved — connect to load.' : 'Not published yet.'}
+            </p>
+            {puzzle !== null && <><span className="sr-only">{action}</span><span className="game-card-arrow" aria-hidden="true">→</span></>}
+          </div>
+        </>
+        return <li key={family} className="game-card-item">
+          <div className={`game-card game-${family}`}>
+            {puzzle === null ? <div className="game-card-face">{content}</div> : (
+              <Link className="game-card-face game-card-play" to={`/archive/${probe.id}`} state={{ fromToday: true }}
+                aria-label={`${elapsed === null ? 'Play' : 'Resume'} ${name}${again ? ' again' : elapsed !== null ? ` at ${formatTime(elapsed)}` : ''}`}
+                aria-description={progressLabel(again, elapsed)}>
+                {content}
+              </Link>
+            )}
+          </div>
+        </li>
       })}
     </ul>
   )

@@ -1,0 +1,20 @@
+.game-plate {
+  display: grid;
+  place-items: center;
+  flex: none;
+  background: var(--plate-bg);
+  color: var(--plate-ink);
+}
+
+.game-plate svg { display: block; width: 4.625rem; height: 4.625rem; }
+.game-plate text { fill: currentColor; font: 600 12px var(--mono); text-anchor: middle; }
+.game-plate .plate-inverse { fill: var(--plate-bg); }
+.plate-queens { --plate-bg: #29466c; --plate-ink: #aac1de; }
+.plate-star-battle { --plate-bg: #3e4070; --plate-ink: #d6c5f2; }
+.plate-word-paths { --plate-bg: #344f68; --plate-ink: #b5dbe9; }
+.plate-trio { --plate-bg: #745321; --plate-ink: #f9d784; }
+.plate-tents { --plate-bg: #355744; --plate-ink: #b9d99c; }
+.plate-nurikabe { --plate-bg: #235765; --plate-ink: #b1dada; }
+.plate-train-tracks { --plate-bg: #753c32; --plate-ink: #f8bf8b; }
+.plate-sudoku { --plate-bg: #27594e; --plate-ink: #c0e0b8; }
+.plate-killer-sudoku { --plate-bg: #674153; --plate-ink: #f5c1b7; }
