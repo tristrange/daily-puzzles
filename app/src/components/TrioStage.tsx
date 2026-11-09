@@ -265,10 +265,10 @@ export function TrioStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }) 
           <button className="tool-button" type="button" onClick={undo} disabled={solved || !history.canUndo}>Undo</button>
           <button className="tool-button" type="button" onClick={redo} disabled={solved || !history.canRedo}>Redo</button>
           <ResetButton onReset={reset} disabled={solved || game.cells.every((v, i) => v === board.givens[i] && game.notes[i] === 0)} />
-          <button ref={hintButton} className="tool-button" type="button" aria-label="Get an explained hint" aria-expanded={hint !== null}
+          <button ref={hintButton} className="tool-button trio-hint-button" type="button" aria-label="Get an explained hint" aria-expanded={hint !== null}
             aria-controls={hint ? hintId : undefined} disabled={solved} onClick={requestHint}>Hint</button>
-          <button ref={checkButton} className="tool-button" type="button" aria-label="Check progress" disabled={solved} onClick={checkProgress}>Check</button>
-          <button className="tool-button" type="button" onClick={clearNotes} disabled={solved || !game.notes.some(Boolean)}>Clear notes</button>
+          <button ref={checkButton} className="tool-button trio-check-button" type="button" aria-label="Check progress" disabled={solved} onClick={checkProgress}>Check</button>
+          <button className="tool-button trio-clear-notes" type="button" onClick={clearNotes} disabled={solved || !game.notes.some(Boolean)}>Clear notes</button>
           <button className="tool-button notes-toggle" type="button" aria-pressed={pencil} disabled={solved} onClick={() => setPencil(!pencil)}>Notes</button>
           <div className={`marks-check-result trio-check-result${progressCheck ? '' : ' sr-only'}`}>
             <p role="status" aria-live="polite">{progressMessage}</p>

@@ -1440,6 +1440,7 @@
   .sudoku-controls .puzzle-tools { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0; border: 0; background: transparent; }
   .sudoku-controls .timer { grid-column: 1 / -1; padding-block: .35rem; }
   .sudoku-check-button { grid-column: 1 / -1; }
+  .sudoku-workspace[data-killer='true'] .sudoku-check-button { grid-column: auto; }
   .sudoku-keypad { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-block: .75rem; }
   .sudoku-keypad .tool-button:last-child { grid-column: 1 / -1; }
   .sudoku-board { width: min(100%, 36rem, max(24rem, 100svh - 18rem)); }
@@ -1722,9 +1723,10 @@
   .trio-workspace { display: flex; align-items: flex-start; justify-content: center; gap: 2rem; }
   .trio-controls { flex: 0 0 12rem; }
   .trio-controls .puzzle-tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
-  .trio-controls .timer { grid-column: 1 / -1; text-align: center; padding-block: 0.35rem; }
-  .trio-controls .notes-toggle { grid-column: 1 / -1; }
-  .trio-controls .trio-check-result { grid-column: 1 / -1; }
+  .trio-controls .timer { order: -2; grid-column: 1 / -1; text-align: center; padding-block: 0.35rem; }
+  .trio-controls :is(.trio-hint-button, .trio-check-button) { order: -1; }
+  .trio-controls .trio-clear-notes { order: 1; grid-column: 1 / -1; }
+  .trio-controls .trio-check-result { order: 2; grid-column: 1 / -1; }
   .trio-controls .trio-picker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .trio-workspace .trio-board { min-width: 0; width: min(100%, 42rem, max(24rem, 100svh - 18rem)); margin: 0; }
 }
