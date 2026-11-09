@@ -1,3 +1,4 @@
+import { GamePlate } from '../components/GameArtwork'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { SUDOKU_LESSONS, SUDOKU_TECHNIQUES } from '../domain/sudokuLessons'
@@ -69,35 +70,35 @@ export function LearnPage() {
       <p>Complete every exercise in a technique to earn it.</p>
     </div>
     <ul className="lesson-cards">
-      <li className="lesson-card-featured">
+      <li className="lesson-card-featured"><GamePlate type="queens" /><div className="lesson-card-copy">
         <p className="eyebrow">Start here</p>
         <h2>Queens</h2><p>Combine region reservations, lines and the no-touch rule.</p>
         <p className="lesson-meta">{completed.queens.length}/{QUEENS_LESSONS.length} completed · {counts.queens.practiced}/{counts.queens.total} techniques</p>
-        <Link className="tool-button primary" to="/learn/queens">Learn Queens →</Link></li>
-      <li><h2>Sudoku</h2>
+        <Link className="tool-button primary" to="/learn/queens">Learn Queens →</Link></div></li>
+      <li><GamePlate type="sudoku" /><div className="lesson-card-copy"><h2>Sudoku</h2>
         <p>{SUDOKU_TECHNIQUES.length} techniques · {SUDOKU_LESSONS.length} exercises. Start with locked candidates, then work through pairs, triples, X-Wing and beyond.</p>
         <p className="lesson-meta">{completed.sudoku.length}/{SUDOKU_LESSONS.length} completed · {counts.sudoku.practiced}/{counts.sudoku.total} techniques</p>
-        <Link className="lesson-link" to="/learn/sudoku">Learn Sudoku →</Link></li>
-      <li><h2>Killer Sudoku</h2><p>Use cage combinations and the 45 rule to narrow down possibilities.</p>
+        <Link className="lesson-link" to="/learn/sudoku">Learn Sudoku →</Link></div></li>
+      <li><GamePlate type="killer-sudoku" /><div className="lesson-card-copy"><h2>Killer Sudoku</h2><p>Use cage combinations and the 45 rule to narrow down possibilities.</p>
         <p className="lesson-meta">{completed.killer.length}/{KILLER_LESSONS.length + KILLER_FORTY_FIVE_LESSONS.length} completed · {counts.killer.practiced}/{counts.killer.total} techniques</p>
-        <Link className="lesson-link" to="/learn/killer-sudoku">Learn Killer Sudoku →</Link></li>
-      <li><h2>Star Battle</h2>
+        <Link className="lesson-link" to="/learn/killer-sudoku">Learn Killer Sudoku →</Link></div></li>
+      <li><GamePlate type="star-battle" /><div className="lesson-card-copy"><h2>Star Battle</h2>
         <p>{STAR_BATTLE_TECHNIQUES.length + 1} techniques · {STAR_BATTLE_LESSONS.length + STAR_BATTLE_CHAINS.length} exercises. Begin with counting spaces, then combine reservations with other deductions.</p>
         <p className="lesson-meta">{completed.star.length}/{STAR_BATTLE_LESSONS.length + STAR_BATTLE_CHAINS.length} completed · {counts.star.practiced}/{counts.star.total} techniques</p>
-        <Link className="lesson-link" to="/learn/star-battle">Learn Star Battle →</Link></li>
-      <li><h2>Trio</h2>
+        <Link className="lesson-link" to="/learn/star-battle">Learn Star Battle →</Link></div></li>
+      <li><GamePlate type="trio" /><div className="lesson-card-copy"><h2>Trio</h2>
         <p>{TRIO_TECHNIQUES.length} techniques · {TRIO_LESSONS.length} exercises. Combine quotas and no-three, propagate linked restrictions, then follow candidate chains.</p>
         <p className="lesson-meta">{completed.trio.length}/{TRIO_LESSONS.length} completed · {counts.trio.practiced}/{counts.trio.total} techniques</p>
-        <Link className="lesson-link" to="/learn/trio">Learn Trio →</Link></li>
-      <li><h2>Nurikabe</h2><p>Connect the sea, compare island shapes and find routes to isolated land.</p>
+        <Link className="lesson-link" to="/learn/trio">Learn Trio →</Link></div></li>
+      <li><GamePlate type="nurikabe" /><div className="lesson-card-copy"><h2>Nurikabe</h2><p>Connect the sea, compare island shapes and find routes to isolated land.</p>
         <p className="lesson-meta">{completed.nurikabe.length}/{GRID_LESSONS.filter(lesson => lesson.kind === 'nurikabe').length} completed · {counts.nurikabe.practiced}/{counts.nurikabe.total} techniques</p>
-        <Link className="lesson-link" to="/learn/nurikabe">Learn Nurikabe →</Link></li>
-      <li><h2>Tents</h2><p>Compare tree pairings, line counts and possible arrangements.</p>
+        <Link className="lesson-link" to="/learn/nurikabe">Learn Nurikabe →</Link></div></li>
+      <li><GamePlate type="tents" /><div className="lesson-card-copy"><h2>Tents</h2><p>Compare tree pairings, line counts and possible arrangements.</p>
         <p className="lesson-meta">{completed.tents.length}/{GRID_LESSONS.filter(lesson => lesson.kind === 'tents').length} completed · {counts.tents.practiced}/{counts.tents.total} techniques</p>
-        <Link className="lesson-link" to="/learn/tents">Learn Tents →</Link></li>
-      <li><h2>Train Tracks</h2><p>Connect tracks, compare line arrangements and rule out impossible routes.</p>
+        <Link className="lesson-link" to="/learn/tents">Learn Tents →</Link></div></li>
+      <li><GamePlate type="train-tracks" /><div className="lesson-card-copy"><h2>Train Tracks</h2><p>Connect tracks, compare line arrangements and rule out impossible routes.</p>
         <p className="lesson-meta">{completed.tracks.length}/{GRID_LESSONS.filter(lesson => lesson.kind === 'train-tracks').length} completed · {counts.tracks.practiced}/{counts.tracks.total} techniques</p>
-        <Link className="lesson-link" to="/learn/train-tracks">Learn Train Tracks →</Link></li>
+        <Link className="lesson-link" to="/learn/train-tracks">Learn Train Tracks →</Link></div></li>
     </ul>
     <p className="status">Learning progress and achievements stay in this browser and are not included in Stats backups.</p>
   </section>
