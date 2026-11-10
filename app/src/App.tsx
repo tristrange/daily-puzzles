@@ -6,6 +6,7 @@ import { HomePage } from './pages/HomePage'
 import { LeaderboardGate } from './components/LeaderboardGate'
 import { LessonLayout } from './components/LessonLayout'
 
+const CustomizationPage = lazy(() => import('./pages/CustomizationPage').then((module) => ({ default: module.CustomizationPage })))
 const ArchivePage = lazy(() => import('./pages/ArchivePage').then((module) => ({ default: module.ArchivePage })))
 const LeaderboardsPage = lazy(() => import('./pages/LeaderboardsPage').then((module) => ({ default: module.LeaderboardsPage })))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((module) => ({ default: module.NotFoundPage })))
@@ -57,6 +58,7 @@ function App() {
             <Route path="preview/sudoku" element={<SudokuPreviewPage />} />
             <Route path="preview/deduction" element={<DeductionPreviewPage />} />
             <Route path="preview/killer-sudoku" element={<KillerSudokuPreviewPage />} />
+            <Route path="customization" element={<CustomizationPage />} />
             <Route path="stats" element={<StatsPage />} />
             <Route path="stats/passport" element={<PassportPage />} />
             <Route element={<LessonLayout />}>

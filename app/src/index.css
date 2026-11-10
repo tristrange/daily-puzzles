@@ -102,3 +102,23 @@ a {
   outline: 3px solid var(--accent);
   outline-offset: 4px;
 }
+
+/* Palettes tint the surrounding paper while retaining the established game inks. */
+:root[data-palette='warm'] {
+  --bg: light-dark(#f7e9df, #251e20);
+  --surface: light-dark(#fff9f1, #31292b);
+  --paper-tint: light-dark(#f0dfd1, #2b2326);
+  --bg-sunken: light-dark(#ead9ca, #1a1418);
+}
+:root[data-palette='cool'] {
+  --bg: light-dark(#eaf0f5, #19222c);
+  --surface: light-dark(#f8fbfd, #25303c);
+  --paper-tint: light-dark(#dce7ee, #222c38);
+  --bg-sunken: light-dark(#d5e3ec, #111a24);
+}
+:root[data-palette='forest'] {
+  --bg: light-dark(#ebf0e3, #1d251f);
+  --surface: light-dark(#f9fbf3, #29322a);
+  --paper-tint: light-dark(#dfe8d5, #242d25);
+  --bg-sunken: light-dark(#d8e4cd, #141c16);
+}

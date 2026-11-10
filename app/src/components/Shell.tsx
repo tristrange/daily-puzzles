@@ -41,7 +41,7 @@ export function Shell() {
             How to play
           </NavLink>
         </nav>
-        <ThemePicker />
+        <div className="appearance-controls"><ThemePicker /><NavLink to="/customization" className={navClass}>Customize</NavLink></div>
       </header>
       <OfflineStatus />
       <main ref={content} className="content" id="main-content" tabIndex={-1}>

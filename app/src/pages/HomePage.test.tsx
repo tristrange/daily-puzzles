@@ -111,3 +111,10 @@ it('offers daily Tents with a normal play link and honest publication states', (
   expect(unpublished).toContain('Tents')
   expect(unpublished).toContain('Not published yet.')
 })
+
+it('orders whole game cards according to the saved preference', () => {
+  const puzzle = parsePuzzle(words)
+  const html = renderToStaticMarkup(<MemoryRouter><TodayCards probes={[...probes, { id: puzzle.id, puzzle }]} solved={new Set()} order={['train-tracks', 'word-paths']} /></MemoryRouter>)
+  expect(html.indexOf('game-train-tracks')).toBeLessThan(html.indexOf('game-word-paths'))
+  expect(html.match(/aria-label="Play Train Tracks/g)).toHaveLength(3)
+})

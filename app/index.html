@@ -15,6 +15,12 @@
       // attribute the stylesheet follows the OS, which is the default anyway.
       // The key matches THEME_STORAGE_KEY in src/lib/theme.ts; keep them in step.
       try {
+        var saved = JSON.parse(localStorage.getItem('daily-puzzles:customization') || 'null')
+        if (saved && saved.version === 1 && ['classic', 'warm', 'cool', 'forest'].includes(saved.palette)) {
+          document.documentElement.dataset.palette = saved.palette
+        }
+      } catch (error) { /* Invalid or unavailable customization uses the default. */ }
+      try {
         var choice = localStorage.getItem('daily-puzzles:theme')
         if (choice === 'light' || choice === 'dark') {
           document.documentElement.dataset.theme = choice
