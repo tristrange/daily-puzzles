@@ -168,6 +168,11 @@ it('saves crossed-out combinations per cage and restores them with Undo and Redo
     expect(container.querySelector('.killer-combinations')?.textContent).toContain('13 cage')
     await click('Cross out 4 + 9')
     expect(container.querySelector('[aria-label="Cross out 4 + 9"]')?.getAttribute('aria-pressed')).toBe('true')
+    await click('Close combinations')
+    expect(container.querySelector('.killer-combinations')).toBeNull()
+    expect(container.querySelector('[aria-label="Cage combinations"]')?.getAttribute('aria-expanded')).toBe('false')
+    await click('Combos')
+    expect(container.querySelector('[aria-label="Cross out 4 + 9"]')?.getAttribute('aria-pressed')).toBe('true')
     expect(readSudokuProgress(board)?.game.excludedCageCombinations?.[0]).toEqual([264])
     expect([...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Reset')?.disabled).toBe(false)
     await click('Undo')
@@ -220,6 +225,11 @@ it('shows combinations only when every selected cell belongs to the same cage', 
     expect(container.querySelector('[aria-label="Cross out 4 + 9"]')).toBeNull()
     expect(container.querySelectorAll('[data-cage-selected="true"]')).toHaveLength(0)
     expect(container.querySelector(`#${toggle.getAttribute('aria-controls')}`)).not.toBeNull()
+    const close = [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Close combinations')!
+    expect(close).toBeDefined()
+    await act(async () => close.click())
+    expect(container.querySelector('.killer-combinations')).toBeNull()
+    await act(async () => toggle.click())
     await select(1)
     expect(container.querySelector('.killer-combinations')?.textContent).toContain('8 cage')
   } finally {

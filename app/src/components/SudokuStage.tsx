@@ -47,7 +47,8 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
   const [message, setMessage] = useState(''), [hint, setHint] = useState<SudokuHint | null>(returnedHint), [mistake, setMistake] = useState<number | null>(null)
   const [progressCheck, setProgressCheck] = useState<SudokuEntryCheck | { kind: 'empty' } | null>(null)
   const [hintSource, setHintSource] = useState<'hint' | 'check'>('hint')
-  const stage = useRef<HTMLDivElement>(null), hintButton = useRef<HTMLButtonElement>(null), checkButton = useRef<HTMLButtonElement>(null)
+  const stage = useRef<HTMLDivElement>(null), hintButton = useRef<HTMLButtonElement>(null), checkButton = useRef<HTMLButtonElement>(null), combinationsButton = useRef<HTMLButtonElement>(null)
+  const closeCombinations = () => { setShowCombinations(false); combinationsButton.current?.focus({ preventScroll: true }) }
   const hintOpen = hint !== null || mistake !== null
   useEffect(() => {
     // On phones the hint sheet brings the board above the controls.
@@ -202,7 +203,7 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
           <button type="button" className="tool-button notes-toggle" disabled={solved} aria-pressed={pencil} onClick={() => setPencil(!pencil)}>Notes</button>
           <button type="button" className="tool-button" disabled={solved || !game.notes.some(Boolean)} onClick={() => commit({ ...game, notes: Array<number>(81).fill(0) }, 'All notes cleared. Undo brings them back.')}>Clear notes</button>
           <button type="button" className="tool-button sudoku-check-button" ref={checkButton} disabled={solved} aria-label="Check progress" onClick={checkProgress}>Check</button>
-          {killer && <button type="button" className="tool-button killer-combinations-toggle" aria-label="Cage combinations" aria-expanded={showCombinations}
+          {killer && <button type="button" className="tool-button killer-combinations-toggle" ref={combinationsButton} aria-label="Cage combinations" aria-expanded={showCombinations}
             aria-controls={showCombinations ? combinationsId : undefined} onClick={() => setShowCombinations(!showCombinations)}>Combos</button>}
           <div className={`sudoku-check-result${progressCheck ? '' : ' sr-only'}`}>
             <p role="status" aria-live="polite">{progressMessage}</p>
@@ -229,8 +230,8 @@ export function SudokuStage({ board, puzzle }: { board: Board; puzzle?: Puzzle }
           resume={{ id: board.id, state: hintState, signature: hintSignature(hint) }}
           onApply={acceptHint} onDismiss={dismiss} onShowCell={showCell} />}
         {showCombinations && killer && <div id={combinationsId} className="killer-combinations-panel">
-          {cage ? <KillerCombinations cage={cage} excluded={game.excludedCageCombinations?.[cageIndex] ?? []} onToggle={toggleCombination} onReset={resetCombinations} disabled={solved} />
-            : <section className="killer-combinations" aria-label="Cage combinations"><div className="killer-combinations-heading"><h2>Multiple cages selected</h2></div><p role="status">Select cells from one cage to see its combinations.</p></section>}
+          {cage ? <KillerCombinations cage={cage} excluded={game.excludedCageCombinations?.[cageIndex] ?? []} onToggle={toggleCombination} onReset={resetCombinations} disabled={solved} onClose={closeCombinations} />
+            : <section className="killer-combinations" aria-label="Cage combinations"><div className="killer-combinations-heading"><h2>Multiple cages selected</h2></div><p role="status">Select cells from one cage to see its combinations.</p><button type="button" className="tool-button" onClick={closeCombinations}>Close combinations</button></section>}
         </div>}
       </div>
     </div>
