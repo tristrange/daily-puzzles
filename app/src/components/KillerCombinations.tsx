@@ -2,8 +2,8 @@ import { useMemo } from 'react'
 import { killerCombinations, type KillerCage } from '../domain/killerSudoku'
 import { sudokuDigits } from '../domain/sudoku'
 
-export function KillerCombinations({ cage, excluded, onToggle, onReset, disabled = false }: {
-  cage: KillerCage; excluded: readonly number[]; onToggle: (mask: number) => void; onReset: () => void; disabled?: boolean
+export function KillerCombinations({ cage, excluded, onToggle, onReset, onClose, disabled = false }: {
+  cage: KillerCage; excluded: readonly number[]; onToggle: (mask: number) => void; onReset: () => void; onClose?: () => void; disabled?: boolean
 }) {
   const combinations = useMemo(() => killerCombinations(cage), [cage])
   return <section className="killer-combinations" aria-label="Cage combinations">
@@ -19,5 +19,6 @@ export function KillerCombinations({ cage, excluded, onToggle, onReset, disabled
     <p className="killer-combinations-count" role="status" aria-live="polite">{combinations.length - excluded.length} of {combinations.length} combinations not crossed out.</p>
     <button type="button" className="tool-button" onClick={onReset} disabled={disabled || excluded.length === 0}>Reset combinations</button>
     <p className="killer-combinations-note">Use the board to rule out sets. Your marks are personal notes; they don&rsquo;t change hints.</p>
+    {onClose && <button type="button" className="tool-button" onClick={onClose}>Close combinations</button>}
   </section>
 }
