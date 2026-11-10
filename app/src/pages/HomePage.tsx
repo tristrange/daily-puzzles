@@ -13,6 +13,7 @@ import { currentStreak, readStoredStats, type SolveRecord } from '../lib/stats'
 import { useToday } from '../lib/useToday'
 import { Challenges } from '../components/Challenges'
 import { GamePlate } from '../components/GameArtwork'
+import { readCustomization } from '../lib/customization'
 import './HomePage.css'
 
 type LoadState =
@@ -47,6 +48,7 @@ async function savedTime(puzzle: Puzzle): Promise<number | null> {
 export function HomePage() {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
   const todayId = useToday(timeZone)
+  const [gameOrder, setGameOrder] = useState(() => readCustomization().games)
   const [state, setState] = useState<LoadState>({ status: 'loading' })
   useEffect(() => {
     let cancelled = false
@@ -76,7 +78,7 @@ export function HomePage() {
       })
     }
     loadPuzzles()
-    const onRefresh = () => { void refresh() }
+    const onRefresh = () => { setGameOrder(readCustomization().games); void refresh() }
     const onVisibility = () => { if (!document.hidden) onRefresh() }
     window.addEventListener('focus', onRefresh)
     window.addEventListener('pageshow', onRefresh)
@@ -117,7 +119,7 @@ export function HomePage() {
             <h2>Puzzles</h2>
             <Link to="/archive">Browse archive <span aria-hidden="true">→</span></Link>
           </div>
-          <TodayCards probes={ready.probes} solved={ready.solved} />
+          <TodayCards probes={ready.probes} solved={ready.solved} order={gameOrder} />
         </>
       )}
       <div className="today-more">
@@ -155,9 +157,10 @@ function progressClass(solved: boolean, elapsed: number | null): string {
 }
 
 /** Rendering is shared by the daily page and controlled publication-state tests. */
-export function TodayCards({ probes, solved }: {
+export function TodayCards({ probes, solved, order }: {
   readonly probes: readonly TodayPuzzle[]
   readonly solved: ReadonlySet<string>
+  readonly order?: readonly PuzzleType[]
 }) {
   const groups = new Map<PuzzleType, TodayPuzzle[]>()
   for (const probe of probes) {
@@ -166,7 +169,7 @@ export function TodayCards({ probes, solved }: {
     if (group) group.push(probe)
     else groups.set(family, [probe])
   }
-  const orderedGroups = [...groups].sort(([, first], [, second]) => Number(first.length > 1) - Number(second.length > 1))
+  const orderedGroups = [...groups].sort(([firstType, first], [secondType, second]) => order ? order.indexOf(firstType) - order.indexOf(secondType) : Number(first.length > 1) - Number(second.length > 1))
   return (
     <ul className="game-cards">
       {orderedGroups.map(([family, entries]) => {
