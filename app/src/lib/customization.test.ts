@@ -19,7 +19,29 @@ describe('customization', () => {
   })
 })
 
-it('round trips stored choices without changing other local data', () => {
+it('round trips normalized choices', () => {
   const settings = parseCustomization(JSON.stringify({ version: 1, palette: 'cool', games: ['tents'] }))
   expect(parseCustomization(JSON.stringify(settings))).toEqual(settings)
+})
+
+it('keeps text and links legible on palette surfaces in both appearances', async () => {
+  const { readFileSync } = await import('node:fs')
+  const { contrastRatio } = await import('./colours')
+  const css = readFileSync(new URL('../index.css', import.meta.url), 'utf8')
+  const base = css.match(/:root\s*\{([\s\S]*?)\n\}/)?.[1] ?? ''
+  const read = (block: string, name: string, side: number) => {
+    const match = new RegExp(`--${name}:\\s*light-dark\\((#[\\da-f]+),\\s*(#[\\da-f]+)\\)`, 'i').exec(block)
+    if (!match) throw new Error(`Missing ${name} colour`)
+    return match[side + 1]!
+  }
+  for (const palette of ['warm', 'cool', 'forest']) {
+    const block = css.match(new RegExp(`:root\\[data-palette='${palette}'\\]\\s*\\{([^}]+)\\}`))?.[1] ?? ''
+    for (const side of [0, 1]) {
+      for (const background of ['bg', 'surface', 'bg-sunken']) {
+        for (const foreground of ['text', 'text-h', 'accent']) {
+          expect(contrastRatio(read(base, foreground, side), read(block, background, side)), `${palette} ${side} ${foreground} on ${background}`).toBeGreaterThanOrEqual(4.5)
+        }
+      }
+    }
+  }
 })
