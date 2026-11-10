@@ -200,7 +200,7 @@ Full archive uniqueness and replay verification still gate every deployment.
 
 ## Local development
 
-Use **Node.js 22.12+** (CI uses Node 22). Python work additionally requires
+Use **Node.js 22.12+** (CI uses Node 26). Python work additionally requires
 **Python 3.13+** and **uv**. The app can run against committed puzzle data without
 starting Python or configuring Supabase.
 

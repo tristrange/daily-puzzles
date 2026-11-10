@@ -8,7 +8,7 @@
 
 ## Development and verification
 
-Use Node.js 22.12+ and, for engine work, Python 3.13+ and `uv`.
+Use Node.js 22.12+ (CI uses Node 26) and, for engine work, Python 3.13+ and `uv`.
 
 - From `app/`, run `npm ci` and `npm run dev` to start the site. Run `npm test`, `npm run typecheck`, `npm run lint`, and `npm run build` for app checks.
 - From `engine/`, run `uv sync --frozen`, then `uv run pytest -q -m 'not generator_sweep'`, `uv run pyright`, `uv run ruff check .`, and `uv run ruff format --check .`.
