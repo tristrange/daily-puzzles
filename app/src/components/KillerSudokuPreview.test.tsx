@@ -252,7 +252,7 @@ it('resets only the current cage combinations as one saved undoable move', async
   try {
     await act(async () => root.render(<MemoryRouter><KillerSudokuPreviewPage /></MemoryRouter>))
     await click('Combos')
-    expect([...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Reset combinations')?.disabled).toBe(true)
+    expect(container.querySelector<HTMLButtonElement>('[aria-label="Reset combinations"]')?.disabled).toBe(true)
     await click('Cross out 4 + 9'); await click('Cross out 5 + 8')
     await select(1); await click('Cross out 1 + 2 + 5')
     await select(0)

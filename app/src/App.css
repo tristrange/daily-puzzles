@@ -1800,6 +1800,7 @@
 .killer-combinations-heading span, .killer-combinations p { color: var(--text); font-size: .8125rem; line-height: 1.45; }
 .killer-combinations p { margin: .45rem 0; }
 .killer-combinations-list { display: flex; flex-wrap: wrap; gap: .4rem; margin-block: .75rem; }
+.killer-combinations-actions { display: flex; flex-wrap: wrap; gap: .4rem; }
 .killer-combination { min-height: 2.75rem; padding: .4rem .65rem; font-variant-numeric: tabular-nums; }
 .killer-combination[aria-pressed='true'] { text-decoration: line-through; color: var(--text); background: var(--bg-sunken); }
 @media (min-width: 48rem) {
