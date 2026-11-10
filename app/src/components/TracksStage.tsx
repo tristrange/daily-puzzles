@@ -119,8 +119,9 @@ export function TracksStage({
   // prevents is silent: the board renders locked, the clock runs on, and nothing
   // is ever stored.
   const recordSolve = useCallback((when: number) => {
-    const stoppedTime = stop()
+    if (completed.current) return
     completed.current = true
+    const stoppedTime = stop()
     clearTrackProgress(puzzle.id)
     setSolvedAt(when)
     // Read before storing, so a replay can be told why its time was not kept.
@@ -133,10 +134,12 @@ export function TracksStage({
     setAnnouncement(`Solved in ${formatTime(stoppedTime.elapsedMs)}!`)
   }, [grid.width, puzzle.id, puzzle.puzzleType, stop, timeZone, offerSolve])
 
-  // Arrived already solved. `solvedAt` is the guard, exactly as it is for a
-  // finished game, so this fires once and never again.
+  // An initially solved board still needs its solve recorded. The ref also
+  // prevents Strict Mode from recording it twice before React rerenders.
   useEffect(() => {
-    if (solvedAt !== null || !isTracksSolved(game)) return
+    if (completed.current || solvedAt !== null || !isTracksSolved(game)) return
+    // Recording an initially solved board synchronizes local stats and the leaderboard.
+    // oxlint-disable-next-line react/set-state-in-effect
     recordSolve(Date.now())
   }, [solvedAt, game, recordSolve])
 
