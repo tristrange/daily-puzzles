@@ -72,3 +72,27 @@ Daily publication is activated separately after engine, app, and offline checks.
 The game has no hints, leaderboard, bonuses, portals, or editor in this version.
 Its inspiration is [enclose.horse](https://enclose.horse/); artwork and copy are
 original, and submissions remain improvable here.
+
+## Browser verification
+
+The browser check uses a separately installed Playwright runner, keeping it out of
+application dependencies. Install its Chromium and WebKit browsers, build and
+serve the app with `npm run preview`, then run from the repository root:
+
+```sh
+PLAYWRIGHT_MODULE=/tmp/enclosure-browser/node_modules/playwright/index.mjs \
+  node app/scripts/verify-enclosure.mjs http://127.0.0.1:4178 /tmp/enclosure-proof
+```
+
+The script requires `uv` and the locked engine environment to compute an independent
+expected optimum. It checks native Enter/Space activation, undo/redo, fixed terrain,
+preview isolation, overflow, four viewport widths, both appearances, and all palettes.
+After daily activation, add `--published` to check real daily JSON, submission,
+improvement, frozen completion time, saved walls and offline reload as well.
+The production server must use the built service worker for offline checks.
+
+[Recorded browser results](measurements/enclosure-browser.json) cover Chromium and
+WebKit emulation at 320, 375, 768, and 1280 pixels. Physical phones and screen
+readers have not been tested. The first completion remains separate from the best
+result; imports retain candidates for different board fingerprints until the actual
+puzzle is loaded, so a stale result cannot discard the player's matching best.
