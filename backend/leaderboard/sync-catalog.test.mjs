@@ -155,6 +155,35 @@ test('imports an exact metadata batch with a server apikey and no redirects', as
   assert.equal(count, 1)
 })
 
+test('registers ordinary puzzles before an unavailable enclosure schema', async () => {
+  const dir = await fixture()
+  const id = '2026-11-11-enclosure'
+  await writeFile(join(dir, `${id}.json`), JSON.stringify({id, type:'enclosure', board:{size:8, optimalScore:5}}))
+  const batches = []
+  await assert.rejects(syncCatalog({url, secretKey, directory:dir, fetcher:async (_target, options) => {
+    const puzzles = JSON.parse(options.body).p_puzzles
+    batches.push(puzzles)
+    return puzzles[0].puzzle_type === 'enclosure' ? new Response('', {status:400}) : new Response('1', {status:200})
+  }}), /enclosure/i)
+  assert.equal(batches.length, 2)
+  assert.equal(batches[0][0].puzzle_type, 'queens')
+  assert.equal(batches[1][0].puzzle_type, 'enclosure')
+})
+
+test('returns the total after each mixed catalog batch is confirmed', async () => {
+  const dir = await fixture()
+  const id = '2026-11-11-enclosure'
+  await writeFile(join(dir, `${id}.json`), JSON.stringify({id, type:'enclosure', board:{size:8, optimalScore:5}}))
+  const types = []
+  const count = await syncCatalog({url, secretKey, directory:dir, fetcher:async (_target, options) => {
+    const puzzles = JSON.parse(options.body).p_puzzles
+    types.push(puzzles.map(puzzle => puzzle.puzzle_type))
+    return new Response(JSON.stringify(puzzles.length), {status:200})
+  }})
+  assert.deepEqual(types, [['queens'], ['enclosure']])
+  assert.equal(count, 2)
+})
+
 test('rejects unsafe configuration and redacts provider/network error text', async () => {
   const dir = await fixture()
   for (const badUrl of [undefined,'http://example.supabase.co','https://example.com',`https://${secretKey}@example.supabase.co`]) {
