@@ -1,10 +1,13 @@
+import json
 from dataclasses import replace
 from datetime import date
+from pathlib import Path
 
 import pytest
 
 from queens_engine import (
     GenerationError,
+    PuzzleParseError,
     PuzzleType,
     dumps_puzzle,
     parse_puzzle,
@@ -43,3 +46,11 @@ def test_modified_target_cannot_pass_replay() -> None:
     changed = replace(puzzle, board=replace(grid, optimal_score=grid.optimal_score - 1))
     with pytest.raises(GenerationError, match="replay mismatch"):
         verify_replay(changed)
+
+
+def test_enclosure_id_cannot_carry_another_family_board() -> None:
+    path = Path(__file__).parents[2] / "conformance/schema-cases/queens-minimal.accept.json"
+    raw = json.loads(path.read_text())
+    raw["id"] = "2026-11-11-enclosure"
+    with pytest.raises(PuzzleParseError, match="enclosure"):
+        parse_puzzle(raw)

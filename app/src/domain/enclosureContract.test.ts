@@ -1,3 +1,4 @@
+import queens from '../../../conformance/schema-cases/queens-minimal.accept.json'
 import { describe, expect, it } from 'vitest'
 import { isEnclosurePuzzle, parsePuzzle } from './puzzle'
 import { puzzleIdFor, puzzleIdsForDay } from './dates'
@@ -12,6 +13,9 @@ describe('enclosure puzzle contract', () => {
     expect(puzzle.board).toMatchObject({ horse: 27, wallBudget: 8, optimalScore: 5 })
     expect(puzzleIdFor('2026-11-11', 'enclosure')).toBe(raw.id)
     expect(puzzleIdsForDay('2026-11-10')).not.toContain('2026-11-10-enclosure')
+  })
+  it('rejects an enclosure id carrying another family board', () => {
+    expect(() => parsePuzzle({ ...queens, id: raw.id })).toThrow(/enclosure/)
   })
   it.each([
     { id: '2026-11-11-trio' }, { generatorVersion: 2 }, { difficulty: 1 },

@@ -178,7 +178,7 @@ export function parsePuzzle(data: unknown): Puzzle {
     (typeRaw !== 'sudoku' || !isPuzzleId(id) || sudokuVariant?.name !== boardRecord['level'])) {
     throw new PuzzleParseError('Sudoku requires a canonical date-sudoku-level id matching its board level')
   }
-  if (typeRaw === 'enclosure' && puzzleTypeOf(id) !== typeRaw) {
+  if ((typeRaw === 'enclosure' || puzzleTypeOf(id) === 'enclosure') && puzzleTypeOf(id) !== typeRaw) {
     throw new PuzzleParseError('enclosure requires a canonical date-enclosure id')
   }
   if (typeRaw === 'nurikabe' && puzzleTypeOf(id) !== typeRaw) {
