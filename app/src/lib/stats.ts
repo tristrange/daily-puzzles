@@ -138,9 +138,10 @@ export function parseStats(value: string | null | undefined): readonly SolveReco
     if (held === undefined) earliest.set(record.id, record)
     else if (record.puzzleType === 'enclosure' && held.puzzleType === 'enclosure') {
       const first = record.solvedAt < held.solvedAt ? record : held
+      const knownFirst = record.solvedAt === held.solvedAt ? held.enclosureFirst ?? record.enclosureFirst : first.enclosureFirst
       const best = enclosureBestFields([held.enclosureBest, ...(held.enclosureAlternatives ?? []), record.enclosureBest, ...(record.enclosureAlternatives ?? [])])
       const { enclosureBest: _discard, enclosureAlternatives: _alternatives, ...completion } = first
-      earliest.set(record.id, { ...completion, ...best })
+      earliest.set(record.id, { ...completion, ...(knownFirst ? { enclosureFirst: knownFirst } : {}), ...best })
     } else if (record.solvedAt < held.solvedAt) earliest.set(record.id, record)
   }
   return [...earliest.values()].sort((a, b) => (a.id < b.id ? -1 : 1))

@@ -69,9 +69,50 @@ Best results retain their wall layout so loading and backup import can recompute
 the score. Legacy stats backups keep their array format.
 
 Daily publication is activated separately after engine, app, and offline checks.
-The game has no hints, leaderboard, bonuses, portals, or editor in this version.
+The game has no hints, bonuses, portals, or editor in this version.
 Its inspiration is [enclose.horse](https://enclose.horse/); artwork and copy are
 original, and submissions remain improvable here.
+
+## Optimal solution reveal and rankings
+
+After a valid submission, **Show optimal solution** opens a separate read-only
+board. It does not replace the editable attempt, change move history, submit a
+score, or restart the completion clock. Players can hide the solution and keep
+improving their personal best.
+
+The first submitted layout and area are preserved in `enclosureFirst`, alongside
+the original completion time. The optional leaderboard uses only this result:
+descending area, then ascending total active time. Equal area and time share a
+rank. Improvements never replace a ranked result. Late opt-in and offline retries
+use the same original area and time. Older completion records that lack the first
+area remain personal history and cannot be used to invent a ranked first score.
+
+Daily witnesses live in `app/public/solutions/enclosure/`, separately from the
+immutable puzzle files. Preview witnesses are bundled in
+`app/src/domain/enclosurePreviewSolutions.json`. Each version-one witness carries
+the exact puzzle ID, compact board fingerprint, and sorted wall indices. Python
+certifies the optimum with CP-SAT; the browser checks the board binding, wall
+legality, enclosure, and target score before showing it.
+
+From `engine/`, run `uv run python -m tools.enclosure_solutions` to fill missing
+witnesses, or add `--check` for read-only corpus verification. Existing valid files
+are preserved. The nightly publisher runs this step and commits its output; CI
+checks completeness, canonical bytes, and certification. Puzzle downloads start a
+background download of the matching witness, keeping puzzle play responsive.
+The reveal control reports when its solution is available offline and warns if
+the copy could not be saved. An older download needs an online visit to acquire
+its witness; an unavailable witness does not prevent puzzle play.
+
+The leaderboard database migration described in
+[the setup guide](leaderboard-setup.md#upgrade-an-existing-project-for-horse-enclosure)
+must be applied before deploying this feature's client and catalog sync.
+
+[The reveal browser report](measurements/enclosure-reveal-browser.json) covers
+Chromium and WebKit at 320, 375, 768, and 1280 pixels. Each scenario checks both
+preview witnesses offline, daily submission followed by offline reveal, read-only
+keyboard behavior, improvement to the optimum, and retention of the first area
+through improvement and offline reload. Physical devices and screen readers were
+not tested.
 
 ## Browser verification
 

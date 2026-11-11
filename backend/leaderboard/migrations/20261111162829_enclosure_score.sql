@@ -26,6 +26,8 @@ alter table public.leaderboard_puzzles
 
 alter table public.leaderboard_puzzles add column if not exists max_score integer;
 alter table public.leaderboard_results add column if not exists score integer;
+create index if not exists leaderboard_results_rank_score on public.leaderboard_results
+  (puzzle_id, score desc nulls last, hints, elapsed_ms, submitted_at, id);
 alter table public.leaderboard_puzzles drop constraint if exists leaderboard_puzzles_max_score_check;
 alter table public.leaderboard_puzzles add constraint leaderboard_puzzles_max_score_check
   check (case when puzzle_type = 'enclosure' then max_score is not null and max_score between 1 and width * height else max_score is null end);

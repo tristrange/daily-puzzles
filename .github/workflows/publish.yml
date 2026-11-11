@@ -37,6 +37,7 @@ jobs:
       - name: Publish any missing puzzles
         run: |
           uv run python -m tools.publish --out ../app/public/puzzles
+          uv run python -m tools.enclosure_solutions
           uv run python -m tools.verify --dir ../app/public/puzzles --jobs 2
           uv run python -m tools.schema_ids --check
       - name: Commit and push
@@ -54,7 +55,7 @@ jobs:
           # `tests/fixtures/…` — and `git add` treats a pathspec that matches
           # nothing as fatal, which is how the nightly stopped publishing for four
           # days without anything else reporting it.
-          git add ../app/public/puzzles tests/fixtures/hint-baseline.json
+          git add ../app/public/puzzles ../app/public/solutions ../app/src/domain/enclosurePreviewSolutions.json tests/fixtures/hint-baseline.json
           if ! git diff --cached --quiet; then
             git commit -m "Publish daily puzzles"
             git push origin main

@@ -54,8 +54,10 @@ export function RulesPage() {
       <p>Tap a cell, or use arrow keys and Enter or Space, to place or remove a wall.
         Undo and Reset remain available after submitting. Submit any valid enclosure to
         complete the daily puzzle, then keep experimenting and save an improved score.
-        Your first completion time stays fixed; your best submitted score is saved separately.
-        The optimal score is shown as a target. Several layouts may reach it.</p>
+        Your first submitted area and completion time are final for the optional leaderboard:
+        larger areas rank first, then faster total time. Later improvements update your personal best.
+        After submitting, use Show optimal solution to inspect a read-only example.
+        Your own attempt stays editable. Several layouts may reach the optimal score.</p>
       <p><Link to="/preview/enclosure">Try the Horse Enclosure previews</Link>. Preview submissions do not affect daily stats.</p>
       <p>Inspired by <a href="https://enclose.horse/" target="_blank" rel="noopener noreferrer">enclose.horse</a>.
         This version uses its own artwork and allows improvements after submission.</p>

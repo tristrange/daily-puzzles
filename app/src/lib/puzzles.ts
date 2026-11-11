@@ -9,7 +9,8 @@
 import { PUZZLE_TYPES } from '../domain/board'
 import { PUZZLE_DOWNLOAD_FAILED } from './offline'
 import { isPuzzleId, previousPuzzleIds, puzzleIdFor, puzzleIdsForDay } from '../domain/dates'
-import { parsePuzzle, type Puzzle } from '../domain/puzzle'
+import { isEnclosurePuzzle, parsePuzzle, type Puzzle } from '../domain/puzzle'
+import { loadEnclosureSolution } from './enclosureSolution'
 
 export const ARCHIVE_WINDOW_DAYS = 7
 
@@ -45,6 +46,12 @@ export class PuzzleUnavailableError extends Error {
 }
 
 const DOWNLOAD_CACHE = `daily-puzzles.puzzles:${import.meta.env.BASE_URL}:v1`
+
+async function cacheSolution(puzzle: Puzzle, fetcher: Fetcher): Promise<void> {
+  if (!isEnclosurePuzzle(puzzle)) return
+  try { await loadEnclosureSolution(puzzle.id, puzzle.board, fetcher) }
+  catch { /* An unavailable witness must not prevent playing its puzzle. */ }
+}
 
 async function parsedResponse(id: string, response: Response): Promise<Puzzle | null> {
   if (!response.ok) return null
@@ -92,6 +99,7 @@ async function fetchPuzzle(id: string, fetcher: Fetcher): Promise<Puzzle | null>
         // Keep online play usable, but do not promise this board is saved.
         if (typeof window !== 'undefined') window.dispatchEvent(new Event(PUZZLE_DOWNLOAD_FAILED))
       }
+      void cacheSolution(puzzle, fetcher)
       return puzzle
     }
     unavailable = !response.ok && response.status !== 404
@@ -101,7 +109,7 @@ async function fetchPuzzle(id: string, fetcher: Fetcher): Promise<Puzzle | null>
       const saved = await (await caches.open(DOWNLOAD_CACHE)).match(url)
       if (saved) {
         const puzzle = await parsedResponse(id, saved)
-        if (puzzle !== null) return puzzle
+        if (puzzle !== null) { void cacheSolution(puzzle, fetcher); return puzzle }
       }
     }
   } catch { /* Missing or blocked storage is the same as no saved download. */ }

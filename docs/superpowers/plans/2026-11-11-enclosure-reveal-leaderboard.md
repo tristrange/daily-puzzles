@@ -42,11 +42,11 @@
 
 ## Execution checks
 
-- [ ] Write focused failing tests before each behavior change; verify they fail for the intended reason.
-- [ ] Implement each owned unit and run its focused tests, type/lint checks, then commit in its own branch.
-- [ ] Sol reviews and integrates commits; no concurrent writers to shared files.
-- [ ] Run app and engine suites, type/lint/build/format checks, SQL/catalog tests, full puzzle archive replay, schema-ID checks and complete witness verification.
-- [ ] Browser checks in Chromium/WebKit at phone, tablet and desktop sizes; light/dark palettes; keyboard/touch emulation; offline reveal; immutable ranked result with continued improvement. Report physical-device/assistive checks separately.
+- [x] Write focused failing tests before each behavior change; verify they fail for the intended reason.
+- [x] Implement each owned unit and run its focused tests, type/lint checks, then commit in its own branch.
+- [x] Sol reviews and integrates commits; no concurrent writers to shared files.
+- [x] Run app and engine suites, type/lint/build/format checks, SQL/catalog tests, full puzzle archive replay, schema-ID checks and complete witness verification.
+- [x] Browser checks in Chromium/WebKit at phone, tablet and desktop sizes; light/dark palettes; keyboard/touch emulation; offline reveal; immutable ranked result with continued improvement. Report physical-device/assistive checks separately.
 - [ ] Independent review, open a PR with screenshots and deployment prerequisites, wait for checks; maintainer reviews and merges.
 
 ## Review focus

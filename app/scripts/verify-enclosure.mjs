@@ -67,7 +67,24 @@ for (const [browserName, browserType] of [['chromium', chromium], ['webkit', web
       assert.equal(await page.evaluate(() => localStorage.getItem('daily-puzzles:stats')), null)
       await capture(page, `${output}/${browserName}-${width}-${theme}.png`)
       const record = { browser: browserName, width, theme, palette, keyboard: true, overflow: false }
-      if (width === 375 && published) {
+      for (const [index, preview] of previews.entries()) {
+        await page.locator('.enclosure-preview-toolbar select').selectOption(String(index))
+        await page.locator(`[data-cell="${preview.horse}"][data-terrain="horse"]`).waitFor()
+        for (const cell of [preview.horse - preview.size, preview.horse - 1, preview.horse + 1, preview.horse + preview.size].filter(cell => !preview.water.includes(cell))) {
+          await page.locator(`[data-cell="${cell}"]`).click()
+        }
+        await page.getByRole('button', { name: 'Submit enclosure', exact: true }).click()
+        await context.setOffline(true)
+        await page.getByRole('button', { name: 'Show optimal solution', exact: true }).click()
+        const solution = page.getByRole('grid', { name: 'Optimal enclosure solution', exact: true })
+        await solution.waitFor()
+        assert.equal(await solution.locator('[data-reachable="true"]').count(), preview.optimalScore)
+        assert.equal(await page.evaluate(() => localStorage.getItem('daily-puzzles:stats')), null)
+        await page.getByRole('button', { name: 'Hide optimal solution', exact: true }).click()
+        await context.setOffline(false)
+      }
+      record.previewOfflineReveal = true
+      if (published) {
         const { puzzle, walls } = fixture
         await page.goto(`${base}/#/archive/${puzzle.id}`)
         await page.getByRole('button', { name: 'Copy puzzle link', exact: true }).waitFor()
@@ -80,18 +97,38 @@ for (const [browserName, browserType] of [['chromium', chromium], ['webkit', web
         const stats = () => page.evaluate(id => JSON.parse(localStorage.getItem('daily-puzzles:stats') ?? '[]').find(record => record.id === id), puzzle.id)
         const first = await stats()
         assert.equal(first.enclosureBest.score, 1)
+        assert.equal(first.enclosureFirst.score, 1)
         const frozen = await page.getByRole('timer', { name: 'Elapsed active time', exact: true }).textContent()
         await page.waitForTimeout(1100)
         assert.equal(await page.getByRole('timer', { name: 'Elapsed active time', exact: true }).textContent(), frozen)
+        const ownBoard = page.locator('.enclosure-stage > .enclosure-board')
+        const ownWalls = () => ownBoard.locator('[data-wall="true"]').evaluateAll(cells => cells.map(cell => cell.getAttribute('data-cell')))
+        const beforeReveal = await ownWalls()
+        await page.getByText('Optimal solution available offline.', { exact: true }).waitFor()
+        await context.setOffline(true)
+        await page.getByRole('button', { name: 'Show optimal solution', exact: true }).click()
+        const optimal = page.getByRole('grid', { name: 'Optimal enclosure solution', exact: true })
+        await optimal.waitFor()
+        assert.equal(await optimal.getAttribute('aria-readonly'), 'true')
+        assert.equal(await optimal.locator('[data-reachable="true"]').count(), puzzle.board.optimalScore)
+        await optimal.getByRole('gridcell').first().focus()
+        await page.keyboard.press('Control+z')
+        assert.deepEqual(await ownWalls(), beforeReveal)
+        assert.deepEqual(await stats(), first)
+        assert.equal(await page.locator('body').evaluate(element => element.scrollWidth <= innerWidth), true)
+        await capture(page, `${output}/${browserName}-${width}-daily-revealed.png`)
+        await page.getByRole('button', { name: 'Hide optimal solution', exact: true }).click()
+        await context.setOffline(false)
         page.once('dialog', dialog => dialog.accept())
         await page.getByRole('button', { name: 'Reset', exact: true }).click()
         for (const cell of walls) await page.locator(`[data-cell="${cell}"]`).click()
         await page.getByRole('button', { name: 'Save improved score', exact: true }).click()
         const improved = await stats()
         assert.equal(improved.enclosureBest.score, puzzle.board.optimalScore)
+        assert.deepEqual(improved.enclosureFirst, first.enclosureFirst)
         assert.equal(improved.solvedAt, first.solvedAt)
         assert.equal(improved.elapsedMs, first.elapsedMs)
-        await capture(page, `${output}/${browserName}-daily-optimal.png`)
+        await capture(page, `${output}/${browserName}-${width}-daily-optimal.png`)
         await page.reload()
         await page.getByRole('grid').waitFor()
         assert.equal(await page.locator('[data-wall="true"]').count(), walls.length)
@@ -102,10 +139,13 @@ for (const [browserName, browserType] of [['chromium', chromium], ['webkit', web
         await page.getByRole('grid').waitFor()
         assert.equal(await page.locator('[data-wall="true"]').count(), walls.length)
         assert.equal((await stats()).enclosureBest.score, puzzle.board.optimalScore)
+        assert.deepEqual((await stats()).enclosureFirst, first.enclosureFirst)
         record.dailySubmission = true
         record.improvement = true
         record.frozenClock = true
         record.offlineReload = true
+        record.offlineReveal = true
+        record.firstScorePreserved = true
         record.publishedJson = published
       }
       assert.deepEqual(pageErrors, [])

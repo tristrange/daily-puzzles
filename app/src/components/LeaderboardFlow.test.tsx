@@ -89,3 +89,10 @@ it('does not enable joining without consent, a valid nickname and verification',
   expect(session.join).not.toHaveBeenCalled()
   expect(closed).not.toHaveBeenCalled()
 })
+
+it('discloses area scores before consenting to publish future first results', () => {
+  const form = children(JoinLeaderboard({ onClose: () => {} }))
+  const disclosure = form.filter(element => element.type === 'span').flatMap(element => element.props['children']).join(' ')
+  expect(disclosure).toContain('area scores')
+  expect(session.join).not.toHaveBeenCalled()
+})

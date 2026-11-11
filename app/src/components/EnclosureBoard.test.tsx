@@ -49,3 +49,13 @@ it('uses native button clicks once and never toggles fixed terrain', async () =>
   await act(async () => { cell(1).click(); cell(4).click() })
   expect(toggle.mock.calls).toEqual([[0], [0]])
 })
+
+it('exposes a separately labelled read-only solution while keeping cells navigable', async () => {
+  await act(async () => root.render(<EnclosureBoard grid={grid} walls={[0]} reachable={[4]} enclosed instructionsId="help" readOnly label="Optimal enclosure solution" />))
+  expect(container.querySelector('[role="grid"]')?.getAttribute('aria-label')).toBe('Optimal enclosure solution')
+  expect(cell(0).getAttribute('aria-readonly')).toBe('true')
+  expect(cell(2).getAttribute('aria-readonly')).toBe('true')
+  await act(async () => { cell(2).focus(); cell(2).click() })
+  expect(cell(2).dataset['wall']).toBe('false')
+  expect(document.activeElement).toBe(cell(2))
+})

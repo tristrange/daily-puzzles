@@ -58,7 +58,7 @@ export function JoinLeaderboard({ candidate, onClose }: { candidate?: SolveRecor
     <p className="leaderboard-note">2–20 letters, numbers, spaces, underscores or hyphens. Names aren’t reserved.</p>
     <label className="leaderboard-consent" htmlFor={consentId}>
       <input id={consentId} type="checkbox" checked={consent} disabled={busy} onChange={event => setConsent(event.target.checked)} />
-      <span>Publish my nickname, puzzle, time and hints {candidate ? 'for this result and future first solves' : 'for future first solves'}. No earlier history is uploaded.</span>
+      <span>Publish my nickname, puzzle, time, hints and area scores {candidate ? 'for this result and future first solves' : 'for future first solves'}. No earlier history is uploaded.</span>
     </label>
     <p className="leaderboard-note">Supabase stores published results and an anonymous player identity. Cloudflare verifies joining. Clearing browser data loses access to that identity; there is no device sync or recovery.</p>
     <div ref={container} className="leaderboard-verification" />

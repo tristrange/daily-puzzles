@@ -32,9 +32,37 @@ for optional since-reset durations, followed by
 [`20261025225242_daily_nurikabe.sql`](../backend/leaderboard/migrations/20261025225242_daily_nurikabe.sql)
 to accept the eighth family before synchronizing the catalog. The Nurikabe migration
 widens only the catalog checks, preserving results, RPCs and permissions.
+Then apply
+[`20261027120000_daily_killer_sudoku.sql`](../backend/leaderboard/migrations/20261027120000_daily_killer_sudoku.sql)
+and
+[`20261111162829_enclosure_score.sql`](../backend/leaderboard/migrations/20261111162829_enclosure_score.sql)
+for Killer Sudoku and Horse Enclosure.
 Never run `tests/auth-fixture.sql` on Supabase: that file belongs only in the
 disposable local test database. Configure CAPTCHA before enabling anonymous
 sign-ins; the provider toggles alone do not activate publishing in the app.
+
+### Upgrade an existing project for Horse Enclosure
+
+Before deploying the Horse Enclosure leaderboard client or updated catalog sync,
+apply the complete
+[`20261111162829_enclosure_score.sql`](../backend/leaderboard/migrations/20261111162829_enclosure_score.sql)
+to the existing project using its SQL Editor. Earlier migrations, including Killer
+Sudoku, must already be applied. The migration adds nullable area fields, a bounded
+area submission RPC, and area/time ordering while preserving existing results,
+ordinary submission APIs, RLS, and grants. It is safe to retry.
+
+After applying it, run the existing trusted catalog sync to register enclosure
+IDs and their certified maximum areas, then deploy the client. Only a player's
+first submitted area and total active time count; later personal improvements
+leave the published entry intact. Existing completions without a recorded first
+area are not retrospectively published. Scores remain community-reported, like
+the other games' times and hint counts.
+
+Verify one ordinary game's rankings and one enclosure submission, including an
+improvement that leaves the ranked area/time unchanged. For rollback, redeploy the
+previous client and retain the additive migration and result data. Do not rerun
+`001` or remove score columns after results exist. The older catalog sync skips
+enclosure files and remains compatible with the expanded schema.
 
 ### Upgrade an existing project for Tents
 
@@ -185,12 +213,15 @@ database. A test-only Auth fixture supplies the roles and `auth.uid()` context;
 the checks exercise real PostgreSQL permissions, rankings, duplicates, owner
 deletion, write limits and concurrent first submissions.
 The harness tests a clean `001` + `002` + `003` install and seeded upgrades from
-`001` through `002` and `003`, followed by the attempt timing and Nurikabe migrations. It checks
+`001` through `002` and `003`, followed by the attempt timing, Nurikabe, Killer Sudoku,
+and enclosure score migrations. It checks
 repeated migrations, preserved rows and permissions, retained Tents and Sudoku
 scores, separate Sudoku levels, and rejection of mismatched family metadata.
 Attempt checks cover old and new callers, first-result retention, total-time
 ranking, legacy JSON, optional metadata inside and outside the top 25, and retry
-after metadata has been stored. These checks do not prove
+after metadata has been stored. Enclosure checks cover area/time ordering, shared
+ranks, immutable first areas, score bounds, anonymous-role rejection and concurrent
+first submissions. These checks do not prove
 Supabase HTTP authentication or CAPTCHA; the two real anonymous sessions in the
 activation checks below cover those. No new npm/Python packages are needed here.
 

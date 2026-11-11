@@ -93,3 +93,11 @@ test('first layout survives improvements and imports while legacy scores remain 
   expect(parseStats(JSON.stringify([first, later]))[0]?.enclosureFirst).toBeUndefined()
   expect(parseStats(JSON.stringify([{ ...early, enclosureFirst: { ...original, score: 100 } }]))[0]?.enclosureFirst).toBeUndefined()
 })
+
+test('an older-format copy of the same completion cannot erase its known first score', () => {
+  const original = { ...best, achievedAt: first.solvedAt }
+  const known = { ...first, enclosureFirst: original }
+  for (const records of [[first, known], [known, first]]) {
+    expect(parseStats(JSON.stringify(records))[0]?.enclosureFirst).toEqual(original)
+  }
+})

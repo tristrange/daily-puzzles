@@ -75,6 +75,9 @@ jobs:
       - name: Schema id pattern matches the manifest
         if: matrix.check == 'archive'
         run: uv run python -m tools.schema_ids --check
+      - name: Verify optimal enclosure solutions
+        if: matrix.check == 'archive'
+        run: uv run python -m tools.enclosure_solutions --check
 
   # Preserve the required check name and fail closed unless routing explicitly skips engine work.
   engine:
