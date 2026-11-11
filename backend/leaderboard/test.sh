@@ -18,6 +18,8 @@ sql < migrations/003_sudoku.sql
 sql < migrations/20261025113819_reset_attempt_time.sql
 sql < migrations/20261025225242_daily_nurikabe.sql
 sql < migrations/20261027120000_daily_killer_sudoku.sql
+sql < migrations/20261111162829_enclosure_score.sql
+sql < tests/enclosure-contract.sql
 sql < tests/nurikabe-contract.sql
 sql < tests/killer-contract.sql
 sql < tests/contract.sql
@@ -119,6 +121,29 @@ sql -d leaderboard_upgrade < tests/upgrade-snapshot.sql
 sql -d leaderboard_upgrade < migrations/20261027120000_daily_killer_sudoku.sql
 sql -d leaderboard_upgrade < tests/upgrade-after.sql
 
+# Upgrade populated legacy data, retry the migration, and exercise scored results.
+sql -d leaderboard_upgrade < migrations/20261111162829_enclosure_score.sql
+sql -d leaderboard_upgrade < tests/enclosure-contract.sql
+sql -d leaderboard_upgrade <<'SQL'
+select public.register_leaderboard_puzzles('[{"puzzle_id":"2020-01-02-enclosure","puzzle_type":"enclosure","puzzle_day":"2020-01-02","width":8,"height":8,"max_score":20}]');
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', jsonb_build_object('sub', md5('37')::uuid)::text, true);
+select public.submit_enclosure_result('2020-01-02-enclosure', 'Existing Enclosure', 12345, 12, 1000);
+commit;
+SQL
+sql -d leaderboard_upgrade < migrations/20261111162829_enclosure_score.sql
+sql -d leaderboard_upgrade < tests/enclosure-contract.sql
+
+sql -d leaderboard_upgrade <<'SQL'
+do $$ begin
+  if not exists (select from public.leaderboard_results where nickname = 'Existing Sudoku' and score is null and elapsed_ms = 54321)
+    or not exists (select from public.leaderboard_results where nickname = 'Existing Nurikabe' and score is null and attempt_elapsed_ms = 12345)
+    or not exists (select from public.leaderboard_results where nickname = 'Existing Enclosure' and score = 12 and attempt_elapsed_ms = 1000)
+  then raise exception 'Migration changed legacy results'; end if;
+end $$;
+SQL
+
 # Separate connections race for one first result; either may win, never both.
 sql <<'SQL'
 select public.register_leaderboard_puzzles(jsonb_build_array(jsonb_build_object(
@@ -147,3 +172,31 @@ do $$ begin
 end $$;
 SQL
 echo 'Leaderboard concurrent submissions passed'
+
+# Race two area submissions using the same player and puzzle.
+sql <<'SQL'
+select public.register_leaderboard_puzzles('[{"puzzle_id":"2020-01-01-enclosure","puzzle_type":"enclosure","puzzle_day":"2020-01-01","width":8,"height":8,"max_score":20}]');
+SQL
+race_enclosure() {
+  sql <<SQL
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', jsonb_build_object('sub', md5('2')::uuid)::text, true);
+select public.submit_enclosure_result('2020-01-01-enclosure', 'Race', $1, $2);
+select pg_sleep(0.2);
+commit;
+SQL
+}
+race_enclosure 1000 10 >/dev/null & first=$!
+race_enclosure 2000 20 >/dev/null & second=$!
+wait "$first"
+wait "$second"
+sql <<'SQL'
+do $$ begin
+  if (select count(*) from public.leaderboard_results where puzzle_id = '2020-01-01-enclosure') <> 1
+    or not exists (select from public.leaderboard_results where puzzle_id = '2020-01-01-enclosure'
+      and (elapsed_ms, score) in ((1000, 10), (2000, 20)))
+  then raise exception 'Concurrent scored results were not retained safely'; end if;
+end $$;
+SQL
+echo 'Enclosure concurrent submissions passed'
