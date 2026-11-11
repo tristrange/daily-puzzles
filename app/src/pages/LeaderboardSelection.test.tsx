@@ -75,3 +75,11 @@ it('offers the original and named Track boards on dates where both exist', async
   expect(container.querySelector('a[href="/archive/2026-10-17-tracks-small"]')).not.toBeNull()
   expect(Array.from(size.options, option => option.value)).toEqual(['small', 'medium', 'large'])
 })
+
+it('selects Horse Enclosure and explains its ranking', async () => {
+  vi.setSystemTime(new Date('2026-11-11T12:00:00Z'))
+  await act(async () => root.render(<MemoryRouter initialEntries={['/leaderboards?id=2026-11-11-enclosure']}><LeaderboardsPage /></MemoryRouter>))
+  expect(container.querySelector<HTMLSelectElement>('select')?.value).toBe('enclosure')
+  expect(container.querySelector('a[href="/archive/2026-11-11-enclosure"]')).not.toBeNull()
+  expect(container.textContent).toContain('Largest first area')
+})

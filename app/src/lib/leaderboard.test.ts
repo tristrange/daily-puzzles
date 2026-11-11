@@ -146,3 +146,28 @@ it('publishes a known zero attempt while rejecting invalid attempt writes', asyn
   }
   expect(requests).toHaveLength(1)
 })
+
+it('reads and submits enclosure area through its dedicated RPC', async () => {
+  const row = { ...alice, score: 3 }
+  respond({ entries: [row], total: 1, own_entry: null })
+  expect((await readLeaderboard(createLeaderboardClient(config), '2026-11-11-enclosure')).entries).toEqual([row])
+  respond({ entries: [alice], total: 1, own_entry: null })
+  await expect(readLeaderboard(createLeaderboardClient(config), '2026-11-11-enclosure')).rejects.toThrow()
+  const requests = respond({ status: 'created' })
+  await submitLeaderboardResult(authorizedClient(), { id: '2026-11-11-enclosure', nickname: 'Alice', elapsedMs: 10, hints: 0, score: 3 }, 'player-a')
+  expect(requests[0]?.url).toContain('/submit_enclosure_result')
+  expect(requests[0]?.body).toEqual({ p_puzzle_id: '2026-11-11-enclosure', p_nickname: 'Alice', p_elapsed_ms: 10, p_score: 3 })
+})
+
+it('rejects invalid enclosure and ordinary area payloads at the API boundary', async () => {
+  const requests = respond({ status: 'created' }), client = authorizedClient()
+  const result = { id: '2026-11-11-enclosure', nickname: 'Alice', elapsedMs: 10, hints: 0 }
+  for (const invalid of [result, { ...result, score: 0 }, { ...result, score: 1.5 }, { ...result, score: 2, hints: 1 }, { ...result, id: '2026-11-11', score: 2 }]) {
+    await expect(submitLeaderboardResult(client, invalid, 'player-a')).rejects.toThrow()
+  }
+  expect(requests).toHaveLength(0)
+  for (const row of [{ ...alice, score: 0 }, { ...alice, score: 1, hints: 1 }]) {
+    respond({ entries: [row], total: 1, own_entry: null })
+    await expect(readLeaderboard(client, result.id)).rejects.toThrow()
+  }
+})

@@ -34,3 +34,10 @@ it('a preview solved panel never offers public participation', () => {
   const html = renderToStaticMarkup(<SolvedPanel solved firstSolve={null} streak={0} copied="idle" shareText={null} onShare={() => {}} />)
   expect(html).not.toContain('Leaderboard')
 })
+
+it('shows area and first-score ranking for enclosure', () => {
+  const html = renderToStaticMarkup(<LeaderboardTable enclosure board={{ total: 1, entries: [{ rank: 1, nickname: 'Alice', elapsed_ms: 1000, hints: 0, score: 3, is_you: false }], own_entry: null }} />)
+  expect(html).toContain('Area')
+  expect(html).toContain('First score only')
+  expect(html).not.toContain('Hints')
+})

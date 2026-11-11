@@ -84,3 +84,12 @@ test('submission preserves imported board results through backup round trip', as
   }
   vi.unstubAllGlobals()
 })
+
+test('first layout survives improvements and imports while legacy scores remain unknown', () => {
+  const original = { ...best, achievedAt: first.solvedAt }
+  const early = { ...first, enclosureFirst: original, enclosureBest: original }
+  const later = { ...first, solvedAt: 4, enclosureFirst: { ...best, achievedAt: 4 }, enclosureBest: best }
+  for (const records of [[early, later], [later, early]]) expect(parseStats(JSON.stringify(records))[0]?.enclosureFirst).toEqual(original)
+  expect(parseStats(JSON.stringify([first, later]))[0]?.enclosureFirst).toBeUndefined()
+  expect(parseStats(JSON.stringify([{ ...early, enclosureFirst: { ...original, score: 100 } }]))[0]?.enclosureFirst).toBeUndefined()
+})

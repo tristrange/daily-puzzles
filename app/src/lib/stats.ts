@@ -1,5 +1,5 @@
 import { attemptTime } from './playTime'
-import { enclosureBestFields, validatedEnclosureBest, type EnclosureBest } from './enclosureResults'
+import { enclosureBestFields, parseEnclosureBest, validatedEnclosureBest, type EnclosureBest } from './enclosureResults'
 import type { EnclosureGrid } from '../domain/enclosure'
 export type { EnclosureBest } from './enclosureResults'
 /**
@@ -31,6 +31,7 @@ export type SolveRecord = {
   readonly attemptElapsedMs?: number
   readonly hints: number
   readonly solvedAt: number
+  readonly enclosureFirst?: EnclosureBest
   readonly enclosureBest?: EnclosureBest
   readonly enclosureAlternatives?: readonly EnclosureBest[]
 }
@@ -106,7 +107,8 @@ function toRecord(value: unknown): SolveRecord | null {
   if (puzzleTypeOf(canonicalId) !== puzzleType) return null
   const alternatives: unknown[] = Array.isArray(entry['enclosureAlternatives']) ? entry['enclosureAlternatives'] : []
   const best = puzzleType === 'enclosure' ? enclosureBestFields([entry['enclosureBest'], ...alternatives]) : {}
-  return { id: canonicalId, puzzleType, size, elapsedMs, ...attemptTime(entry['attemptElapsedMs'], elapsedMs), hints, solvedAt, ...best }
+  const first = puzzleType === 'enclosure' ? parseEnclosureBest(entry['enclosureFirst']) : null
+  return { id: canonicalId, puzzleType, size, elapsedMs, ...attemptTime(entry['attemptElapsedMs'], elapsedMs), hints, solvedAt, ...best, ...(first?.achievedAt === solvedAt ? { enclosureFirst: first } : {}) }
 }
 
 /**
