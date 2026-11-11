@@ -68,6 +68,9 @@ from queens_engine import (
     star_layout,
     target_for,
 )
+from queens_engine.enclosure import EnclosureGrid
+from queens_engine.enclosure_gen import LAYOUT_WINDOW_DAYS as ENCLOSURE_LAYOUT_WINDOW_DAYS
+from queens_engine.enclosure_gen import terrain_layout
 from queens_engine.nurikabe import NurikabeGrid
 from queens_engine.nurikabe import solve as solve_nurikabe
 from queens_engine.nurikabe_gen import LAYOUT_WINDOW_DAYS, canonical_layout
@@ -133,6 +136,18 @@ def _nearby_nurikabe_layouts(out_dir: Path, day: date) -> set[tuple[int, ...]]:
         grid = load_puzzle(path).board
         if isinstance(grid, NurikabeGrid):
             layouts.add(_nurikabe_layout(grid))
+    return layouts
+
+
+def _nearby_enclosure_layouts(out_dir: Path, day: date) -> set[tuple[int, ...]]:
+    layouts: set[tuple[int, ...]] = set()
+    for path in sorted(out_dir.glob("*-enclosure.json")):
+        parsed = split_puzzle_id(path.stem)
+        if parsed is None or abs((parsed[0] - day).days) > ENCLOSURE_LAYOUT_WINDOW_DAYS:
+            continue
+        grid = load_puzzle(path).board
+        if isinstance(grid, EnclosureGrid):
+            layouts.add(terrain_layout(grid))
     return layouts
 
 
@@ -207,6 +222,7 @@ def _generate(
     avoid_layouts: set[tuple[tuple[int, ...], ...]] | None = None,
     *,
     avoid_nurikabe_layouts: set[tuple[int, ...]] | None = None,
+    avoid_enclosure_layouts: set[tuple[int, ...]] | None = None,
 ) -> tuple[Puzzle, float | None]:
     """Generate one day of one type, and its difficulty score if it has one.
 
@@ -257,6 +273,13 @@ def _generate(
             avoid_nurikabe_layouts is not None
             and isinstance(puzzle.board, NurikabeGrid)
             and _nurikabe_layout(puzzle.board) in avoid_nurikabe_layouts
+        ):
+            seed = (seed + 1) % (2**32)
+            continue
+        if (
+            avoid_enclosure_layouts is not None
+            and isinstance(puzzle.board, EnclosureGrid)
+            and terrain_layout(puzzle.board) in avoid_enclosure_layouts
         ):
             seed = (seed + 1) % (2**32)
             continue
@@ -324,6 +347,11 @@ def main(argv: list[str] | None = None) -> int:
                         day_id,
                         seed,
                         _nearby_star_layouts(args.out, window),
+                        avoid_enclosure_layouts=(
+                            _nearby_enclosure_layouts(args.out, window)
+                            if book.puzzle_type is PuzzleType.ENCLOSURE
+                            else None
+                        ),
                         avoid_nurikabe_layouts=(
                             _nearby_nurikabe_layouts(args.out, window)
                             if book.puzzle_type is PuzzleType.NURIKABE
@@ -357,6 +385,8 @@ def main(argv: list[str] | None = None) -> int:
                     + (
                         f" score {score:g}"
                         if score is not None
+                        else f" (optimal score {puzzle.board.optimal_score} verified)"
+                        if isinstance(puzzle.board, EnclosureGrid)
                         else " (unique, direct deductions)"
                         if book.logic_only
                         else " (unique, app hints verified)"

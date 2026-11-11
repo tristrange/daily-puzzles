@@ -1,4 +1,4 @@
-"""Generate a unique-solution daily puzzle and write it to a file.
+"""Generate a certified daily puzzle and write it to a file.
 
 Usage:
     python -m tools.generate --date 2026-10-01 [--size N] [--seed N] [--out DIR]
@@ -38,6 +38,7 @@ from queens_engine import (
     score_difficulty,
     split_puzzle_id,
 )
+from queens_engine.enclosure import EnclosureGrid
 
 #: How many seed bumps `--logic-only` may try before failing loudly.
 LOGIC_ONLY_TRIES = 32
@@ -150,7 +151,11 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     if not book.rated:
-        print(f"difficulty: not rated ({puzzle_type.value} boards are unique but unscored)")
+        print(
+            f"optimal score: {puzzle.board.optimal_score} (verified)"
+            if isinstance(puzzle.board, EnclosureGrid)
+            else f"difficulty: not rated ({puzzle_type.value} boards are unique but unscored)"
+        )
     else:
         difficulty = score_difficulty(as_marks_board(puzzle.board))
         status = "logic" if difficulty.needs_guessing else "pure-logic"

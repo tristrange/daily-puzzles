@@ -46,9 +46,13 @@ from queens_engine import (
     target_for,
     verify_replay,
 )
+from queens_engine.enclosure import EnclosureGrid
+from queens_engine.enclosure_gen import LAYOUT_WINDOW_DAYS as ENCLOSURE_LAYOUT_WINDOW_DAYS
+from queens_engine.enclosure_gen import terrain_layout
 from queens_engine.nurikabe import NurikabeGrid
 from queens_engine.nurikabe import solve as solve_nurikabe
 from queens_engine.nurikabe_gen import LAYOUT_WINDOW_DAYS, canonical_layout
+from queens_engine.rulebook import ENCLOSURE_START
 
 
 class RampCheck(NamedTuple):
@@ -118,6 +122,28 @@ def _nurikabe_repeat_problem(
             break
         if layout == other_layout:
             return f"repeats the Nurikabe solution layout published on {other_day}"
+    seen.append((day, layout))
+    return None
+
+
+def _enclosure_repeat_problem(
+    day: date,
+    puzzle: Puzzle,
+    seen: list[tuple[date, tuple[int, ...]]],
+) -> str | None:
+    if not isinstance(puzzle.board, EnclosureGrid):
+        return None
+    if day < ENCLOSURE_START:
+        return "enclosure puzzle predates daily activation"
+    layout = terrain_layout(puzzle.board)
+    for previous_day, previous in reversed(seen):
+        if (day - previous_day).days > ENCLOSURE_LAYOUT_WINDOW_DAYS:
+            break
+        if layout == previous:
+            return (
+                f"enclosure terrain repeats {previous_day} "
+                f"within {ENCLOSURE_LAYOUT_WINDOW_DAYS} days"
+            )
     seen.append((day, layout))
     return None
 
@@ -206,6 +232,7 @@ def main(argv: list[str] | None = None) -> int:
     failed: list[str] = []
     star_layouts_seen: list[tuple[date, tuple[tuple[int, ...], ...]]] = []
     nurikabe_layouts_seen: list[tuple[date, tuple[int, ...]]] = []
+    enclosure_layouts_seen: list[tuple[date, tuple[int, ...]]] = []
     paths = sorted(args.dir.glob("*.json"))
     with (
         ProcessPoolExecutor(max_workers=args.jobs, mp_context=multiprocessing.get_context("spawn"))
@@ -237,6 +264,7 @@ def main(argv: list[str] | None = None) -> int:
             if problem := (
                 _star_repeat_problem(day, puzzle, star_layouts_seen)
                 or _nurikabe_repeat_problem(day, puzzle, nurikabe_layouts_seen)
+                or _enclosure_repeat_problem(day, puzzle, enclosure_layouts_seen)
             ):
                 failed.append(f"{path}: {problem}")
                 print(f"{path.name}: FAILED ({problem})")

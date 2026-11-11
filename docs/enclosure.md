@@ -96,3 +96,19 @@ WebKit emulation at 320, 375, 768, and 1280 pixels. Physical phones and screen
 readers have not been tested. The first completion remains separate from the best
 result; imports retain candidates for different board fingerprints until the actual
 puzzle is loaded, so a stale result cannot discard the player's matching best.
+
+## Daily activation
+
+The family activates on November 11, 2026. The initial corpus covers November
+11–14, using the existing three-day publication horizon. Terrain and horse
+positions cannot repeat under rotations or reflections within fourteen days,
+regardless of wall budget. Both the publisher and archive verifier enforce this.
+All 795 existing puzzle files remain byte-for-byte unchanged.
+
+The final local check replayed all 799 puzzles with two workers; the recorded
+end-to-end run took about 289 seconds on this host. This is an operational
+measurement of one full archive run, not a speed comparison. See
+[the launch report](measurements/enclosure-launch.json).
+Chromium and WebKit also checked actual published JSON, submission, improvement
+to the proved optimum, fixed first-completion time, current-wall reload and
+offline reload. Physical devices and screen readers remain untested.
