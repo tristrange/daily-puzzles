@@ -589,7 +589,7 @@ export function PuzzleView({
     setLinkAnnouncement('Could not reach the clipboard — the puzzle link is shown below, ready to copy.')
   }
   return (
-    <article className="puzzle">
+    <article className={isEnclosurePuzzle(state.puzzle) ? 'puzzle enclosure-puzzle' : 'puzzle'}>
       <div className="puzzle-heading published-heading">
         <p className="eyebrow puzzle-meta">
           {formatPuzzleLabel(id, timeZone)} · {' '}

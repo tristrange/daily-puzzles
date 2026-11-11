@@ -75,10 +75,16 @@ original, and submissions remain improvable here.
 
 ## Optimal solution reveal and rankings
 
-After a valid submission, **Show optimal solution** opens a separate read-only
-board. It does not replace the editable attempt, change move history, submit a
-score, or restart the completion clock. Players can hide the solution and keep
-improving their personal best.
+Submit and the optimal-solution toggle sit above the board. After a valid
+submission, **Show optimal solution** displays a read-only solution in the same
+board space, without adding a second grid or moving focus. Editing and history
+controls pause while it is visible. Hiding it restores the player's attempt and
+move history; revealing never submits a score or restarts the completion clock.
+Players can keep improving their personal best afterward.
+
+The grid uses the remaining viewport height on shorter screens, including when
+the offline notice is visible. Controls retain 44px touch targets. The board keeps
+a 224px minimum width so very short windows and larger text can still scroll.
 
 The first submitted layout and area are preserved in `enclosureFirst`, alongside
 the original completion time. The optional leaderboard uses only this result:
@@ -113,6 +119,13 @@ preview witnesses offline, daily submission followed by offline reveal, read-onl
 keyboard behavior, improvement to the optimum, and retention of the first area
 through improvement and offline reload. Physical devices and screen readers were
 not tested.
+
+[The in-place solution report](measurements/enclosure-in-place-browser.json) checks
+five viewport sizes in each browser, including 375×667. It verifies controls above
+the board, online and offline viewport fit, one grid with unchanged bounds across
+show/hide, keyboard focus during cached and uncached reveals, and restoration of
+the player's walls. These are browser-emulated checks; physical devices and
+screen readers remain untested.
 
 ## Browser verification
 
