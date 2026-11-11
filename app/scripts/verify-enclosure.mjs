@@ -31,13 +31,13 @@ async function capture(page, path) {
     window.scrollTo(0, 0)
   })
   await page.waitForTimeout(80)
-  await page.screenshot({ path, fullPage: true })
+  await page.screenshot({ path, fullPage: false })
 }
 const runs = []
 for (const [browserName, browserType] of [['chromium', chromium], ['webkit', webkit]]) {
   const browser = await browserType.launch({ headless: true })
   try {
-    for (const [width, height, theme, palette] of [[320, 740, 'light', 'classic'], [375, 812, 'dark', 'forest'], [768, 1024, 'light', 'warm'], [1280, 900, 'dark', 'cool']]) {
+    for (const [width, height, theme, palette] of [[320, 740, 'light', 'classic'], [375, 667, 'light', 'classic'], [375, 812, 'dark', 'forest'], [768, 1024, 'light', 'warm'], [1280, 900, 'dark', 'cool']]) {
       const context = await browser.newContext({ viewport: { width, height }, reducedMotion: 'reduce', colorScheme: theme })
       const page = await context.newPage()
       const pageErrors = []
@@ -66,7 +66,7 @@ for (const [browserName, browserType] of [['chromium', chromium], ['webkit', web
       assert.equal(await page.locator('[data-wall="true"]').count(), 0)
       assert.equal(await page.evaluate(() => localStorage.getItem('daily-puzzles:stats')), null)
       await capture(page, `${output}/${browserName}-${width}-${theme}.png`)
-      const record = { browser: browserName, width, theme, palette, keyboard: true, overflow: false }
+      const record = { browser: browserName, width, height, theme, palette, keyboard: true, overflow: false }
       for (const [index, preview] of previews.entries()) {
         await page.locator('.enclosure-preview-toolbar select').selectOption(String(index))
         await page.locator(`[data-cell="${preview.horse}"][data-terrain="horse"]`).waitFor()
@@ -86,6 +86,20 @@ for (const [browserName, browserType] of [['chromium', chromium], ['webkit', web
       record.previewOfflineReveal = true
       if (published) {
         const { puzzle, walls } = fixture
+        if (width === 768) {
+          await page.evaluate(() => {
+            let released = false
+            const waiting = []
+            window.releaseEnclosureWitness = () => { released = true; waiting.forEach(resume => resume()) }
+            const fetch = window.fetch.bind(window)
+            window.fetch = async (...args) => {
+              const input = args[0]
+              const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+              if (url.includes('/solutions/enclosure/') && !released) await new Promise(resolve => { waiting.push(resolve) })
+              return fetch(...args)
+            }
+          })
+        }
         await page.goto(`${base}/#/archive/${puzzle.id}`)
         await page.getByRole('button', { name: 'Copy puzzle link', exact: true }).waitFor()
         await page.locator(`[data-cell="${puzzle.board.horse}"][data-terrain="horse"]`).waitFor()
@@ -101,34 +115,74 @@ for (const [browserName, browserType] of [['chromium', chromium], ['webkit', web
         const frozen = await page.getByRole('timer', { name: 'Elapsed active time', exact: true }).textContent()
         await page.waitForTimeout(1100)
         assert.equal(await page.getByRole('timer', { name: 'Elapsed active time', exact: true }).textContent(), frozen)
-        const ownBoard = page.locator('.enclosure-stage > .enclosure-board')
+        const ownBoard = page.locator('.enclosure-board-slot > .enclosure-board')
         const ownWalls = () => ownBoard.locator('[data-wall="true"]').evaluateAll(cells => cells.map(cell => cell.getAttribute('data-cell')))
         const beforeReveal = await ownWalls()
+        if (width === 768) {
+          await page.getByRole('button', { name: 'Show optimal solution', exact: true }).focus()
+          await page.keyboard.press('Enter')
+          const loading = page.getByRole('button', { name: 'Loading optimal solution…', exact: true })
+          await loading.waitFor()
+          assert.equal(await loading.getAttribute('aria-disabled'), 'true')
+          assert.equal(await loading.evaluate(button => button === document.activeElement), true)
+          await page.evaluate(() => window.releaseEnclosureWitness())
+          const hide = page.getByRole('button', { name: 'Hide optimal solution', exact: true })
+          await hide.waitFor()
+          assert.equal(await hide.evaluate(button => button === document.activeElement), true)
+          await page.keyboard.press('Enter')
+          assert.deepEqual(await ownWalls(), beforeReveal)
+          record.uncachedRevealPreservesFocus = true
+        }
         await page.getByText('Optimal solution available offline.', { exact: true }).waitFor()
+        await page.evaluate(() => document.fonts.ready)
+        await page.evaluate(() => window.scrollTo(0, 0))
+        const onlineBox = await ownBoard.boundingBox()
+        assert.ok(onlineBox && onlineBox.y + onlineBox.height <= height, 'board fits without scrolling')
         await context.setOffline(true)
-        await page.getByRole('button', { name: 'Show optimal solution', exact: true }).click()
+        await page.locator('.offline-status').getByText('Offline', { exact: false }).waitFor()
+        await page.waitForFunction(() => {
+          const box = document.querySelector('.enclosure-board')?.getBoundingClientRect()
+          return box && box.bottom <= innerHeight
+        })
+        const boardBox = await ownBoard.boundingBox()
+        assert.ok(boardBox && boardBox.y + boardBox.height <= height, 'board fits without scrolling')
+        const submitBox = await page.getByRole('button', { name: 'Save best score', exact: true }).boundingBox()
+        const showButton = page.getByRole('button', { name: 'Show optimal solution', exact: true })
+        const showBox = await showButton.boundingBox()
+        assert.ok(submitBox && showBox && submitBox.y + submitBox.height <= boardBox.y && showBox.y + showBox.height <= boardBox.y, 'primary controls are above the board')
+        await showButton.focus()
+        await page.keyboard.press('Enter')
         const optimal = page.getByRole('grid', { name: 'Optimal enclosure solution', exact: true })
         await optimal.waitFor()
         assert.equal(await optimal.getAttribute('aria-readonly'), 'true')
         assert.equal(await optimal.locator('[data-reachable="true"]').count(), puzzle.board.optimalScore)
+        assert.equal(await page.getByRole('grid').count(), 1)
+        assert.deepEqual(await optimal.boundingBox(), boardBox, 'solution stays in the same board footprint')
+        assert.equal(await page.evaluate(() => window.scrollY), 0, 'reveal does not scroll')
+        const hideButton = page.getByRole('button', { name: 'Hide optimal solution', exact: true })
+        assert.equal(await hideButton.evaluate(button => button === document.activeElement), true)
+        assert.equal(await page.getByRole('button', { name: 'Save best score', exact: true }).isDisabled(), true)
+        assert.equal(await page.getByRole('button', { name: 'Undo', exact: true }).isDisabled(), true)
         await optimal.getByRole('gridcell').first().focus()
         await page.keyboard.press('Control+z')
-        assert.deepEqual(await ownWalls(), beforeReveal)
         assert.deepEqual(await stats(), first)
         assert.equal(await page.locator('body').evaluate(element => element.scrollWidth <= innerWidth), true)
-        await capture(page, `${output}/${browserName}-${width}-daily-revealed.png`)
+        await capture(page, `${output}/${browserName}-${width}x${height}-daily-revealed.png`)
         await page.getByRole('button', { name: 'Hide optimal solution', exact: true }).click()
+        assert.deepEqual(await ownWalls(), beforeReveal)
+        assert.deepEqual(await ownBoard.boundingBox(), boardBox)
+        assert.equal(await page.evaluate(() => window.scrollY), 0, 'hide does not scroll')
         await context.setOffline(false)
         page.once('dialog', dialog => dialog.accept())
         await page.getByRole('button', { name: 'Reset', exact: true }).click()
         for (const cell of walls) await page.locator(`[data-cell="${cell}"]`).click()
-        await page.getByRole('button', { name: 'Save improved score', exact: true }).click()
+        await page.getByRole('button', { name: 'Save best score', exact: true }).click()
         const improved = await stats()
         assert.equal(improved.enclosureBest.score, puzzle.board.optimalScore)
         assert.deepEqual(improved.enclosureFirst, first.enclosureFirst)
         assert.equal(improved.solvedAt, first.solvedAt)
         assert.equal(improved.elapsedMs, first.elapsedMs)
-        await capture(page, `${output}/${browserName}-${width}-daily-optimal.png`)
+        await capture(page, `${output}/${browserName}-${width}x${height}-daily-optimal.png`)
         await page.reload()
         await page.getByRole('grid').waitFor()
         assert.equal(await page.locator('[data-wall="true"]').count(), walls.length)
@@ -146,6 +200,10 @@ for (const [browserName, browserType] of [['chromium', chromium], ['webkit', web
         record.offlineReload = true
         record.offlineReveal = true
         record.firstScorePreserved = true
+        record.controlsAboveBoard = true
+        record.boardFitsViewportOnlineAndOffline = true
+        record.inPlaceReveal = true
+        record.revealPreservesFocus = true
         record.publishedJson = published
       }
       assert.deepEqual(pageErrors, [])

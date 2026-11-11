@@ -13,10 +13,10 @@ export function EnclosurePreviewPage() {
   const grid = boards[index] ?? boards[0]
   const previewId = `2000-01-${String(index + 1).padStart(2, '0')}-enclosure`
   const solution = grid ? parseEnclosureSolution(solutions[index], previewId, grid) : null
-  return <article className="puzzle">
+  return <article className="puzzle enclosure-puzzle enclosure-preview">
     <p className="eyebrow">Preview</p>
     <h1>Horse Enclosure</h1>
-    <p>Enclose the horse using walls and water. Practice without changing your daily stats.</p>
+    <p>Practice without changing daily stats.</p>
     <div className="enclosure-preview-toolbar">
     <label>Board <select value={index} onChange={event => setIndex(Number(event.target.value))}>
       {boards.map((_, board) => <option key={board} value={board}>Meadow {board + 1}</option>)}

@@ -17,7 +17,7 @@ const leaderboard = createLeaderboardStore(null, null, null)
 beforeEach(() => { Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true }); localStorage.clear(); container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks(); vi.unstubAllGlobals() })
 const cell = (i: number) => container.querySelector<HTMLButtonElement>(`[data-cell="${i}"]`)!
-const button = (name: string) => [...container.querySelectorAll('button')].find(b => b.textContent === name)!
+const button = (name: string) => [...container.querySelectorAll('button')].find(b => (b.getAttribute('aria-label') ?? b.textContent) === name)!
 const click = async (element: HTMLButtonElement) => { await act(async () => element.click()) }
 const render = async (daily = true) => { await act(async () => root.render(<MemoryRouter><LeaderboardContext.Provider value={leaderboard}><EnclosureStage grid={grid} {...(daily ? { puzzle } : {})} /></LeaderboardContext.Provider></MemoryRouter>)) }
 
@@ -30,24 +30,49 @@ it('reveals only after submission without replacing the attempt or its first ran
   await click(cell(6)); await click(cell(9)); await click(button('Submit enclosure'))
   const first = readStoredStats()[0]!
   expect(first.enclosureFirst?.score).toBe(1)
+  const board = container.querySelector('[role="grid"]')!
+  expect(button('Save best score').compareDocumentPosition(board) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0)
+  expect(button('Show optimal solution').compareDocumentPosition(board) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0)
   await click(button('Show optimal solution'))
   const solution = container.querySelector('[aria-label="Optimal enclosure solution"]')!
   expect(solution).not.toBeNull()
+  expect(container.querySelectorAll('[role="grid"]')).toHaveLength(1)
+  expect(button('Save best score').disabled).toBe(true)
+  expect(button('Undo').disabled).toBe(true)
   expect(solution.querySelectorAll('[data-wall="true"]')).toHaveLength(0)
   expect(solution.querySelector('[data-cell="6"]')?.getAttribute('aria-readonly')).toBe('true')
   expect(container.textContent).toContain('could not be saved for offline viewing')
-  expect(cell(6).dataset['wall']).toBe('true')
+  await click(cell(6))
+  await act(async () => { cell(6).dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true })) })
   expect(readStoredStats()[0]).toEqual(first)
-  await click(cell(6)); await click(button('Save improved score'))
+  await click(button('Hide optimal solution'))
+  expect(cell(6).dataset['wall']).toBe('true')
+  await click(button('Undo'))
+  expect(cell(9).dataset['wall']).toBe('false')
+  await click(button('Redo'))
+  expect(cell(9).dataset['wall']).toBe('true')
+  await click(cell(6)); await click(button('Save best score'))
   const improved = readStoredStats()[0]!
   expect(improved.enclosureBest?.score).toBe(3)
   expect(improved.enclosureFirst).toEqual(first.enclosureFirst)
   expect(improved.elapsedMs).toBe(first.elapsedMs)
   expect(offered).toHaveBeenCalledTimes(1)
   expect(offered.mock.calls[0]?.[0].enclosureFirst?.score).toBe(1)
-  await click(button('Hide optimal solution'))
   expect(container.querySelector('[aria-label="Optimal enclosure solution"]')).toBeNull()
   expect(cell(9).dataset['wall']).toBe('true')
+})
+
+it('keeps the reveal toggle focusable while loading an uncached solution', async () => {
+  let respond!: (response: Response) => void
+  vi.stubGlobal('fetch', () => new Promise<Response>(resolve => { respond = resolve }))
+  await render(); await click(button('Submit enclosure'))
+  button('Show optimal solution').focus()
+  await click(button('Show optimal solution'))
+  expect(button('Loading optimal solution…').disabled).toBe(false)
+  expect(button('Loading optimal solution…').getAttribute('aria-disabled')).toBe('true')
+  expect(document.activeElement).toBe(button('Loading optimal solution…'))
+  await act(async () => respond(new Response(JSON.stringify({ version: 1, id: puzzle.id, board: enclosureFingerprint(grid), walls: [] }))))
+  expect(document.activeElement).toBe(button('Hide optimal solution'))
 })
 
 it('keeps a legacy completion eligible to reveal without inventing a ranked first score', async () => {
@@ -97,8 +122,8 @@ it('submits manually, improves without replacing the first completion, and resto
   await click(button('Submit enclosure'))
   const first = readStoredStats()[0]!
   expect(first.enclosureBest?.score).toBe(1)
-  expect(button('Save improved score').disabled).toBe(true)
-  await click(cell(6)); await click(button('Save improved score'))
+  expect(button('Save best score').disabled).toBe(true)
+  await click(cell(6)); await click(button('Save best score'))
   const improved = readStoredStats()[0]!
   expect(improved.enclosureBest?.score).toBe(3)
   expect(improved.solvedAt).toBe(first.solvedAt)
@@ -127,13 +152,13 @@ it('freezes the completion clock through improvements and reload', async () => {
   await click(button('Submit enclosure'))
   expect(readStoredStats()[0]?.elapsedMs).toBe(5000)
   now = 16000
-  await click(cell(6)); await click(button('Save improved score'))
+  await click(cell(6)); await click(button('Save best score'))
   expect(readStoredStats()[0]?.elapsedMs).toBe(5000)
   await act(async () => root.unmount())
   root = createRoot(container)
   await render()
   now = 26000
-  await click(cell(9)); await click(button('Save improved score'))
+  await click(cell(9)); await click(button('Save best score'))
   expect(readStoredStats()[0]?.elapsedMs).toBe(5000)
   expect(readStoredStats()[0]?.enclosureBest?.score).toBe(4)
 })
@@ -174,7 +199,7 @@ it('restores preview best and stopped time after switching boards and remounting
   expect(container.textContent).toContain('Best score: 3')
   expect(cell(9).dataset['wall']).toBe('true')
   expect(container.querySelector('[aria-label="Elapsed active time"]')?.textContent).toContain('0:05')
-  now = 26000; await click(cell(9)); await click(cell(6)); await click(button('Save improved score'))
+  now = 26000; await click(cell(9)); await click(cell(6)); await click(button('Save best score'))
   expect(container.querySelector('[aria-label="Elapsed active time"]')?.textContent).toContain('0:05')
   expect(localStorage.getItem(STATS_STORAGE_KEY)).toBeNull()
 })
