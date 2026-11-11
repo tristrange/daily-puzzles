@@ -11,13 +11,13 @@ from queens_engine.enclosure import EnclosureGrid
 from queens_engine.enclosure_gen import generate, terrain_layout
 
 
-def test_activation_does_not_backfill_past_days() -> None:
-    before = date(2026, 11, 10)
-    start = date(2026, 11, 11)
+def test_publisher_requires_the_backlog_from_october_12_only() -> None:
+    before = date(2026, 10, 11)
+    start = date(2026, 10, 12)
     assert not any(identifier.endswith("-enclosure") for identifier in publish._ids_for_day(before))
-    assert publish._ids_for_day(start)[-1] == "2026-11-11-enclosure"
+    assert publish._ids_for_day(start)[-1] == "2026-10-12-enclosure"
     existing = set(publish._ids_for_day(before)) | set(publish._ids_for_day(start))
-    existing.remove("2026-11-11-enclosure")
+    existing.remove("2026-10-12-enclosure")
     assert publish._first_incomplete_day(existing, before, start) == start
 
 

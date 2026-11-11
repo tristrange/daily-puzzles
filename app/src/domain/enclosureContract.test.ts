@@ -12,7 +12,11 @@ describe('enclosure puzzle contract', () => {
     expect(isEnclosurePuzzle(puzzle)).toBe(true)
     expect(puzzle.board).toMatchObject({ horse: 27, wallBudget: 8, optimalScore: 5 })
     expect(puzzleIdFor('2026-11-11', 'enclosure')).toBe(raw.id)
-    expect(puzzleIdsForDay('2026-11-10')).not.toContain('2026-11-10-enclosure')
+  })
+  it('offers the backfilled archive from October 12 onward', () => {
+    expect(puzzleIdsForDay('2026-10-11')).not.toContain('2026-10-11-enclosure')
+    expect(puzzleIdsForDay('2026-10-12')).toContain('2026-10-12-enclosure')
+    expect(puzzleIdsForDay('2026-11-10')).toContain('2026-11-10-enclosure')
   })
   it('rejects an enclosure id carrying another family board', () => {
     expect(() => parsePuzzle({ ...queens, id: raw.id })).toThrow(/enclosure/)

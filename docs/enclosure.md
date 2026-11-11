@@ -99,13 +99,16 @@ puzzle is loaded, so a stale result cannot discard the player's matching best.
 
 ## Daily activation
 
-The family activates on November 11, 2026. The initial corpus covers November
-11–14, using the existing three-day publication horizon. Terrain and horse
+The family launched on November 11, 2026, with an initial corpus covering November
+11–14. Thirty archived puzzles backfill October 12–November 10, making October 12
+the shared availability start for the app, publisher, and verifier. Daily
+publication keeps the existing three-day horizon. Terrain and horse
 positions cannot repeat under rotations or reflections within fourteen days,
 regardless of wall budget. Both the publisher and archive verifier enforce this.
-All 795 existing puzzle files remain byte-for-byte unchanged.
+The backfill preserves all 811 previously published puzzle files byte-for-byte,
+including the four original Horse Enclosure boards.
 
-The final local check replayed all 799 puzzles with two workers; the recorded
+The original launch check replayed all 799 puzzles with two workers; the recorded
 end-to-end run took about 289 seconds on this host. This is an operational
 measurement of one full archive run, not a speed comparison. See
 [the launch report](measurements/enclosure-launch.json).

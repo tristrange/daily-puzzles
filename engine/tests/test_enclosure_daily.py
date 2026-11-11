@@ -34,7 +34,7 @@ def test_enclosure_contract_roundtrip_replay_and_not_unique_solution_counting() 
     assert "walls" not in data
     with pytest.raises(GenerationError, match="optimization"):
         book.count_solutions(puzzle.board)
-    assert book.daily_ids(date(2026, 11, 10)) == ()
+    assert book.daily_ids(date(2026, 10, 11)) == ()
 
 
 def test_modified_target_cannot_pass_replay() -> None:

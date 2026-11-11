@@ -158,6 +158,11 @@
       "id": "2026-11-11-enclosure",
       "day": "2026-11-11",
       "type": "enclosure"
+    },
+    {
+      "id": "2026-10-12-enclosure",
+      "day": "2026-10-12",
+      "type": "enclosure"
     }
   ],
   "unparsed": [
@@ -996,6 +1001,47 @@
       ]
     },
     {
+      "day": "2026-10-11",
+      "ids": [
+        "2026-10-11",
+        "2026-10-11-star",
+        "2026-10-11-tracks-small",
+        "2026-10-11-tracks-medium",
+        "2026-10-11-tracks-large",
+        "2026-10-11-words",
+        "2026-10-11-trio",
+        "2026-10-11-tents",
+        "2026-10-11-sudoku-easy",
+        "2026-10-11-sudoku-medium",
+        "2026-10-11-sudoku-hard",
+        "2026-10-11-nurikabe",
+        "2026-10-11-killer-sudoku-easy",
+        "2026-10-11-killer-sudoku-medium",
+        "2026-10-11-killer-sudoku-hard"
+      ]
+    },
+    {
+      "day": "2026-10-12",
+      "ids": [
+        "2026-10-12",
+        "2026-10-12-star",
+        "2026-10-12-tracks-small",
+        "2026-10-12-tracks-medium",
+        "2026-10-12-tracks-large",
+        "2026-10-12-words",
+        "2026-10-12-trio",
+        "2026-10-12-tents",
+        "2026-10-12-sudoku-easy",
+        "2026-10-12-sudoku-medium",
+        "2026-10-12-sudoku-hard",
+        "2026-10-12-nurikabe",
+        "2026-10-12-killer-sudoku-easy",
+        "2026-10-12-killer-sudoku-medium",
+        "2026-10-12-killer-sudoku-hard",
+        "2026-10-12-enclosure"
+      ]
+    },
+    {
       "day": "2026-10-14",
       "ids": [
         "2026-10-14",
@@ -1012,7 +1058,8 @@
         "2026-10-14-nurikabe",
         "2026-10-14-killer-sudoku-easy",
         "2026-10-14-killer-sudoku-medium",
-        "2026-10-14-killer-sudoku-hard"
+        "2026-10-14-killer-sudoku-hard",
+        "2026-10-14-enclosure"
       ]
     },
     {
@@ -1032,7 +1079,8 @@
         "2026-10-15-nurikabe",
         "2026-10-15-killer-sudoku-easy",
         "2026-10-15-killer-sudoku-medium",
-        "2026-10-15-killer-sudoku-hard"
+        "2026-10-15-killer-sudoku-hard",
+        "2026-10-15-enclosure"
       ]
     },
     {
@@ -1052,7 +1100,8 @@
         "2026-10-16-nurikabe",
         "2026-10-16-killer-sudoku-easy",
         "2026-10-16-killer-sudoku-medium",
-        "2026-10-16-killer-sudoku-hard"
+        "2026-10-16-killer-sudoku-hard",
+        "2026-10-16-enclosure"
       ]
     },
     {
@@ -1072,7 +1121,8 @@
         "2026-10-20-nurikabe",
         "2026-10-20-killer-sudoku-easy",
         "2026-10-20-killer-sudoku-medium",
-        "2026-10-20-killer-sudoku-hard"
+        "2026-10-20-killer-sudoku-hard",
+        "2026-10-20-enclosure"
       ]
     },
     {
@@ -1092,7 +1142,8 @@
         "2026-10-21-nurikabe",
         "2026-10-21-killer-sudoku-easy",
         "2026-10-21-killer-sudoku-medium",
-        "2026-10-21-killer-sudoku-hard"
+        "2026-10-21-killer-sudoku-hard",
+        "2026-10-21-enclosure"
       ]
     },
     {
@@ -1112,7 +1163,8 @@
         "2026-10-28-nurikabe",
         "2026-10-28-killer-sudoku-easy",
         "2026-10-28-killer-sudoku-medium",
-        "2026-10-28-killer-sudoku-hard"
+        "2026-10-28-killer-sudoku-hard",
+        "2026-10-28-enclosure"
       ]
     },
     {
@@ -1132,7 +1184,8 @@
         "2026-11-10-nurikabe",
         "2026-11-10-killer-sudoku-easy",
         "2026-11-10-killer-sudoku-medium",
-        "2026-11-10-killer-sudoku-hard"
+        "2026-11-10-killer-sudoku-hard",
+        "2026-11-10-enclosure"
       ]
     },
     {
@@ -1209,6 +1262,6 @@
     ]
   },
   "enclosure": {
-    "activationDay": "2026-11-11"
+    "activationDay": "2026-10-12"
   }
 }

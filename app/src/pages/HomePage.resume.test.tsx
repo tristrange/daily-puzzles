@@ -14,6 +14,7 @@ import sudoku from '../data/sudoku-previews.json'
 import killerEasy from '../../public/puzzles/2026-10-21-killer-sudoku-easy.json'
 import killerMedium from '../../public/puzzles/2026-10-21-killer-sudoku-medium.json'
 import killerHard from '../../public/puzzles/2026-10-21-killer-sudoku-hard.json'
+import enclosure from '../../public/puzzles/2026-10-21-enclosure.json'
 import { createSudokuGame } from '../domain/sudoku'
 import { storeSudokuProgress } from '../lib/sudokuProgress'
 import tents from '../../../conformance/schema-cases/tents.accept.json'
@@ -38,7 +39,7 @@ import { STATS_STORAGE_KEY } from '../lib/stats'
 import { puzzleIdsForDay } from '../domain/dates'
 import { HomePage } from './HomePage'
 
-const data = [queen, star, small, medium, large, words, trio, tents, nurikabe, ...sudoku.map(board => ({ id: `2026-10-21-sudoku-${board.level}`, type: 'sudoku', seed: 1, generatorVersion: 1, board: { size: 9, level: board.level, givens: board.givens } })), killerEasy, killerMedium, killerHard]
+const data = [queen, star, small, medium, large, words, trio, tents, nurikabe, ...sudoku.map(board => ({ id: `2026-10-21-sudoku-${board.level}`, type: 'sudoku', seed: 1, generatorVersion: 1, board: { size: 9, level: board.level, givens: board.givens } })), killerEasy, killerMedium, killerHard, enclosure]
   .map(raw => ({ ...raw, id: raw.id.replace(/^\d{4}-\d{2}-\d{2}/, '2026-10-21') }))
 const puzzles = data.map(parsePuzzle)
 let container: HTMLDivElement, root: Root
@@ -87,12 +88,12 @@ async function render() {
 }
 const link = (label: string) => container.querySelector(`a[aria-label="${label}"]`)
 
-it('groups games with multiple daily puzzles after single-puzzle games', async () => {
+it('keeps the established game order with all daily families available', async () => {
   await render()
   const titles = [...container.querySelectorAll('.game-card-title')].map(title => title.textContent)
   expect(titles).toEqual([
     'Queens', 'Star Battle', 'Word Paths', 'Trio', 'Tents', 'Nurikabe',
-    'Train Tracks', 'Sudoku', 'Killer Sudoku',
+    'Train Tracks', 'Sudoku', 'Killer Sudoku', 'Horse Enclosure',
   ])
 })
 
@@ -196,7 +197,7 @@ it('counts individual available puzzles and excludes unavailable variants even i
   await render()
   const published = data.filter(puzzle => puzzleIdsForDay('2026-10-21').includes(puzzle.id)).length - 1
   expect(container.querySelector('.today-progress')?.textContent).toContain(`2 of ${published} available puzzles completed`)
-  expect(published).toBe(14)
+  expect(published).toBe(15)
   expect(container.querySelector('progress')?.getAttribute('value')).toBe('2')
   expect(container.querySelector('progress')?.getAttribute('max')).toBe(String(published))
   expect(container.textContent).toContain('Not saved — connect to load.')
@@ -267,6 +268,6 @@ it('updates availability after reconnecting, without counting unavailable puzzle
     window.dispatchEvent(new Event('online'))
     await vi.dynamicImportSettled()
   })
-  expect(container.querySelector('.today-progress')?.textContent).toContain('1 of 15 available puzzles completed')
+  expect(container.querySelector('.today-progress')?.textContent).toContain('1 of 16 available puzzles completed')
   expect(link('Play Queens again')).not.toBeNull()
 })
