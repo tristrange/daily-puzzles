@@ -7,8 +7,10 @@ import json
 from pathlib import Path
 from typing import Any, cast
 
+from queens_engine.board import PuzzleType
 from queens_engine.enclosure import EnclosureGrid
 from queens_engine.enclosure_solution import Solution, make_solution, validate_solution
+from queens_engine.puzzle import load_puzzle
 
 ROOT = Path(__file__).resolve().parents[2]
 MAX_PREVIEWS = 31
@@ -66,13 +68,14 @@ def run(puzzles: Path, out: Path, previews: Path, preview_out: Path, *, check: b
         raise ValueError(f"missing puzzle directory: {puzzles}")
     boards: list[tuple[str, EnclosureGrid]] = []
     for path in sorted(puzzles.glob("*-enclosure.json")):
-        puzzle = read_json(path)
-        if not isinstance(puzzle, dict):
+        puzzle = load_puzzle(path)
+        if (
+            puzzle.id != path.stem
+            or puzzle.puzzle_type is not PuzzleType.ENCLOSURE
+            or not isinstance(puzzle.board, EnclosureGrid)
+        ):
             raise ValueError(f"invalid puzzle: {path}")
-        puzzle = cast(dict[str, Any], puzzle)
-        if puzzle.get("id") != path.stem or puzzle.get("type") != "enclosure":
-            raise ValueError(f"invalid puzzle: {path}")
-        boards.append((path.stem, grid_from_board(puzzle.get("board"))))
+        boards.append((puzzle.id, puzzle.board))
     preview_boards = read_json(previews)
     if not isinstance(preview_boards, list) or len(cast(list[Any], preview_boards)) > MAX_PREVIEWS:
         raise ValueError("invalid previews")
@@ -113,7 +116,12 @@ def run(puzzles: Path, out: Path, previews: Path, preview_out: Path, *, check: b
         pending.append((preview_out, encoded(generated_previews)))
     for path, contents in pending:
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(contents, encoding="utf-8")
+        temporary = path.with_suffix(path.suffix + ".tmp")
+        try:
+            temporary.write_text(contents, encoding="utf-8")
+            temporary.replace(path)
+        finally:
+            temporary.unlink(missing_ok=True)
 
 
 def main() -> None:
