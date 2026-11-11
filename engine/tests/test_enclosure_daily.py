@@ -22,7 +22,7 @@ from queens_engine.puzzle import puzzle_to_dict
 def test_enclosure_contract_roundtrip_replay_and_not_unique_solution_counting() -> None:
     book = rulebook_for(PuzzleType.ENCLOSURE)
     puzzle = book.generate(seed=7, puzzle_id=puzzle_id(date(2026, 11, 11), PuzzleType.ENCLOSURE))
-    assert not book.published
+    assert book.published
     assert not book.rated
     assert not book.logic_only
     assert book.certification == "optimal-score"

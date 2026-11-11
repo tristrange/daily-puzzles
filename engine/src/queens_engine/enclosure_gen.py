@@ -169,3 +169,12 @@ def generate_with_report(seed: int) -> tuple[EnclosureGrid, GenerationReport]:
         )
         return replace(grid, optimal_score=result.score), report
     raise EnclosureGenerationError(dict(sorted(rejected.items())))
+
+
+LAYOUT_WINDOW_DAYS = 14
+
+
+def terrain_layout(grid: EnclosureGrid) -> tuple[int, ...]:
+    """Compare terrain and horse position independently of the wall allowance."""
+    signature = canonical_layout(grid)
+    return (signature[0], *signature[2:])

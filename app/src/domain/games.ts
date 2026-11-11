@@ -59,7 +59,7 @@ export const PUZZLE_TYPE_PUBLISHED: Record<PuzzleType, boolean> = {
   tents: true,
   sudoku: true,
   nurikabe: true,
-  enclosure: false,
+  enclosure: true,
   'killer-sudoku': true,
 }
 

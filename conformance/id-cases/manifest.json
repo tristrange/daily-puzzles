@@ -1114,6 +1114,47 @@
         "2026-10-28-killer-sudoku-medium",
         "2026-10-28-killer-sudoku-hard"
       ]
+    },
+    {
+      "day": "2026-11-10",
+      "ids": [
+        "2026-11-10",
+        "2026-11-10-star",
+        "2026-11-10-tracks-small",
+        "2026-11-10-tracks-medium",
+        "2026-11-10-tracks-large",
+        "2026-11-10-words",
+        "2026-11-10-trio",
+        "2026-11-10-tents",
+        "2026-11-10-sudoku-easy",
+        "2026-11-10-sudoku-medium",
+        "2026-11-10-sudoku-hard",
+        "2026-11-10-nurikabe",
+        "2026-11-10-killer-sudoku-easy",
+        "2026-11-10-killer-sudoku-medium",
+        "2026-11-10-killer-sudoku-hard"
+      ]
+    },
+    {
+      "day": "2026-11-11",
+      "ids": [
+        "2026-11-11",
+        "2026-11-11-star",
+        "2026-11-11-tracks-small",
+        "2026-11-11-tracks-medium",
+        "2026-11-11-tracks-large",
+        "2026-11-11-words",
+        "2026-11-11-trio",
+        "2026-11-11-tents",
+        "2026-11-11-sudoku-easy",
+        "2026-11-11-sudoku-medium",
+        "2026-11-11-sudoku-hard",
+        "2026-11-11-nurikabe",
+        "2026-11-11-killer-sudoku-easy",
+        "2026-11-11-killer-sudoku-medium",
+        "2026-11-11-killer-sudoku-hard",
+        "2026-11-11-enclosure"
+      ]
     }
   ],
   "trio": {

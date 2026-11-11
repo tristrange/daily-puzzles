@@ -1702,7 +1702,7 @@ class EnclosureRulebook(Rulebook):
     on_ramp = False
     rated = False
     logic_only = False
-    published = False
+    published = True
     default_size = 8
     certification: Literal["unique-solution", "optimal-score"] = "optimal-score"
 
@@ -1858,8 +1858,8 @@ _RULEBOOKS: Final[dict[PuzzleType, Rulebook]] = {
     PuzzleType.TENTS: TentsRulebook(),
     PuzzleType.SUDOKU: SudokuRulebook(),
     PuzzleType.NURIKABE: NurikabeRulebook(),
-    PuzzleType.ENCLOSURE: EnclosureRulebook(),
     PuzzleType.KILLER_SUDOKU: KillerRulebook(),
+    PuzzleType.ENCLOSURE: EnclosureRulebook(),
 }
 
 

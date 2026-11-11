@@ -84,8 +84,9 @@ class TestPublishWindow:
             avoid_layouts: set[tuple[tuple[int, ...], ...]] | None = None,
             *,
             avoid_nurikabe_layouts: set[tuple[int, ...]] | None = None,
+            avoid_enclosure_layouts: set[tuple[int, ...]] | None = None,
         ) -> tuple[Puzzle, float | None]:
-            del avoid_nurikabe_layouts
+            del avoid_nurikabe_layouts, avoid_enclosure_layouts
             if rulebook_for(puzzle_type).on_ramp:
                 return generate(puzzle_type, day_id, seed, avoid_layouts)
             puzzle = load_puzzle(archive / f"{day_id}.json")
@@ -673,8 +674,9 @@ class TestDailyTrackSlots:
             avoid_layouts: set[tuple[tuple[int, ...], ...]] | None = None,
             *,
             avoid_nurikabe_layouts: set[tuple[int, ...]] | None = None,
+            avoid_enclosure_layouts: set[tuple[int, ...]] | None = None,
         ) -> tuple[Puzzle, float | None]:
-            del avoid_nurikabe_layouts
+            del avoid_nurikabe_layouts, avoid_enclosure_layouts
             if day_id.endswith("-medium"):
                 raise RuntimeError("interrupted")
             return original(puzzle_type, day_id, seed, avoid_layouts)
