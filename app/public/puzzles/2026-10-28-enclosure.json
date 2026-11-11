@@ -1,0 +1,7 @@
+{
+  "id": "2026-10-28-enclosure",
+  "type": "enclosure",
+  "seed": 4262754797,
+  "generatorVersion": 1,
+  "board": {"size": 8, "water": [4, 5, 6, 7, 10, 11, 12, 13, 18, 19, 20, 27, 35, 36, 43, 44, 46, 47, 54, 55], "horse": 45, "wallBudget": 8, "optimalScore": 12}
+}
