@@ -74,7 +74,7 @@ def solve_optimal(
     if status == cp_model.INFEASIBLE:
         return InfeasibleResult()
     if status != cp_model.OPTIMAL:
-        if work + 1e-6 < max_deterministic_time:
+        if work < max_deterministic_time:
             raise EnclosureSolverTimeoutError(
                 "safety time limit interrupted exact enclosure search"
             )

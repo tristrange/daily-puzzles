@@ -1,6 +1,8 @@
 from itertools import combinations
 
 import pytest
+from ortools.sat import cp_model_pb2
+from ortools.sat.python import cp_model
 
 from queens_engine.enclosure import EnclosureGrid, evaluate, exhaustive_optimum
 from queens_engine.enclosure_solver import (
@@ -58,6 +60,19 @@ def test_zero_search_budget_is_inconclusive_and_not_a_claim_of_optimality() -> N
 def test_safety_timeout_aborts_instead_of_selecting_a_different_board() -> None:
     with pytest.raises(EnclosureSolverTimeoutError):
         solve_optimal(EnclosureGrid(8, (), 27, 10), max_time_seconds=0.000001)
+
+
+def test_work_just_below_limit_still_aborts_on_interruption(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def interrupted(_self: cp_model.CpSolver, _model: cp_model.CpModel) -> cp_model.CpSolverStatus:
+        return cp_model.UNKNOWN
+
+    response = cp_model_pb2.CpSolverResponse(deterministic_time=5.0 - 0.0000005)
+    monkeypatch.setattr(cp_model.CpSolver, "solve", interrupted)
+    monkeypatch.setattr(cp_model.CpSolver, "response_proto", property(lambda _self: response))
+    with pytest.raises(EnclosureSolverTimeoutError):
+        solve_optimal(EnclosureGrid(3, (), 4, 4), max_deterministic_time=5.0)
 
 
 @pytest.mark.parametrize("limit", [-1, float("nan"), float("inf")])
