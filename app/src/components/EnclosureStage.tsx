@@ -71,10 +71,11 @@ export function EnclosureStage({ grid, puzzle, previewId = '2000-01-01-enclosure
       <ResetButton onReset={reset} disabled={game.walls.length === 0} />
     </div>
     <div className="enclosure-scores">
-      <span>Current score: {result.score}</span><span>Best submitted score: {best?.score ?? '—'}</span>
-      <span>Optimal score: {grid.optimalScore ?? '—'}</span><span>Walls used: {game.walls.length} / {grid.wallBudget} ({grid.wallBudget - game.walls.length} remaining)</span>
+      <span>Current score: <strong>{result.score}</strong></span><span>Best score: <strong>{best?.score ?? '—'}</strong></span>
+      <span>Optimal score: <strong>{grid.optimalScore ?? '—'}</strong></span>
     </div>
-    <p id={instructionsId} className="enclosure-status">Place or remove walls on grass. Use arrow keys to move and Enter or Space to toggle a wall.</p>
+    <p className="enclosure-budget">Walls used: {game.walls.length} / {grid.wallBudget} · {grid.wallBudget - game.walls.length} remaining</p>
+    <p id={instructionsId} className="enclosure-status">Tap grass to toggle walls. Arrow keys move; Enter or Space toggles.</p>
     <EnclosureBoard grid={grid} walls={game.walls} reachable={result.reachable} enclosed={!result.escaped} instructionsId={instructionsId} onToggle={toggle} />
     <p className="enclosure-status" aria-live="polite">{result.escaped ? `The horse can escape. Reachable area: ${result.reachable.length}.` : `Enclosed! Reachable area: ${result.reachable.length}.`}</p>
     <button type="button" className="tool-button" disabled={result.escaped || (best !== null && result.score <= best.score)} onClick={submit}>{best ? 'Save improved score' : 'Submit enclosure'}</button>

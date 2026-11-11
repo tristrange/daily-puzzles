@@ -4,6 +4,7 @@ import './GameArtwork.css'
 /** Decorative symbols share the same silhouettes as the games they represent. */
 export function GameIcon({ type }: { readonly type: PuzzleType }) {
   return <svg viewBox="0 0 40 40" fill="none" aria-hidden="true" focusable="false">
+    {type === 'enclosure' && <><path d="M8 32h24l-2-5-5-3 2-6-4-9-5 2-4-5-2 9-4 4 5 4-2 4z" fill="currentColor" /><path d="M4 35h32" stroke="currentColor" strokeWidth="2" /></>}
     {type === 'queens' && <><path d="M7 29 5 12l9 7 6-11 6 11 9-7-2 17H7Z" fill="currentColor" /><path d="M9 32h22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></>}
     {type === 'star-battle' && <path d="m20 3 5.2 10.7 11.8 1.7-8.5 8.3 2 11.7L20 29.9 9.5 35.4l2-11.7L3 15.4l11.8-1.7L20 3Z" fill="currentColor" />}
     {type === 'train-tracks' && <path d="M8 8v24M32 8v24M8 12h24M8 20h24M8 28h24" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />}
@@ -62,6 +63,7 @@ export function GamePlate({ type }: { readonly type: PuzzleType }) {
         <path d="M16 19h16m-16 8h16m-16 8h16m-16 8h16m8 11v16m8-16v16m8-16v16m8-16v16m8-16v16" stroke="currentColor" strokeWidth="2" />
         <path d="M20 11v31q0 24 20 24h37M28 11v31q0 16 12 16h37" stroke="#fff4d9" strokeWidth="2" />
       </>}
+      {type === 'enclosure' && <><path d="M10 10h16v32H10zm48 48h16v16H58z" fill="currentColor" opacity=".45" /><path d="M30 60h24l-3-5-5-3 3-6-4-8-5 2-3-4-2 8-4 4 5 4-3 3z" fill="currentColor" /><path d="M26 26h32v40H26" stroke="currentColor" strokeWidth="2" strokeDasharray="5 3" /></>}
       {type === 'sudoku' && <>
         <path d="M26 26h16v16H26zm32 16h16v16H58z" fill="currentColor" />
         <text x="18" y="22">4</text><text x="34" y="38" className="plate-inverse">9</text><text x="66" y="54" className="plate-inverse">2</text><text x="50" y="70">7</text>

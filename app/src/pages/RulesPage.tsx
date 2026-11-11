@@ -56,6 +56,7 @@ export function RulesPage() {
         complete the daily puzzle, then keep experimenting and save an improved score.
         Your first completion time stays fixed; your best submitted score is saved separately.
         The optimal score is shown as a target. Several layouts may reach it.</p>
+      <p><Link to="/preview/enclosure">Try the Horse Enclosure previews</Link>. Preview submissions do not affect daily stats.</p>
       <p>Inspired by <a href="https://enclose.horse/" target="_blank" rel="noopener noreferrer">enclose.horse</a>.
         This version uses its own artwork and allows improvements after submission.</p>
 

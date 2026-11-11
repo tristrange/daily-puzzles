@@ -44,13 +44,34 @@ it('submits manually, improves without replacing the first completion, and resto
   await click(button('Undo')); expect(cell(9).dataset['wall']).toBe('true')
   await act(async () => root.unmount()); root = createRoot(container); await render()
   expect(cell(9).dataset['wall']).toBe('true')
-  expect(container.textContent).toContain('Best submitted score: 3')
+  expect(container.textContent).toContain('Best score: 3')
 })
 
 it('does not write daily stats for preview', async () => {
   await render(false); await click(button('Submit enclosure'))
   expect(localStorage.getItem(STATS_STORAGE_KEY)).toBeNull()
-  expect(container.textContent).toContain('Best submitted score: 4')
+  expect(container.textContent).toContain('Best score: 4')
+})
+
+it('freezes the completion clock through improvements and reload', async () => {
+  let now = 1000
+  vi.spyOn(performance, 'now').mockImplementation(() => now)
+  vi.spyOn(document, 'hasFocus').mockReturnValue(true)
+  await render()
+  await click(cell(6)); await click(cell(9))
+  now = 6000
+  await click(button('Submit enclosure'))
+  expect(readStoredStats()[0]?.elapsedMs).toBe(5000)
+  now = 16000
+  await click(cell(6)); await click(button('Save improved score'))
+  expect(readStoredStats()[0]?.elapsedMs).toBe(5000)
+  await act(async () => root.unmount())
+  root = createRoot(container)
+  await render()
+  now = 26000
+  await click(cell(9)); await click(button('Save improved score'))
+  expect(readStoredStats()[0]?.elapsedMs).toBe(5000)
+  expect(readStoredStats()[0]?.enclosureBest?.score).toBe(4)
 })
 
 it('reports storage failures', async () => {

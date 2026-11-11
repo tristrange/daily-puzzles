@@ -6,6 +6,8 @@ import { HomePage } from './pages/HomePage'
 import { LeaderboardGate } from './components/LeaderboardGate'
 import { LessonLayout } from './components/LessonLayout'
 
+const EnclosurePreviewPage = lazy(() => import('./pages/EnclosurePreviewPage').then(module => ({ default: module.EnclosurePreviewPage })))
+
 const CustomizationPage = lazy(() => import('./pages/CustomizationPage').then((module) => ({ default: module.CustomizationPage })))
 const ArchivePage = lazy(() => import('./pages/ArchivePage').then((module) => ({ default: module.ArchivePage })))
 const LeaderboardsPage = lazy(() => import('./pages/LeaderboardsPage').then((module) => ({ default: module.LeaderboardsPage })))
@@ -52,6 +54,7 @@ function App() {
               <Route path="leaderboards" element={<LeaderboardsPage />} />
             </Route>
             <Route path="preview/word-paths" element={<WordPathsPreviewPage />} />
+            <Route path="preview/enclosure" element={<EnclosurePreviewPage />} />
             <Route path="preview/trio" element={<TrioPreviewPage />} />
             <Route path="preview/nurikabe" element={<NurikabePreviewPage />} />
             <Route path="preview/tents" element={<TentsPreviewPage />} />
