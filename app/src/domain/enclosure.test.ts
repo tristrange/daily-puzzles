@@ -37,5 +37,7 @@ describe('enclosure', () => {
     }
     const grid = new EnclosureGrid(3, [], 4, 4);
     for (const walls of [[1, 1], [3, 1], [4], [9], [1, 3, 5, 7, 8], Array(1)]) expect(() => evaluate(grid, walls)).toThrow();
+    expect(() => resetEnclosure({ grid, walls: [1, 1] })).toThrow()
+    expect(() => resetEnclosure({ grid, walls: Array(1) })).toThrow()
   });
 });

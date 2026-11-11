@@ -91,5 +91,8 @@ export function toggleWall(game: EnclosureGame, cell: number): EnclosureGame {
   }
   return { ...game, walls: [...game.walls, cell].sort((a, b) => a - b) }
 }
-export function resetEnclosure(game: EnclosureGame): EnclosureGame { return game.walls.length === 0 ? game : { ...game, walls: [] } }
+export function resetEnclosure(game: EnclosureGame): EnclosureGame {
+  validateWalls(game.grid, game.walls)
+  return game.walls.length === 0 ? game : { ...game, walls: [] }
+}
 export function enclosureFingerprint(grid: EnclosureGrid): string { return JSON.stringify([grid.size, grid.water, grid.horse, grid.wallBudget, grid.optimalScore]) }
