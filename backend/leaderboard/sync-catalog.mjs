@@ -15,22 +15,23 @@ export async function readCatalog(directory) {
       const day = raw.id.slice(0,10)
       if (new Date(`${day}T00:00:00Z`).toISOString().slice(0,10) !== day) throw Error()
       const suffix = raw.id.slice(10)
-      if (raw.type === 'enclosure' && suffix === '-enclosure') continue
-      const expected = {queens:'', 'star-battle':'-star', 'word-paths':'-words', trio:'-trio', tents:'-tents', nurikabe:'-nurikabe'}
+      const expected = {queens:'', 'star-battle':'-star', 'word-paths':'-words', trio:'-trio', tents:'-tents', nurikabe:'-nurikabe', enclosure:'-enclosure'}
       if (raw.type === 'sudoku' || raw.type === 'killer-sudoku') {
         if (!['easy','medium','hard'].includes(raw.board?.level)
           || suffix !== `-${raw.type}-${raw.board.level}` || raw.board.size !== 9) throw Error()
       } else if (raw.type === 'train-tracks' ? !/^\-tracks(?:-small|-medium|-large)?$/.test(suffix)
         : !Object.hasOwn(expected, raw.type) || suffix !== expected[raw.type]) throw Error()
       if (raw.type === 'nurikabe' && raw.board?.size !== 7) throw Error()
-      const square = ['queens','star-battle','trio','tents','sudoku','nurikabe','killer-sudoku'].includes(raw.type)
+      const square = ['queens','star-battle','trio','tents','sudoku','nurikabe','killer-sudoku','enclosure'].includes(raw.type)
       const width = square ? raw.board?.size : raw.board?.width
       const height = square ? raw.board?.size : raw.board?.height
       if ([width,height].some(n => !Number.isInteger(n) || n < 1 || n > 16)) throw Error()
       const labels = {'-tracks-small':'Small', '-tracks-medium':'Medium', '-tracks-large':'Large',
         '-sudoku-easy':'Easy', '-sudoku-medium':'Medium', '-sudoku-hard':'Hard',
         '-killer-sudoku-easy':'Easy', '-killer-sudoku-medium':'Medium', '-killer-sudoku-hard':'Hard'}
-      entries.push({puzzle_id:raw.id,puzzle_type:raw.type,puzzle_day:day,width,height,size_label:labels[suffix] ?? null})
+      if (raw.type === 'enclosure' && (!Number.isInteger(raw.board?.optimalScore) || raw.board.optimalScore < 1 || raw.board.optimalScore > width * height)) throw Error()
+      entries.push({puzzle_id:raw.id,puzzle_type:raw.type,puzzle_day:day,width,height,size_label:labels[suffix] ?? null,
+        ...(raw.type === 'enclosure' ? {max_score:raw.board.optimalScore} : {})})
     }
     if (!entries.length) throw Error()
     return entries
@@ -45,19 +46,26 @@ export async function syncCatalog({url, secretKey, directory, fetcher = fetch}) 
     throw Error('Set SUPABASE_URL and a server-only SUPABASE_SECRET_KEY')
   }
   const puzzles = await readCatalog(directory)
-  let response
-  try {
-    response = await fetcher(`${url.replace(/\/$/,'')}/rest/v1/rpc/register_leaderboard_puzzles`, {
-      method:'POST',redirect:'error',signal:AbortSignal.timeout(15_000),
-      headers:{apikey:secretKey,'Content-Type':'application/json'},body:JSON.stringify({p_puzzles:puzzles}),
-    })
-  } catch { throw Error('Leaderboard catalog request failed; check connection and project settings') }
-  if (!response.ok) throw Error(`Leaderboard catalog request failed (HTTP ${response.status})`)
-  let count
-  try { count = await response.json() }
-  catch { throw Error('Leaderboard catalog returned an invalid response') }
-  if (count !== puzzles.length) throw Error('Leaderboard catalog did not confirm the complete batch')
-  return count
+  const batches = [
+    {name:'ordinary', puzzles:puzzles.filter(puzzle => puzzle.puzzle_type !== 'enclosure')},
+    {name:'enclosure', puzzles:puzzles.filter(puzzle => puzzle.puzzle_type === 'enclosure')},
+  ]
+  for (const batch of batches) {
+    if (!batch.puzzles.length) continue
+    let response
+    try {
+      response = await fetcher(`${url.replace(/\/$/,'')}/rest/v1/rpc/register_leaderboard_puzzles`, {
+        method:'POST',redirect:'error',signal:AbortSignal.timeout(15_000),
+        headers:{apikey:secretKey,'Content-Type':'application/json'},body:JSON.stringify({p_puzzles:batch.puzzles}),
+      })
+    } catch { throw Error(`Leaderboard ${batch.name} catalog request failed; check connection and project settings`) }
+    if (!response.ok) throw Error(`Leaderboard ${batch.name} catalog request failed (HTTP ${response.status})`)
+    let count
+    try { count = await response.json() }
+    catch { throw Error(`Leaderboard ${batch.name} catalog returned an invalid response`) }
+    if (count !== batch.puzzles.length) throw Error(`Leaderboard ${batch.name} catalog did not confirm the complete batch`)
+  }
+  return puzzles.length
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

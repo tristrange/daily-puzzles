@@ -25,21 +25,30 @@ async function fixture() {
 const url = 'https://example.supabase.co'
 const secretKey = 'sb_secret_private-test-value'
 
-test('keeps existing leaderboard metadata while excluding Horse Enclosure', async () => {
+test('includes Horse Enclosure with its optimum', async () => {
   const dir = await fixture()
   await writeFile(join(dir, '2026-11-11-enclosure.json'), JSON.stringify({
     id: '2026-11-11-enclosure', type: 'enclosure', generatorVersion: 1, seed: 0,
     board: { size: 8, water: [], horse: 27, wallBudget: 8, optimalScore: 5 },
   }))
   const entries = await readCatalog(dir)
-  assert.equal(entries.length, 1)
-  assert.equal(entries[0].puzzle_type, 'queens')
+  assert.equal(entries.length, 2)
+  assert.equal(entries.find(entry => entry.puzzle_type === 'enclosure').max_score, 5)
 })
 
-test('reads the complete published catalog without enrolling enclosure puzzles', async () => {
+test('reads the complete published catalog including enclosure puzzles', async () => {
   const entries = await readCatalog(fileURLToPath(new URL('../../app/public/puzzles/', import.meta.url)))
   assert.ok(entries.length > 0)
-  assert.ok(entries.every(entry => entry.puzzle_type !== 'enclosure'))
+  assert.ok(entries.some(entry => entry.puzzle_type === 'enclosure' && entry.max_score > 0))
+})
+
+test('rejects invalid enclosure optima', async () => {
+  for (const optimalScore of [undefined, null, 0, -1, 1.5, 65]) {
+    const dir = await directory()
+    const id = '2026-11-11-enclosure'
+    await writeFile(join(dir, `${id}.json`), JSON.stringify({id, type:'enclosure', board:{size:8, optimalScore}}))
+    await assert.rejects(readCatalog(dir))
+  }
 })
 
 test('still rejects enclosure ID/type mismatches and invalid calendar days', async () => {
@@ -144,6 +153,35 @@ test('imports an exact metadata batch with a server apikey and no redirects', as
     return new Response('1', {status:200})
   }})
   assert.equal(count, 1)
+})
+
+test('registers ordinary puzzles before an unavailable enclosure schema', async () => {
+  const dir = await fixture()
+  const id = '2026-11-11-enclosure'
+  await writeFile(join(dir, `${id}.json`), JSON.stringify({id, type:'enclosure', board:{size:8, optimalScore:5}}))
+  const batches = []
+  await assert.rejects(syncCatalog({url, secretKey, directory:dir, fetcher:async (_target, options) => {
+    const puzzles = JSON.parse(options.body).p_puzzles
+    batches.push(puzzles)
+    return puzzles[0].puzzle_type === 'enclosure' ? new Response('', {status:400}) : new Response('1', {status:200})
+  }}), /enclosure/i)
+  assert.equal(batches.length, 2)
+  assert.equal(batches[0][0].puzzle_type, 'queens')
+  assert.equal(batches[1][0].puzzle_type, 'enclosure')
+})
+
+test('returns the total after each mixed catalog batch is confirmed', async () => {
+  const dir = await fixture()
+  const id = '2026-11-11-enclosure'
+  await writeFile(join(dir, `${id}.json`), JSON.stringify({id, type:'enclosure', board:{size:8, optimalScore:5}}))
+  const types = []
+  const count = await syncCatalog({url, secretKey, directory:dir, fetcher:async (_target, options) => {
+    const puzzles = JSON.parse(options.body).p_puzzles
+    types.push(puzzles.map(puzzle => puzzle.puzzle_type))
+    return new Response(JSON.stringify(puzzles.length), {status:200})
+  }})
+  assert.deepEqual(types, [['queens'], ['enclosure']])
+  assert.equal(count, 2)
 })
 
 test('rejects unsafe configuration and redacts provider/network error text', async () => {

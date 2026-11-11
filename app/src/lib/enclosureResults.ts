@@ -43,6 +43,12 @@ export function validatedEnclosureBest(record: SolveRecord | undefined, grid: En
   return [fields.enclosureBest, ...(fields.enclosureAlternatives ?? [])].find(best => best?.board === board) ?? null
 }
 
+export function validatedEnclosureFirst(record: SolveRecord | undefined, grid: EnclosureGrid): EnclosureBest | null {
+  if (record?.puzzleType !== 'enclosure') return null
+  const first = parseEnclosureBest(record.enclosureFirst)
+  return first && first.achievedAt === record.solvedAt && first.board === enclosureFingerprint(grid) ? first : null
+}
+
 export function betterEnclosureBest(a: EnclosureBest | undefined, b: EnclosureBest | undefined): EnclosureBest | undefined {
   if (!a) return b
   if (!b) return a

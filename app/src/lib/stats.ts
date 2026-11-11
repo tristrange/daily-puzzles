@@ -1,5 +1,5 @@
 import { attemptTime } from './playTime'
-import { enclosureBestFields, validatedEnclosureBest, type EnclosureBest } from './enclosureResults'
+import { enclosureBestFields, parseEnclosureBest, validatedEnclosureBest, type EnclosureBest } from './enclosureResults'
 import type { EnclosureGrid } from '../domain/enclosure'
 export type { EnclosureBest } from './enclosureResults'
 /**
@@ -31,6 +31,7 @@ export type SolveRecord = {
   readonly attemptElapsedMs?: number
   readonly hints: number
   readonly solvedAt: number
+  readonly enclosureFirst?: EnclosureBest
   readonly enclosureBest?: EnclosureBest
   readonly enclosureAlternatives?: readonly EnclosureBest[]
 }
@@ -106,7 +107,8 @@ function toRecord(value: unknown): SolveRecord | null {
   if (puzzleTypeOf(canonicalId) !== puzzleType) return null
   const alternatives: unknown[] = Array.isArray(entry['enclosureAlternatives']) ? entry['enclosureAlternatives'] : []
   const best = puzzleType === 'enclosure' ? enclosureBestFields([entry['enclosureBest'], ...alternatives]) : {}
-  return { id: canonicalId, puzzleType, size, elapsedMs, ...attemptTime(entry['attemptElapsedMs'], elapsedMs), hints, solvedAt, ...best }
+  const first = puzzleType === 'enclosure' ? parseEnclosureBest(entry['enclosureFirst']) : null
+  return { id: canonicalId, puzzleType, size, elapsedMs, ...attemptTime(entry['attemptElapsedMs'], elapsedMs), hints, solvedAt, ...best, ...(first?.achievedAt === solvedAt ? { enclosureFirst: first } : {}) }
 }
 
 /**
@@ -136,9 +138,10 @@ export function parseStats(value: string | null | undefined): readonly SolveReco
     if (held === undefined) earliest.set(record.id, record)
     else if (record.puzzleType === 'enclosure' && held.puzzleType === 'enclosure') {
       const first = record.solvedAt < held.solvedAt ? record : held
+      const knownFirst = record.solvedAt === held.solvedAt ? held.enclosureFirst ?? record.enclosureFirst : first.enclosureFirst
       const best = enclosureBestFields([held.enclosureBest, ...(held.enclosureAlternatives ?? []), record.enclosureBest, ...(record.enclosureAlternatives ?? [])])
       const { enclosureBest: _discard, enclosureAlternatives: _alternatives, ...completion } = first
-      earliest.set(record.id, { ...completion, ...best })
+      earliest.set(record.id, { ...completion, ...(knownFirst ? { enclosureFirst: knownFirst } : {}), ...best })
     } else if (record.solvedAt < held.solvedAt) earliest.set(record.id, record)
   }
   return [...earliest.values()].sort((a, b) => (a.id < b.id ? -1 : 1))

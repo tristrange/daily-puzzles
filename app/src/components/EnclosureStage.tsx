@@ -2,7 +2,9 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import { createEnclosureGame, enclosureFingerprint, evaluate, resetEnclosure, toggleWall, type EnclosureGame, type EnclosureGrid } from '../domain/enclosure'
 import type { Puzzle } from '../domain/puzzle'
 import { readEnclosureProgress, storeEnclosureProgress } from '../lib/enclosureProgress'
-import { validatedEnclosureBest, type EnclosureBest } from '../lib/enclosureResults'
+import { validatedEnclosureBest, validatedEnclosureFirst, type EnclosureBest } from '../lib/enclosureResults'
+import type { EnclosureSolution } from '../lib/enclosureSolution'
+import { useLeaderboard } from '../lib/useLeaderboard'
 import { readStoredStats, storeEnclosureResult, type SolveRecord } from '../lib/stats'
 import { historyCommand, useMoveHistory } from '../lib/useMoveHistory'
 import type { PlayTime } from '../lib/playTime'
@@ -10,8 +12,12 @@ import { usePlayClock } from '../lib/usePlayClock'
 import { EnclosureBoard } from './EnclosureBoard'
 import { PlayTimer } from './PlayTimer'
 import { ResetButton } from './ResetButton'
+import { EnclosureSolutionPanel } from './EnclosureSolutionPanel'
+import { LeaderboardPanel } from './LeaderboardPanel'
 
-export function EnclosureStage({ grid, puzzle, previewId = '2000-01-01-enclosure' }: { grid: EnclosureGrid; puzzle?: Puzzle; previewId?: string }) {
+type Submission = { status: 'unsubmitted' } | { status: 'preview' } | { status: 'daily'; record: SolveRecord }
+
+export function EnclosureStage({ grid, puzzle, previewId = '2000-01-01-enclosure', previewSolution }: { grid: EnclosureGrid; puzzle?: Puzzle; previewId?: string; previewSolution?: EnclosureSolution }) {
   const id = puzzle?.id ?? previewId
   const [initial] = useState(() => readEnclosureProgress(id, grid))
   const [first] = useState(() => puzzle ? readStoredStats().find(record => record.id === id && record.puzzleType === 'enclosure') : undefined)
@@ -19,18 +25,21 @@ export function EnclosureStage({ grid, puzzle, previewId = '2000-01-01-enclosure
   const current = useRef(game)
   const [best, setBest] = useState<EnclosureBest | null>(() => puzzle ? validatedEnclosureBest(first, grid) : initial?.previewBest ?? null)
   const bestRef = useRef(best)
-  const completed = useRef(first !== undefined || (!puzzle && initial?.previewBest !== undefined))
-  const firstRecord = useRef(first)
+  const [submission, setSubmission] = useState<Submission>(() => first ? { status: 'daily', record: first }
+    : !puzzle && initial?.previewBest ? { status: 'preview' } : { status: 'unsubmitted' })
+  const completed = submission.status !== 'unsubmitted'
+  const firstRecord = submission.status === 'daily' ? submission.record : undefined
   const history = useMoveHistory<EnclosureGame>()
   const [pending, setPending] = useState<SolveRecord | null>(null)
   const [saving, setSaving] = useState(true), [statsSaving, setStatsSaving] = useState(true), [message, setMessage] = useState('')
   const instructionsId = useId()
+  const { offerSolve } = useLeaderboard()
   const saveProgress = (value: PlayTime) => storeEnclosureProgress(id, current.current, value, puzzle ? undefined : bestRef.current ?? undefined)
   const initialTime = first ? { elapsedMs: first.elapsedMs, ...(first.attemptElapsedMs === undefined ? {} : { attemptElapsedMs: first.attemptElapsedMs }) } : initial ?? { elapsedMs: 0 }
   const { time, settle, stop, restartAttempt } = usePlayClock(initialTime, value => {
     setSaving(saveProgress(value))
   })
-  useEffect(() => { if (completed.current) stop() }, [stop])
+  useEffect(() => { if (completed) stop() }, [completed, stop])
   const save = () => setSaving(saveProgress(settle()))
   const change = (next: EnclosureGame) => { current.current = next; setGame(next); save() }
   const toggle = (cell: number) => {
@@ -46,6 +55,7 @@ export function EnclosureStage({ grid, puzzle, previewId = '2000-01-01-enclosure
     restartAttempt(); history.remember(current.current); change(next); setMessage('Board cleared. Undo restores it.')
   }
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [data-readonly="true"]')) return
     const command = historyCommand(event.nativeEvent)
     if (command) { event.preventDefault(); if (command === 'undo') undo(); else redo() }
   }
@@ -59,21 +69,24 @@ export function EnclosureStage({ grid, puzzle, previewId = '2000-01-01-enclosure
     const verified = !!candidate && !!savedBest && savedBest.score >= candidate.score && saved?.solvedAt === merged?.solvedAt && saved?.elapsedMs === merged?.elapsedMs && saved?.attemptElapsedMs === merged?.attemptElapsedMs
     bestRef.current = mergedBest; setBest(mergedBest)
     setStatsSaving(verified); setPending(verified ? null : record)
+    setSubmission({ status: 'daily', record: merged ?? record })
+    return merged ?? record
   }
   const submit = () => {
     if (result.escaped || (best && result.score <= best.score)) return
     const when = Date.now()
-    const stoppedTime = completed.current ? settle() : stop()
-    completed.current = true
+    const firstSubmission = !completed
+    const stoppedTime = firstSubmission ? stop() : settle()
     const candidate: EnclosureBest = { score: result.score, walls: [...game.walls], board: enclosureFingerprint(grid), achievedAt: when }
     if (puzzle) {
-      const record: SolveRecord = { ...(firstRecord.current ?? { id, puzzleType: 'enclosure', size: grid.size, ...stoppedTime, hints: 0, solvedAt: when }), enclosureBest: candidate }
-      firstRecord.current = record
-      saveResult(record)
-    } else { bestRef.current = candidate; setBest(candidate) }
+      const record: SolveRecord = { ...(firstRecord ?? { id, puzzleType: 'enclosure', size: grid.size, ...stoppedTime, hints: 0, solvedAt: when, enclosureFirst: candidate }), enclosureBest: candidate }
+      const savedRecord = saveResult(record)
+      if (firstSubmission) void offerSolve(savedRecord)
+    } else { bestRef.current = candidate; setBest(candidate); setSubmission({ status: 'preview' }) }
     setSaving(saveProgress(stoppedTime))
     setMessage('Enclosure submitted. You can keep editing to improve your score.')
   }
+  const ranked = validatedEnclosureFirst(firstRecord, grid)
   return <div className="enclosure-stage" onKeyDown={onKeyDown}>
     <div className="enclosure-controls">
       <PlayTimer time={time} />
@@ -89,10 +102,13 @@ export function EnclosureStage({ grid, puzzle, previewId = '2000-01-01-enclosure
     <p id={instructionsId} className="enclosure-status">Tap grass to toggle walls. Arrow keys move; Enter or Space toggles.</p>
     <EnclosureBoard grid={grid} walls={game.walls} reachable={result.reachable} enclosed={!result.escaped} instructionsId={instructionsId} onToggle={toggle} />
     <p className="enclosure-status" aria-live="polite">{result.escaped ? `The horse can escape. Reachable area: ${result.reachable.length}.` : `Enclosed! Reachable area: ${result.reachable.length}.`}</p>
+    {puzzle && <p className="enclosure-status">{ranked ? `First submitted score: ${ranked.score}. Only your first score and time count for the leaderboard; improvements are personal.` : completed ? 'Your original score was not recorded for ranking. You can keep improving your personal best.' : 'Your first submitted score and time are final for the leaderboard. You can improve your personal best afterward.'}</p>}
     <button type="button" className="tool-button" disabled={result.escaped || (best !== null && result.score <= best.score)} onClick={submit}>{best ? 'Save improved score' : 'Submit enclosure'}</button>
     {message && <p className="enclosure-status" role="status">{message}</p>}
     {!saving && <p className="enclosure-status" role="alert">Could not save the current board on this device.</p>}
     {!statsSaving && <p className="enclosure-status" role="alert">Could not save your submitted score on this device.</p>}
     {pending && <button type="button" className="tool-button" onClick={() => saveResult(pending)}>Retry saving score</button>}
+    {grid.optimalScore !== null && <EnclosureSolutionPanel id={id} grid={grid} canReveal={completed} {...(previewSolution ? { provided: previewSolution } : {})} />}
+    {puzzle && <LeaderboardPanel puzzleId={id} candidate={ranked ? firstRecord : null} />}
   </div>
 }

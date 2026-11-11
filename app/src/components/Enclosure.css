@@ -16,6 +16,10 @@
 .enclosure-cell[data-wall='true'] { background: var(--text); }
 .enclosure-water-mark { font: 700 clamp(1rem, 5vw, 1.8rem)/1 var(--sans); }
 .enclosure-horse { width: 75%; height: 75%; }
+.enclosure-board[data-readonly='true'] .enclosure-cell { cursor: default; }
+.enclosure-solution, .enclosure-solution-board { display: flex; flex-direction: column; align-items: center; gap: .75rem; width: min(100%, 28rem); }
+.enclosure-solution-board h2 { margin: .25rem 0 0; font-size: 1.25rem; }
+.enclosure-stage > .leaderboard-panel { width: 100%; }
 .enclosure-wall-mark { width: 70%; height: 50%; border-block: 2px solid var(--surface); background: linear-gradient(90deg, transparent 45%, var(--surface) 45% 55%, transparent 55%); }
 .enclosure-cell:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; z-index: 1; }
 @media (forced-colors: active) {

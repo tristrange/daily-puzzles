@@ -30,7 +30,10 @@ def engine_required() -> bool:
     for path in os.fsdecode(diff.stdout).split("\0"):
         if not path:
             continue
-        if path.startswith("app/public/puzzles/"):
+        if path.startswith(("app/public/puzzles/", "app/public/solutions/")) or path in {
+            "app/src/domain/enclosurePreviews.json",
+            "app/src/domain/enclosurePreviewSolutions.json",
+        }:
             return True
         if path.startswith(("app/", "docs/", "backend/leaderboard/")) or path in {
             "README.md",

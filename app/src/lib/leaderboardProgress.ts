@@ -1,7 +1,8 @@
 import { attemptTime } from './playTime'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { SolveRecord } from './stats'
-import { isPuzzleId } from '../domain/dates'
+import { isPuzzleId, puzzleTypeOf } from '../domain/dates'
+import { parseEnclosureBest } from './enclosureResults'
 import { isLeaderboardNickname, isScoreNumber, removeLeaderboardResults, submitLeaderboardResult, type LeaderboardConfig, type LeaderboardResult } from './leaderboard'
 
 type StoragePort = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
@@ -18,7 +19,8 @@ function parse(raw: string | null, project: string): Progress {
     if (!saved || saved.project !== project || typeof saved.enabled !== 'boolean' || typeof saved.owner !== 'string'
       || !saved.owner || !isLeaderboardNickname(saved.nickname) || !Array.isArray(saved.pending) || saved.pending.length > 100
       || saved.pending.some(result => !result || !isPuzzleId(result.id) || !isLeaderboardNickname(result.nickname)
-        || !isScoreNumber(result.elapsedMs) || !isScoreNumber(result.hints))
+        || !isScoreNumber(result.elapsedMs) || !isScoreNumber(result.hints)
+        || (puzzleTypeOf(result.id) === 'enclosure' ? !isScoreNumber(result.score) || result.score === 0 || result.hints !== 0 : result.score !== undefined))
       || new Set(saved.pending.map(result => result.id)).size !== saved.pending.length) return empty
     return { ...saved, pending: saved.enabled ? saved.pending.map(({ attemptElapsedMs, ...result }) => ({ ...result, ...attemptTime(attemptElapsedMs, result.elapsedMs) })) : [] }
   } catch { return empty }
@@ -100,6 +102,10 @@ export function createLeaderboardStore(config: LeaderboardConfig | null, client:
   const offerSolve = async (record: SolveRecord) => {
     if (!config || !client || removing || storageFailed) return
     if (!isPuzzleId(record.id) || !isScoreNumber(record.elapsedMs) || !isScoreNumber(record.hints)) return
+    const enclosure = record.puzzleType === 'enclosure'
+    if (puzzleTypeOf(record.id) !== record.puzzleType) return
+    const first = enclosure ? parseEnclosureBest(record.enclosureFirst) : null
+    if (enclosure && (!first || first.achievedAt !== record.solvedAt || record.hints !== 0)) return
     const restoring = !verified
     try {
       await locked(async () => {
@@ -112,7 +118,7 @@ export function createLeaderboardStore(config: LeaderboardConfig | null, client:
           if (owner !== identity || removing || storageFailed) return
         }
         if (saved.pending.length >= 100) { overflow = true; emit(); return }
-        persist({ ...saved, pending: [...saved.pending, { id: record.id, nickname: saved.nickname, elapsedMs: record.elapsedMs, ...attemptTime(record.attemptElapsedMs, record.elapsedMs), hints: record.hints }] })
+        persist({ ...saved, pending: [...saved.pending, { id: record.id, nickname: saved.nickname, elapsedMs: record.elapsedMs, ...attemptTime(record.attemptElapsedMs, record.elapsedMs), hints: record.hints, ...(first ? { score: first.score } : {}) }] })
         notice = 'Result queued.'; emit()
       })
       void retry()

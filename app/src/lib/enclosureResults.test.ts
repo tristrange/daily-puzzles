@@ -10,3 +10,10 @@ test('checks board and recalculates score', () => {
   expect(validatedEnclosureBest(record, new EnclosureGrid(3, [0], 4, 4))).toBeNull()
   expect(validatedEnclosureBest({ ...record, enclosureBest: { ...best, score: 2 } }, grid)).toBeNull()
 })
+
+test('validates the first result against its completion and board', async () => {
+  const { validatedEnclosureFirst } = await import('./enclosureResults')
+  expect(validatedEnclosureFirst({ ...record, enclosureFirst: best }, grid)).toEqual(best)
+  expect(validatedEnclosureFirst({ ...record, enclosureFirst: { ...best, achievedAt: 2 } }, grid)).toBeNull()
+  expect(validatedEnclosureFirst({ ...record, enclosureFirst: { ...best, walls: [] } }, grid)).toBeNull()
+})

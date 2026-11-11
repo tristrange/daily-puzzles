@@ -357,3 +357,26 @@ it('drops malformed pending attempt decoration while preserving its legacy score
   await reopened.retry()
   expect(f.requests[0]?.body).toEqual({ p_puzzle_id: solve.id, p_nickname: 'Alice', p_elapsed_ms: 60000, p_hints: 2 })
 })
+
+it('queues only the validated first enclosure area across offline retries and late joining', async () => {
+  const { EnclosureGrid, enclosureFingerprint } = await import('../domain/enclosure')
+  const grid = new EnclosureGrid(3, [], 4, 4)
+  const first = { score: 1, walls: [1, 3, 5, 7], board: enclosureFingerprint(grid), achievedAt: 1000 }
+  const record = { ...solve, id: '2026-11-11-enclosure', puzzleType: 'enclosure' as const, size: 3, hints: 0, enclosureFirst: first }
+  const f = fixture(), store = createLeaderboardStore(config, f.client, f.storage)
+  f.setResponse(async () => new Response('{}', { status: 503 }))
+  await store.join('Alice', 'captcha', record)
+  await store.offerSolve({ ...record, enclosureFirst: { ...first, score: 50 } })
+  const reopened = createLeaderboardStore(config, f.client, f.storage)
+  f.setResponse(async () => new Response('{"status":"created"}'))
+  await reopened.retry()
+  expect(f.requests.length).toBeGreaterThan(1)
+  for (const request of f.requests) expect(request).toEqual({ name: 'submit_enclosure_result', body: { p_puzzle_id: record.id, p_nickname: 'Alice', p_elapsed_ms: 60000, p_score: 1 } })
+  const before = f.requests.length
+  const { enclosureFirst: _first, ...legacy } = record
+  await reopened.offerSolve({ ...legacy, id: '2026-11-10-enclosure' })
+  await reopened.offerSolve({ ...record, id: '2026-11-09-enclosure', enclosureFirst: { ...first, achievedAt: 1 } })
+  await reopened.offerSolve({ ...record, id: '2026-11-08-enclosure', enclosureFirst: { ...first, walls: [] } })
+  await reopened.retry()
+  expect(f.requests).toHaveLength(before)
+})

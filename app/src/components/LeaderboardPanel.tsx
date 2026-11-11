@@ -1,23 +1,24 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatTime } from '../domain/game'
+import { puzzleTypeOf } from '../domain/dates'
 import { readLeaderboard, type LeaderboardSnapshot } from '../lib/leaderboard'
 import { useLeaderboard } from '../lib/useLeaderboard'
 import type { SolveRecord } from '../lib/stats'
 import { JoinLeaderboard } from './JoinLeaderboard'
 
-export function LeaderboardTable({ board }: { board: LeaderboardSnapshot }) {
+export function LeaderboardTable({ board, enclosure = false }: { board: LeaderboardSnapshot; enclosure?: boolean }) {
   if (!board.entries.length) return <p className="status">No results yet. Be the first to publish one.</p>
   const rows = [...board.entries, ...(board.own_entry ? [board.own_entry] : [])]
   return <>
     <table className="leaderboard-table">
-      <caption className="sr-only">Puzzle results, ranked by hints used then elapsed time</caption>
-      <thead><tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col">Time</th><th scope="col">Hints</th></tr></thead>
+      <caption className="sr-only">{enclosure ? 'Puzzle results, ranked by largest area then elapsed time' : 'Puzzle results, ranked by hints used then elapsed time'}</caption>
+      <thead><tr><th scope="col">Rank</th><th scope="col">Player</th>{enclosure && <th scope="col">Area</th>}<th scope="col">Time</th>{!enclosure && <th scope="col">Hints</th>}</tr></thead>
       <tbody>{rows.map((entry, position) => <tr key={position} className={`${entry.is_you ? 'is-you' : ''}${position === board.entries.length ? ' own-outside' : ''}`}>
-        <td>{entry.rank}</td><th scope="row">{entry.nickname}{entry.is_you && <span className="leaderboard-you">You</span>}</th><td>{formatTime(entry.elapsed_ms)}{entry.attempt_elapsed_ms !== undefined && <small className="leaderboard-attempt"> ({formatTime(entry.attempt_elapsed_ms)} since reset)</small>}</td><td>{entry.hints}</td>
+        <td>{entry.rank}</td><th scope="row">{entry.nickname}{entry.is_you && <span className="leaderboard-you">You</span>}</th>{enclosure && <td>{entry.score}</td>}<td>{formatTime(entry.elapsed_ms)}{entry.attempt_elapsed_ms !== undefined && <small className="leaderboard-attempt"> ({formatTime(entry.attempt_elapsed_ms)} since reset)</small>}</td>{!enclosure && <td>{entry.hints}</td>}
       </tr>)}</tbody>
     </table>
-    <p className="leaderboard-note">{board.total} player{board.total === 1 ? '' : 's'} · Fewest hints, then fastest total time. Tied scores share rank.</p>
+    <p className="leaderboard-note">{board.total} player{board.total === 1 ? '' : 's'} · {enclosure ? 'First score only. Largest area, then fastest total time.' : 'Fewest hints, then fastest total time.'} Tied scores share rank.</p>
   </>
 }
 
@@ -53,7 +54,7 @@ export function LeaderboardPanel({ puzzleId, candidate }: { puzzleId: string; ca
       : <>
         {offline ? <p className="status" role="status">You’re offline. Connect to view rankings; you can keep playing saved puzzles.</p>
           : !active ? <p className="status" role="status">Loading leaderboard…</p>
-            : 'error' in active ? <p className="status" role="status">{active.error}</p> : <LeaderboardTable board={active.board} />}
+            : 'error' in active ? <p className="status" role="status">{active.error}</p> : <LeaderboardTable board={active.board} enclosure={puzzleTypeOf(puzzleId) === 'enclosure'} />}
         <div className="leaderboard-actions">
           <button className="tool-button" type="button" disabled={offline} onClick={() => setRefresh(value => value + 1)}>Refresh</button>
           {status !== 'loading' && <button className="tool-button" type="button" disabled={offline || removing} onClick={() => setJoining(value => !value)}>{status === 'on' ? 'Change nickname' : 'Join leaderboard'}</button>}

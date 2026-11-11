@@ -30,7 +30,7 @@ export function LeaderboardsPage() {
   const today = useToday(timeZone)
   const requested = params.get('id') ?? today
   const parsed = puzzleIdParts(requested)
-  const valid = parsed !== null && parsed.type !== 'enclosure' && parsed.day <= today && parsed.day >= FIRST_DAY[parsed.type]
+  const valid = parsed !== null && parsed.day <= today && parsed.day >= FIRST_DAY[parsed.type]
   const day = valid ? parsed.day : today, type = valid ? parsed.type : 'queens'
   const sudokuVariant = valid && type === 'sudoku' ? sudokuVariantOf(requested) : type === 'killer-sudoku' ? killerVariantOf(requested) : null
   const variant = valid && type === 'train-tracks' ? trackVariantOf(requested) : null
@@ -53,9 +53,9 @@ export function LeaderboardsPage() {
   }
   return <section className="leaderboards-page">
     <h1 className="page-title">Leaderboards</h1>
-    <p className="page-intro">Compare the same puzzle. Fewer hints rank first, then time.</p>
+    <p className="page-intro">{type === 'enclosure' ? 'Compare the same puzzle. Largest first area ranks first, then time.' : 'Compare the same puzzle. Fewer hints rank first, then time.'}</p>
     <div className="leaderboard-filters">
-      <label>Game<select value={type} onChange={event => change(event.target.value as PuzzleType, day)}>{PUZZLE_TYPES.filter(game => PUZZLE_TYPE_PUBLISHED[game] && game !== 'enclosure').map(game => <option key={game} value={game}>{PUZZLE_TYPE_LABEL[game]}</option>)}</select></label>
+      <label>Game<select value={type} onChange={event => change(event.target.value as PuzzleType, day)}>{PUZZLE_TYPES.filter(game => PUZZLE_TYPE_PUBLISHED[game]).map(game => <option key={game} value={game}>{PUZZLE_TYPE_LABEL[game]}</option>)}</select></label>
       <label>Date<input type="date" value={day} min={FIRST_DAY[type]} max={today} onChange={event => change(type, event.target.value)} /></label>
       {(type === 'sudoku' || type === 'killer-sudoku') && <label>Level<select value={sudokuVariant?.name ?? 'easy'} onChange={event => change(type, day, undefined, event.target.value as SudokuLevel)}>
         {SUDOKU_VARIANTS.map(level => <option key={level.name} value={level.name}>{level.label}</option>)}
