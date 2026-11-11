@@ -7,7 +7,7 @@ import { probePuzzles, type ProbedPuzzle } from '../lib/puzzles'
 import { sudokuVariantOf, killerVariantOf } from '../domain/sudokuLevels'
 import { trackVariantOf } from '../domain/trackSizes'
 import { formatTime } from '../domain/game'
-import { isMarksPuzzle, isTracksPuzzle, isTrioPuzzle, isTentsPuzzle, isSudokuPuzzle, isNurikabePuzzle, type Puzzle } from '../domain/puzzle'
+import { isMarksPuzzle, isTracksPuzzle, isTrioPuzzle, isTentsPuzzle, isSudokuPuzzle, isNurikabePuzzle, isEnclosurePuzzle, type Puzzle } from '../domain/puzzle'
 import { WordGrid } from '../domain/wordPaths'
 import { currentStreak, readStoredStats, type SolveRecord } from '../lib/stats'
 import { useToday } from '../lib/useToday'
@@ -37,6 +37,7 @@ const DESCRIPTION: Record<PuzzleType, string> = {
 
 // Keep full save validation, including the Word Paths vocabulary, out of the initial bundle.
 async function savedTime(puzzle: Puzzle): Promise<number | null> {
+  if (isEnclosurePuzzle(puzzle)) return (await import('../lib/enclosureProgress')).readEnclosureProgress(puzzle.id, puzzle.board)?.elapsedMs ?? null
   if (isMarksPuzzle(puzzle)) return (await import('../lib/marksProgress')).readMarksProgress(puzzle.id, puzzle.board)?.elapsedMs ?? null
   if (isTracksPuzzle(puzzle)) return (await import('../lib/trackProgress')).readTrackProgress(puzzle.id, puzzle.board)?.elapsedMs ?? null
   if (isTrioPuzzle(puzzle)) return (await import('../lib/trioProgress')).readTrioProgress(puzzle.board, true)?.elapsedMs ?? null

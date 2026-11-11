@@ -1,0 +1,68 @@
+{
+  "runs": [
+    {
+      "browser": "chromium",
+      "width": 320,
+      "theme": "light",
+      "palette": "classic",
+      "keyboard": true,
+      "overflow": false
+    },
+    {
+      "browser": "chromium",
+      "width": 375,
+      "theme": "dark",
+      "palette": "forest",
+      "keyboard": true,
+      "overflow": false
+    },
+    {
+      "browser": "chromium",
+      "width": 768,
+      "theme": "light",
+      "palette": "warm",
+      "keyboard": true,
+      "overflow": false
+    },
+    {
+      "browser": "chromium",
+      "width": 1280,
+      "theme": "dark",
+      "palette": "cool",
+      "keyboard": true,
+      "overflow": false
+    },
+    {
+      "browser": "webkit",
+      "width": 320,
+      "theme": "light",
+      "palette": "classic",
+      "keyboard": true,
+      "overflow": false
+    },
+    {
+      "browser": "webkit",
+      "width": 375,
+      "theme": "dark",
+      "palette": "forest",
+      "keyboard": true,
+      "overflow": false
+    },
+    {
+      "browser": "webkit",
+      "width": 768,
+      "theme": "light",
+      "palette": "warm",
+      "keyboard": true,
+      "overflow": false
+    },
+    {
+      "browser": "webkit",
+      "width": 1280,
+      "theme": "dark",
+      "palette": "cool",
+      "keyboard": true,
+      "overflow": false
+    }
+  ]
+}

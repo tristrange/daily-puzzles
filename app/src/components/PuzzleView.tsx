@@ -26,7 +26,7 @@ import { hintCellName } from '../domain/hints'
 import { checkedHint, checkMarksEntries, type CheckedHint, type MarksEntryCheck } from '../domain/checkedHints'
 import { marksHintLesson } from '../domain/hintLessons'
 import type { Board, PuzzleType } from '../domain/board'
-import { isMarksPuzzle, isTracksPuzzle, isTrioPuzzle, isTentsPuzzle, isSudokuPuzzle, isNurikabePuzzle, type Puzzle } from '../domain/puzzle'
+import { isMarksPuzzle, isTracksPuzzle, isTrioPuzzle, isTentsPuzzle, isSudokuPuzzle, isNurikabePuzzle, isEnclosurePuzzle, type Puzzle } from '../domain/puzzle'
 import { sudokuVariantOf, killerVariantOf } from '../domain/sudokuLevels'
 import { trackVariantOf } from '../domain/trackSizes'
 import { TracksStage } from './TracksStage'
@@ -45,6 +45,8 @@ import { ResetButton } from './ResetButton'
 import { useMoveHistory } from '../lib/useMoveHistory'
 import { usePlayClock } from '../lib/usePlayClock'
 import { hintSignature, useReturnedHint } from '../lib/hintReturn'
+
+const EnclosureStage = lazy(() => import('./EnclosureStage').then(module => ({ default: module.EnclosureStage })))
 
 const NurikabeStage = lazy(() => import('./NurikabeStage').then(module => ({ default: module.NurikabeStage })))
 
@@ -627,7 +629,11 @@ export function PuzzleView({
         </div>
       </div>
       <div key={state.puzzle.id}>
-        {isNurikabePuzzle(state.puzzle) ? (
+        {isEnclosurePuzzle(state.puzzle) ? (
+          <Suspense fallback={<p className="status">Loading Horse Enclosure…</p>}>
+            <EnclosureStage grid={state.puzzle.board} puzzle={state.puzzle} />
+          </Suspense>
+        ) : isNurikabePuzzle(state.puzzle) ? (
           <Suspense fallback={<p className="status">Loading Nurikabe…</p>}>
             <NurikabeStage board={state.puzzle.board} puzzle={state.puzzle} />
           </Suspense>

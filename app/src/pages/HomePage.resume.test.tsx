@@ -1,4 +1,3 @@
-import { PUZZLE_TYPE_PUBLISHED } from '../domain/games'
 // @vitest-environment jsdom
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -19,7 +18,6 @@ import { createSudokuGame } from '../domain/sudoku'
 import { storeSudokuProgress } from '../lib/sudokuProgress'
 import tents from '../../../conformance/schema-cases/tents.accept.json'
 import nurikabe from '../../../conformance/schema-cases/nurikabe.accept.json'
-import { PUZZLE_TYPES } from '../domain/board'
 import { parsePuzzle, isSudokuPuzzle, isNurikabePuzzle } from '../domain/puzzle'
 import { createNurikabeGame } from '../domain/nurikabe'
 import { storeNurikabeProgress } from '../lib/nurikabeProgress'
@@ -143,7 +141,7 @@ it('ignores stale saves and blocked storage instead of advertising a broken resu
     localStorage.setItem(key, JSON.stringify({ ...JSON.parse(localStorage.getItem(key)!), board: 'old board' }))
   }
   await render()
-  expect(container.querySelectorAll('.game-card')).toHaveLength(PUZZLE_TYPES.filter(type => PUZZLE_TYPE_PUBLISHED[type]).length)
+  expect(container.querySelectorAll('.game-card')).toHaveLength(new Set(puzzles.map(puzzle => puzzle.puzzleType)).size)
   expect(container.textContent).not.toContain('Resume')
   expect([...container.querySelectorAll('a[href*="/preview/"]')].map(link => link.getAttribute('href')))
     .toEqual(['/preview/deduction'])
@@ -151,7 +149,7 @@ it('ignores stale saves and blocked storage instead of advertising a broken resu
   await act(async () => root.unmount())
   root = createRoot(container)
   await render()
-  expect(container.querySelectorAll('.game-card')).toHaveLength(PUZZLE_TYPES.filter(type => PUZZLE_TYPE_PUBLISHED[type]).length)
+  expect(container.querySelectorAll('.game-card')).toHaveLength(new Set(puzzles.map(puzzle => puzzle.puzzleType)).size)
   expect(container.textContent).not.toContain('Resume')
 })
 
