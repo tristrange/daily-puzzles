@@ -4,6 +4,7 @@ import { cp, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import { readCatalog, syncCatalog } from './sync-catalog.mjs'
 
 const temporary = []
@@ -23,6 +24,34 @@ async function fixture() {
 }
 const url = 'https://example.supabase.co'
 const secretKey = 'sb_secret_private-test-value'
+
+test('keeps existing leaderboard metadata while excluding Horse Enclosure', async () => {
+  const dir = await fixture()
+  await writeFile(join(dir, '2026-11-11-enclosure.json'), JSON.stringify({
+    id: '2026-11-11-enclosure', type: 'enclosure', generatorVersion: 1, seed: 0,
+    board: { size: 8, water: [], horse: 27, wallBudget: 8, optimalScore: 5 },
+  }))
+  const entries = await readCatalog(dir)
+  assert.equal(entries.length, 1)
+  assert.equal(entries[0].puzzle_type, 'queens')
+})
+
+test('reads the complete published catalog without enrolling enclosure puzzles', async () => {
+  const entries = await readCatalog(fileURLToPath(new URL('../../app/public/puzzles/', import.meta.url)))
+  assert.ok(entries.length > 0)
+  assert.ok(entries.every(entry => entry.puzzle_type !== 'enclosure'))
+})
+
+test('still rejects enclosure ID/type mismatches and invalid calendar days', async () => {
+  for (const [id, type] of [
+    ['2026-11-11-enclosure', 'queens'], ['2026-11-11', 'enclosure'],
+    ['2026-02-30-enclosure', 'enclosure'],
+  ]) {
+    const dir = await fixture()
+    await writeFile(join(dir, `${id}.json`), JSON.stringify({ id, type, board: { size: 8 } }))
+    await assert.rejects(readCatalog(dir))
+  }
+})
 
 test('reads three Sudoku levels as separate 9x9 boards with level labels', async () => {
   const dir = await directory()

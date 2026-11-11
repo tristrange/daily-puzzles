@@ -11,10 +11,11 @@ export async function readCatalog(directory) {
     for (const name of files) {
       const raw = JSON.parse(await readFile(join(directory, name), 'utf8'))
       if (typeof raw?.id !== 'string' || name !== `${raw.id}.json`
-        || !/^\d{4}-\d{2}-\d{2}(?:-star|-tracks(?:-small|-medium|-large)?|-words|-trio|-tents|-nurikabe|-(?:killer-)?sudoku-(?:easy|medium|hard))?$/.test(raw.id)) throw Error()
+        || !/^\d{4}-\d{2}-\d{2}(?:-star|-tracks(?:-small|-medium|-large)?|-words|-trio|-tents|-nurikabe|-enclosure|-(?:killer-)?sudoku-(?:easy|medium|hard))?$/.test(raw.id)) throw Error()
       const day = raw.id.slice(0,10)
       if (new Date(`${day}T00:00:00Z`).toISOString().slice(0,10) !== day) throw Error()
       const suffix = raw.id.slice(10)
+      if (raw.type === 'enclosure' && suffix === '-enclosure') continue
       const expected = {queens:'', 'star-battle':'-star', 'word-paths':'-words', trio:'-trio', tents:'-tents', nurikabe:'-nurikabe'}
       if (raw.type === 'sudoku' || raw.type === 'killer-sudoku') {
         if (!['easy','medium','hard'].includes(raw.board?.level)
