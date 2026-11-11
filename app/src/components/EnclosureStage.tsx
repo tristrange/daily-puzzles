@@ -5,6 +5,7 @@ import { readEnclosureProgress, storeEnclosureProgress } from '../lib/enclosureP
 import { validatedEnclosureBest, type EnclosureBest } from '../lib/enclosureResults'
 import { readStoredStats, storeEnclosureResult, type SolveRecord } from '../lib/stats'
 import { historyCommand, useMoveHistory } from '../lib/useMoveHistory'
+import type { PlayTime } from '../lib/playTime'
 import { usePlayClock } from '../lib/usePlayClock'
 import { EnclosureBoard } from './EnclosureBoard'
 import { PlayTimer } from './PlayTimer'
@@ -16,17 +17,21 @@ export function EnclosureStage({ grid, puzzle, previewId = '2000-01-01-enclosure
   const [first] = useState(() => puzzle ? readStoredStats().find(record => record.id === id && record.puzzleType === 'enclosure') : undefined)
   const [game, setGame] = useState(() => initial?.game ?? createEnclosureGame(grid))
   const current = useRef(game)
-  const [best, setBest] = useState<EnclosureBest | null>(() => validatedEnclosureBest(first, grid))
-  const completed = useRef(first !== undefined)
+  const [best, setBest] = useState<EnclosureBest | null>(() => puzzle ? validatedEnclosureBest(first, grid) : initial?.previewBest ?? null)
+  const bestRef = useRef(best)
+  const completed = useRef(first !== undefined || (!puzzle && initial?.previewBest !== undefined))
   const firstRecord = useRef(first)
   const history = useMoveHistory<EnclosureGame>()
+  const [pending, setPending] = useState<SolveRecord | null>(null)
   const [saving, setSaving] = useState(true), [statsSaving, setStatsSaving] = useState(true), [message, setMessage] = useState('')
   const instructionsId = useId()
-  const { time, settle, stop, restartAttempt } = usePlayClock(initial ?? { elapsedMs: first?.elapsedMs ?? 0 }, value => {
-    setSaving(storeEnclosureProgress(id, current.current, value))
+  const saveProgress = (value: PlayTime) => storeEnclosureProgress(id, current.current, value, puzzle ? undefined : bestRef.current ?? undefined)
+  const initialTime = first ? { elapsedMs: first.elapsedMs, ...(first.attemptElapsedMs === undefined ? {} : { attemptElapsedMs: first.attemptElapsedMs }) } : initial ?? { elapsedMs: 0 }
+  const { time, settle, stop, restartAttempt } = usePlayClock(initialTime, value => {
+    setSaving(saveProgress(value))
   })
   useEffect(() => { if (completed.current) stop() }, [stop])
-  const save = () => setSaving(storeEnclosureProgress(id, current.current, settle()))
+  const save = () => setSaving(saveProgress(settle()))
   const change = (next: EnclosureGame) => { current.current = next; setGame(next); save() }
   const toggle = (cell: number) => {
     const next = toggleWall(current.current, cell)
@@ -45,6 +50,16 @@ export function EnclosureStage({ grid, puzzle, previewId = '2000-01-01-enclosure
     if (command) { event.preventDefault(); if (command === 'undo') undo(); else redo() }
   }
   const result = evaluate(grid, game.walls)
+  const saveResult = (record: SolveRecord) => {
+    const merged = storeEnclosureResult(record, grid).find(entry => entry.id === id)
+    const saved = readStoredStats().find(entry => entry.id === id)
+    const mergedBest = validatedEnclosureBest(merged, grid)
+    const savedBest = validatedEnclosureBest(saved, grid)
+    const candidate = validatedEnclosureBest(record, grid)
+    const verified = !!candidate && !!savedBest && savedBest.score >= candidate.score && saved?.solvedAt === merged?.solvedAt && saved?.elapsedMs === merged?.elapsedMs && saved?.attemptElapsedMs === merged?.attemptElapsedMs
+    bestRef.current = mergedBest; setBest(mergedBest)
+    setStatsSaving(verified); setPending(verified ? null : record)
+  }
   const submit = () => {
     if (result.escaped || (best && result.score <= best.score)) return
     const when = Date.now()
@@ -54,13 +69,9 @@ export function EnclosureStage({ grid, puzzle, previewId = '2000-01-01-enclosure
     if (puzzle) {
       const record: SolveRecord = { ...(firstRecord.current ?? { id, puzzleType: 'enclosure', size: grid.size, ...stoppedTime, hints: 0, solvedAt: when }), enclosureBest: candidate }
       firstRecord.current = record
-      const merged = storeEnclosureResult(record, grid).find(entry => entry.id === id)
-      const saved = readStoredStats().find(entry => entry.id === id)
-      const mergedBest = validatedEnclosureBest(merged, grid)
-      const savedBest = validatedEnclosureBest(saved, grid)
-      setBest(mergedBest); setStatsSaving(!!savedBest && savedBest.score >= candidate.score && saved?.solvedAt === merged?.solvedAt)
-    } else setBest(candidate)
-    setSaving(storeEnclosureProgress(id, current.current, stoppedTime))
+      saveResult(record)
+    } else { bestRef.current = candidate; setBest(candidate) }
+    setSaving(saveProgress(stoppedTime))
     setMessage('Enclosure submitted. You can keep editing to improve your score.')
   }
   return <div className="enclosure-stage" onKeyDown={onKeyDown}>
@@ -82,5 +93,6 @@ export function EnclosureStage({ grid, puzzle, previewId = '2000-01-01-enclosure
     {message && <p className="enclosure-status" role="status">{message}</p>}
     {!saving && <p className="enclosure-status" role="alert">Could not save the current board on this device.</p>}
     {!statsSaving && <p className="enclosure-status" role="alert">Could not save your submitted score on this device.</p>}
+    {pending && <button type="button" className="tool-button" onClick={() => saveResult(pending)}>Retry saving score</button>}
   </div>
 }

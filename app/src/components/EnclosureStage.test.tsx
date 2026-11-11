@@ -81,3 +81,50 @@ it('reports storage failures', async () => {
   expect(container.textContent).toContain('Could not save the current board')
   expect(container.textContent).toContain('Could not save your submitted score')
 })
+
+it('retries a failed daily score even after the board changes', async () => {
+  let now = 1000
+  vi.spyOn(performance, 'now').mockImplementation(() => now)
+  vi.spyOn(document, 'hasFocus').mockReturnValue(true)
+  await render(); await click(cell(6)); await click(cell(9))
+  const write = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('quota') })
+  now = 6000; await click(button('Submit enclosure'))
+  expect(readStoredStats()).toHaveLength(0)
+  expect(container.textContent).toContain('Could not save your submitted score')
+  await click(cell(6))
+  write.mockRestore(); now = 16000
+  await click(button('Retry saving score'))
+  expect(readStoredStats()[0]?.enclosureBest?.score).toBe(1)
+  expect(readStoredStats()[0]?.elapsedMs).toBe(5000)
+  expect(container.textContent).not.toContain('Could not save your submitted score')
+})
+
+it('restores preview best and stopped time after switching boards and remounting', async () => {
+  let now = 1000
+  vi.spyOn(performance, 'now').mockImplementation(() => now)
+  vi.spyOn(document, 'hasFocus').mockReturnValue(true)
+  await render(false); await click(cell(6)); now = 6000; await click(button('Submit enclosure'))
+  await click(cell(9))
+  await act(async () => root.unmount()); root = createRoot(container)
+  now = 16000; await render(false)
+  expect(container.textContent).toContain('Best score: 3')
+  expect(cell(9).dataset['wall']).toBe('true')
+  expect(container.querySelector('[aria-label="Elapsed active time"]')?.textContent).toContain('0:05')
+  now = 26000; await click(cell(9)); await click(cell(6)); await click(button('Save improved score'))
+  expect(container.querySelector('[aria-label="Elapsed active time"]')?.textContent).toContain('0:05')
+  expect(localStorage.getItem(STATS_STORAGE_KEY)).toBeNull()
+})
+
+it('uses the first daily completion time even if progress is stale', async () => {
+  let now = 1000
+  vi.spyOn(performance, 'now').mockImplementation(() => now)
+  vi.spyOn(document, 'hasFocus').mockReturnValue(true)
+  await render(); await click(cell(6)); now = 6000; await click(button('Submit enclosure'))
+  const key = `daily-puzzles.enclosure-progress.${puzzle.id}`
+  const progress = JSON.parse(localStorage.getItem(key)!)
+  progress.elapsedMs = 1000
+  localStorage.setItem(key, JSON.stringify(progress))
+  await act(async () => root.unmount()); root = createRoot(container); await render()
+  expect(cell(6).dataset['wall']).toBe('true')
+  expect(container.querySelector('[aria-label="Elapsed active time"]')?.textContent).toContain('0:05')
+})
