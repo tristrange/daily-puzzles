@@ -132,6 +132,8 @@ def generate(seed: int) -> EnclosureGrid:
 
 
 def generate_with_report(seed: int) -> tuple[EnclosureGrid, GenerationReport]:
+    if type(seed) is not int or not 0 <= seed < 2**32:
+        raise ValueError("seed must be an unsigned 32-bit integer")
     rng = Prng(seed)
     rejected: Counter[str] = Counter()
     for attempt in range(1, MAX_ATTEMPTS + 1):

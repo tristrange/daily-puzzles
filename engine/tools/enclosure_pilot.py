@@ -6,6 +6,7 @@ import argparse
 import json
 from collections import Counter
 from dataclasses import asdict
+from importlib.metadata import version
 from pathlib import Path
 from time import monotonic
 
@@ -37,6 +38,7 @@ def main(argv: list[str] | None = None) -> int:
     errors: list[dict[str, object]] = []
     rejections: Counter[str] = Counter()
     for seed in range(args.seeds):
+        seed_started = monotonic()
         try:
             grid, report = generate_with_report(seed)
         except EnclosureGenerationError as exc:
@@ -53,11 +55,14 @@ def main(argv: list[str] | None = None) -> int:
                 "score": grid.optimal_score,
                 "budget": grid.wall_budget,
                 "snapshot": _snapshot(grid),
+                "elapsed_seconds": monotonic() - seed_started,
                 **asdict(report),
             }
         )
     result = {
         "requested_seeds": args.seeds,
+        "attempted_seeds": len(boards) + len(errors),
+        "solver_version": version("ortools"),
         "successes": len(boards),
         "errors": errors,
         "rejections": dict(sorted(rejections.items())),

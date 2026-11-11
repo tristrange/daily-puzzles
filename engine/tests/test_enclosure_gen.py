@@ -25,6 +25,7 @@ def test_canonical_layout_normalizes_rotations():
 
 def test_another_seed_returns_a_certified_board():
     grid, report = generate_with_report(1)
+    assert grid.optimal_score is not None
     assert report.best_bound == grid.optimal_score
     assert report.greedy_gap == grid.optimal_score - report.greedy_score
     assert report.attempts == 1 + sum(report.rejections.values())
@@ -37,8 +38,14 @@ def test_version_one_seed_zero_layout_is_pinned():
     )
 
 
-def test_solver_watchdog_aborts_generation(monkeypatch):
-    def timeout(_grid):
+@pytest.mark.parametrize("seed", [-1, 2**32, True, 1.5])
+def test_generation_rejects_non_uint32_seeds(seed: object) -> None:
+    with pytest.raises(ValueError, match="unsigned 32-bit"):
+        generate_with_report(seed)  # type: ignore[arg-type]
+
+
+def test_solver_watchdog_aborts_generation(monkeypatch: pytest.MonkeyPatch) -> None:
+    def timeout(_grid: EnclosureGrid) -> None:
         raise EnclosureSolverTimeoutError("watchdog")
 
     monkeypatch.setattr(enclosure_gen, "solve_optimal", timeout)
