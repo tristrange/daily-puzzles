@@ -40,7 +40,11 @@ export function EnclosureBoard({ grid, walls, reachable, enclosed, instructionsI
         return <button key={cell} type="button" role="gridcell" className="enclosure-cell" data-cell={cell} data-terrain={terrain} data-wall={wall} data-reachable={isReachable}
           tabIndex={cell === focus ? 0 : -1} aria-readonly={fixed} aria-label={`Row ${row + 1}, column ${col + 1}, ${description}`}
           onFocus={() => setFocus(cell)} onClick={() => { if (!fixed) onToggle(cell) }}>
-          {terrain === 'horse' && <svg className="enclosure-horse" viewBox="0 0 32 32" aria-hidden="true"><path d="M7 26h19l-2-4-4-2 2-5-3-7-4 2-3-4-2 7-3 3 4 3-2 3z" fill="currentColor"/><circle cx="16" cy="13" r="1" fill="var(--surface)"/></svg>}
+          {terrain === 'horse' && <svg className="enclosure-horse" viewBox="0 0 64 64" fill="currentColor" aria-hidden="true">
+            <path d="M15 24C20 21 29 22 34 23C34 18 37 13 41 11L42 8L46 12L48 10L49 14C51 17 56 18 59 21Q61 23 59 26L55 27L48 23C47 27 45 31 43 34L41 47L43 53H37L36 43L35 39C29 41 22 39 19 38L15 44L17 50L20 53H13L10 43L12 35C9 31 9 27 15 24Z" />
+            <path d="M13 25C5 20 5 28 5 34Q5 40 1 43C9 41 11 34 10 29Q11 27 14 29ZM17 36L23 38L21 44L26 51V53H21L16 45ZM32 36L38 37L34 48L37 53H32L29 45Z" />
+            <circle cx="49" cy="18" r="1.25" fill="var(--surface)" />
+          </svg>}
           {terrain === 'water' && <span className="enclosure-water-mark" aria-hidden="true">≈</span>}
           {wall && <span className="enclosure-wall-mark" aria-hidden="true" />}
         </button>
