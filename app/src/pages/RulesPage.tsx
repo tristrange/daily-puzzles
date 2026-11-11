@@ -44,6 +44,21 @@ export function RulesPage() {
         Undo and Redo history lasts while the puzzle is open and is cleared by reloading or leaving it.
         Rules links inside a game open a new tab so you can consult them without leaving your board.</p>
 
+      <h2 id="enclosure" tabIndex={-1}>Horse Enclosure</h2>
+      <p>Place walls on grass cells to keep the horse inside the largest possible meadow.
+        The horse moves up, down, left and right. Water and walls block it; an open route
+        to any edge lets it escape. You cannot place a wall on water or the horse.</p>
+      <p>Use up to the wall budget. An enclosed meadow scores one point per reachable
+        grass cell, including the horse. Walls, water and separate enclosed pockets do not score.
+        An escaping horse scores zero and cannot be submitted.</p>
+      <p>Tap a cell, or use arrow keys and Enter or Space, to place or remove a wall.
+        Undo and Reset remain available after submitting. Submit any valid enclosure to
+        complete the daily puzzle, then keep experimenting and save an improved score.
+        Your first completion time stays fixed; your best submitted score is saved separately.
+        The optimal score is shown as a target. Several layouts may reach it.</p>
+      <p>Inspired by <a href="https://enclose.horse/" target="_blank" rel="noopener noreferrer">enclose.horse</a>.
+        This version uses its own artwork and allows improvements after submission.</p>
+
       <h2 id="tents" tabIndex={-1}>Tents</h2>
       <h3>Rules</h3>
       <ul>

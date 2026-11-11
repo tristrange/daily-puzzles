@@ -4,7 +4,7 @@ export const PALETTES = ['classic', 'warm', 'cool', 'forest'] as const
 export type Palette = (typeof PALETTES)[number]
 export type Customization = { version: 1; palette: Palette; games: PuzzleType[] }
 export const CUSTOMIZATION_KEY = 'daily-puzzles:customization'
-export const DEFAULT_CUSTOMIZATION: Customization = { version: 1, palette: 'classic', games: ['queens', 'star-battle', 'word-paths', 'trio', 'tents', 'nurikabe', 'train-tracks', 'sudoku', 'killer-sudoku'] }
+export const DEFAULT_CUSTOMIZATION: Customization = { version: 1, palette: 'classic', games: ['queens', 'star-battle', 'word-paths', 'trio', 'tents', 'nurikabe', 'train-tracks', 'sudoku', 'killer-sudoku', 'enclosure'] }
 
 export function parseCustomization(raw: string | null): Customization {
   try {

@@ -1,3 +1,4 @@
+import { PUZZLE_TYPE_PUBLISHED } from '../domain/games'
 // @vitest-environment jsdom
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -142,7 +143,7 @@ it('ignores stale saves and blocked storage instead of advertising a broken resu
     localStorage.setItem(key, JSON.stringify({ ...JSON.parse(localStorage.getItem(key)!), board: 'old board' }))
   }
   await render()
-  expect(container.querySelectorAll('.game-card')).toHaveLength(PUZZLE_TYPES.length)
+  expect(container.querySelectorAll('.game-card')).toHaveLength(PUZZLE_TYPES.filter(type => PUZZLE_TYPE_PUBLISHED[type]).length)
   expect(container.textContent).not.toContain('Resume')
   expect([...container.querySelectorAll('a[href*="/preview/"]')].map(link => link.getAttribute('href')))
     .toEqual(['/preview/deduction'])
@@ -150,7 +151,7 @@ it('ignores stale saves and blocked storage instead of advertising a broken resu
   await act(async () => root.unmount())
   root = createRoot(container)
   await render()
-  expect(container.querySelectorAll('.game-card')).toHaveLength(PUZZLE_TYPES.length)
+  expect(container.querySelectorAll('.game-card')).toHaveLength(PUZZLE_TYPES.filter(type => PUZZLE_TYPE_PUBLISHED[type]).length)
   expect(container.textContent).not.toContain('Resume')
 })
 

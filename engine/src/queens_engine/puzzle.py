@@ -135,6 +135,7 @@ def parse_puzzle(data: object) -> Puzzle:
         PuzzleType.TRIO,
         PuzzleType.TENTS,
         PuzzleType.NURIKABE,
+        PuzzleType.ENCLOSURE,
     ):
         parsed = split_puzzle_id(identifier)
         if parsed is None or parsed[1] is not puzzle_type:
