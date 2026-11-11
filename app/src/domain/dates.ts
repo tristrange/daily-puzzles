@@ -29,6 +29,7 @@ import {
   TRIO_START,
   TENTS_START,
   NURIKABE_ARCHIVE_START,
+  ENCLOSURE_START,
   isDefaultPuzzleType,
 } from './games'
 
@@ -158,6 +159,7 @@ export function puzzleIdsForDay(day: string): string[] {
     (type !== 'trio' || day >= TRIO_START) &&
     (type !== 'tents' || day >= TENTS_START) &&
     (type !== 'nurikabe' || day >= NURIKABE_ARCHIVE_START) &&
+    (type !== 'enclosure' || day >= ENCLOSURE_START) &&
     (type !== 'sudoku' || day >= SUDOKU_ARCHIVE_START) &&
     (type !== 'killer-sudoku' || day >= KILLER_START)).flatMap((type) =>
     type === 'train-tracks' && day >= TRACK_SIZES_ARCHIVE_START

@@ -130,6 +130,11 @@ def parse_puzzle(data: object) -> Puzzle:
         raise PuzzleParseError(str(error)) from error
 
     identifier = _require_str(record.get("id"), "id")
+    named = split_puzzle_id(identifier)
+    if (puzzle_type is PuzzleType.ENCLOSURE or (named and named[1] is PuzzleType.ENCLOSURE)) and (
+        named is None or named[1] is not puzzle_type
+    ):
+        raise PuzzleParseError("enclosure requires a canonical date-enclosure id matching its type")
     if puzzle_type in (
         PuzzleType.WORD_PATHS,
         PuzzleType.TRIO,

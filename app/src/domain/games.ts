@@ -12,7 +12,7 @@
  * the archive and the share text, with nothing to say so.
  */
 
-import { trio, wordPaths, tents, nurikabe } from '../../../conformance/id-cases/manifest.json'
+import { trio, wordPaths, tents, nurikabe, enclosure } from '../../../conformance/id-cases/manifest.json'
 import type { PuzzleType } from './board'
 import type { DifficultyBand } from './puzzle'
 
@@ -37,6 +37,7 @@ export const PUZZLE_TYPE_SUFFIX: Record<PuzzleType, string> = {
   tents: '-tents',
   sudoku: '-sudoku',
   nurikabe: '-nurikabe',
+  enclosure: '-enclosure',
   'killer-sudoku': '-killer',
 }
 
@@ -58,6 +59,7 @@ export const PUZZLE_TYPE_PUBLISHED: Record<PuzzleType, boolean> = {
   tents: true,
   sudoku: true,
   nurikabe: true,
+  enclosure: false,
   'killer-sudoku': true,
 }
 
@@ -65,6 +67,8 @@ export const WORD_PATHS_START = wordPaths.activationDay
 export const WORD_PATHS_ARCHIVE_START = wordPaths.archiveStart
 export const TRIO_START = trio.activationDay
 export const TENTS_START = tents.activationDay
+export const ENCLOSURE_START = enclosure.activationDay
+
 export const NURIKABE_START = nurikabe.activationDay
 export const NURIKABE_ARCHIVE_START = nurikabe.archiveStart
 
@@ -95,6 +99,7 @@ export const PUZZLE_TYPE_HAS_HINTS: Record<PuzzleType, boolean> = {
   tents: true,
   sudoku: true,
   nurikabe: true,
+  enclosure: false,
   'killer-sudoku': true,
 }
 
@@ -107,6 +112,7 @@ export const PUZZLE_TYPE_LABEL: Record<PuzzleType, string> = {
   tents: 'Tents',
   sudoku: 'Sudoku',
   nurikabe: 'Nurikabe',
+  enclosure: 'Horse Enclosure',
   'killer-sudoku': 'Killer Sudoku',
 }
 
@@ -142,5 +148,6 @@ export const PUZZLE_PIECE: Record<PuzzleType, { noun: string; plural: string; gl
   tents: { noun: 'tent', plural: 'tents', glyph: '⛺' },
   sudoku: { noun: 'digit', plural: 'digits', glyph: '9' },
   'killer-sudoku': { noun: 'digit', plural: 'digits', glyph: '9' },
+  enclosure: { noun: 'wall', plural: 'walls', glyph: '▦' },
   nurikabe: { noun: 'sea cell', plural: 'sea cells', glyph: '◈' },
 }

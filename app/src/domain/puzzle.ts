@@ -18,6 +18,7 @@ import { TentsGrid, TentsGridError } from './tents'
 import { KillerSudokuGrid } from './killerSudoku'
 import { SudokuGrid, SudokuGridError } from './sudoku'
 import { killerVariantOf, sudokuVariantOf } from './sudokuLevels'
+import { EnclosureGrid, EnclosureGridError } from './enclosure'
 import { NurikabeGrid, NurikabeGridError } from './nurikabe'
 
 export class PuzzleParseError extends Error {
@@ -43,7 +44,7 @@ export interface Puzzle {
   readonly seed: number
   readonly generatorVersion: number
   /** Family-specific grid. Shared readers use width, height and cellCount. */
-  readonly board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid
+  readonly board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid | EnclosureGrid
   readonly difficulty: DifficultyBand | null
 }
 
@@ -69,6 +70,10 @@ export function isTentsPuzzle(puzzle: Puzzle): puzzle is Puzzle & { board: Tents
 
 export function isSudokuPuzzle(puzzle: Puzzle): puzzle is Puzzle & { board: SudokuGrid } {
   return puzzle.board instanceof SudokuGrid
+}
+
+export function isEnclosurePuzzle(puzzle: Puzzle): puzzle is Puzzle & { board: EnclosureGrid } {
+  return puzzle.board instanceof EnclosureGrid
 }
 
 export function isNurikabePuzzle(puzzle: Puzzle): puzzle is Puzzle & { board: NurikabeGrid } {
@@ -145,9 +150,10 @@ export function parsePuzzle(data: unknown): Puzzle {
   // The one place the file format branches. Everything downstream asks the board
   // what it is rather than the type, because a board knows its own geometry and a
   // puzzle type does not.
-  let board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid
+  let board: Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid | EnclosureGrid
   try {
-    board = typeRaw === 'nurikabe' ? new NurikabeGrid(String(record['id']), boardRecord['size'], boardRecord['clues'])
+    board = typeRaw === 'enclosure' ? new EnclosureGrid(boardRecord['size'], boardRecord['water'], boardRecord['horse'], boardRecord['wallBudget'], boardRecord['optimalScore'])
+      : typeRaw === 'nurikabe' ? new NurikabeGrid(String(record['id']), boardRecord['size'], boardRecord['clues'])
       : typeRaw === 'killer-sudoku' ? new KillerSudokuGrid(String(record['id']), boardRecord['level'], boardRecord['givens'], boardRecord['cages'])
       : typeRaw === 'sudoku' ? new SudokuGrid(String(record['id']), boardRecord['level'], boardRecord['givens'])
       : typeRaw === 'tents' ? new TentsGrid(String(record['id']), boardRecord['size'], boardRecord['trees'], boardRecord['rowClues'], boardRecord['colClues'])
@@ -155,7 +161,7 @@ export function parsePuzzle(data: unknown): Puzzle {
       : typeRaw === 'word-paths' ? parseWordGrid(boardRecord, Number(record['generatorVersion']))
       : typeRaw === 'train-tracks' ? parseTrackGrid(boardRecord) : parseMarksBoard(boardRecord, typeRaw)
   } catch (error) {
-    if (error instanceof BoardError || error instanceof TrackGridError || error instanceof WordGridError || error instanceof TrioGridError || error instanceof TentsGridError || error instanceof SudokuGridError || error instanceof NurikabeGridError) {
+    if (error instanceof BoardError || error instanceof TrackGridError || error instanceof WordGridError || error instanceof TrioGridError || error instanceof TentsGridError || error instanceof SudokuGridError || error instanceof NurikabeGridError || error instanceof EnclosureGridError) {
       throw new PuzzleParseError(error.message)
     }
     throw error
@@ -171,6 +177,9 @@ export function parsePuzzle(data: unknown): Puzzle {
   if ((typeRaw === 'sudoku' || sudokuVariant !== null) &&
     (typeRaw !== 'sudoku' || !isPuzzleId(id) || sudokuVariant?.name !== boardRecord['level'])) {
     throw new PuzzleParseError('Sudoku requires a canonical date-sudoku-level id matching its board level')
+  }
+  if ((typeRaw === 'enclosure' || puzzleTypeOf(id) === 'enclosure') && puzzleTypeOf(id) !== typeRaw) {
+    throw new PuzzleParseError('enclosure requires a canonical date-enclosure id')
   }
   if (typeRaw === 'nurikabe' && puzzleTypeOf(id) !== typeRaw) {
     throw new PuzzleParseError('nurikabe requires a canonical date-nurikabe id')

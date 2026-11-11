@@ -31,6 +31,7 @@ const DESCRIPTION: Record<PuzzleType, string> = {
   tents: 'Pair every tree with a tent. Match the counts and keep tents apart.',
   sudoku: 'Digits 1–9 once in every row, column and box.',
   'killer-sudoku': 'Complete the Sudoku and match each cage total.',
+  enclosure: 'Enclose the horse with limited walls. Make the largest meadow.',
   nurikabe: 'Shade a connected sea around islands. Match each island’s number.',
 }
 

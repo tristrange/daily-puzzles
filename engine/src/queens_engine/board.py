@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     # A string annotation only. Imported for real at module scope this would be a
     # cycle: `tracks.py` reaches for the solver's default limit, and the solver
     # builds `Board`s.
+    from .enclosure import EnclosureGrid
     from .killer_sudoku import KillerGrid
     from .nurikabe import NurikabeGrid
     from .sudoku import SudokuGrid
@@ -50,6 +51,7 @@ class PuzzleType(StrEnum):
     SUDOKU = "sudoku"
     NURIKABE = "nurikabe"
     KILLER_SUDOKU = "killer-sudoku"
+    ENCLOSURE = "enclosure"
 
 
 class BoardError(ValueError):
@@ -197,7 +199,15 @@ class Puzzle:
     generator_version: int
     #: Family-specific grid. Shared readers ask the rulebook for dimensions.
     board: (
-        Board | TrackGrid | WordGrid | TrioGrid | TentsGrid | SudokuGrid | NurikabeGrid | KillerGrid
+        Board
+        | TrackGrid
+        | WordGrid
+        | TrioGrid
+        | TentsGrid
+        | SudokuGrid
+        | NurikabeGrid
+        | KillerGrid
+        | EnclosureGrid
     )
     #: Band index, 1-based into `LEVEL_NAMES`. `None` for boards published
     #: before the weekly ramp, and for anything generated outside a target.

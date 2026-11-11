@@ -66,6 +66,7 @@ const LESSON_PATHS = {
   tents: '/learn/tents',
   sudoku: '/learn/sudoku',
   nurikabe: '/learn/nurikabe',
+  enclosure: null,
   'killer-sudoku': '/learn/killer-sudoku',
 } satisfies Record<PuzzleType, string | null>
 

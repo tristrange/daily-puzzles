@@ -37,6 +37,10 @@
     {
       "type": "killer-sudoku",
       "suffix": "-killer"
+    },
+    {
+      "type": "enclosure",
+      "suffix": "-enclosure"
     }
   ],
   "cases": [
@@ -149,6 +153,11 @@
       "id": "2026-10-28-killer-sudoku-hard",
       "day": "2026-10-28",
       "type": "killer-sudoku"
+    },
+    {
+      "id": "2026-11-11-enclosure",
+      "day": "2026-11-11",
+      "type": "enclosure"
     }
   ],
   "unparsed": [
@@ -1157,5 +1166,8 @@
         "label": "Hard"
       }
     ]
+  },
+  "enclosure": {
+    "activationDay": "2026-11-11"
   }
 }
