@@ -381,19 +381,11 @@ export function storeSolve(record: SolveRecord): readonly SolveRecord[] {
   return records
 }
 
-/** Save a verified result after removing any result for a different board. */
+/** Save a verified result while preserving results for other boards. */
 export function storeEnclosureResult(record: SolveRecord, grid: EnclosureGrid): readonly SolveRecord[] {
   const records = readStoredStats()
-  const submitted = validatedEnclosureBest(record, grid)
-  if (!submitted) return records
-  const sanitized = records.map((held) => {
-    if (held.id !== record.id) return held
-    const best = validatedEnclosureBest(held, grid)
-    const { enclosureBest: _discard, enclosureAlternatives: _alternatives, ...completion } = held
-    return { ...completion, ...(best ? { enclosureBest: best } : {}) }
-  })
-  const { enclosureBest: _discard, enclosureAlternatives: _alternatives, ...completion } = record
-  const merged = addSolve(sanitized, { ...completion, enclosureBest: submitted })
+  if (!validatedEnclosureBest(record, grid)) return records
+  const merged = addSolve(records, record)
   try { localStorage.setItem(STATS_STORAGE_KEY, JSON.stringify(merged)) } catch { /* Storage may be unavailable. */ }
   return merged
 }
