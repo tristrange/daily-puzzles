@@ -14,7 +14,12 @@
       "theme": "dark",
       "palette": "forest",
       "keyboard": true,
-      "overflow": false
+      "overflow": false,
+      "dailySubmission": true,
+      "improvement": true,
+      "frozenClock": true,
+      "offlineReload": true,
+      "publishedJson": true
     },
     {
       "browser": "chromium",
@@ -46,7 +51,12 @@
       "theme": "dark",
       "palette": "forest",
       "keyboard": true,
-      "overflow": false
+      "overflow": false,
+      "dailySubmission": true,
+      "improvement": true,
+      "frozenClock": true,
+      "offlineReload": true,
+      "publishedJson": true
     },
     {
       "browser": "webkit",

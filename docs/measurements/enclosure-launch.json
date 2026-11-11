@@ -1,0 +1,14 @@
+{
+  "exitCode": 0,
+  "puzzles": 799,
+  "elapsedSeconds": 288.7508441659156,
+  "jobs": 2,
+  "runs": 1,
+  "originalPuzzlesPreserved": 795,
+  "newPuzzles": [
+    "app/public/puzzles/2026-11-11-enclosure.json",
+    "app/public/puzzles/2026-11-12-enclosure.json",
+    "app/public/puzzles/2026-11-13-enclosure.json",
+    "app/public/puzzles/2026-11-14-enclosure.json"
+  ]
+}

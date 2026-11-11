@@ -25,6 +25,14 @@ print(json.dumps({'puzzle': {'id':identifier,'type':'enclosure','seed':seed,'gen
 'board':{'size':grid.size,'water':list(grid.water),'horse':grid.horse,'wallBudget':grid.wall_budget,'optimalScore':grid.optimal_score}},'walls':solution.walls}))
 `], { cwd: fileURLToPath(new URL('../../engine/', import.meta.url)), encoding: 'utf8' }))
 const previews = JSON.parse(await readFile(new URL('../src/domain/enclosurePreviews.json', import.meta.url), 'utf8'))
+async function capture(page, path) {
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
+    window.scrollTo(0, 0)
+  })
+  await page.waitForTimeout(80)
+  await page.screenshot({ path, fullPage: true })
+}
 const runs = []
 for (const [browserName, browserType] of [['chromium', chromium], ['webkit', webkit]]) {
   const browser = await browserType.launch({ headless: true })
@@ -57,12 +65,10 @@ for (const [browserName, browserType] of [['chromium', chromium], ['webkit', web
       await page.keyboard.press('Enter')
       assert.equal(await page.locator('[data-wall="true"]').count(), 0)
       assert.equal(await page.evaluate(() => localStorage.getItem('daily-puzzles:stats')), null)
-      await page.screenshot({ path: `${output}/${browserName}-${width}-${theme}.png`, fullPage: true })
+      await capture(page, `${output}/${browserName}-${width}-${theme}.png`)
       const record = { browser: browserName, width, theme, palette, keyboard: true, overflow: false }
       if (width === 375 && published) {
         const { puzzle, walls } = fixture
-        const pattern = `**/puzzles/${puzzle.id}.json`
-        if (!published) await page.route(pattern, route => route.fulfill({ json: puzzle }))
         await page.goto(`${base}/#/archive/${puzzle.id}`)
         await page.getByRole('button', { name: 'Copy puzzle link', exact: true }).waitFor()
         await page.locator(`[data-cell="${puzzle.board.horse}"][data-terrain="horse"]`).waitFor()
@@ -85,16 +91,12 @@ for (const [browserName, browserType] of [['chromium', chromium], ['webkit', web
         assert.equal(improved.enclosureBest.score, puzzle.board.optimalScore)
         assert.equal(improved.solvedAt, first.solvedAt)
         assert.equal(improved.elapsedMs, first.elapsedMs)
-        await page.screenshot({ path: `${output}/${browserName}-daily-optimal.png`, fullPage: true })
+        await capture(page, `${output}/${browserName}-daily-optimal.png`)
         await page.reload()
         await page.getByRole('grid').waitFor()
         assert.equal(await page.locator('[data-wall="true"]').count(), walls.length)
         assert.match(await page.locator('.enclosure-scores').textContent(), new RegExp(`Best score: ${puzzle.board.optimalScore}`))
-        await page.evaluate(async () => {
-          await navigator.serviceWorker.ready
-          if (!navigator.serviceWorker.controller) await new Promise(resolve => navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true }))
-        })
-        if (!published) await page.unroute(pattern)
+        await page.waitForFunction(() => navigator.serviceWorker.controller !== null, null, { timeout: 15_000 })
         await context.setOffline(true)
         await page.reload()
         await page.getByRole('grid').waitFor()
