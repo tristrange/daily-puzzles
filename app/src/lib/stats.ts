@@ -1,5 +1,5 @@
 import { attemptTime } from './playTime'
-import { betterEnclosureBest, parseEnclosureBest, validatedEnclosureBest, type EnclosureBest } from './enclosureResults'
+import { enclosureBestFields, validatedEnclosureBest, type EnclosureBest } from './enclosureResults'
 import type { EnclosureGrid } from '../domain/enclosure'
 export type { EnclosureBest } from './enclosureResults'
 /**
@@ -32,6 +32,7 @@ export type SolveRecord = {
   readonly hints: number
   readonly solvedAt: number
   readonly enclosureBest?: EnclosureBest
+  readonly enclosureAlternatives?: readonly EnclosureBest[]
 }
 
 export type Stats = {
@@ -103,8 +104,9 @@ function toRecord(value: unknown): SolveRecord | null {
   if (!isWholeNumber(solvedAt)) return null
   const canonicalId = migratedId(id, puzzleType)
   if (puzzleTypeOf(canonicalId) !== puzzleType) return null
-  const best = puzzleType === 'enclosure' ? parseEnclosureBest(entry['enclosureBest']) : null
-  return { id: canonicalId, puzzleType, size, elapsedMs, ...attemptTime(entry['attemptElapsedMs'], elapsedMs), hints, solvedAt, ...(best !== null && JSON.parse(best.board)[0] === size ? { enclosureBest: best } : {}) }
+  const alternatives: unknown[] = Array.isArray(entry['enclosureAlternatives']) ? entry['enclosureAlternatives'] : []
+  const best = puzzleType === 'enclosure' ? enclosureBestFields([entry['enclosureBest'], ...alternatives]) : {}
+  return { id: canonicalId, puzzleType, size, elapsedMs, ...attemptTime(entry['attemptElapsedMs'], elapsedMs), hints, solvedAt, ...best }
 }
 
 /**
@@ -134,9 +136,9 @@ export function parseStats(value: string | null | undefined): readonly SolveReco
     if (held === undefined) earliest.set(record.id, record)
     else if (record.puzzleType === 'enclosure' && held.puzzleType === 'enclosure') {
       const first = record.solvedAt < held.solvedAt ? record : held
-      const best = betterEnclosureBest(held.enclosureBest, record.enclosureBest)
-      const { enclosureBest: _discard, ...completion } = first
-      earliest.set(record.id, { ...completion, ...(best ? { enclosureBest: best } : {}) })
+      const best = enclosureBestFields([held.enclosureBest, ...(held.enclosureAlternatives ?? []), record.enclosureBest, ...(record.enclosureAlternatives ?? [])])
+      const { enclosureBest: _discard, enclosureAlternatives: _alternatives, ...completion } = first
+      earliest.set(record.id, { ...completion, ...best })
     } else if (record.solvedAt < held.solvedAt) earliest.set(record.id, record)
   }
   return [...earliest.values()].sort((a, b) => (a.id < b.id ? -1 : 1))
@@ -382,13 +384,16 @@ export function storeSolve(record: SolveRecord): readonly SolveRecord[] {
 /** Save a verified result after removing any result for a different board. */
 export function storeEnclosureResult(record: SolveRecord, grid: EnclosureGrid): readonly SolveRecord[] {
   const records = readStoredStats()
-  if (!validatedEnclosureBest(record, grid)) return records
+  const submitted = validatedEnclosureBest(record, grid)
+  if (!submitted) return records
   const sanitized = records.map((held) => {
-    if (held.id !== record.id || validatedEnclosureBest(held, grid)) return held
-    const { enclosureBest: _discard, ...completion } = held
-    return completion
+    if (held.id !== record.id) return held
+    const best = validatedEnclosureBest(held, grid)
+    const { enclosureBest: _discard, enclosureAlternatives: _alternatives, ...completion } = held
+    return { ...completion, ...(best ? { enclosureBest: best } : {}) }
   })
-  const merged = addSolve(sanitized, record)
+  const { enclosureBest: _discard, enclosureAlternatives: _alternatives, ...completion } = record
+  const merged = addSolve(sanitized, { ...completion, enclosureBest: submitted })
   try { localStorage.setItem(STATS_STORAGE_KEY, JSON.stringify(merged)) } catch { /* Storage may be unavailable. */ }
   return merged
 }

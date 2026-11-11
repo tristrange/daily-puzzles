@@ -27,3 +27,49 @@ test('merges the higher verified score independently of completion order', () =>
   const later = { ...first, size: 5, elapsedMs: 500, solvedAt: 3, enclosureBest: large }
   expect(parseStats(JSON.stringify([later, early]))).toEqual([{ ...early, enclosureBest: large }])
 })
+
+test('keeps each board best across import order and repeated normalization', async () => {
+  const { validatedEnclosureBest } = await import('./enclosureResults')
+  const staleGrid = new EnclosureGrid(5, [], 12, 6)
+  const staleBest = { score: 2, walls: [2, 6, 8, 11, 13, 17], board: enclosureFingerprint(staleGrid), achievedAt: 4 }
+  const current = { ...first, enclosureBest: best }
+  const stale = { ...first, size: 5, solvedAt: 2, enclosureBest: staleBest }
+  let canonical: readonly SolveRecord[] | undefined
+  for (const inputs of [[current, stale], [stale, current]]) {
+    const normalized = parseStats(JSON.stringify(inputs))
+    expect(validatedEnclosureBest(normalized[0], grid)).toEqual(best)
+    expect(validatedEnclosureBest(normalized[0], staleGrid)).toEqual(staleBest)
+    expect(parseStats(JSON.stringify(normalized))).toEqual(normalized)
+    if (canonical) expect(normalized).toEqual(canonical)
+    canonical = normalized
+  }
+})
+
+test('a best survives round trips when completion size differs from its board', async () => {
+  const { validatedEnclosureBest } = await import('./enclosureResults')
+  const records = parseStats(JSON.stringify([{ ...first, size: 5 }, { ...first, solvedAt: 3, enclosureBest: best }]))
+  const roundTrip = parseStats(JSON.stringify(records))
+  expect(roundTrip).toEqual(records)
+  expect(roundTrip[0]?.size).toBe(5)
+  expect(validatedEnclosureBest(roundTrip[0], grid)).toEqual(best)
+})
+
+test('equal scores use deterministic wall and time tie breaks in either order', () => {
+  const earlier = { ...best, achievedAt: 1 }
+  const later = { ...best, achievedAt: 5 }
+  for (const values of [[earlier, later], [later, earlier]]) {
+    const records = values.map(enclosureBest => ({ ...first, enclosureBest }))
+    expect(parseStats(JSON.stringify(records))).toEqual([{ ...first, enclosureBest: earlier }])
+  }
+})
+
+test('submission keeps the actual board best and removes stale alternatives', () => {
+  const values = new Map<string, string>()
+  vi.stubGlobal('localStorage', { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => values.set(key, value) })
+  const staleGrid = new EnclosureGrid(5, [], 12, 6)
+  const stale = { score: 2, walls: [2, 6, 8, 11, 13, 17], board: enclosureFingerprint(staleGrid), achievedAt: 1 }
+  localStorage.setItem('daily-puzzles:stats', JSON.stringify([{ ...first, enclosureBest: stale, enclosureAlternatives: [best] }]))
+  const result = storeEnclosureResult({ ...first, solvedAt: 9, enclosureBest: { ...best, achievedAt: 9 } }, grid)
+  expect(result).toEqual([{ ...first, enclosureBest: best }])
+  vi.unstubAllGlobals()
+})

@@ -22,10 +22,25 @@ export function parseEnclosureBest(value: unknown): EnclosureBest | null {
   } catch { return null }
 }
 
+/** Normalize each board separately until the current puzzle is available. */
+export function enclosureBestFields(values: readonly unknown[]): Pick<SolveRecord, 'enclosureBest' | 'enclosureAlternatives'> {
+  const byBoard = new Map<string, EnclosureBest>()
+  for (const value of values) {
+    const candidate = parseEnclosureBest(value)
+    if (candidate === null) continue
+    const best = betterEnclosureBest(byBoard.get(candidate.board), candidate)
+    if (best) byBoard.set(candidate.board, best)
+  }
+  const ordered = [...byBoard.values()].sort((a, b) => a.board < b.board ? -1 : a.board > b.board ? 1 : 0)
+  const [enclosureBest, ...enclosureAlternatives] = ordered
+  return enclosureBest ? { enclosureBest, ...(enclosureAlternatives.length ? { enclosureAlternatives } : {}) } : {}
+}
+
 export function validatedEnclosureBest(record: SolveRecord | undefined, grid: EnclosureGrid): EnclosureBest | null {
-  if (record?.puzzleType !== 'enclosure' || record.size !== grid.size) return null
-  const best = parseEnclosureBest(record.enclosureBest)
-  return best !== null && best.board === enclosureFingerprint(grid) ? best : null
+  if (record?.puzzleType !== 'enclosure') return null
+  const board = enclosureFingerprint(grid)
+  const fields = enclosureBestFields([record.enclosureBest, ...(record.enclosureAlternatives ?? [])])
+  return [fields.enclosureBest, ...(fields.enclosureAlternatives ?? [])].find(best => best?.board === board) ?? null
 }
 
 export function betterEnclosureBest(a: EnclosureBest | undefined, b: EnclosureBest | undefined): EnclosureBest | undefined {
