@@ -45,7 +45,7 @@ def build_cases() -> list[dict[str, JsonValue]]:
                     "water": list(water),
                     "horse": horse,
                     "wallBudget": budget,
-                    "walls": walls,
+                    "walls": list(walls),
                     "escaped": result.escaped,
                     "reachable": list(result.reachable),
                     "score": result.score,
