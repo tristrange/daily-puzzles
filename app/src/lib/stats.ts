@@ -1,4 +1,7 @@
 import { attemptTime } from './playTime'
+import { betterEnclosureBest, parseEnclosureBest, validatedEnclosureBest, type EnclosureBest } from './enclosureResults'
+import type { EnclosureGrid } from '../domain/enclosure'
+export type { EnclosureBest } from './enclosureResults'
 /**
  * Local solve history: what this browser has finished, and what that adds up to.
  *
@@ -28,6 +31,7 @@ export type SolveRecord = {
   readonly attemptElapsedMs?: number
   readonly hints: number
   readonly solvedAt: number
+  readonly enclosureBest?: EnclosureBest
 }
 
 export type Stats = {
@@ -99,7 +103,8 @@ function toRecord(value: unknown): SolveRecord | null {
   if (!isWholeNumber(solvedAt)) return null
   const canonicalId = migratedId(id, puzzleType)
   if (puzzleTypeOf(canonicalId) !== puzzleType) return null
-  return { id: canonicalId, puzzleType, size, elapsedMs, ...attemptTime(entry['attemptElapsedMs'], elapsedMs), hints, solvedAt }
+  const best = puzzleType === 'enclosure' ? parseEnclosureBest(entry['enclosureBest']) : null
+  return { id: canonicalId, puzzleType, size, elapsedMs, ...attemptTime(entry['attemptElapsedMs'], elapsedMs), hints, solvedAt, ...(best !== null && JSON.parse(best.board)[0] === size ? { enclosureBest: best } : {}) }
 }
 
 /**
@@ -126,7 +131,13 @@ export function parseStats(value: string | null | undefined): readonly SolveReco
   const earliest = new Map<string, SolveRecord>()
   for (const record of records) {
     const held = earliest.get(record.id)
-    if (held === undefined || record.solvedAt < held.solvedAt) earliest.set(record.id, record)
+    if (held === undefined) earliest.set(record.id, record)
+    else if (record.puzzleType === 'enclosure' && held.puzzleType === 'enclosure') {
+      const first = record.solvedAt < held.solvedAt ? record : held
+      const best = betterEnclosureBest(held.enclosureBest, record.enclosureBest)
+      const { enclosureBest: _discard, ...completion } = first
+      earliest.set(record.id, { ...completion, ...(best ? { enclosureBest: best } : {}) })
+    } else if (record.solvedAt < held.solvedAt) earliest.set(record.id, record)
   }
   return [...earliest.values()].sort((a, b) => (a.id < b.id ? -1 : 1))
 }
@@ -143,7 +154,7 @@ export function addSolve(
   records: readonly SolveRecord[],
   record: SolveRecord,
 ): readonly SolveRecord[] {
-  if (records.some((held) => held.id === record.id)) return records
+  if (record.puzzleType !== 'enclosure' && records.some((held) => held.id === record.id)) return records
   return parseStats(JSON.stringify([...records, record]))
 }
 
@@ -366,4 +377,18 @@ export function storeSolve(record: SolveRecord): readonly SolveRecord[] {
     // A solve that is not remembered is better than a page that breaks.
   }
   return records
+}
+
+/** Save a verified result after removing any result for a different board. */
+export function storeEnclosureResult(record: SolveRecord, grid: EnclosureGrid): readonly SolveRecord[] {
+  const records = readStoredStats()
+  if (!validatedEnclosureBest(record, grid)) return records
+  const sanitized = records.map((held) => {
+    if (held.id !== record.id || validatedEnclosureBest(held, grid)) return held
+    const { enclosureBest: _discard, ...completion } = held
+    return completion
+  })
+  const merged = addSolve(sanitized, record)
+  try { localStorage.setItem(STATS_STORAGE_KEY, JSON.stringify(merged)) } catch { /* Storage may be unavailable. */ }
+  return merged
 }
