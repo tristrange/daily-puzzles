@@ -1,0 +1,7 @@
+{
+  "id": "2026-11-19-trio",
+  "type": "trio",
+  "seed": 2107530563,
+  "generatorVersion": 1,
+  "board": {"size": 9, "givens": [0, 0, 0, 2, 3, 0, 0, 1, 0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 2, 0, 0, 2, 0, 2, 0, 1, 0, 0, 1, 0, 3, 0, 2, 0, 0, 1, 0, 3, 0, 0, 0, 1, 0, 0, 3, 0, 0, 0, 0, 0, 0, 2, 0, 3, 0, 0, 3, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2], "relations": [{"first": 8, "second": 17, "kind": "same"}, {"first": 9, "second": 10, "kind": "same"}, {"first": 32, "second": 41, "kind": "different"}, {"first": 33, "second": 34, "kind": "same"}, {"first": 35, "second": 44, "kind": "same"}, {"first": 37, "second": 46, "kind": "same"}, {"first": 38, "second": 39, "kind": "different"}, {"first": 39, "second": 40, "kind": "different"}, {"first": 40, "second": 41, "kind": "different"}, {"first": 45, "second": 54, "kind": "same"}, {"first": 60, "second": 61, "kind": "different"}, {"first": 60, "second": 69, "kind": "different"}, {"first": 72, "second": 73, "kind": "same"}]}
+}
