@@ -17,8 +17,9 @@ from queens_engine import (
 
 
 @pytest.mark.parametrize("broken", [False, True])
+@pytest.mark.parametrize("jobs", [2, 4])
 def test_parallel_verification_matches_serial_output(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str], broken: bool
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], broken: bool, jobs: int
 ) -> None:
     queen = generate_puzzle(seed=1, puzzle_id="2026-05-11", config=GenerationConfig(size=5))
     raw = dumps_puzzle(queen)
@@ -45,7 +46,7 @@ def test_parallel_verification_matches_serial_output(
 
     serial = verify.main(["--dir", str(tmp_path)])
     serial_output = capsys.readouterr()
-    parallel = verify.main(["--dir", str(tmp_path), "--jobs", "2"])
+    parallel = verify.main(["--dir", str(tmp_path), "--jobs", str(jobs)])
     parallel_output = capsys.readouterr()
 
     assert serial == parallel == int(broken)
@@ -66,10 +67,11 @@ def test_parallel_verification_matches_serial_output(
         assert "3 puzzles verified" in parallel_output.out
 
 
-def test_parallel_worker_io_errors_fail_the_run(tmp_path: Path) -> None:
+@pytest.mark.parametrize("jobs", [2, 4])
+def test_parallel_worker_io_errors_fail_the_run(tmp_path: Path, jobs: int) -> None:
     (tmp_path / "2026-05-11.json").mkdir()
     with pytest.raises(IsADirectoryError):
-        verify.main(["--dir", str(tmp_path), "--jobs", "2"])
+        verify.main(["--dir", str(tmp_path), "--jobs", str(jobs)])
 
 
 def test_rejects_zero_workers(tmp_path: Path) -> None:
