@@ -53,7 +53,7 @@ export function TentsStage({ board, puzzle }: { board: Board; puzzle?: Puzzle })
   const reasons = useMemo(() => hint ? hint.reason.split('\n') : [], [hint])
 
   const { time, settle, stop, restartAttempt } = usePlayClock(initial ?? { elapsedMs: 0 }, time => {
-    setSaving(storeTentsProgress(board, current.current, time, hintsUsed.current, daily))
+    setSaving(storeTentsProgress(board, before.current ?? current.current, time, hintsUsed.current, daily))
   })
   const elapsed = time.elapsedMs
   const save = () => { setSaving(storeTentsProgress(board, current.current, settle(), hintsUsed.current, daily)) }
