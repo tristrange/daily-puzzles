@@ -48,7 +48,10 @@ export function usePlayClock(initial: PlayTime, onSave: (time: PlayTime) => void
     const blur = () => { if (isIPhone()) refresh(); else pause() }
     const show = () => { pageShown.current = true; refresh() }
     const hide = () => { pageShown.current = false; pause() }
-    timer.current = setInterval(refresh, 500)
+    timer.current = setInterval(() => {
+      const playing = active()
+      if (playing || clock.current.visible) flush(playing)
+    }, 500)
     document.addEventListener('visibilitychange', refresh)
     window.addEventListener('focus', refresh); window.addEventListener('blur', blur)
     window.addEventListener('pageshow', show); window.addEventListener('pagehide', hide)

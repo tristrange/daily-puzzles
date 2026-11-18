@@ -59,10 +59,10 @@ it.each([
   vi.spyOn(performance, 'now').mockImplementation(() => now)
   vi.spyOn(document, 'hasFocus').mockImplementation(() => focused)
   vi.spyOn(document, 'hidden', 'get').mockImplementation(() => hidden)
-  const container = document.createElement('div'), root = createRoot(container)
+  const container = document.createElement('div'), root = createRoot(container), save = vi.fn<(time: PlayTime) => void>()
   let clock: ReturnType<typeof usePlayClock> | undefined
   function Harness() {
-    const value = usePlayClock({ elapsedMs: 1000 }, () => {})
+    const value = usePlayClock({ elapsedMs: 1000 }, save)
     useLayoutEffect(() => { clock = value })
     return null
   }
@@ -74,8 +74,11 @@ it.each([
     await tick(1000)
     expect(current().time.elapsedMs).toBe(2000)
     focused = false; await dispatch(window, 'blur')
+    save.mockClear()
     await tick(3000)
     expect(current().time.elapsedMs).toBe(countsUnfocused ? 5000 : 2000)
+    if (countsUnfocused) expect(save).toHaveBeenCalledWith({ elapsedMs: 5000 })
+    else expect(save).not.toHaveBeenCalled()
     hidden = true; await dispatch(document, 'visibilitychange')
     await tick(10000)
     expect(current().time.elapsedMs).toBe(countsUnfocused ? 5000 : 2000)
@@ -86,9 +89,13 @@ it.each([
     await tick(1000)
     const beforeHide = countsUnfocused ? 8000 : 3000
     expect(current().time.elapsedMs).toBe(beforeHide)
+    save.mockClear()
     await dispatch(window, 'pagehide')
+    expect(save).toHaveBeenCalledExactlyOnceWith({ elapsedMs: beforeHide })
+    save.mockClear()
     await tick(5000)
     expect(current().time.elapsedMs).toBe(beforeHide)
+    expect(save).not.toHaveBeenCalled()
     await dispatch(window, 'pageshow')
     await tick(1000)
     expect(current().time.elapsedMs).toBe(beforeHide + 1000)
