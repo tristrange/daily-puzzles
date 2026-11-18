@@ -11,9 +11,12 @@ function memory() {
 }
 function fixture() {
   const tails = new Map<string, Promise<unknown>>()
+  let signalLockRequest: (() => void) | undefined
   vi.stubGlobal('navigator', { locks: { request: (key: string, work: () => unknown) => {
     const next = (tails.get(key) ?? Promise.resolve()).then(work)
     tails.set(key, next.catch(() => {}))
+    signalLockRequest?.()
+    signalLockRequest = undefined
     return next
   } } })
   const storage = memory()
@@ -33,7 +36,16 @@ function fixture() {
     requests.push({ name: String(url).split('/').at(-1)!, body: init.body ? JSON.parse(String(init.body)) : null })
     return response()
   })
-  return { client, storage, signup, requests, setResponse: (next: () => Promise<Response>) => { response = next },
+  const holdResponse = () => {
+    let markStarted!: () => void
+    let release!: (response: Response) => void
+    const started = new Promise<void>(resolve => { markStarted = resolve })
+    const reply = new Promise<Response>(resolve => { release = resolve })
+    response = () => { markStarted(); return reply }
+    return { started, release }
+  }
+  const nextLockRequest = () => new Promise<void>(resolve => { signalLockRequest = resolve })
+  return { client, storage, signup, requests, holdResponse, nextLockRequest, setResponse: (next: () => Promise<Response>) => { response = next },
     lose: () => { session = null }, switchIdentity: () => { session = identity('player-b') } }
 }
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals() })
@@ -59,14 +71,13 @@ it('persists identical failed payloads and serializes retry triggers', async () 
   f.setResponse(async () => new Response(JSON.stringify({ message: 'Unavailable' }), { status: 503 }))
   await store.offerSolve(solve); await store.retry()
   expect(store.getSnapshot().pendingCount).toBe(1)
-  let release!: (value: Response) => void
-  f.setResponse(() => new Promise(resolve => { release = resolve }))
+  const upload = f.holdResponse()
   const before = f.requests.length
   const reopened = createLeaderboardStore(config, f.client, f.storage)
   const first = reopened.retry(), second = reopened.retry()
-  await new Promise(resolve => setTimeout(resolve, 0))
+  await upload.started
   expect(f.requests.length - before).toBe(1)
-  release(new Response(JSON.stringify({ status: 'existing' })))
+  upload.release(new Response(JSON.stringify({ status: 'existing' })))
   await Promise.all([first, second])
   expect(reopened.getSnapshot().pendingCount).toBe(0)
   expect(f.requests.every(request => JSON.stringify(request.body) === JSON.stringify({ p_puzzle_id: '2026-10-19', p_nickname: 'Alice', p_elapsed_ms: 60000, p_hints: 2 }))).toBe(true)
@@ -75,12 +86,11 @@ it('persists identical failed payloads and serializes retry triggers', async () 
 it('a failed in-flight request cannot change stopped publication back to pending', async () => {
   const f = fixture(), store = createLeaderboardStore(config, f.client, f.storage)
   await store.join('Alice', 'captcha')
-  let release!: (response: Response) => void
-  f.setResponse(() => new Promise(resolve => { release = resolve }))
+  const upload = f.holdResponse()
   await store.offerSolve(solve)
-  await new Promise(resolve => setTimeout(resolve, 0))
+  await upload.started
   const stopping = store.stop()
-  release(new Response('{}', { status: 503 }))
+  upload.release(new Response('{}', { status: 503 }))
   await stopping
   await store.retry()
   expect(store.getSnapshot()).toMatchObject({ status: 'off', pendingCount: 0 })
@@ -138,16 +148,16 @@ it('never reassigns pending uploads after identity loss or another project', asy
 it('stop and deletion cannot resurrect queued results after an in-flight submission', async () => {
   const f = fixture(), store = createLeaderboardStore(config, f.client, f.storage)
   await store.join('Alice', 'captcha')
-  let release!: (response: Response) => void
-  f.setResponse(() => new Promise(resolve => { release = resolve }))
+  const upload = f.holdResponse()
   await store.offerSolve(solve)
-  await new Promise(resolve => setTimeout(resolve, 0))
+  await upload.started
   const offered = store.offerSolve({ ...solve, id: '2026-10-18' })
+  const removalRequested = f.nextLockRequest()
   const remove = store.removeResults()
-  await new Promise(resolve => setTimeout(resolve, 0))
+  await removalRequested
   expect(f.requests).toHaveLength(1)
   f.setResponse(async () => new Response('1'))
-  release(new Response('{"status":"created"}'))
+  upload.release(new Response('{"status":"created"}'))
   await remove
   await offered
   expect(f.requests.map(request => request.name)).toEqual(['submit_result', 'remove_my_results'])
@@ -201,15 +211,15 @@ it('waits for another tab’s in-flight submission before removing the owner’s
   await sender.join('Alice', 'captcha')
   const remover = createLeaderboardStore(config, f.client, f.storage)
   await remover.retry()
-  let release!: (response: Response) => void
-  f.setResponse(() => new Promise(resolve => { release = resolve }))
+  const upload = f.holdResponse()
   await sender.offerSolve(solve)
-  await new Promise(resolve => setTimeout(resolve, 0))
+  await upload.started
   f.setResponse(async () => new Response('1'))
+  const removalRequested = f.nextLockRequest()
   const removing = remover.removeResults()
-  await new Promise(resolve => setTimeout(resolve, 0))
+  await removalRequested
   const beforeRelease = f.requests.map(request => request.name)
-  release(new Response('{"status":"created"}'))
+  upload.release(new Response('{"status":"created"}'))
   await removing
   expect(beforeRelease).toEqual(['submit_result'])
   expect(f.requests.map(request => request.name)).toEqual(['submit_result', 'remove_my_results'])
@@ -235,15 +245,15 @@ it('retains a first solve under its persisted owner while the initial session is
 it('drains the new owner’s candidate after the old owner’s in-flight drain settles', async () => {
   const f = fixture(), store = createLeaderboardStore(config, f.client, f.storage)
   await store.join('Alice', 'captcha')
-  let release!: (response: Response) => void
-  f.setResponse(() => new Promise(resolve => { release = resolve }))
+  const upload = f.holdResponse()
   await store.offerSolve(solve)
-  await new Promise(resolve => setTimeout(resolve, 0))
+  await upload.started
   f.switchIdentity()
   f.setResponse(async () => new Response('{"status":"created"}'))
+  const joinRequested = f.nextLockRequest()
   const joining = store.join('Bob', 'captcha', { ...solve, id: '2026-10-18' })
-  await new Promise(resolve => setTimeout(resolve, 0))
-  release(new Response('{"status":"created"}'))
+  await joinRequested
+  upload.release(new Response('{"status":"created"}'))
   await joining
   expect(f.requests.map(request => (request.body as { p_nickname: string }).p_nickname)).toEqual(['Alice', 'Bob'])
   expect(store.getSnapshot()).toMatchObject({ status: 'on', pendingCount: 0, nickname: 'Bob' })
