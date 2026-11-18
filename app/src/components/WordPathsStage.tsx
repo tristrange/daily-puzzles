@@ -1,14 +1,12 @@
 import { PlayTimer } from './PlayTimer'
-import { useLeaderboard } from '../lib/useLeaderboard'
+import { usePublishedSolve } from '../lib/usePublishedSolve'
 import { useId, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import type { Puzzle } from '../domain/puzzle'
 import type { WordGrid } from '../domain/wordPaths'
 import { createWordGame, clearTrace, traceCell, submitWord, removeWord, undoWord, resetWordGame, isWordSolved, spellPath, type WordGame } from '../domain/wordGame'
 import { usePlayClock } from '../lib/usePlayClock'
 import { formatTime } from '../domain/game'
-import { puzzleOfToday } from '../domain/dates'
 import { clearWordProgress, readWordProgress, storeWordProgress } from '../lib/wordProgress'
-import { readStoredStats, storeSolve, summarise, type SolveRecord, type Stats } from '../lib/stats'
 import { buildShareText, buildWordSolutionShareText, copyText, puzzleShareLink, type ShareResult } from '../lib/share'
 import { SolvedPanel } from './SolvedPanel'
 import { WordPathsBoard } from './WordPathsBoard'
@@ -38,10 +36,10 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
     'Trace and submit it yourself. Your current selection stays unchanged.',
   ] : [], [hint])
   const completed = useRef(false)
-  const [firstSolve, setFirstSolve] = useState<SolveRecord | null>(null)
-  const [candidate, setCandidate] = useState<SolveRecord | null>(null)
-  const { offerSolve } = useLeaderboard()
-  const [stats, setStats] = useState<Stats | null>(null)
+  const clearSavedProgress = () => clearWordProgress(puzzle.id, preview, grid.vocabularyVersion)
+  const { save, saved, retry } = usePublishedSolve(timeZone, clearSavedProgress)
+  const firstSolve = saved?.firstSolve ?? null
+  const streak = saved?.streak ?? 0
   const [copied, setCopied] = useState<'idle' | 'result' | 'solution' | 'failed'>('idle')
   const [shareText, setShareText] = useState<string | null>(null)
   const instructionsId = useId()
@@ -73,19 +71,18 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
     if (!result.accepted) return
     setHint(null)
     history.remember(clearTrace(before))
-    change(result.game)
-    if (!isWordSolved(result.game)) return
+    if (!isWordSolved(result.game)) {
+      change(result.game)
+      return
+    }
+    current.current = result.game
+    setGame(result.game)
     const stoppedTime = stop()
     completed.current = true
-    clearWordProgress(puzzle.id, preview, grid.vocabularyVersion)
-    if (!preview) {
-      const when = Date.now()
-      const earlier = readStoredStats().find((record) => record.id === puzzle.id)
-      setFirstSolve(earlier ?? null)
-      const record: SolveRecord = { id: puzzle.id, puzzleType: puzzle.puzzleType, size: grid.width,
-        ...stoppedTime, hints: hintsUsed.current, solvedAt: when }
-      setStats(summarise(storeSolve(record), puzzleOfToday(new Date(when), timeZone)))
-      if (!earlier) { setCandidate(record); offerSolve(record) }
+    if (preview) clearSavedProgress()
+    else if (!save({ id: puzzle.id, puzzleType: puzzle.puzzleType, size: grid.width,
+      ...stoppedTime, hints: hintsUsed.current, solvedAt: Date.now() })) {
+      setSaving(storeWordProgress(puzzle.id, before, stoppedTime, preview, hintsUsed.current))
     }
     setMessage(`Solved in ${formatTime(stoppedTime.elapsedMs)}!`)
   }
@@ -159,7 +156,7 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
   const share = async (variant: 'result' | 'solution') => {
     const result: ShareResult = {
       puzzleId: puzzle.id, puzzleType: 'word-paths', width: grid.width, height: grid.height,
-      elapsedMs: firstSolve?.elapsedMs ?? elapsed, hints: firstSolve?.hints ?? hintsUsed.current, streak: stats?.currentStreak ?? 0,
+      elapsedMs: firstSolve?.elapsedMs ?? elapsed, hints: firstSolve?.hints ?? hintsUsed.current, streak,
       link: puzzleShareLink(puzzle.id, previewBoard), ...(previewBoard === undefined ? {} : { previewBoard }),
     }
     const text = variant === 'result' ? buildShareText(result) : buildWordSolutionShareText(result, current.current)
@@ -180,7 +177,7 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
         <button ref={hintButton} type="button" className="tool-button" onClick={requestHint} disabled={solved}
           aria-label="Get a word hint" aria-expanded={hint !== null} aria-controls={hint ? hintId : undefined}>Hint</button>
       </div>
-      {!saving && !solved && <p className="status error" role="status">Progress can&rsquo;t be saved in this browser. Keep this page open to retain it.</p>}
+      {!saving && (!solved || retry) && <p className="status error" role="status">Progress can&rsquo;t be saved in this browser. Keep this page open to retain it.</p>}
       <div className="word-workspace">
         <div className="word-play-area">
           <WordPathsBoard game={game} locked={solved} instructionsId={instructionsId} onSelect={select}
@@ -220,7 +217,7 @@ export function WordPathsStage({ puzzle, grid, timeZone, previewBoard }: {
         With a keyboard: arrows move, Space selects, Enter submits; Backspace removes a letter and Escape clears selection. H asks for a hint.
       </p>
       <p className="word-note">Use every letter once. Tap an accepted word to remove it; Undo brings it back. Only words in this game&rsquo;s English list are accepted.</p>
-      <SolvedPanel puzzleId={preview ? undefined : puzzle.id} candidate={candidate} solved={solved} firstSolve={firstSolve} streak={stats?.currentStreak ?? 0} copied={copied} shareText={shareText} onShare={share} />
+      <SolvedPanel puzzleId={preview ? undefined : puzzle.id} candidate={saved?.candidate ?? null} solved={solved} firstSolve={firstSolve} streak={streak} retrySave={retry} copied={copied} shareText={shareText} onShare={share} />
     </div>
   )
 }

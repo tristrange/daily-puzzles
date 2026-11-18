@@ -1,9 +1,9 @@
 import { PlayTimer } from './PlayTimer'
 import { SolvedPanel } from './SolvedPanel'
-import { useLeaderboard } from '../lib/useLeaderboard'
+import { usePublishedSolve } from '../lib/usePublishedSolve'
 import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { formatPuzzleLabel, puzzleOfToday } from '../domain/dates'
+import { formatPuzzleLabel } from '../domain/dates'
 import {
   clearCell,
   conflicts,
@@ -34,7 +34,7 @@ import { TrioStage } from './TrioStage'
 import { TentsStage } from './TentsStage'
 import { WordGrid } from '../domain/wordPaths'
 import { PuzzleNotFoundError, PuzzleUnavailableError, loadPuzzle } from '../lib/puzzles'
-import { tryStoreSolve, summarise, type SolveRecord, type Stats } from '../lib/stats'
+import type { SolveRecord } from '../lib/stats'
 import { readStoredAutoMark, storeAutoMark } from '../lib/autoMark'
 import { clearMarksProgress, readMarksProgress, storeMarksProgress } from '../lib/marksProgress'
 import { buildShareText, buildSolutionShareText, copyText, puzzleShareLink } from '../lib/share'
@@ -117,18 +117,13 @@ export function PuzzleStage({
   const hintReasons = useMemo(() => hint ? [hint.reason] : [], [hint])
   const [announcement, setAnnouncement] = useState('')
   const [autoMark, setAutoMark] = useState(readStoredAutoMark)
-  const [pendingSolve, setPendingSolve] = useState<SolveRecord | null>(null)
   const [savingAvailable, setSavingAvailable] = useState(true)
   // Hints actually shown, not hints asked for: a request that had nothing forced
   // to say is not help, and counting it would make the stat a measure of nerves.
   const hintsUsed = useRef(initialProgress?.hints ?? 0)
-  // Set once this puzzle has been solved, so the banner can show what the solve
-  // did to the history without re-reading storage on every render.
-  const [stats, setStats] = useState<Stats | null>(null)
-  // The solve already on record for this puzzle, if this was a replay.
-  const [firstSolve, setFirstSolve] = useState<SolveRecord | null>(null)
-  const [candidate, setCandidate] = useState<SolveRecord | null>(null)
-  const { offerSolve } = useLeaderboard()
+  const { save, saved, retry } = usePublishedSolve(timeZone, () => clearMarksProgress(puzzle.id))
+  const firstSolve = saved?.firstSolve ?? null
+  const streak = saved?.streak ?? 0
   const [copied, setCopied] = useState<'idle' | 'result' | 'solution' | 'failed'>('idle')
   // Set only when copying failed, so the text can be selected by hand.
   const [shareText, setShareText] = useState<string | null>(null)
@@ -172,26 +167,12 @@ export function PuzzleStage({
     setProgressCheck(null)
   }
 
-  const saveSolve = (record: SolveRecord) => {
-    const { records, firstSolve, persisted } = tryStoreSolve(record)
-    if (!persisted) {
-      setPendingSolve(record)
-      return false
-    }
-    clearMarksProgress(puzzle.id)
-    setPendingSolve(null)
-    setStats(summarise(records, puzzleOfToday(new Date(record.solvedAt), timeZone)))
-    setFirstSolve(firstSolve)
-    if (firstSolve === null) { setCandidate(record); void offerSolve(record) }
-    return true
-  }
-
   const recordSolve = (when: number, before: GameState) => {
     const stoppedTime = stop()
     completed.current = true
     const record: SolveRecord = { id: puzzle.id, puzzleType: puzzle.puzzleType, size: board.size,
       ...stoppedTime, hints: hintsUsed.current, solvedAt: when }
-    if (!saveSolve(record)) {
+    if (!save(record)) {
       setSavingAvailable(storeMarksProgress(puzzle.id, before, stoppedTime, record.hints))
     }
     setAnnouncement(`Solved in ${formatTime(stoppedTime.elapsedMs)}!`)
@@ -412,7 +393,7 @@ export function PuzzleStage({
       puzzleType: puzzle.puzzleType,
       elapsedMs: counted.elapsedMs,
       hints: counted.hints,
-      streak: stats?.currentStreak ?? 0,
+      streak,
       link: puzzleShareLink(puzzle.id),
     }
     const text =
@@ -490,7 +471,7 @@ export function PuzzleStage({
               </>
             )}
           </div>
-          {!savingAvailable && (!solved || pendingSolve !== null) && (
+          {!savingAvailable && (!solved || retry) && (
             <p className="status error" role="status">
               Progress can&rsquo;t be saved in this browser. Keep this page open to retain it.
             </p>
@@ -529,12 +510,8 @@ export function PuzzleStage({
           ? 'Checked against the unique solution, independently of your other entries. Clears only this cell.'
           : `Your placed ${piecePlural} and crosses were checked against the unique solution before this deduction.`}
         onApply={acceptHint} onDismiss={dismissHint} onShowCell={showHintCell} />}
-      {pendingSolve !== null && <div>
-        <p className="status error" role="alert">Could not save your solve. Retry before leaving to keep this result.</p>
-        <button type="button" className="tool-button" onClick={() => saveSolve(pendingSolve)}>Retry saving solve</button>
-      </div>}
-      <SolvedPanel solved={solved} firstSolve={firstSolve} streak={stats?.currentStreak ?? 0}
-        copied={copied} shareText={shareText} onShare={share} puzzleId={puzzle.id} candidate={candidate} />
+      <SolvedPanel solved={solved} firstSolve={firstSolve} streak={streak} retrySave={retry}
+        copied={copied} shareText={shareText} onShare={share} puzzleId={puzzle.id} candidate={saved?.candidate ?? null} />
       <p className="sr-only" role="status" aria-live="polite">
         {announcement}
       </p>

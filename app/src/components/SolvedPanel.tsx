@@ -71,6 +71,7 @@ export interface SolvedPanelProps {
   onShare: (variant: 'result' | 'solution') => void
   puzzleId?: string | undefined
   candidate?: SolveRecord | null
+  retrySave?: (() => void) | undefined
 }
 
 export function SolvedPanel({
@@ -82,6 +83,7 @@ export function SolvedPanel({
   onShare,
   puzzleId,
   candidate,
+  retrySave,
 }: SolvedPanelProps) {
   const unlocks = useMemo(() => {
     if (!solved || firstSolve !== null || !candidate || puzzleId !== candidate.id) return []
@@ -103,6 +105,10 @@ export function SolvedPanel({
   return (
     <div className={`solved-panel${startedSolved ? '' : ' just-solved'}`}>
       {!startedSolved && <Confetti />}
+      {retrySave && <div>
+        <p className="status error" role="alert">Could not save your solve. Retry before leaving to keep this result.</p>
+        <button type="button" className="tool-button" onClick={retrySave}>Retry saving solve</button>
+      </div>}
       <p className="solved-banner" ref={banner}>
         {firstSolve === null ? (
           <>
