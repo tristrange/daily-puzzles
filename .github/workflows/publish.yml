@@ -38,8 +38,10 @@ jobs:
         run: |
           uv run python -m tools.publish --out ../app/public/puzzles
           uv run python -m tools.enclosure_solutions
-          uv run python -m tools.verify --dir ../app/public/puzzles --jobs 4
-          uv run python -m tools.schema_ids --check
+      - name: Verify published puzzles
+        uses: ./.github/actions/verify-archive
+      - name: Schema id pattern matches the manifest
+        run: uv run python -m tools.schema_ids --check
       - name: Commit and push
         id: commit
         run: |
