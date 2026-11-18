@@ -116,6 +116,24 @@ it.each(cases)('$name counts only visible, focused time and resumes its saved du
   expect(container.querySelector('[role="timer"]')?.textContent).toBe('0:04')
 })
 
+it('records the Train Tracks solve time when the final piece is committed', async () => {
+  const { element, snapshot } = tracks()
+  await mount(element)
+  const last = container.querySelector('[data-cell="1"]')!
+  now = 200
+  await act(async () => last.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1 })))
+  expect(readStoredStats()).toEqual([])
+  expect(container.textContent).not.toContain('Solved — nice!')
+  expect(publication.offerSolve).not.toHaveBeenCalled()
+
+  await tick(2_000)
+  expect(snapshot()?.game.pieces).toEqual([1, MAYBE, 1])
+  await act(async () => window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1 })))
+  expect(readStoredStats()).toMatchObject([{ elapsedMs: 3400, solvedAt: 1_790_000_002_200 }])
+  expect(container.textContent).toContain('Solved — nice!')
+  expect(publication.offerSolve).toHaveBeenCalledExactlyOnceWith(readStoredStats()[0])
+})
+
 it.each(['Queens', 'Train Tracks'])('%s records focused time at the solve instant and freezes it', async name => {
   const playing = name === 'Queens' ? marks(queen) : tracks()
   if (name === 'Queens') {
@@ -140,24 +158,6 @@ it.each(['Queens', 'Train Tracks'])('%s records focused time at the solve instan
 
 const button = (text: string) => [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === text)!
 const click = async (text: string) => { await act(async () => button(text).click()) }
-
-it('records the Train Tracks solve time when the final piece is committed', async () => {
-  const { element, snapshot } = tracks()
-  await mount(element)
-  const last = container.querySelector('[data-cell="1"]')!
-  now = 200
-  await act(async () => last.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1 })))
-  expect(readStoredStats()).toEqual([])
-  expect(container.textContent).not.toContain('Solved — nice!')
-  expect(publication.offerSolve).not.toHaveBeenCalled()
-
-  await tick(2_000)
-  expect(snapshot()?.game.pieces).toEqual([1, MAYBE, 1])
-  await act(async () => window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1 })))
-  expect(readStoredStats()).toMatchObject([{ elapsedMs: 3400, solvedAt: 1_790_000_002_200 }])
-  expect(container.textContent).toContain('Solved — nice!')
-  expect(publication.offerSolve).toHaveBeenCalledExactlyOnceWith(readStoredStats()[0])
-})
 
 it.each(cases)('$name keeps total through cancelled, repeated and undone resets and reload', async ({ setup }) => {
   const { element, snapshot } = setup()
