@@ -375,13 +375,28 @@ export function clearStats(): readonly SolveRecord[] {
 
 /** Record a solve, keeping the history sorted. A puzzle already solved is left alone. */
 export function storeSolve(record: SolveRecord): readonly SolveRecord[] {
-  const records = addSolve(readStoredStats(), record)
+  return tryStoreSolve(record).records
+}
+
+export function tryStoreSolve(record: SolveRecord): {
+  records: readonly SolveRecord[]
+  firstSolve: SolveRecord | null
+  persisted: boolean
+} {
+  let previous: readonly SolveRecord[]
+  try {
+    previous = parseStats(localStorage.getItem(STATS_STORAGE_KEY))
+  } catch {
+    return { records: addSolve([], record), firstSolve: null, persisted: false }
+  }
+  const firstSolve = record.puzzleType === 'enclosure' ? null : previous.find((held) => held.id === record.id) ?? null
+  const records = addSolve(previous, record)
   try {
     localStorage.setItem(STATS_STORAGE_KEY, JSON.stringify(records))
+    return { records, firstSolve, persisted: true }
   } catch {
-    // A solve that is not remembered is better than a page that breaks.
+    return { records, firstSolve, persisted: firstSolve !== null }
   }
-  return records
 }
 
 /** Save a verified result while preserving results for other boards. */

@@ -33,7 +33,7 @@ import { readWordProgress, storeWordProgress } from '../lib/wordProgress'
 import { readTrioProgress, storeTrioProgress } from '../lib/trioProgress'
 import { readTentsProgress, storeTentsProgress } from '../lib/tentsProgress'
 import { readSudokuProgress, storeSudokuProgress } from '../lib/sudokuProgress'
-import { readStoredStats } from '../lib/stats'
+import { readStoredStats, STATS_STORAGE_KEY } from '../lib/stats'
 import { PuzzleStage } from './PuzzleView'
 import { TracksStage } from './TracksStage'
 import { WordPathsStage } from './WordPathsStage'
@@ -140,6 +140,45 @@ it.each(['Queens', 'Train Tracks'])('%s records focused time at the solve instan
 
 const button = (text: string) => [...container.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === text)!
 const click = async (text: string) => { await act(async () => button(text).click()) }
+
+it('keeps a resumable Queens board and retries the original solve when stats storage recovers', async () => {
+  const puzzle = parsePuzzle(queen), board = marksBoard(puzzle)
+  const unfinished = { board, queens: new Set([3, 5, 12, 19]), marks: new Set<number>() }
+  storeMarksProgress(puzzle.id, unfinished, { elapsedMs: 1200, attemptElapsedMs: 200 }, 1)
+  await mount(<PuzzleStage puzzle={puzzle} board={board} timeZone="UTC" />)
+
+  const setItem = Storage.prototype.setItem
+  const write = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, key, value) {
+    if (key === STATS_STORAGE_KEY) throw new DOMException('Storage quota exceeded', 'QuotaExceededError')
+    setItem.call(this, key, value)
+  })
+
+  await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="Get an explained hint"]')!.click())
+  now = 775
+  await act(async () => container.querySelector<HTMLButtonElement>('.apply-hint')!.click())
+
+  expect(container.querySelector('[role="alert"]')?.textContent).toContain('Could not save your solve')
+  expect(readStoredStats()).toEqual([])
+  expect(readMarksProgress(puzzle.id, board)).toMatchObject({
+    game: unfinished, elapsedMs: 1975, attemptElapsedMs: 975, hints: 2,
+  })
+  expect(publication.offerSolve).not.toHaveBeenCalled()
+
+  await tick(10_000)
+  await click('Retry saving solve')
+  expect(readStoredStats()).toEqual([])
+  expect(publication.offerSolve).not.toHaveBeenCalled()
+
+  write.mockRestore()
+  await click('Retry saving solve')
+  expect(readStoredStats()).toEqual([{
+    id: puzzle.id, puzzleType: 'queens', size: board.size,
+    elapsedMs: 1975, attemptElapsedMs: 975, hints: 2, solvedAt: 1_790_000_000_775,
+  }])
+  expect(publication.offerSolve).toHaveBeenCalledExactlyOnceWith(readStoredStats()[0])
+  expect(readMarksProgress(puzzle.id, board)).toBeNull()
+  expect(button('Retry saving solve')).toBeUndefined()
+})
 
 it.each(cases)('$name keeps total through cancelled, repeated and undone resets and reload', async ({ setup }) => {
   const { element, snapshot } = setup()
