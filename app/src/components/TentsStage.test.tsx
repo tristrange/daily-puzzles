@@ -142,6 +142,27 @@ it('treats a drag as one move and restores cancelled strokes', async () => {
   expect(button('Undo').disabled).toBe(true)
 })
 
+it('resumes the committed board after leaving during a drag', async () => {
+  await act(async () => root.render(<TentsStage board={board} />))
+  await key(0, '2')
+  const committed = readTentsProgress(board)?.game
+  expect(committed?.[0]).toBe(2)
+
+  await act(async () => container.querySelector<HTMLInputElement>('input[aria-label="Grass"]')!.click())
+  const pointer = pointerDriver()
+  await pointer('pointerdown', 8)
+  await pointer('pointermove', 0)
+  expect(cell(8).getAttribute('aria-label')).toContain('Grass')
+
+  await act(async () => window.dispatchEvent(new Event('pagehide')))
+  expect(readTentsProgress(board)?.game).toEqual(committed)
+  await act(async () => root.unmount())
+  root = createRoot(container)
+  await act(async () => root.render(<TentsStage board={board} />))
+  expect(cell(0).getAttribute('aria-label')).toContain('Grass')
+  expect(cell(8).getAttribute('aria-label')).not.toContain('Grass')
+})
+
 it.each([0, 6])('completes preview %s without adding daily stats', async index => {
   const board = parseTentsBoard(raw[index])
   const solution = proof.samples[index]!.solution, last = solution.at(-1)!
