@@ -54,6 +54,7 @@ class ArchiveFingerprintTests(unittest.TestCase):
             "schema/puzzle.schema.json",
             "conformance/id-cases/manifest.json",
             ".github/actions/verify-archive/action.yml",
+            ".github/workflows/publish.yml",
         ):
             with self.subTest(path=path):
                 previous = fingerprint(self.repo)

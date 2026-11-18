@@ -23,8 +23,8 @@ of repeating it.
 The engine's `tests` and `archive` matrix jobs run on separate runners in parallel.
 The first runs pytest (excluding `generator_sweep`), pyright and ruff. The second
 requires a successful archive replay and checks schema IDs and Enclosure
-solutions. Both must succeed for
-the stable `engine` gate to pass. Failure, cancellation, unexpected skips or routing
+solutions. Both must succeed for the stable `engine` gate to pass. Failure,
+cancellation, unexpected skips or routing
 failure cannot produce a green gate. Known frontend-only PRs skip both legs and
 the gate, as before; main and publisher dispatches always require both checks.
 
@@ -127,8 +127,8 @@ and calls `verify_replay` on it, so a generator change
 that would have drifted the archive fails loudly before anything is merged.
 
 CI and daily publishing use four replay workers. They can reuse a successful full
-replay when archive paths and bytes, verifier code, schemas, and the runner's
-Python and uv environment match exactly. A cache miss runs all parse, identity,
+replay when archive paths and bytes, verifier code, schemas, workflow definitions,
+and the runner's Python and uv environment match exactly. A cache miss runs all parse, identity,
 replay, ramp, repeat-window and canonical-byte checks. The publisher saves the
 result before dispatching CI, so the deployment can reuse it for the same archive.
 Omit `--jobs` for serial verification, or set it to the worker count available locally.

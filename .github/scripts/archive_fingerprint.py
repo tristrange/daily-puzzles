@@ -10,6 +10,8 @@ from pathlib import Path
 INPUTS = (
     ".github/actions/verify-archive/action.yml",
     ".github/scripts/archive_fingerprint.py",
+    ".github/workflows/ci.yml",
+    ".github/workflows/publish.yml",
     ".gitignore",
     "engine",
     "schema",
