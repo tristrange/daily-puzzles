@@ -1,0 +1,46 @@
+name: Verify the puzzle archive
+description: Reuse a successful replay only for identical inputs
+
+runs:
+  using: composite
+  steps:
+    - name: Fingerprint replay inputs
+      id: inputs
+      continue-on-error: true
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        version=$(uv --version)
+        export ARCHIVE_UV_VERSION="$version"
+        fingerprint=$(uv run --project engine --frozen --no-sync python .github/scripts/archive_fingerprint.py)
+        echo "key=archive-replay-v1-$fingerprint" >> "$GITHUB_OUTPUT"
+    - name: Look up successful replay
+      if: steps.inputs.outcome == 'success'
+      id: proof
+      continue-on-error: true
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ runner.temp }}/daily-puzzles-archive-verified
+        key: ${{ steps.inputs.outputs.key }}
+        lookup-only: true
+    - name: Replay every published puzzle
+      if: steps.proof.outcome != 'success' || steps.proof.outputs.cache-hit != 'true'
+      id: replay
+      shell: bash
+      working-directory: ${{ github.workspace }}/engine
+      run: uv run --frozen python -m tools.verify --dir ../app/public/puzzles --jobs 4
+    - name: Write replay success marker
+      if: steps.inputs.outcome == 'success' && steps.replay.outcome == 'success'
+      id: marker
+      continue-on-error: true
+      shell: bash
+      env:
+        ARCHIVE_KEY: ${{ steps.inputs.outputs.key }}
+      run: printf '%s\n' "$ARCHIVE_KEY" > "$RUNNER_TEMP/daily-puzzles-archive-verified"
+    - name: Save replay success marker
+      if: steps.marker.outcome == 'success'
+      continue-on-error: true
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ runner.temp }}/daily-puzzles-archive-verified
+        key: ${{ steps.inputs.outputs.key }}
