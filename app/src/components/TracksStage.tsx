@@ -56,6 +56,7 @@ export function TracksStage({
 }) {
   const [initialProgress] = useState(() => readTrackProgress(puzzle.id, grid))
   const [game, setGame] = useState<TracksGame>(() => initialProgress?.game ?? createTracksGame(grid))
+  const [initiallySolved] = useState(() => isTracksSolved(game))
   const stage = useRef<HTMLDivElement>(null)
   const hintButton = useRef<HTMLButtonElement>(null)
   const checkButton = useRef<HTMLButtonElement>(null)
@@ -78,7 +79,7 @@ export function TracksStage({
   const clearReview = () => { clearHint(); setProgressCheck(null); setCorrection(null) }
   const history = useMoveHistory<TracksGame>()
   const [announcement, setAnnouncement] = useState('')
-  const [solvedAt, setSolvedAt] = useState<number | null>(null)
+  const [finished, setFinished] = useState(false)
   const [savingAvailable, setSavingAvailable] = useState(true)
   const [stats, setStats] = useState<Stats | null>(null)
   const [firstSolve, setFirstSolve] = useState<SolveRecord | null>(null)
@@ -93,10 +94,8 @@ export function TracksStage({
   const currentGame = useRef(game)
   const completed = useRef(false)
 
-  useEffect(() => { currentGame.current = game }, [game])
-
   const { time, settle, stop, restartAttempt } = usePlayClock(initialProgress ?? { elapsedMs: 0 }, time => {
-    setSavingAvailable(storeTrackProgress(puzzle.id, currentGame.current, time, hintsUsed.current))
+    setSavingAvailable(storeTrackProgress(puzzle.id, strokeStart.current ?? currentGame.current, time, hintsUsed.current))
   })
   const elapsed = time.elapsedMs
 
@@ -110,7 +109,7 @@ export function TracksStage({
     () => (placed ? trackConflicts(game).filter((c) => isFault(c.rule)) : []),
     [game, placed],
   )
-  const solved = isTracksSolved(game)
+  const solved = initiallySolved || finished
   const shownTime = elapsed
 
   // The one place a solve is recorded, so a board that arrives already solved and
@@ -123,7 +122,7 @@ export function TracksStage({
     completed.current = true
     const stoppedTime = stop()
     clearTrackProgress(puzzle.id)
-    setSolvedAt(when)
+    setFinished(true)
     // Read before storing, so a replay can be told why its time was not kept.
     const earlier = readStoredStats().find((record) => record.id === puzzle.id)
     const record: SolveRecord = { id: puzzle.id, puzzleType: puzzle.puzzleType, size: grid.width,
@@ -137,11 +136,11 @@ export function TracksStage({
   // An initially solved board still needs its solve recorded. The ref also
   // prevents Strict Mode from recording it twice before React rerenders.
   useEffect(() => {
-    if (completed.current || solvedAt !== null || !isTracksSolved(game)) return
+    if (!initiallySolved) return
     // Recording an initially solved board synchronizes local stats and the leaderboard.
     // oxlint-disable-next-line react/set-state-in-effect
     recordSolve(Date.now())
-  }, [solvedAt, game, recordSolve])
+  }, [initiallySolved, recordSolve])
 
   const applyGame = (next: TracksGame, before: TracksGame = game) => {
     // A no-op records nothing. `applyBrush` and `clearCell` both return the state
@@ -149,25 +148,26 @@ export function TracksStage({
     // same, so a click on a given would otherwise enable Undo and displace a real
     // move from the bounded history — and an Undo that appears to do nothing is
     // worse than no Undo at all. The marks board has the same rule in `endStroke`.
-    if (next === before) return
+    if (completed.current || strokeStart.current !== null || next === before) return
     clearReview()
     history.remember(before)
     currentGame.current = next
     setGame(next)
-    setSavingAvailable(storeTrackProgress(puzzle.id, next, settle(), hintsUsed.current))
-    if (solvedAt !== null || !isTracksSolved(next)) return
-    recordSolve(Date.now())
+    if (isTracksSolved(next)) recordSolve(Date.now())
+    else setSavingAvailable(storeTrackProgress(puzzle.id, next, settle(), hintsUsed.current))
   }
 
   /** A press landed. The whole stroke, drag or click, is one move from here. */
   const beginStroke = () => {
     clearReview()
-    strokeStart.current = game
+    strokeStart.current = currentGame.current
   }
 
   /** Live feedback while dragging: no history, the stroke is not over yet. */
   const paint = (cell: number, withBrush: TrackBrush) => {
-    setGame((current) => paintBrush(current, cell, withBrush))
+    const next = paintBrush(currentGame.current, cell, withBrush)
+    currentGame.current = next
+    setGame(next)
   }
 
   /**
@@ -183,7 +183,7 @@ export function TracksStage({
     if (clickedCell === null) {
       // A stroke over cells already holding what the brush puts there changed
       // nothing, and `applyGame` drops the no-op rather than the history.
-      applyGame(game, before)
+      applyGame(currentGame.current, before)
       return
     }
     applyGame(applyBrush(before, clickedCell, withBrush), before)
